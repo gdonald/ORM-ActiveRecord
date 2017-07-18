@@ -3,14 +3,14 @@ use lib 'lib';
 use ActiveRecord;
 
 class User is ActiveRecord {
-
+    
     submethod BUILD {
         self.has-many: 'pages';
     }
 }
 
 class Page is ActiveRecord {
-
+    
     submethod BUILD {
         self.belongs-to: 'user';
     }
@@ -19,7 +19,9 @@ class Page is ActiveRecord {
 sub MAIN {
     my $user = User.find(1);
     say $user.fname;
-    #my $page = $user.pages.first;
-    #say $page;
-    #say $page.user;
+    my @pages = $user.pages;
+    say @pages;
+    my $page = $user.pages.first;
+    say $page;
+    say $page.user;
 }
