@@ -17,8 +17,9 @@ class ActiveRecord {
 	$!db = ActiveRecord::DB.new;
 
 	if %!record && %!record{'attributes'} {
-	    %!attributes = %!record{'attributes'};
-	} elsif $!id {
+            %!attributes = %!record{'attributes'};
+	    @!fields = slip(%!record{'fields'}) if %!record{'fields'};
+        } elsif $!id {
 	    @!fields = $!db.get-fields(table => self.table-name);
 	    self.get-attributes;
 	}
@@ -62,7 +63,7 @@ class ActiveRecord {
     method find(*@rest) {
 	my Int $id = 0;
 	$id = @rest[0] if @rest.elems == 1 && @rest[0].isa(Int);
-	return self.new(id => $id);
+	self.new(id => $id);
     }
 
     method get-attributes {

@@ -48,7 +48,7 @@ class ActiveRecord::DB {
 	my @records = self.get-records(fields => @fields, table => $table, where => %where);
 	my @objects = [];
 	for @records.kv -> $k, $record {
-	    my $obj = $class.new(id => $record{'id'}, record => attributes => $record);
+	    my $obj = $class.new(id => $record{'id'}, record => { attributes => $record, fields => @fields });
 	    @objects.push: $obj;
 	}
 	@objects;
@@ -56,7 +56,7 @@ class ActiveRecord::DB {
 
     method get-object(:$class, :@fields, :$table, :%where) {
 	my $record = self.get-record(fields => @fields, table => $table, where => %where);
-	$class.new(id => $record{'id'}, record => attributes => $record);
+	$class.new(id => $record{'id'}, record => { attributes => $record, fields => @fields });
     }
     
     method get-rows(:$sql) {
