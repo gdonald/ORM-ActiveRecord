@@ -43,6 +43,21 @@ class ActiveRecord::DB {
 	}
         return @where.join(" AND ");
     }
+
+    method get-objects(:$class, :@fields, :$table, :%where) {
+	my @records = self.get-records(fields => @fields, table => $table, where => %where);
+	my @objects = [];
+	for @records.kv -> $k, $record {
+	    my $obj = $class.new(id => $record{'id'}, record => attributes => $record);
+	    @objects.push: $obj;
+	}
+	@objects;
+    }
+
+    method get-object(:$class, :@fields, :$table, :%where) {
+	my $record = self.get-record(fields => @fields, table => $table, where => %where);
+	$class.new(id => $record{'id'}, record => attributes => $record);
+    }
     
     method get-rows(:$sql) {
         my $query = $!db.prepare(qq:to/SQL/);
@@ -51,7 +66,7 @@ class ActiveRecord::DB {
         $query.execute();
         return $query.allrows();
     }
-    
+
     method get-records(:@fields, :$table, :%where) {
         my @records = [];
 	my $sql = self.build-sql(

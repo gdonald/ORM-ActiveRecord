@@ -7,45 +7,48 @@ class ActiveRecord {
     has $!db;
     has Str @!fields;
     has Int $!id;
-    has Str @!has-manys;
-    has Str @!belongs-tos;
+    has %!record;
+    has %!has-manys;
+    has %!belongs-tos;
     has %!attributes;
 
-    submethod BUILD(:$!id) {
+    submethod BUILD(:$!id, :%!record) {
+
 	$!db = ActiveRecord::DB.new;
-	@!fields = $!db.get-fields(table => self.table-name);
 
-	self.get-attributes;
+	if %!record && %!record{'attributes'} {
+	    %!attributes = %!record{'attributes'};
+	} elsif $!id {
+	    @!fields = $!db.get-fields(table => self.table-name);
+	    self.get-attributes;
+	}
 
-	@!has-manys = [];
-	@!belongs-tos = [];
-
-	say %!attributes;
         # $!db.dispose;
     }
 
     method FALLBACK($name, *@rest) {
-	# say "FALLBACK";
-	# say "self.WHAT.perl: {self.WHAT.perl}";
-	# say "\$name: $name";
-	# say "\@rest: @rest[]";
-	# say "end FALLBACK";
 
 	return %!attributes{$name} if %!attributes{$name};
 
-	if any(@!has-manys) eq $name {
-	    # say "{self.WHAT.perl.lc} has many {$name}";
-	    my @fields = $!db.get-fields(table => $name);
-	    return $!db.get-records(fields => @fields, table => $name, where => self.fkey-name => $!id);
+	if any(%!has-manys.keys) eq $name {
+	    my Str @fields = $!db.get-fields(table => $name);
+	    return $!db.get-objects(class => %!has-manys{$name}{'class'}, fields => @fields, table => $name, where => self.fkey-name => $!id);
+	}
+
+	if any(%!belongs-tos.keys) eq $name {
+	    my Str $table = $name ~ 's';
+	    my Str @fields = $!db.get-fields(table => $table);
+	    my Int $id = %!attributes{$name ~ '_id'};
+	    return $!db.get-object(class => %!belongs-tos{$name}{'class'}, fields => @fields, table => $table, where => id => $id);
 	}
     }
 
-    method belongs-to($key) {
-	@!belongs-tos.push: $key; 
+    method belongs-to(*%rest) {
+	%!belongs-tos.push: %rest.keys.first => %rest.values.first;
     }
 
-    method has-many($key) {
-	@!has-manys.push: $key;
+    method has-many(*%rest) {
+	%!has-manys.push: %rest.keys.first => %rest.values.first;
     }
 
     method table-name {
