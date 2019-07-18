@@ -1,25 +1,23 @@
-
-use v6.c;
+use v6.d;
 
 class ActiveRecord::Spell {
+  submethod BUILD {
 
-    submethod BUILD {
-	
-    }
-    
-    method plural(:$word) {
-	
-    }
+  }
 
-    method plural_exceptions(:$word) {
-	
-    }
+  method plural(:$word) {
 
-    method singular(:$word) {
-	
-    }
+  }
 
-    method singular_exceptions(:$word) {
-	
-    }
+  method plural_exceptions(:$word) {
+
+  }
+
+  method singular(:$word) {
+
+  }
+
+  method singular_exceptions(:$word) {
+
+  }
 }
