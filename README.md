@@ -1,5 +1,5 @@
 
-## ORM::ActiveRecord
+### ORM::ActiveRecord
 
 Object-relational mapping module for Perl 6.
 
@@ -36,3 +36,13 @@ Perl 6
 say $page.user.fname;
 Greg
 ```
+
+#### Run Tests:
+
+```
+$ prove -v --exec=perl6 --ext=t6
+```
+
+#### License
+
+ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensource.org/licenses/Artistic-2.0)
