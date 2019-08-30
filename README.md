@@ -24,8 +24,8 @@ class Page is ActiveRecord {
 ```
 
 ```perl6
-User $user = User.find(1);
-Page $page = $user.pages.first;
+my User $user = User.find(1);
+my Page $page = $user.pages.first;
 
 say $user.fullname;
 Greg Donald
