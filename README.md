@@ -43,6 +43,10 @@ Greg
 $ prove -v --exec=perl6 --ext=t6
 ```
 
+## Status
+
+[![Build Status](https://travis-ci.org/gdonald/ORM-ActiveRecord.svg?branch=master)](https://travis-ci.org/gdonald/ORM-ActiveRecord)
+
 #### License
 
 ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensource.org/licenses/Artistic-2.0)
