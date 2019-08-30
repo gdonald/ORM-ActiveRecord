@@ -1,0 +1,30 @@
+{
+  "name": "ORM::ActiveRecord",
+  "description": "Object-relational mapping",
+  "version": "0.0.1",
+  "perl": "6.d",
+  "authors": [
+    "Greg Donald"
+  ],
+  "auth": "github:gdonald",
+  "depends": [],
+  "build-depends": [],
+  "test-depends": [
+    "Test",
+    "Test::META",
+    "JSON::Tiny",
+    "DBIish"
+  ],
+  "provides": {
+    "ORM::AciveRecord": "lib/ORM/AciveRecord.pm6",
+    "ORM::AciveRecord::DB": "lib/ORM/AciveRecord/DB.pm6",
+    "ORM::AciveRecord::Spell": "lib/ORM/AciveRecord/Spell.pm6"
+  },
+  "resources": [],
+  "license": "Artistic-2.0",
+  "tags": [
+    "ORM",
+    "ActiveRecord"
+  ],
+  "source-url": "git://github.com/gdonald/ORM-ActiveRecord.git"
+}

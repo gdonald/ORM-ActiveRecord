@@ -1,6 +1,7 @@
-use v6.d;
 
-class ActiveRecord::Spell {
+unit class ORM::ActiveRecord::Spell;
+
+class Spell is export {
   submethod BUILD {
 
   }

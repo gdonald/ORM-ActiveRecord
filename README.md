@@ -1,4 +1,4 @@
-# ActiveRecord
-Trying to create something like a Perl 6 ActiveRecord.
 
-Feel free to send pull requests :)
+## ORM::ActiveRecord
+
+Object-relational mapping module for Perl 6.

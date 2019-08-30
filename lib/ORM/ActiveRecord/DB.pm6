@@ -1,8 +1,10 @@
-use v6.d;
+
+unit class ORM::ActiveRecord::DB;
+
 use JSON::Tiny;
 use DBIish;
 
-class ActiveRecord::DB {
+class DB is export {
   has Str $!database;
   has Str $!user;
   has Str $!password;

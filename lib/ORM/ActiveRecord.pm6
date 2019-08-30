@@ -1,7 +1,9 @@
-use v6.d;
-use ActiveRecord::DB;
 
-class ActiveRecord {
+unit module ORM::ActiveRecord;
+
+use ORM::ActiveRecord::DB;
+
+class ActiveRecord is export {
   has $!db;
   has Str @!fields;
   has Int $!id;
@@ -11,7 +13,7 @@ class ActiveRecord {
   has %!attributes;
 
   submethod BUILD(:$!id, :%!record) {
-    $!db = ActiveRecord::DB.new;
+    $!db = DB.new;
 
     if %!record && %!record{'attributes'} {
       %!attributes = %!record{'attributes'};
