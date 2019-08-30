@@ -29,7 +29,7 @@ my User $user = User.find(1);
 ok $user.fullname eq 'Greg Donald';
 
 my Page $page = $user.pages.first;
-ok $page.name eq 'Perl6';
+ok $page.name eq 'Perl 6';
 ok $page.user.fname eq 'Greg';
 
 done-testing;
