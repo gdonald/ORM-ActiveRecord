@@ -1,0 +1,31 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord;
+
+use Test;
+
+class User is ActiveRecord {
+
+}
+
+validate User, 'fname', {
+  :presence,
+  length => { minimum => 4, maximum => 32 }
+}
+
+plan 4;
+
+my User $user;
+
+$user = User.build;
+nok $user.is-valid;
+
+$user = User.build({});
+nok $user.is-valid;
+
+$user = User.build({fname => 'x' x 33});
+nok $user.is-valid;
+
+$user = User.build({fname => 'Greg'});
+ok $user.is-valid;

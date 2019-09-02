@@ -1,7 +1,9 @@
 
-unit module ORM::ActiveRecord;
+#unit module ORM::ActiveRecord;
 
 use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Validator;
+use ORM::ActiveRecord::Error;
 
 class ActiveRecord is export {
   has DB $!db;
@@ -12,6 +14,7 @@ class ActiveRecord is export {
   has Int $.id;
   has Str @.fields;
   has %.attributes;
+  has @.errors of Error;
 
   submethod BUILD(:$!id, :%!record, :$action) {
     $!db = DB.new;
@@ -28,8 +31,11 @@ class ActiveRecord is export {
       self.get-attributes;
     }
 
+    Validator.validate(self);
+
     given $action {
       when 'create' { $!id = $!db.create-object(self) }
+      when 'build' { }
     }
   }
 
@@ -79,5 +85,24 @@ class ActiveRecord is export {
     my %record = 'attributes' => %attributes;
     my $action = 'create';
     self.new(:id(0), :%record, :$action);
+  }
+
+  multi method build(%attributes) {
+    my %record = 'attributes' => %attributes;
+    my $action = 'build';
+    self.new(:id(0), :%record, :$action);
+  }
+
+  multi method build {
+    self.build({});
+  }
+
+  method is-valid {
+    !@!errors.elems.so;
+  }
+
+  sub validate($klass, Str $field, Hash $params) is export {
+    my $v = Validator.new(:$klass, :$field, :$params);
+    Validator.validators.push($v);
   }
 }

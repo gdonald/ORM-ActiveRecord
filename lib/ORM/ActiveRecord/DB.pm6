@@ -24,7 +24,6 @@ class DB is export {
     qq:to/SQL/;
       INSERT INTO $table ($fields)
       VALUES ($values)
-      RETURNING id
     SQL
   }
 
@@ -78,7 +77,8 @@ class DB is export {
       $sql
     SQL
 
-    $query.execute()[0].Int;
+    my @res = $query.execute();
+    @res[0][0].Int;
   }
 
   method get-rows(:$sql) {
