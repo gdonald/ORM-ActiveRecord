@@ -32,7 +32,7 @@ ok $user_id > 0;
 $user = User.find($user_id);
 ok $user.fullname eq 'Greg Donald';
 
-Page.create({:$user_id, name => 'Perl 6'});
+Page.create({:$user_id, name => 'Perl 6'});  # TODO: make this work for $user
 my Page $page = $user.pages.first;
 ok $page.name eq 'Perl 6';
 ok $page.user.fname eq 'Greg';
