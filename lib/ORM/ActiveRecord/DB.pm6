@@ -15,42 +15,52 @@ class DB is export {
   submethod BUILD {
     self.get-config;
     self.connect-db;
-    # $!db.dispose;
   }
 
-  method build-sql(:@fields, :$table, :%where, :@order, :$limit) {
+  method build-insert(:$table, :%attrs) {
+    my $fields = %attrs.keys.join(',');
+    my $values = %attrs.values.map({ "'$_'" }).join(',');
+
+    qq:to/SQL/;
+      INSERT INTO $table ($fields)
+      VALUES ($values)
+      RETURNING id
+    SQL
+  }
+
+  method build-select(:@fields, :$table, :%where, :@order, :$limit) {
     my $select = @fields.join(',');
     my $where = self.build-where(%where);
     my $order = @order ?? "ORDER BY @order.join(',')" !! '';
     my $limit_ = $limit ?? "LIMIT $limit" !! '';
 
-    my Str $sql = qq:to/SQL/;
+    qq:to/SQL/;
       SELECT $select
 	    FROM $table
 	    WHERE $where
       $order
       $limit_
     SQL
-
-    # say "\$sql: $sql";
-    return $sql;
   }
 
   method build-where(%where) {
-    my @where = [];
+    my @where;
     for %where.kv -> $k, $v {
       @where.push: "$k = '$v'";
     }
-    return @where.join(" AND ");
+
+    @where.join(' AND ');
   }
 
   method get-objects(:$class, :@fields, :$table, :%where) {
     my @records = self.get-records(:@fields, :$table, :%where);
-    my @objects = [];
+    my @objects;
+
     for @records.kv -> $k, $record {
       my $obj = $class.new(id => $record{'id'}, record => { attributes => $record, :@fields });
       @objects.push: $obj;
     }
+
     @objects;
   }
 
@@ -59,18 +69,30 @@ class DB is export {
     $class.new(id => $record{'id'}, record => { attributes => $record, :@fields });
   }
 
+  method create-object($obj) {
+    my $table = $obj.WHAT.perl.lc ~ 's';
+    my %attrs = $obj.attributes;
+    my $sql = self.build-insert(:$table, :%attrs);
+
+    my $query = $!db.prepare(qq:to/SQL/);
+      $sql
+    SQL
+
+    $query.execute()[0].Int;
+  }
+
   method get-rows(:$sql) {
     my $query = $!db.prepare(qq:to/SQL/);
-                $sql
-        SQL
+      $sql
+    SQL
 
     $query.execute();
     return $query.allrows();
   }
 
   method get-records(:@fields, :$table, :%where) {
-    my @records = [];
-    my $sql = self.build-sql(:@fields, :$table, :%where);
+    my @records;
+    my $sql = self.build-select(:@fields, :$table, :%where);
 
     for self.get-rows(:$sql).kv -> $k, $row {
       my %record;
@@ -85,7 +107,7 @@ class DB is export {
   }
 
   method get-record(:@fields, :$table, :%where) {
-    my $sql = self.build-sql(:@fields, :$table, :%where, limit  => 1);
+    my $sql = self.build-select(:@fields, :$table, :%where, limit => 1);
     my $row = self.get-rows(:$sql)[0];
     my %record;
 
@@ -97,20 +119,21 @@ class DB is export {
   }
 
   method get-fields(:$table) {
-    my $sql = self.build-sql(
+    my $sql = self.build-select(
       fields => qw<column_name>.words,
-      table  => 'information_schema.columns',
-      where  => {
+      table => 'information_schema.columns',
+      where => {
         'table_schema' => 'public',
         'table_name'   => $table
       },
-      order  => qw<table_name>.words
+      order => qw<table_name>.words
     );
+
     self.get-list(:$sql);
   }
 
   method get-list(:$sql, :$col=0) {
-    my @list = [];
+    my @list;
     my @rows = self.get-rows(:$sql);
 
     if @rows.elems > 0 {
@@ -123,7 +146,7 @@ class DB is export {
   }
 
   method get-table-names {
-    my $sql = $!db.build-sql(
+    my $sql = $!db.build-select(
       fields => qw<table_name>.words,
       table  => 'information_schema.tables',
       where  => { 'table_schema' => 'public' },
