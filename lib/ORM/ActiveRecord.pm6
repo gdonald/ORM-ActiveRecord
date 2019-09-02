@@ -4,26 +4,33 @@ unit module ORM::ActiveRecord;
 use ORM::ActiveRecord::DB;
 
 class ActiveRecord is export {
-  has $!db;
-  has Str @!fields;
-  has Int $!id;
+  has DB $!db;
   has %!record;
   has %!has-manys;
   has %!belongs-tos;
-  has %!attributes;
 
-  submethod BUILD(:$!id, :%!record) {
+  has Int $.id;
+  has Str @.fields;
+  has %.attributes;
+
+  submethod BUILD(:$!id, :%!record, :$action) {
     $!db = DB.new;
 
     if %!record && %!record{'attributes'} {
       %!attributes = %!record{'attributes'};
-      @!fields = slip(%!record{'fields'}) if %!record{'fields'};
+      if %!record{'fields'} {
+        @!fields = slip(%!record{'fields'});
+      } else {
+        @!fields = $!db.get-fields(table => self.table-name);
+      }
     } elsif $!id {
       @!fields = $!db.get-fields(table => self.table-name);
       self.get-attributes;
     }
 
-    # $!db.dispose;
+    given $action {
+      when 'create' { $!id = $!db.create-object(self) }
+    }
   }
 
   method FALLBACK($name, *@rest) {
@@ -66,5 +73,11 @@ class ActiveRecord is export {
 
   method get-attributes {
     %!attributes = $!db.get-record(:@!fields, table => self.table-name, where => :$!id);
+  }
+
+  method create(%attributes) {
+    my %record = 'attributes' => %attributes;
+    my $action = 'create';
+    self.new(:id(0), :%record, :$action);
   }
 }
