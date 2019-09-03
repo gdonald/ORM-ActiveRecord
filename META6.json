@@ -18,7 +18,10 @@
   "provides": {
     "ORM::AciveRecord": "lib/ORM/AciveRecord.pm6",
     "ORM::AciveRecord::DB": "lib/ORM/AciveRecord/DB.pm6",
-    "ORM::AciveRecord::Spell": "lib/ORM/AciveRecord/Spell.pm6"
+    "ORM::AciveRecord::Error": "lib/ORM/AciveRecord/Error.pm6",
+    "ORM::AciveRecord::Errors": "lib/ORM/AciveRecord/Errors.pm6",
+    "ORM::AciveRecord::Spell": "lib/ORM/AciveRecord/Spell.pm6",
+    "ORM::AciveRecord::Validator": "lib/ORM/AciveRecord/Validator.pm6"
   },
   "resources": [],
   "license": "Artistic-2.0",

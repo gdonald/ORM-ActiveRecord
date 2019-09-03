@@ -11,21 +11,24 @@ class User is ActiveRecord {
 
 validate User, 'fname', {
   :presence,
-  length => { minimum => 4, maximum => 32 }
+  length => { min => 4, max => 32 }
 }
 
-plan 4;
+plan 7;
 
 my User $user;
 
 $user = User.build;
 nok $user.is-valid;
+ok $user.errors.fname == ['at least 4 characters required', 'must be present'];
 
 $user = User.build({});
 nok $user.is-valid;
+ok $user.errors.fname == ['must be present', 'at least 4 characters required'];
 
 $user = User.build({fname => 'x' x 33});
 nok $user.is-valid;
+ok $user.errors.fname == ['only 32 characters allowed'];
 
 $user = User.build({fname => 'Greg'});
 ok $user.is-valid;

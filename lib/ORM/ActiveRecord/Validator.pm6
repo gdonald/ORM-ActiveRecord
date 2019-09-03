@@ -1,4 +1,3 @@
-#unit class ORM::ActiveRecord::Validator;
 
 use ORM::ActiveRecord::Error;
 
@@ -9,37 +8,43 @@ class Validator is export {
   has Str $.field;
   has Hash $.params;
 
-  submethod BUILD(:$!klass, :$!field, :$!params) {
-
-  }
-
   method validate($obj) {
     for Validator.validators -> $validator {
       next unless $obj.^name eq $validator.klass.perl;
 
+      my $field = $validator.field;
+
       for $validator.params -> $param {
-        my Str $name = $param.keys.first;
-
-        if $name eq 'presence' && $obj."$validator.field()"() ~~ Empty {
-          my $e = Error.new(:field($validator.field), :message('must be present'));
-          $obj.errors.push($e);
+        given $param.keys.first {
+          when 'presence' { self.validate_presence($obj, $field) }
+          when 'length' { self.validate_length($obj, $field, $param<length>) }
         }
+      }
+    }
+  }
 
-        if $name eq 'length' {
-          if $param<length><maximum> {
-            if $obj."$validator.field()"().chars > $param<length><maximum> {
-              my $e = Error.new(:field($validator.field), :message("less than $param<length><maximum> characters required"));
-              $obj.errors.push($e);
-            }
-          }
+  method validate_presence($obj, $field) {
+    if $obj."$field"() ~~ Empty {
+      my $e = Error.new(:$field, :message('must be present'));
+      $obj.errors.push($e);
+    }
+  }
 
-          if $param<length><minimum> {
-            if $obj."$validator.field()"().chars < $param<length><minimum> {
-              my $e = Error.new(:field($validator.field), :message("at least $param<length><minimum> characters required"));
-              $obj.errors.push($e);
-            }
-          }
-        }
+  method validate_length($obj, $field, $length) {
+    my $max = $length<max>;
+    my $min = $length<min>;
+
+    if $max {
+      if $obj."$field"().chars > $max {
+        my $e = Error.new(:$field, :message("only $max characters allowed"));
+        $obj.errors.push($e);
+      }
+    }
+
+    if $min {
+      if $obj."$field"().chars < $min {
+        my $e = Error.new(:$field, :message("at least $min characters required"));
+        $obj.errors.push($e);
       }
     }
   }
