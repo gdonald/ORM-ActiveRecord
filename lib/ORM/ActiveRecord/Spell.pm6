@@ -1,6 +1,4 @@
 
-unit class ORM::ActiveRecord::Spell;
-
 class Spell is export {
   submethod BUILD {
 

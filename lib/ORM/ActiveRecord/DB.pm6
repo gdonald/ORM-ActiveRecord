@@ -1,6 +1,4 @@
 
-unit class ORM::ActiveRecord::DB;
-
 use JSON::Tiny;
 use DBIish;
 

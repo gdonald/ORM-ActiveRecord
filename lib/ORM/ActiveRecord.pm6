@@ -1,12 +1,11 @@
 
-#unit module ORM::ActiveRecord;
-
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Validator;
-use ORM::ActiveRecord::Error;
+use ORM::ActiveRecord::Errors;
 
 class ActiveRecord is export {
   has DB $!db;
+  has Errors $.errors;
   has %!record;
   has %!has-manys;
   has %!belongs-tos;
@@ -14,10 +13,10 @@ class ActiveRecord is export {
   has Int $.id;
   has Str @.fields;
   has %.attributes;
-  has @.errors of Error;
 
   submethod BUILD(:$!id, :%!record, :$action) {
     $!db = DB.new;
+    $!errors = Errors.new;
 
     if %!record && %!record{'attributes'} {
       %!attributes = %!record{'attributes'};
@@ -98,11 +97,11 @@ class ActiveRecord is export {
   }
 
   method is-valid {
-    !@!errors.elems.so;
+    !$!errors.errors.elems.so;
   }
+}
 
-  sub validate($klass, Str $field, Hash $params) is export {
-    my $v = Validator.new(:$klass, :$field, :$params);
-    Validator.validators.push($v);
-  }
+sub validate($klass, Str $field, Hash $params) is export {
+  my $v = Validator.new(:$klass, :$field, :$params);
+  Validator.validators.push($v);
 }
