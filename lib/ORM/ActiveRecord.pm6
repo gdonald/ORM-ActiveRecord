@@ -1,11 +1,14 @@
 
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Validator;
+use ORM::ActiveRecord::Validators;
 use ORM::ActiveRecord::Errors;
 
 class ActiveRecord is export {
   has DB $!db;
   has Errors $.errors;
+  has Validators $.validators;
+
   has %!record;
   has %!has-manys;
   has %!belongs-tos;
@@ -14,9 +17,10 @@ class ActiveRecord is export {
   has Str @.fields;
   has %.attributes;
 
-  submethod BUILD(:$!id, :%!record, :$action) {
+  submethod BUILD(:$!id, :%!record) {
     $!db = DB.new;
     $!errors = Errors.new;
+    $!validators = Validators.new;
 
     if %!record && %!record{'attributes'} {
       %!attributes = %!record{'attributes'};
@@ -28,13 +32,6 @@ class ActiveRecord is export {
     } elsif $!id {
       @!fields = $!db.get-fields(table => self.table-name);
       self.get-attributes;
-    }
-
-    Validator.validate(self);
-
-    given $action {
-      when 'create' { $!id = $!db.create-object(self) }
-      when 'build' { }
     }
   }
 
@@ -80,10 +77,19 @@ class ActiveRecord is export {
     %!attributes = $!db.get-record(:@!fields, table => self.table-name, where => :$!id);
   }
 
-  method create(%attributes) {
+  method save {
+    $!id = $!db.create-object(self);
+  }
+
+  multi method create(%attributes) {
     my %record = 'attributes' => %attributes;
-    my $action = 'create';
-    self.new(:id(0), :%record, :$action);
+    my $obj = self.new(:id(0), :%record);
+    $obj.save if $obj.is-valid;
+    $obj;
+  }
+
+  multi method create {
+    self.create({});
   }
 
   multi method build(%attributes) {
@@ -97,11 +103,14 @@ class ActiveRecord is export {
   }
 
   method is-valid {
+    $!errors = Errors.new;
+    $!validators.validate(self);
     !$!errors.errors.elems.so;
   }
-}
 
-sub validate($klass, Str $field, Hash $params) is export {
-  my $v = Validator.new(:$klass, :$field, :$params);
-  Validator.validators.push($v);
+  method validate(Str $field, Hash $params) {
+    my $klass = self.WHAT;
+    my $v = Validator.new(:$klass, :$field, :$params);
+    $!validators.validators.push($v);
+  }
 }
