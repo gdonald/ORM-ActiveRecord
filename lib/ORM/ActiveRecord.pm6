@@ -78,7 +78,21 @@ class ActiveRecord is export {
   }
 
   method save {
-    $!id = $!db.create-object(self);
+    if self.is-valid {
+      given $!id {
+        when 0 { $!id = $!db.create-object(self) }
+        default { $!db.update-object(self) }
+      }
+      return True;
+    }
+    False;
+  }
+
+  method update(%attributes) {
+    for %attributes.keys -> $key {
+      %!attributes{$key} = %attributes{$key};
+    }
+    self.save;
   }
 
   multi method create(%attributes) {
@@ -94,8 +108,7 @@ class ActiveRecord is export {
 
   multi method build(%attributes) {
     my %record = 'attributes' => %attributes;
-    my $action = 'build';
-    self.new(:id(0), :%record, :$action);
+    self.new(:id(0), :%record);
   }
 
   multi method build {

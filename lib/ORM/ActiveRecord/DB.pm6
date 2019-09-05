@@ -15,9 +15,19 @@ class DB is export {
     self.connect-db;
   }
 
+  method build-update(:$table, :%attrs, :$id) {
+    my $values = %attrs.keys.map({ "$_ = '%attrs{$_}'" }).join(', ');
+
+    qq:to/SQL/;
+      UPDATE $table
+      SET $values
+      WHERE id = $id
+    SQL
+  }
+
   method build-insert(:$table, :%attrs) {
-    my $fields = %attrs.keys.join(',');
-    my $values = %attrs.values.map({ "'$_'" }).join(',');
+    my $fields = %attrs.keys.join(', ');
+    my $values = %attrs.values.map({ "'$_'" }).join(', ');
 
     qq:to/SQL/;
       INSERT INTO $table ($fields)
@@ -26,9 +36,9 @@ class DB is export {
   }
 
   method build-select(:@fields, :$table, :%where, :@order, :$limit) {
-    my $select = @fields.join(',');
+    my $select = @fields.join(', ');
     my $where = self.build-where(%where);
-    my $order = @order ?? "ORDER BY @order.join(',')" !! '';
+    my $order = @order ?? "ORDER BY @order.join(', ')" !! '';
     my $limit_ = $limit ?? "LIMIT $limit" !! '';
 
     qq:to/SQL/;
@@ -41,12 +51,7 @@ class DB is export {
   }
 
   method build-where(%where) {
-    my @where;
-    for %where.kv -> $k, $v {
-      @where.push: "$k = '$v'";
-    }
-
-    @where.join(' AND ');
+    %where.keys.map({ "$_ = '%where{$_}'" }).join(' AND ');
   }
 
   method get-objects(:$class, :@fields, :$table, :%where) {
@@ -64,6 +69,19 @@ class DB is export {
   method get-object(:$class, :@fields, :$table, :%where) {
     my $record = self.get-record(:@fields, :$table, :%where);
     $class.new(id => $record{'id'}, record => { attributes => $record, :@fields });
+  }
+
+  method update-object($obj) {
+    my $table = $obj.WHAT.perl.lc ~ 's';
+    my %attrs = $obj.attributes;
+    my $id = $obj.id;
+    my $sql = self.build-update(:$table, :%attrs, :$id);
+
+    my $query = $!db.prepare(qq:to/SQL/);
+      $sql
+    SQL
+
+    $query.execute();
   }
 
   method create-object($obj) {
