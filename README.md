@@ -3,6 +3,14 @@
 
 Object-relational mapping module for Perl 6.
 
+#### Install from CPAN
+
+```
+zef install --/test ORM::ActiveRecord
+```
+
+#### Example usage
+
 ```perl6
 use ORM::ActiveRecord;
 
@@ -44,13 +52,13 @@ say $page.user.fullname
 Alfred E. Neuman
 ```
 
-#### Run Tests:
+#### Run Tests
 
 ```
 $ prove -v --exec=perl6 --ext=t6
 ```
 
-## Status
+#### Status
 
 [![Build Status](https://travis-ci.org/gdonald/ORM-ActiveRecord.svg?branch=master)](https://travis-ci.org/gdonald/ORM-ActiveRecord)
 
