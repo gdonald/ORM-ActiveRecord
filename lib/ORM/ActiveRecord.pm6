@@ -9,13 +9,17 @@ class ActiveRecord is export {
   has Errors $.errors;
   has Validators $.validators;
 
-  has %!record;
+  has %.record is rw;
   has %!has-manys;
-  has %!belongs-tos;
+  has %.belongs-tos;
 
   has Int $.id;
   has Str @.fields;
   has %.attributes;
+
+  submethod DESTROY {
+    $!db = Nil;
+  }
 
   submethod BUILD(:$!id, :%!record) {
     $!db = DB.new;
@@ -79,6 +83,8 @@ class ActiveRecord is export {
 
   method save {
     if self.is-valid {
+      self.update-foreign-keys;
+
       given $!id {
         when 0 { $!id = $!db.create-object(self) }
         default { $!db.update-object(self) }
@@ -86,6 +92,16 @@ class ActiveRecord is export {
       return True;
     }
     False;
+  }
+
+  method update-foreign-keys {
+    for $.belongs-tos.keys -> $key {
+      next unless $.attributes{$key};
+      if $.attributes{$key}.^name eq $.belongs-tos{$key}.value.^name {
+        $.attributes{$key ~ '_id'} = $.attributes{$key}.id;
+        $.attributes{$key}:delete;
+      }
+    }
   }
 
   method update(%attributes) {

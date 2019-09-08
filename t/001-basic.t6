@@ -23,16 +23,19 @@ class Page is ActiveRecord {
   }
 }
 
-plan 4;
+plan 5;
 
 my User $user = User.create({fname => 'Greg', lname => 'Donald'});
-my $user_id = $user.id;
-ok $user_id;
+ok $user.id;
 
-$user = User.find($user_id);
-ok $user.fullname eq 'Greg Donald';
+Page.create({:$user, name => 'Perl 6'});
 
-Page.create({:$user_id, name => 'Perl 6'});  # TODO: make this work for $user
 my Page $page = $user.pages.first;
 ok $page.name eq 'Perl 6';
-ok $page.user.fname eq 'Greg';
+ok $page.user.fullname eq 'Greg Donald';
+
+my User $alfred = User.create({fname => 'Alfred E.', lname => 'Neuman'});
+ok $alfred.id;
+
+$page.update({user => $alfred});
+ok $page.user.fullname eq 'Alfred E. Neuman';
