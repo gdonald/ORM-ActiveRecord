@@ -6,6 +6,8 @@ Object-relational mapping module for Perl 6.
 ```perl6
 use ORM::ActiveRecord;
 
+class Page {...} # forward declaration
+
 class User is ActiveRecord {
   submethod BUILD {
     self.has-many: pages => class => Page;
@@ -24,17 +26,19 @@ class Page is ActiveRecord {
 ```
 
 ```perl6
-my User $user = User.find(1);
-my Page $page = $user.pages.first;
+my User $user = User.create({fname => 'Greg', lname => 'Donald'});
+my $user_id = $user.id;
 
-say $user.fullname;
-Greg Donald
+say $user_id;
+1
 
-say $page.name;
+my $page = Page.create({:$user_id, name => 'Perl 6'});
+
+say $user.pages.first.name;
 Perl 6
 
-say $page.user.fname;
-Greg
+say $page.user.fullname;
+Greg Donald
 ```
 
 #### Run Tests:

@@ -21,40 +21,40 @@ my User $user;
 # build
 $user = User.build;
 nok $user.is-valid;
-ok $user.id == 0;
+nok $user.id;
 ok $user.errors.fname == ['at least 4 characters required', 'must be present'];
 
 $user = User.build({});
 nok $user.is-valid;
-ok $user.id == 0;
+nok $user.id;
 ok $user.errors.fname == ['must be present', 'at least 4 characters required'];
 
 $user = User.build({fname => 'x' x 33});
 nok $user.is-valid;
-ok $user.id == 0;
+nok $user.id;
 ok $user.errors.fname == ['only 32 characters allowed'];
 
 $user = User.build({fname => 'Greg'});
-ok $user.id == 0;
+nok $user.id;
 ok $user.is-valid;
 
 # build && save
 $user = User.build;
 nok $user.save;
 nok $user.is-valid;
-ok $user.id == 0;
+nok $user.id;
 ok $user.errors.fname == ['at least 4 characters required', 'must be present'];
 
 $user = User.build({});
 nok $user.save;
 nok $user.is-valid;
-ok $user.id == 0;
+nok $user.id;
 ok $user.errors.fname == ['must be present', 'at least 4 characters required'];
 
 $user = User.build({fname => 'x' x 33});
 nok $user.save;
 nok $user.is-valid;
-ok $user.id == 0;
+nok $user.id;
 ok $user.errors.fname == ['only 32 characters allowed'];
 
 $user = User.build({fname => 'Greg'});
@@ -65,17 +65,17 @@ ok $user.is-valid;
 # create
 $user = User.create;
 nok $user.is-valid;
-ok $user.id == 0;
+nok $user.id;
 ok $user.errors.fname == ['at least 4 characters required', 'must be present'];
 
 $user = User.create({});
 nok $user.is-valid;
-ok $user.id == 0;
+nok $user.id;
 ok $user.errors.fname == ['must be present', 'at least 4 characters required'];
 
 $user = User.create({fname => 'x' x 33});
 nok $user.is-valid;
-ok $user.id == 0;
+nok $user.id;
 ok $user.errors.fname == ['only 32 characters allowed'];
 
 $user = User.create({fname => 'Greg'});

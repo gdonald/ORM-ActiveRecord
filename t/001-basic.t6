@@ -27,7 +27,7 @@ plan 4;
 
 my User $user = User.create({fname => 'Greg', lname => 'Donald'});
 my $user_id = $user.id;
-ok $user_id > 0;
+ok $user_id;
 
 $user = User.find($user_id);
 ok $user.fullname eq 'Greg Donald';
