@@ -15,6 +15,11 @@ class DB is export {
     self.connect-db;
   }
 
+  submethod DESTROY {
+    $!db.dispose;
+    $!db = Nil;
+  }
+
   method build-update(:$table, :%attrs, :$id) {
     my $values = %attrs.keys.map({ "$_ = '%attrs{$_}'" }).join(', ');
 
@@ -32,6 +37,7 @@ class DB is export {
     qq:to/SQL/;
       INSERT INTO $table ($fields)
       VALUES ($values)
+      RETURNING id
     SQL
   }
 
@@ -93,8 +99,8 @@ class DB is export {
       $sql
     SQL
 
-    my @res = $query.execute();
-    @res[0][0].Int;
+    $query.execute();
+    $query.allrows[0][0].Int; # insert id
   }
 
   method get-rows(:$sql) {

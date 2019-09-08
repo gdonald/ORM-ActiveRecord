@@ -27,18 +27,21 @@ class Page is ActiveRecord {
 
 ```perl6
 my User $user = User.create({fname => 'Greg', lname => 'Donald'});
-my $user_id = $user.id;
 
-say $user_id;
-1
-
-my $page = Page.create({:$user_id, name => 'Perl 6'});
+Page.create({:$user, name => 'Perl 6'});
 
 say $user.pages.first.name;
 Perl 6
 
 say $page.user.fullname;
 Greg Donald
+
+my User $alfred = User.create({fname => 'Alfred E.', lname => 'Neuman'});
+
+$page.update({user => $alfred});
+
+say $page.user.fullname
+Alfred E. Neuman
 ```
 
 #### Run Tests:
