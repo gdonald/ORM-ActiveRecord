@@ -3,6 +3,7 @@ use JSON::Tiny;
 use DBIish;
 
 class DB is export {
+  has Str $.schema;
   has Str $!database;
   has Str $!user;
   has Str $!password;
@@ -18,6 +19,31 @@ class DB is export {
   submethod DESTROY {
     $!db.dispose;
     $!db = Nil;
+  }
+
+  method begin-transaction {
+    my $query = $!db.prepare(qq:to/SQL/);
+      BEGIN
+    SQL
+
+    $query.execute;
+  }
+
+  method commit-transaction {
+    my $query = $!db.prepare(qq:to/SQL/);
+      COMMIT
+    SQL
+
+    $query.execute;
+  }
+
+  method execute($sql) {
+    my $query = $!db.prepare(qq:to/SQL/);
+      $sql
+    SQL
+
+    $query.execute;
+    $query.allrows;
   }
 
   method build-update(:$table, :%attrs, :$id) {
@@ -87,7 +113,7 @@ class DB is export {
       $sql
     SQL
 
-    $query.execute();
+    $query.execute;
   }
 
   method create-object($obj) {
@@ -99,7 +125,7 @@ class DB is export {
       $sql
     SQL
 
-    $query.execute();
+    $query.execute;
     $query.allrows[0][0].Int; # insert id
   }
 
@@ -108,8 +134,8 @@ class DB is export {
       $sql
     SQL
 
-    $query.execute();
-    return $query.allrows();
+    $query.execute;
+    return $query.allrows;
   }
 
   method get-records(:@fields, :$table, :%where) {
@@ -180,7 +206,7 @@ class DB is export {
 
   method connect-db {
     return if $!db.defined;
-    $!db = DBIish.connect('Pg', :$!database, :$!user, :$!password);
+    $!db = DBIish.connect('Pg', :$!schema, :$!database, :$!user, :$!password);
   }
 
   method get-config {
@@ -189,6 +215,7 @@ class DB is export {
       $fh.close;
 
       my $json = from-json($contents);
+      $!schema   = $json{'db'}{'schema'};
       $!database = $json{'db'}{'name'};
       $!user     = $json{'db'}{'user'};
       $!password = $json{'db'}{'password'};

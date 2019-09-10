@@ -9,4 +9,4 @@ services:
 before_script:
   - cp config/application.json-travis config/application.json
   - psql -c 'create database travis_ci_test;' -U postgres
-  - psql travis_ci_test postgres < sql/ar-travis.sql
+  - perl6 -Ilib bin/ar
