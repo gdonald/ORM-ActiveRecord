@@ -70,12 +70,10 @@ class Migrate is export {
   }
 
   method rm($version) {
-    my $sql = qq:to/SQL/;
+    $!db.execute(qq:to/SQL/);
       DELETE FROM migrations
       WHERE version LIKE '$version'
     SQL
-
-    $!db.execute($sql);
   }
 
   method files($dir) {

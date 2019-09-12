@@ -3,6 +3,7 @@ use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Validator;
 use ORM::ActiveRecord::Validators;
 use ORM::ActiveRecord::Errors;
+use ORM::ActiveRecord::Utils;
 
 class ActiveRecord is export {
   has DB $!db;
@@ -44,7 +45,8 @@ class ActiveRecord is export {
 
     if any(%!has-manys.keys) eq $name {
       my Str @fields = $!db.get-fields(table => $name);
-      return $!db.get-objects(class => %!has-manys{$name}{'class'}, :@fields, table => $name, where => self.fkey-name => $!id);
+      my $fkey-name = Utils.base-name(self.fkey-name);
+      return $!db.get-objects(class => %!has-manys{$name}{'class'}, :@fields, table => $name, where => $fkey-name => $!id);
     }
 
     if any(%!belongs-tos.keys) eq $name {

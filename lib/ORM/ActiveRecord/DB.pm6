@@ -2,6 +2,8 @@
 use JSON::Tiny;
 use DBIish;
 
+use ORM::ActiveRecord::Utils;
+
 class DB is export {
   has Str $.schema;
   has Str $!database;
@@ -104,7 +106,7 @@ class DB is export {
   }
 
   method update-object($obj) {
-    my $table = $obj.WHAT.perl.lc ~ 's';
+    my $table = Utils.table-name($obj);
     my %attrs = $obj.attributes;
     my $id = $obj.id;
     my $sql = self.build-update(:$table, :%attrs, :$id);
@@ -117,7 +119,7 @@ class DB is export {
   }
 
   method create-object($obj) {
-    my $table = $obj.WHAT.perl.lc ~ 's';
+    my $table = Utils.table-name($obj);
     my %attrs = $obj.attributes;
     my $sql = self.build-insert(:$table, :%attrs);
 
