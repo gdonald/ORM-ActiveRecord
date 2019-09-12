@@ -21,7 +21,7 @@ class DB is export {
     $!db = Nil;
   }
 
-  method begin-transaction {
+  method begin {
     my $query = $!db.prepare(qq:to/SQL/);
       BEGIN
     SQL
@@ -29,7 +29,7 @@ class DB is export {
     $query.execute;
   }
 
-  method commit-transaction {
+  method commit {
     my $query = $!db.prepare(qq:to/SQL/);
       COMMIT
     SQL

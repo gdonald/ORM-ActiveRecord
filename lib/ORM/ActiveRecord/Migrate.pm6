@@ -4,7 +4,7 @@ use MONKEY-SEE-NO-EVAL;
 use ORM::ActiveRecord::DB;
 
 class Migrate is export {
-  my Str $.migrations-dir = 'db/migrate';
+  my Str $.dir = 'db/migrate';
 
   has @.args;
   has DB $!db;
@@ -18,67 +18,55 @@ class Migrate is export {
 
   method do-migrations {
     if not @!args.elems {
-      self.migrate-up(0);
+      self.migrate('up', 0);
     } elsif @!args.elems == 1 {
-      my $action = '';
-      my $count = 0;
-      if @!args[0] ~~ /(<[\w]>+) [':' (<[\d]>+)]?/ {
-        $action = $0 ?? $0 !! '';
-        $count = $1 ?? $1.Int !! 0;
-      }
-
-      if $action ~~ 'up' {
-        self.migrate-up($count);
-      } elsif $action ~~ 'down' {
-        self.migrate-down($count);
-      }
+      my ($action, $count) = self.action-count;
+      self.migrate($action, $count);
     }
   }
 
-  method migrate-up($count) {
+  method action-count {
+    my $action = '';
+    my $count = 0;
+
+    if @!args[0] ~~ /(<[\w]>+) [':' (<[\d]>+)]?/ {
+      $action = $0 ?? $0 !! '';
+      $count = $1 ?? $1.Int !! 0;
+    }
+
+    [$action, $count];
+  }
+
+  method migrate($action, $count) {
     my $cnt = 0;
-    for self.migration-files(Migrate.migrations-dir).sort -> $path {
-      if IO::Path.new($path).basename ~~ /^(\d+) '-' (.*) \.p6/ {
-        if $0 > self.last-migration && ($count == 0 || $cnt++ < $count) {
-          say $path;
-          my $str = $path.IO.slurp.trim;
-          EVAL $str;
-          my $klass = $1.split('-').map({ $_.tc }).join;
-          $!db.begin-transaction;
-          EVAL "$klass.new.up";
-          self.add-migration($0.Str);
-          $!db.commit-transaction;
-        }
+
+    my @files = self.files(Migrate.dir).sort;
+    @files .= reverse if $action ~~ 'down';
+
+    for @files -> $path {
+      next unless IO::Path.new($path).basename ~~ /^(\d+) '-' (.*) \.p6/;
+      next unless $count == 0 || $cnt++ < $count;
+
+      if ($action ~~ 'down' && $0 == self.last-migration) ||
+         ($action ~~ 'up'   && $0  > self.last-migration) {
+        say $path;
+        EVAL $path.IO.slurp;
+        $!db.begin;
+        EVAL "{$1.split('-').map({ $_.tc }).join}.new.$action";
+        $action ~~ 'up' ?? self.add($0.Str) !! self.rm($0.Str);
+        $!db.commit;
       }
     }
   }
 
-  method migrate-down($count) {
-    my $cnt = 0;
-    for self.migration-files(Migrate.migrations-dir).sort.reverse -> $path {
-      if IO::Path.new($path).basename ~~ /^(\d+) '-' (.*) \.p6/ {
-        if $0 == self.last-migration && ($count == 0 || $cnt++ < $count) {
-          say $path;
-          my $str = $path.IO.slurp.trim;
-          EVAL $str;
-          my $klass = $1.split('-').map({ $_.tc }).join;
-          $!db.begin-transaction;
-          EVAL "$klass.new.down";
-          self.rm-migration($0);
-          $!db.commit-transaction;
-        }
-      }
-    }
-  }
-
-  method add-migration($version) {
+  method add($version) {
     $!db.execute(qq:to/SQL/);
       INSERT INTO migrations (version)
       VALUES ('$version')
     SQL
   }
 
-  method rm-migration($version) {
+  method rm($version) {
     my $sql = qq:to/SQL/;
       DELETE FROM migrations
       WHERE version LIKE '$version'
@@ -87,7 +75,7 @@ class Migrate is export {
     $!db.execute($sql);
   }
 
-  method migration-files($dir) {
+  method files($dir) {
     unless $dir.IO.d {
       say "`$dir` directory not found\n";
       exit 1;
