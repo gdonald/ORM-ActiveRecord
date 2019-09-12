@@ -20,42 +20,45 @@ class Migrate is export {
     if not @!args.elems {
       self.migrate('up', 0);
     } elsif @!args.elems == 1 {
-      my ($action, $count) = self.action-count;
-      self.migrate($action, $count);
+      self.migrate(self.action-count);
     }
   }
 
   method action-count {
-    my $action = '';
-    my $count = 0;
+    my ($action, $count) = '', 0;
 
-    if @!args[0] ~~ /(<[\w]>+) [':' (<[\d]>+)]?/ {
+    if @!args[0] ~~ /(up|down) [':' (<[\d]>+)]?/ {
       $action = $0 ?? $0 !! '';
       $count = $1 ?? $1.Int !! 0;
     }
 
-    [$action, $count];
+    $action, $count;
   }
 
-  method migrate($action, $count) {
+  method migrate(|ac) {
+    my ($action, $count) = ac[0];
     my $cnt = 0;
 
     my @files = self.files(Migrate.dir).sort;
     @files .= reverse if $action ~~ 'down';
 
     for @files -> $path {
-      next unless IO::Path.new($path).basename ~~ /^(\d+) '-' (.*) \.p6/;
-      next unless $count == 0 || $cnt++ < $count;
+      next unless IO::Path.new($path).basename ~~ /^$<version>=(\d+) '-' $<name>=(.*) \.p6/;
+      next unless $count == 0 || $cnt < $count;
 
-      if ($action ~~ 'down' && $0 == self.last-migration) ||
-         ($action ~~ 'up'   && $0  > self.last-migration) {
-        say $path;
-        EVAL $path.IO.slurp;
-        $!db.begin;
-        EVAL "{$1.split('-').map({ $_.tc }).join}.new.$action";
-        $action ~~ 'up' ?? self.add($0.Str) !! self.rm($0.Str);
-        $!db.commit;
-      }
+      my $v = $<version>.Str;
+      my $last = self.last;
+      next unless $action ~~ 'down' && $v == $last || $action ~~ 'up' && $v > $last;
+
+      say $path;
+      EVAL $path.IO.slurp;
+
+      $!db.begin;
+      EVAL "{$<name>.Str.split('-').map({ $_.tc }).join}.new.$action";
+      $action ~~ 'up' ?? self.add($v) !! self.rm($v);
+      $!db.commit;
+
+      $cnt++;
     }
   }
 
@@ -86,7 +89,7 @@ class Migrate is export {
     }
   }
 
-  method last-migration {
+  method last {
     my $sql = qq:to/SQL/;
       SELECT version
       FROM migrations
