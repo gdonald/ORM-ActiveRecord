@@ -1,5 +1,6 @@
 {
     "db": {
+        "schema": "public",
         "name": "travis_ci_test",
         "user": "postgres",
         "password": ""

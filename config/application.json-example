@@ -1,5 +1,6 @@
 {
     "db": {
+        "schema": "public",
         "name": "ar",
         "user": "gd",
         "password": ""
