@@ -18,7 +18,7 @@ class Migrate is export {
 
   method do-migrations {
     if not @!args.elems {
-      self.migrate('up', 0);
+      self.migrate(['up', 0]);
     } elsif @!args.elems == 1 {
       self.migrate(self.action-count);
     }
