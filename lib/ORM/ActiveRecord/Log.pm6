@@ -6,7 +6,7 @@ logger.send-to('log/error.log', :level(ERROR));
 use ORM::ActiveRecord::Colors;
 
 class Log is export {
-  method sql(:$sql) {
+  method sql(Str:D :$sql) {
     return if %*ENV<DISABLE-SQL-LOG>;
 
     my $log = $sql.trans(/\n/ => ' ', /<[\s]>+/ => ' ');

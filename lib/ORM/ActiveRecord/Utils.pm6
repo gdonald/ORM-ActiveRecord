@@ -4,7 +4,7 @@ class Utils is export {
     $name.split('::').first(:end);
   }
 
-  method table-name($obj) {
+  method table-name(Mu:D $obj) {
     Utils.base-name($obj.WHAT.perl.lc) ~ 's';
   }
 }

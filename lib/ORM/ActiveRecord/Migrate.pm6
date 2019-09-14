@@ -47,9 +47,9 @@ class Migrate is export {
       next unless IO::Path.new($path).basename ~~ /^$<version>=(\d+) '-' $<name>=(.*) \.p6/;
       next unless $count == 0 || $cnt < $count;
 
-      my $v = $<version>.Str;
+      my $version = $<version>.Str;
       my $last = self.last;
-      next unless $action ~~ 'down' && $v == $last || $action ~~ 'up' && $v > $last;
+      next unless $action ~~ 'down' && $version == $last || $action ~~ 'up' && $version > $last;
 
       say '';
       say $action ~~ 'up' ?? green('↑ ' ~ $path ~ ' ↑') !! red('↓ ' ~ $path ~ ' ↓');
@@ -57,35 +57,35 @@ class Migrate is export {
 
       $!db.begin;
       EVAL "{$<name>.Str.split('-').map({ $_.tc }).join}.new.$action";
-      $action ~~ 'up' ?? self.add($v) !! self.rm($v);
+      $action ~~ 'up' ?? self.add(:$version) !! self.rm(:$version);
       $!db.commit;
 
       $cnt++;
     }
   }
 
-  method add($version) {
+  method add(Str:D :$version) {
     $!db.exec(qq:to/SQL/);
       INSERT INTO migrations (version)
       VALUES ('$version')
       SQL
   }
 
-  method rm($version) {
+  method rm(Str:D :$version) {
     $!db.exec(qq:to/SQL/);
       DELETE FROM migrations
       WHERE version LIKE '$version'
       SQL
   }
 
-  method files($dir) {
+  method files(Str:D $dir) {
     unless $dir.IO.d {
       say "`$dir` directory not found\n";
       exit 1;
     }
 
     gather for dir $dir -> $path {
-      if $path.basename ~~ /^\d+ '-' <[\w\-]>+ \.p6$/ { take $path.Str }
+      take $path.Str if $path.basename ~~ /^\d+ '-' <[\w\-]>+ \.p6$/;
     }
   }
 

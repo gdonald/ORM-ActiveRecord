@@ -5,7 +5,7 @@ use ORM::ActiveRecord::Validators;
 use ORM::ActiveRecord::Errors;
 use ORM::ActiveRecord::Utils;
 
-class ActiveRecord is export {
+class Model is export {
   has DB $!db;
   has Errors $.errors;
   has Validators $.validators;
@@ -22,7 +22,7 @@ class ActiveRecord is export {
     $!db = Nil;
   }
 
-  submethod BUILD(:$!id, :%!record) {
+  submethod BUILD(Int:D :$!id, :%!record) {
     $!db = DB.new;
     $!errors = Errors.new;
     $!validators = Validators.new;
@@ -40,7 +40,7 @@ class ActiveRecord is export {
     }
   }
 
-  method FALLBACK($name, *@rest) {
+  method FALLBACK(Str:D $name, *@rest) {
     return %!attributes{$name} if %!attributes{$name};
 
     if any(%!has-manys.keys) eq $name {
@@ -139,7 +139,7 @@ class ActiveRecord is export {
     !$!errors.errors.elems.so;
   }
 
-  method validate(Str $field, Hash $params) {
+  method validate(Str:D $field, Hash:D $params) {
     my $klass = self.WHAT;
     my $v = Validator.new(:$klass, :$field, :$params);
     $!validators.validators.push($v);

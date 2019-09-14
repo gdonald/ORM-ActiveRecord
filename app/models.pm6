@@ -1,9 +1,9 @@
 
-use ORM::ActiveRecord;
+use ORM::ActiveRecord::Model;
 
 class Page {...} # stub
 
-class User is ActiveRecord is export {
+class User is Model is export {
   submethod BUILD {
     self.has-many: pages => class => Page;
 
@@ -16,7 +16,7 @@ class User is ActiveRecord is export {
   }
 }
 
-class Page is ActiveRecord is export {
+class Page is Model is export {
   submethod BUILD {
     self.belongs-to: user => class => User;
 
