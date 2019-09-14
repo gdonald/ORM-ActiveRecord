@@ -12,21 +12,21 @@ class Validators is export {
 
       for $validator.params -> $param {
         given $param.keys.first {
-          when 'presence' { self.validate_presence($obj, $field) }
-          when 'length' { self.validate_length($obj, $field, $param<length>) }
+          when 'presence' { self.validate-presence($obj, $field) }
+          when 'length' { self.validate-length($obj, $field, $param<length>) }
         }
       }
     }
   }
 
-  method validate_presence($obj, $field) {
+  method validate-presence($obj, $field) {
     if $obj."$field"() ~~ Empty {
       my $e = Error.new(:$field, :message('must be present'));
       $obj.errors.push($e);
     }
   }
 
-  method validate_length($obj, $field, $length) {
+  method validate-length($obj, $field, $length) {
     my $max = $length<max>;
     my $min = $length<min>;
 
