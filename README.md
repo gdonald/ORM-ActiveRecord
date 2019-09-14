@@ -3,17 +3,34 @@
 
 Object-relational mapping module for Perl 6.
 
-#### Install from CPAN
+#### Install using zef
 
 ```
 zef install --/test ORM::ActiveRecord
+```
+
+`--/test` is suggested because you probably don't have a test database setup.
+
+#### Database configuration
+
+ORM::ActiveRecord expects a database configuration file to live in `config/application.json`.  The format looks like:
+
+```json
+{
+    "db": {
+        "schema": "public",
+        "name": "ar",
+        "user": "postgres",
+        "password": ""
+    }
+}
 ```
 
 #### Example Migrations
 
 Migrations contain an `up` and a `down`.
 
-**db/migrate/001-create-users.pm6**
+db/migrate/001-create-users.pm6
 
 ```perl6
 use ORM::ActiveRecord::Migration;
@@ -32,7 +49,7 @@ class CreateUsers is Migration {
 }
 ```
 
-**db/migrate/002-create-pages.pm6**
+db/migrate/002-create-pages.pm6
 
 ```perl6
 use ORM::ActiveRecord::Migration;
@@ -57,16 +74,16 @@ class CreatePages is Migration {
 > ar
 ```
 
-Migration options:
+Some other migration options:
 
 ```shell
 > ar up      # runs all pending migrations
 > ar down    # resets all migrations, be careful!
 > ar up:1    # runs 1 pending migrations
-> ar down:1  # resets 1 previously completed migration
+> ar down:2  # resets 2 previously completed migrations
 ```
 
-#### Add Models and their Relationships and Validations
+#### Add Models, Relationships, and Validations
 
 ```perl6
 use ORM::ActiveRecord;
@@ -95,6 +112,8 @@ class Page is ActiveRecord is export {
 }
 ```
 
+Perl 6 does single-pass compilation.  You must provide forward declarations for any models that have not been defined yet but need to be used in has-many or belongs-to relationships.
+
 #### Usage
 
 ```perl6
@@ -121,7 +140,8 @@ Alfred E. Neuman
 
 #### Run Tests
 
-```
+```bash
+$ perl6 -Ilib bin/ar # migrate
 $ prove -v --exec=perl6 --ext=t6
 ```
 

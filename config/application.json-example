@@ -2,7 +2,7 @@
     "db": {
         "schema": "public",
         "name": "ar",
-        "user": "gd",
+        "user": "postgres",
         "password": ""
     }
 }

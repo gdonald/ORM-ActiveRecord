@@ -26,9 +26,9 @@ class Migration is export {
         ADD CONSTRAINT fk_{$_}_id
         FOREIGN KEY ({$_}_id)
         REFERENCES {$_ ~ 's'}(id)
-      SQL
+        SQL
 
-      $!db.execute($sql);
+      $!db.exec($sql);
     }
 
     @!foreign-keys = [];
@@ -38,9 +38,9 @@ class Migration is export {
     my $sql = qq:to/SQL/;
       ALTER TABLE ONLY $table
       ADD CONSTRAINT {$table}_pkey PRIMARY KEY (id);
-    SQL
+      SQL
 
-    $!db.execute($sql);
+    $!db.exec($sql);
   }
 
   method do-create-table(Str $table, @params) {
@@ -48,9 +48,9 @@ class Migration is export {
 
     my $sql = qq:to/SQL/;
       CREATE TABLE $table ( id SERIAL, $fields )
-    SQL
+      SQL
 
-    $!db.execute($sql);
+    $!db.exec($sql);
   }
 
   method build-fields(@params) {
@@ -79,14 +79,14 @@ class Migration is export {
       @fields.push($name ~ ' ' ~ $type ~ $limit);
     }
 
-    @fields.join(",\n    ").trim;
+    @fields.join(', ').trim;
   }
 
   method drop-table(Str $table) {
     my $sql = qq:to/SQL/;
       DROP TABLE $table
-    SQL
+      SQL
 
-    $!db.execute($sql);
+    $!db.exec($sql);
   }
 }

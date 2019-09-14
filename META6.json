@@ -7,19 +7,23 @@
     "Greg Donald"
   ],
   "auth": "github:gdonald",
-  "depends": [],
+  "depends": [
+    "DBIish",
+    "JSON::Tiny",
+    "Log::Async"
+  ],
   "build-depends": [],
   "test-depends": [
     "Test",
-    "Test::META",
-    "JSON::Tiny",
-    "DBIish"
+    "Test::META"
   ],
   "provides": {
     "ORM::ActiveRecord": "lib/ORM/ActiveRecord.pm6",
+    "ORM::ActiveRecord::Colors": "lib/ORM/ActiveRecord/Colors.pm6",
     "ORM::ActiveRecord::DB": "lib/ORM/ActiveRecord/DB.pm6",
     "ORM::ActiveRecord::Error": "lib/ORM/ActiveRecord/Error.pm6",
     "ORM::ActiveRecord::Errors": "lib/ORM/ActiveRecord/Errors.pm6",
+    "ORM::ActiveRecord::Log": "lib/ORM/ActiveRecord/Log.pm6",
     "ORM::ActiveRecord::Migrate": "lib/ORM/ActiveRecord/Migrate.pm6",
     "ORM::ActiveRecord::Migration": "lib/ORM/ActiveRecord/Migration.pm6",
     "ORM::ActiveRecord::Spell": "lib/ORM/ActiveRecord/Spell.pm6",
@@ -31,7 +35,14 @@
   "license": "Artistic-2.0",
   "tags": [
     "ORM",
-    "ActiveRecord"
+    "ActiveRecord",
+    "Database",
+    "Relational",
+    "Model",
+    "Object",
+    "Migration",
+    "Validation",
+    "Postgres"
   ],
   "source-url": "git://github.com/gdonald/ORM-ActiveRecord.git"
 }

@@ -8,6 +8,8 @@ use Test;
 
 plan 51;
 
+%*ENV<DISABLE-SQL-LOG> = True;
+
 my User $user;
 
 # build

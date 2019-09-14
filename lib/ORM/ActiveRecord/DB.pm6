@@ -2,6 +2,7 @@
 use JSON::Tiny;
 use DBIish;
 
+use ORM::ActiveRecord::Log;
 use ORM::ActiveRecord::Utils;
 
 class DB is export {
@@ -24,26 +25,22 @@ class DB is export {
   }
 
   method begin {
-    my $query = $!db.prepare(qq:to/SQL/);
-      BEGIN
-    SQL
-
+    my $sql = 'BEGIN';
+    Log.sql(:$sql);
+    my $query = $!db.prepare($sql);
     $query.execute;
   }
 
   method commit {
-    my $query = $!db.prepare(qq:to/SQL/);
-      COMMIT
-    SQL
-
+    my $sql = 'COMMIT';
+    Log.sql(:$sql);
+    my $query = $!db.prepare($sql);
     $query.execute;
   }
 
-  method execute($sql) {
-    my $query = $!db.prepare(qq:to/SQL/);
-      $sql
-    SQL
-
+  method exec($sql) {
+    Log.sql(:$sql);
+    my $query = $!db.prepare($sql);
     $query.execute;
     $query.allrows;
   }
@@ -55,7 +52,7 @@ class DB is export {
       UPDATE $table
       SET $values
       WHERE id = $id
-    SQL
+      SQL
   }
 
   method build-insert(:$table, :%attrs) {
@@ -66,7 +63,7 @@ class DB is export {
       INSERT INTO $table ($fields)
       VALUES ($values)
       RETURNING id
-    SQL
+      SQL
   }
 
   method build-select(:@fields, :$table, :%where, :@order, :$limit) {
@@ -81,7 +78,7 @@ class DB is export {
 	    WHERE $where
       $order
       $limit_
-    SQL
+      SQL
   }
 
   method build-where(%where) {
@@ -111,10 +108,8 @@ class DB is export {
     my $id = $obj.id;
     my $sql = self.build-update(:$table, :%attrs, :$id);
 
-    my $query = $!db.prepare(qq:to/SQL/);
-      $sql
-    SQL
-
+    Log.sql(:$sql);
+    my $query = $!db.prepare($sql);
     $query.execute;
   }
 
@@ -123,21 +118,17 @@ class DB is export {
     my %attrs = $obj.attributes;
     my $sql = self.build-insert(:$table, :%attrs);
 
-    my $query = $!db.prepare(qq:to/SQL/);
-      $sql
-    SQL
-
+    Log.sql(:$sql);
+    my $query = $!db.prepare($sql);
     $query.execute;
     $query.allrows[0][0].Int; # insert id
   }
 
   method get-rows(:$sql) {
-    my $query = $!db.prepare(qq:to/SQL/);
-      $sql
-    SQL
-
+    Log.sql(:$sql);
+    my $query = $!db.prepare($sql);
     $query.execute;
-    return $query.allrows;
+    $query.allrows;
   }
 
   method get-records(:@fields, :$table, :%where) {
@@ -165,7 +156,7 @@ class DB is export {
       %record{@fields[$k]} = $row[$k];
     }
 
-    return %record;
+    %record;
   }
 
   method get-fields(:$table) {
@@ -183,16 +174,7 @@ class DB is export {
   }
 
   method get-list(:$sql, :$col=0) {
-    my @list;
-    my @rows = self.get-rows(:$sql);
-
-    if @rows.elems > 0 {
-      for @rows -> $row {
-        @list.push: $row[$col];
-      }
-    }
-
-    return @list;
+    self.get-rows(:$sql).map({ $_[$col] });
   }
 
   method get-table-names {

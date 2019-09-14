@@ -2,6 +2,7 @@
 use MONKEY-SEE-NO-EVAL;
 
 use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Colors;
 
 class Migrate is export {
   my Str $.dir = 'db/migrate';
@@ -50,7 +51,8 @@ class Migrate is export {
       my $last = self.last;
       next unless $action ~~ 'down' && $v == $last || $action ~~ 'up' && $v > $last;
 
-      say $path;
+      say '';
+      say $action ~~ 'up' ?? green('↑ ' ~ $path ~ ' ↑') !! red('↓ ' ~ $path ~ ' ↓');
       EVAL $path.IO.slurp;
 
       $!db.begin;
@@ -63,17 +65,17 @@ class Migrate is export {
   }
 
   method add($version) {
-    $!db.execute(qq:to/SQL/);
+    $!db.exec(qq:to/SQL/);
       INSERT INTO migrations (version)
       VALUES ('$version')
-    SQL
+      SQL
   }
 
   method rm($version) {
-    $!db.execute(qq:to/SQL/);
+    $!db.exec(qq:to/SQL/);
       DELETE FROM migrations
       WHERE version LIKE '$version'
-    SQL
+      SQL
   }
 
   method files($dir) {
@@ -93,9 +95,9 @@ class Migrate is export {
       FROM migrations
       ORDER BY id DESC
       LIMIT 1
-    SQL
+      SQL
 
-    my @res = $!db.execute($sql);
+    my @res = $!db.exec($sql);
     @res.elems ?? @res[0][0] !! '';
   }
 
@@ -109,10 +111,10 @@ class Migrate is export {
       CREATE TABLE migrations (
         id serial,
         version character varying
-      );
-    SQL
+      )
+      SQL
 
-    $!db.execute($sql);
+    $!db.exec($sql);
   }
 
   method migrations-table-exists {
@@ -123,9 +125,9 @@ class Migrate is export {
         WHERE schemaname = '{$!db.schema}'
         AND tablename = 'migrations'
       )
-    SQL
+      SQL
 
-    my @res = $!db.execute($sql);
+    my @res = $!db.exec($sql);
     @res[0][0];
   }
 }
