@@ -38,14 +38,14 @@ class DB is export {
     $query.execute;
   }
 
-  method exec($sql) {
+  method exec(Str:D $sql) {
     Log.sql(:$sql);
     my $query = $!db.prepare($sql);
     $query.execute;
     $query.allrows;
   }
 
-  method build-update(:$table, :%attrs, :$id) {
+  method build-update(Str:D :$table, Int:D :$id, :%attrs) {
     my $values = %attrs.keys.map({ "$_ = '%attrs{$_}'" }).join(', ');
 
     qq:to/SQL/;
@@ -55,7 +55,7 @@ class DB is export {
       SQL
   }
 
-  method build-insert(:$table, :%attrs) {
+  method build-insert(Str:D :$table, :%attrs) {
     my $fields = %attrs.keys.join(', ');
     my $values = %attrs.values.map({ "'$_'" }).join(', ');
 
@@ -66,7 +66,7 @@ class DB is export {
       SQL
   }
 
-  method build-select(:@fields, :$table, :%where, :@order, :$limit) {
+  method build-select(Str:D :$table, :@fields, :%where, :@order, Int:D :$limit=0) {
     my $select = @fields.join(', ');
     my $where = self.build-where(%where);
     my $order = @order ?? "ORDER BY @order.join(', ')" !! '';
@@ -85,7 +85,7 @@ class DB is export {
     %where.keys.map({ "$_ = '%where{$_}'" }).join(' AND ');
   }
 
-  method get-objects(:$class, :@fields, :$table, :%where) {
+  method get-objects(Str:D :$table, Mu:U :$class, :@fields, :%where) {
     my @records = self.get-records(:@fields, :$table, :%where);
     my @objects;
 
@@ -97,12 +97,12 @@ class DB is export {
     @objects;
   }
 
-  method get-object(:$class, :@fields, :$table, :%where) {
+  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where) {
     my $record = self.get-record(:@fields, :$table, :%where);
     $class.new(id => $record{'id'}, record => { attributes => $record, :@fields });
   }
 
-  method update-object($obj) {
+  method update-object(Mu:D $obj) {
     my $table = Utils.table-name($obj);
     my %attrs = $obj.attributes;
     my $id = $obj.id;
@@ -113,7 +113,7 @@ class DB is export {
     $query.execute;
   }
 
-  method create-object($obj) {
+  method create-object(Mu:D $obj) {
     my $table = Utils.table-name($obj);
     my %attrs = $obj.attributes;
     my $sql = self.build-insert(:$table, :%attrs);
@@ -124,14 +124,14 @@ class DB is export {
     $query.allrows[0][0].Int; # insert id
   }
 
-  method get-rows(:$sql) {
+  method get-rows(Str:D :$sql) {
     Log.sql(:$sql);
     my $query = $!db.prepare($sql);
     $query.execute;
     $query.allrows;
   }
 
-  method get-records(:@fields, :$table, :%where) {
+  method get-records(Str:D :$table, :@fields, :%where) {
     my @records;
     my $sql = self.build-select(:@fields, :$table, :%where);
 
@@ -147,7 +147,7 @@ class DB is export {
     @records;
   }
 
-  method get-record(:@fields, :$table, :%where) {
+  method get-record(Str:D :$table, :@fields, :%where) {
     my $sql = self.build-select(:@fields, :$table, :%where, limit => 1);
     my $row = self.get-rows(:$sql)[0];
     my %record;
@@ -159,7 +159,7 @@ class DB is export {
     %record;
   }
 
-  method get-fields(:$table) {
+  method get-fields(Str:D :$table) {
     my $sql = self.build-select(
       fields => qw<column_name>.words,
       table => 'information_schema.columns',
@@ -173,7 +173,7 @@ class DB is export {
     self.get-list(:$sql);
   }
 
-  method get-list(:$sql, :$col=0) {
+  method get-list(Str:D :$sql, Int:D :$col=0) {
     self.get-rows(:$sql).map({ $_[$col] });
   }
 
