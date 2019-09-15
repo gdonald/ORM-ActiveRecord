@@ -1,0 +1,36 @@
+
+use v6.d;
+use lib 'lib';
+use lib 'app';
+
+use models;
+use Test;
+
+plan 15;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my User $user;
+
+$user = User.build;
+ok $user.is-invalid;
+nok $user.is-valid;
+nok $user.id;
+ok $user.errors.fname == ['at least 4 characters required', 'must be present'];
+
+$user = User.build({});
+ok $user.is-invalid;
+nok $user.is-valid;
+nok $user.id;
+ok $user.errors.fname == ['must be present', 'at least 4 characters required'];
+
+$user = User.build({fname => 'x' x 33});
+ok $user.is-invalid;
+nok $user.is-valid;
+nok $user.id;
+ok $user.errors.fname == ['only 32 characters allowed'];
+
+$user = User.build({fname => 'Greg', lname => 'Donald'});
+nok $user.id;
+nok $user.is-invalid;
+ok $user.is-valid;

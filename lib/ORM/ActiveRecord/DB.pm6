@@ -55,9 +55,16 @@ class DB is export {
       SQL
   }
 
+  method without-excluded-fields(%attrs) {
+    for %attrs.keys { %attrs{$_}:delete if $_ ~~ /_confirmation$/ }
+    %attrs;
+  }
+
+
   method build-insert(Str:D :$table, :%attrs) {
-    my $fields = %attrs.keys.join(', ');
-    my $values = %attrs.values.map({ "'$_'" }).join(', ');
+    my %fvs = self.without-excluded-fields(%attrs);
+    my $fields = %fvs.keys.join(', ');
+    my $values = %fvs.values.map({ "'$_'" }).join(', ');
 
     qq:to/SQL/;
       INSERT INTO $table ($fields)

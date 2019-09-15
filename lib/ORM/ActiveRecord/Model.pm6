@@ -134,9 +134,13 @@ class Model is export {
   }
 
   method is-valid {
+    !self.is-invalid;
+  }
+
+  method is-invalid {
     $!errors = Errors.new;
     $!validators.validate(self);
-    !$!errors.errors.elems.so;
+    $!errors.errors.elems.so;
   }
 
   method validate(Str:D $field, Hash:D $params) {
