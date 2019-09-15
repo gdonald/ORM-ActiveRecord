@@ -60,7 +60,6 @@ class DB is export {
     %attrs;
   }
 
-
   method build-insert(Str:D :$table, :%attrs) {
     my %fvs = self.without-excluded-fields(%attrs);
     my $fields = %fvs.keys.join(', ');

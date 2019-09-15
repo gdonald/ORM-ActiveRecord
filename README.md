@@ -152,3 +152,22 @@ $ prove -v --exec=perl6 --ext=t6
 #### License
 
 ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensource.org/licenses/Artistic-2.0)
+
+#### TODO
+
+Things to build in the near future:
+
+- [ ] Validation: exclusion
+- [ ] Validation: inclusion
+- [ ] Validation: format
+- [ ] Validation: length: add 'is' and 'in' support 
+- [ ] Validation: numericality: gt, lt, gte, lte, not, etc.
+- [ ] Validation: uniqueness
+- [ ] Validation: on: create versus update
+- [ ] Validation: if: and unless:
+- [ ] Validation: custom error message
+- [ ] Migration: add_column
+- [ ] Migration: drop_column
+- [ ] Migration: add_index
+- [ ] Migration: drop_index
+- [ ] Migration: Irreversable
