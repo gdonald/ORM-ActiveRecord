@@ -30,3 +30,9 @@ class Contract is Model is export {
     self.validate: 'terms', { :acceptance }
   }
 }
+
+class Client is Model is export {
+  submethod BUILD {
+    self.validate: 'email', { :presence, :confirmation, length => { min => 5 } }
+  }
+}
