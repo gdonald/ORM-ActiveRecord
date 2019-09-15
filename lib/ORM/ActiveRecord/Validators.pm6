@@ -14,6 +14,8 @@ class Validators is export {
         given $param.keys.first {
           when 'presence' { self.validate-presence($obj, $field) }
           when 'length' { self.validate-length($obj, $field, $param<length>) }
+          when 'acceptance' { self.validate-acceptance($obj, $field) }
+          default { say 'unknown validation: ' ~ $param.keys.first; die }
         }
       }
     }
@@ -37,6 +39,13 @@ class Validators is export {
 
     if $min && $obj."$field"().chars < $min {
       my $e = Error.new(:$field, :message("at least $min characters required"));
+      $obj.errors.push($e);
+    }
+  }
+
+  method validate-acceptance(Mu:D $obj, Str:D $field) {
+    unless $obj."$field"() {
+      my $e = Error.new(:$field, :message('must be accepted'));
       $obj.errors.push($e);
     }
   }

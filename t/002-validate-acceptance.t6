@@ -1,0 +1,21 @@
+
+use v6.d;
+use lib 'lib';
+use lib 'app';
+
+use models;
+use Test;
+
+plan 4;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my Contract $contract;
+
+$contract = Contract.create({name => 'Offical Document', terms => False});
+nok $contract.is-valid;
+ok $contract.errors.terms == ['must be accepted'];
+
+$contract = Contract.create({name => 'Offical Document', terms => True});
+ok $contract.is-valid;
+nok $contract.errors.terms;

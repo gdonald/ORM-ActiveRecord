@@ -23,3 +23,10 @@ class Page is Model is export {
     self.validate: 'name', { :presence, length => { min => 4, max => 32 } }
   }
 }
+
+class Contract is Model is export {
+  submethod BUILD {
+    self.validate: 'name', { :presence, length => { min => 8, max => 64 } }
+    self.validate: 'terms', { :acceptance }
+  }
+}
