@@ -9,7 +9,8 @@
   "auth": "github:gdonald",
   "depends": [
     "DBIish",
-    "JSON::Tiny"
+    "JSON::Tiny",
+    "Log::Async"
   ],
   "build-depends": [],
   "test-depends": [
