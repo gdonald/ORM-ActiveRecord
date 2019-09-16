@@ -36,3 +36,15 @@ class Client is Model is export {
     self.validate: 'email', { :presence, :confirmation, length => { min => 5 } }
   }
 }
+
+class Person is Model is export {
+  submethod BUILD {
+    self.validate: 'username', { :presence, exclusion => { in => <admin superuser> } }
+  }
+}
+
+class Image is Model is export {
+  submethod BUILD {
+    self.validate: 'format', { :presence, inclusion => { in => <gif jpeg jpg png> } }
+  }
+}

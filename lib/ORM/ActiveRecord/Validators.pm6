@@ -16,6 +16,8 @@ class Validators is export {
           when 'length' { self.validate-length($obj, $field, $param<length>) }
           when 'acceptance' { self.validate-acceptance($obj, $field) }
           when 'confirmation' { self.validate-confirmation($obj, $field) }
+          when 'exclusion' { self.validate-exclusion($obj, $field, $param<exclusion>) }
+          when 'inclusion' { self.validate-inclusion($obj, $field, $param<inclusion>) }
           default { say 'unknown validation: ' ~ $param.keys.first; die }
         }
       }
@@ -54,6 +56,20 @@ class Validators is export {
   method validate-confirmation(Mu:D $obj, Str:D $field) {
     if $obj."{$field}_confirmation"() ~~ Empty || $obj."{$field}_confirmation"() !~~ $obj."$field"() {
       my $e = Error.new(:$field, :message('must be confirmed'));
+      $obj.errors.push($e);
+    }
+  }
+
+  method validate-exclusion(Mu:D $obj, Str:D $field, Hash:D $exclusion) {
+    if $obj."$field"() ~~ Empty || $obj."$field"() (elem) $exclusion<in> {
+      my $e = Error.new(:$field, :message('is invalid'));
+      $obj.errors.push($e);
+    }
+  }
+
+  method validate-inclusion(Mu:D $obj, Str:D $field, Hash:D $inclusion) {
+    if $obj."$field"() ~~ Empty || (not $obj."$field"() (elem) $inclusion<in>) {
+      my $e = Error.new(:$field, :message('is invalid'));
       $obj.errors.push($e);
     }
   }

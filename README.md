@@ -142,7 +142,7 @@ Alfred E. Neuman
 
 ```bash
 $ perl6 -Ilib bin/ar # migrate
-$ prove -v --exec=perl6 --ext=t6
+$ prove6
 ```
 
 #### Status
@@ -157,11 +157,10 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
 
 Things to build in the near future:
 
-- [ ] Validation: exclusion
-- [ ] Validation: inclusion
-- [ ] Validation: format
-- [ ] Validation: length: add 'is' and 'in' support 
-- [ ] Validation: numericality: gt, lt, gte, lte, not, etc.
+- [ ] Validation: format: with
+- [ ] Validation: length: is, in
+- [ ] Integer field type
+- [ ] Validation: numericality: gt, lt, gte, lte, in
 - [ ] Validation: uniqueness
 - [ ] Validation: on: create versus update
 - [ ] Validation: if: and unless:

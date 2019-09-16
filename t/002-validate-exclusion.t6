@@ -1,0 +1,29 @@
+
+use v6.d;
+use lib 'lib';
+use lib 'app';
+
+use models;
+use Test;
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my Person $person;
+
+$person = Person.build({});
+ok $person.is-invalid;
+ok $person.errors.username == ['must be present', 'is invalid'];
+
+$person = Person.build({username => 'admin'});
+ok $person.is-invalid;
+ok $person.errors.username == ['is invalid'];
+
+$person = Person.build({username => 'superuser'});
+ok $person.is-invalid;
+ok $person.errors.username == ['is invalid'];
+
+$person = Person.create({username => 'alfred'});
+ok $person.is-valid;
+nok $person.errors.username;
