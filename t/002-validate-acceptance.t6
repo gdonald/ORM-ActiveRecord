@@ -8,7 +8,7 @@ use Test;
 
 plan 4;
 
-%*ENV<DISABLE-SQL-LOG> = True;
+#%*ENV<DISABLE-SQL-LOG> = True;
 
 my Contract $contract;
 
