@@ -5,10 +5,6 @@ logger.send-to('log/error.log', :level(ERROR));
 
 use ORM::ActiveRecord::Colors;
 
-#sub info(Str:D $str) {
-#  say DateTime.now, ' ', $str;
-#}
-
 class Log is export {
   method sql(Str:D :$sql) {
     return if %*ENV<DISABLE-SQL-LOG>;
