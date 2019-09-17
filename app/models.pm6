@@ -48,3 +48,9 @@ class Image is Model is export {
     self.validate: 'format', { :presence, inclusion => { in => <gif jpeg jpg png> } }
   }
 }
+
+class Contact is Model is export {
+  submethod BUILD {
+    self.validate: 'email', { :presence, format => { with => /:i ^<[\w]>+ '@' <[\w]>+ '.' <[\w]>+$/ } }
+  }
+}

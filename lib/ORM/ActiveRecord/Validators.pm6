@@ -18,6 +18,7 @@ class Validators is export {
           when 'confirmation' { self.validate-confirmation($obj, $field) }
           when 'exclusion' { self.validate-exclusion($obj, $field, $param<exclusion>) }
           when 'inclusion' { self.validate-inclusion($obj, $field, $param<inclusion>) }
+          when 'format' { self.validate-format($obj, $field, $param<format>) }
           default { say 'unknown validation: ' ~ $param.keys.first; die }
         }
       }
@@ -69,6 +70,13 @@ class Validators is export {
 
   method validate-inclusion(Mu:D $obj, Str:D $field, Hash:D $inclusion) {
     if $obj."$field"() ~~ Empty || (not $obj."$field"() (elem) $inclusion<in>) {
+      my $e = Error.new(:$field, :message('is invalid'));
+      $obj.errors.push($e);
+    }
+  }
+
+  method validate-format(Mu:D $obj, Str:D $field, Hash:D $format) {
+    if $obj."$field"() !~~ $format<with> {
       my $e = Error.new(:$field, :message('is invalid'));
       $obj.errors.push($e);
     }
