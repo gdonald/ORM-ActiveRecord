@@ -13,7 +13,7 @@ class Validators is export {
       for .params -> $param {
         given $param.keys.first {
           when 'presence' { self.validate-presence($obj, $field) }
-          when 'length' { self.validate-length($obj, $field, $param<length>) }
+          when 'length' { self.validate-length($obj, $field, $param) }
           when 'acceptance' { self.validate-acceptance($obj, $field) }
           when 'confirmation' { self.validate-confirmation($obj, $field) }
           when 'exclusion' { self.validate-exclusion($obj, $field, $param<exclusion>) }
@@ -32,9 +32,11 @@ class Validators is export {
     }
   }
 
-  method validate-length(Mu:D $obj, Str:D $field, Hash:D $length) {
-    my $max = $length<max>;
-    my $min = $length<min>;
+  method validate-length(Mu:D $obj, Str:D $field, Pair:D $params) {
+    my $max = $params<length><max>;
+    my $min = $params<length><min>;
+    my $is = $params<length><is>;
+    my $in = $params<length><in>;
 
     if $max && $obj."$field"().chars > $max {
       my $e = Error.new(:$field, :message("only $max characters allowed"));
@@ -43,6 +45,16 @@ class Validators is export {
 
     if $min && $obj."$field"().chars < $min {
       my $e = Error.new(:$field, :message("at least $min characters required"));
+      $obj.errors.push($e);
+    }
+
+    if $is && $obj."$field"().chars != $is {
+      my $e = Error.new(:$field, :message("exactly $is characters required"));
+      $obj.errors.push($e);
+    }
+
+    if $in && $obj."$field"().chars !~~ $in {
+      my $e = Error.new(:$field, :message("{$in.min} to {$in.max} characters required"));
       $obj.errors.push($e);
     }
   }

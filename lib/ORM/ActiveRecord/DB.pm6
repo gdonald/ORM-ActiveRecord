@@ -96,7 +96,7 @@ class DB is export {
     my @objects;
 
     for @records.kv -> $k, $record {
-      my $obj = $class.new(id => $record{'id'}, record => { attributes => $record, :@fields });
+      my $obj = $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
       @objects.push: $obj;
     }
 
@@ -105,12 +105,12 @@ class DB is export {
 
   method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where) {
     my $record = self.get-record(:@fields, :$table, :%where);
-    $class.new(id => $record{'id'}, record => { attributes => $record, :@fields });
+    $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
   }
 
   method update-object(Mu:D $obj) {
     my $table = Utils.table-name($obj);
-    my %attrs = $obj.attributes;
+    my %attrs = $obj.attrs;
     my $id = $obj.id;
     my $sql = self.build-update(:$table, :%attrs, :$id);
 
@@ -121,7 +121,7 @@ class DB is export {
 
   method create-object(Mu:D $obj) {
     my $table = Utils.table-name($obj);
-    my %attrs = $obj.attributes;
+    my %attrs = $obj.attrs;
     my $sql = self.build-insert(:$table, :%attrs);
 
     Log.sql(:$sql);

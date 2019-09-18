@@ -6,20 +6,23 @@ use lib 'app';
 use models;
 use Test;
 
-plan 6;
+plan 7;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
+my @errors;
 my Contact $contact;
 
 $contact = Contact.create({});
 ok $contact.is-invalid;
-ok $contact.errors.email == ['must be present', 'is invalid'];
+@errors = ['must be present', 'is invalid'];
+ok @errors.grep: $contact.errors.email[0];
+ok @errors.grep: $contact.errors.email[1];
 
 $contact = Contact.create({email => 'foo'});
 ok $contact.is-invalid;
-ok $contact.errors.email == ['is invalid'];
+ok $contact.errors.email[0] eq 'is invalid';
 
-$contact = Contact.create({email => 'foo@bar.com'});
+$contact = Contact.create({email => 'foo@bar.com', fname => 'Gregory', lname => 'Donald'});
 ok $contact.is-valid;
 nok $contact.errors.email;

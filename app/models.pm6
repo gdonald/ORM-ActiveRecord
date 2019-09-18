@@ -52,5 +52,7 @@ class Image is Model is export {
 class Contact is Model is export {
   submethod BUILD {
     self.validate: 'email', { :presence, format => { with => /:i ^<[\w]>+ '@' <[\w]>+ '.' <[\w]>+$/ } }
+    self.validate: 'fname', { :presence, length => { is => 7 } }
+    self.validate: 'lname', { :presence, length => { in => 4..32 } }
   }
 }

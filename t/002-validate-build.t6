@@ -6,29 +6,33 @@ use lib 'app';
 use models;
 use Test;
 
-plan 15;
+plan 17;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
+my @errors;
 my User $user;
 
 $user = User.build;
 ok $user.is-invalid;
 nok $user.is-valid;
 nok $user.id;
-ok $user.errors.fname == ['at least 4 characters required', 'must be present'];
+@errors = ['at least 4 characters required', 'must be present'];
+ok @errors.grep: $user.errors.fname[0];
+ok @errors.grep: $user.errors.fname[1];
 
 $user = User.build({});
 ok $user.is-invalid;
 nok $user.is-valid;
 nok $user.id;
-ok $user.errors.fname == ['must be present', 'at least 4 characters required'];
+ok @errors.grep: $user.errors.fname[0];
+ok @errors.grep: $user.errors.fname[1];
 
 $user = User.build({fname => 'x' x 33});
 ok $user.is-invalid;
 nok $user.is-valid;
 nok $user.id;
-ok $user.errors.fname == ['only 32 characters allowed'];
+ok $user.errors.fname[0] eq 'only 32 characters allowed';
 
 $user = User.build({fname => 'Greg', lname => 'Donald'});
 nok $user.id;
