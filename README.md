@@ -157,8 +157,6 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
 
 Things to build in the near future:
 
-- [ ] Integer field type
-- [ ] Validation: numericality: gt, lt, gte, lte, in
 - [ ] Validation: uniqueness
 - [ ] Validation: on: create versus update
 - [ ] Validation: if: and unless:

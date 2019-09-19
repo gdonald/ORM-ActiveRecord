@@ -19,6 +19,7 @@ class Validators is export {
           when 'exclusion' { self.validate-exclusion($obj, $field, $param<exclusion>) }
           when 'inclusion' { self.validate-inclusion($obj, $field, $param<inclusion>) }
           when 'format' { self.validate-format($obj, $field, $param<format>) }
+          when 'numericality' { self.validate-numericality($obj, $field, $param) }
           default { say 'unknown validation: ' ~ $param.keys.first; die }
         }
       }
@@ -90,6 +91,39 @@ class Validators is export {
   method validate-format(Mu:D $obj, Str:D $field, Hash:D $format) {
     if $obj."$field"() !~~ $format<with> {
       my $e = Error.new(:$field, :message('is invalid'));
+      $obj.errors.push($e);
+    }
+  }
+
+  method validate-numericality(Mu:D $obj, Str:D $field, Pair:D $params) {
+    my $gt = $params<numericality><gt>;
+    my $gte = $params<numericality><gte>;
+    my $lt = $params<numericality><lt>;
+    my $lte = $params<numericality><lte>;
+    my $in = $params<numericality><in>;
+
+    if $gt && $obj."$field"().Int <= $gt {
+      my $e = Error.new(:$field, :message("more than $gt required"));
+      $obj.errors.push($e);
+    }
+
+    if $gte && $obj."$field"().Int < $gte {
+      my $e = Error.new(:$field, :message("$gte or more required"));
+      $obj.errors.push($e);
+    }
+
+    if $lt && $obj."$field"().Int >= $lt {
+      my $e = Error.new(:$field, :message("less than $lt required"));
+      $obj.errors.push($e);
+    }
+
+    if $lte && $obj."$field"().Int > $lte {
+      my $e = Error.new(:$field, :message("$lte or less required"));
+      $obj.errors.push($e);
+    }
+
+    if $in && $obj."$field"().Int !~~ $in {
+      my $e = Error.new(:$field, :message("{$in.min} to {$in.max} required"));
       $obj.errors.push($e);
     }
   }
