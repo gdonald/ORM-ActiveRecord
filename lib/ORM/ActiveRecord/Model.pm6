@@ -16,7 +16,7 @@ class Model is export {
 
   has Int $.id;
   has Str @.fields;
-  has %.attributes;
+  has %.attrs is rw;
 
   submethod DESTROY {
     $!db = Nil;
@@ -27,8 +27,8 @@ class Model is export {
     $!errors = Errors.new;
     $!validators = Validators.new;
 
-    if %!record && %!record{'attributes'} {
-      %!attributes = %!record{'attributes'};
+    if %!record && %!record{'attrs'} {
+      %!attrs = %!record{'attrs'};
       if %!record{'fields'} {
         @!fields = slip(%!record{'fields'});
       } else {
@@ -36,24 +36,27 @@ class Model is export {
       }
     } elsif $!id {
       @!fields = $!db.get-fields(table => self.table-name);
-      self.get-attributes;
+      self.get-attrs;
     }
   }
 
-  method FALLBACK(Str:D $name, *@rest) {
-    return %!attributes{$name} if %!attributes{$name};
+  method FALLBACK(Str:D $name, *@rest) is raw {
+    if %!attrs{$name} {
+      %!attrs{$name};
+    } else {
 
-    if any(%!has-manys.keys) eq $name {
-      my Str @fields = $!db.get-fields(table => $name);
-      my $fkey-name = Utils.base-name(self.fkey-name);
-      return $!db.get-objects(class => %!has-manys{$name}{'class'}, :@fields, table => $name, where => $fkey-name => $!id);
-    }
+      if any(%!has-manys.keys) eq $name {
+        my Str @fields = $!db.get-fields(table => $name);
+        my $fkey-name = Utils.base-name(self.fkey-name);
+        return $!db.get-objects(class => %!has-manys{$name}{'class'}, :@fields, table => $name, where => $fkey-name => $!id);
+      }
 
-    if any(%!belongs-tos.keys) eq $name {
-      my Str $table = $name ~ 's';
-      my Str @fields = $!db.get-fields(:$table);
-      my Int $id = %!attributes{$name ~ '_id'};
-      return $!db.get-object(class => %!belongs-tos{$name}{'class'}, :@fields, :$table, where => :$id);
+      if any(%!belongs-tos.keys) eq $name {
+        my Str $table = $name ~ 's';
+        my Str @fields = $!db.get-fields(:$table);
+        my Int $id = %!attrs{$name ~ '_id'};
+        return $!db.get-object(class => %!belongs-tos{$name}{'class'}, :@fields, :$table, where => :$id);
+      }
     }
   }
 
@@ -79,8 +82,8 @@ class Model is export {
     self.new(:$id);
   }
 
-  method get-attributes {
-    %!attributes = $!db.get-record(:@!fields, table => self.table-name, where => :$!id);
+  method get-attrs {
+    %!attrs = $!db.get-record(:@!fields, table => self.table-name, where => :$!id);
   }
 
   method save {
@@ -98,23 +101,23 @@ class Model is export {
 
   method update-foreign-keys {
     for $.belongs-tos.keys -> $key {
-      next unless $.attributes{$key};
-      if $.attributes{$key}.^name eq $.belongs-tos{$key}.value.^name {
-        $.attributes{$key ~ '_id'} = $.attributes{$key}.id;
-        $.attributes{$key}:delete;
+      next unless $.attrs{$key};
+      if $.attrs{$key}.^name eq $.belongs-tos{$key}.value.^name {
+        $.attrs{$key ~ '_id'} = $.attrs{$key}.id;
+        $.attrs{$key}:delete;
       }
     }
   }
 
-  method update(%attributes) {
-    for %attributes.keys -> $key {
-      %!attributes{$key} = %attributes{$key};
+  method update(%attrs) {
+    for %attrs.keys -> $key {
+      %!attrs{$key} = %attrs{$key};
     }
     self.save;
   }
 
-  multi method create(%attributes) {
-    my %record = 'attributes' => %attributes;
+  multi method create(%attrs) {
+    my %record = 'attrs' => %attrs;
     my $obj = self.new(:id(0), :%record);
     $obj.save if $obj.is-valid;
     $obj;
@@ -124,8 +127,8 @@ class Model is export {
     self.create({});
   }
 
-  multi method build(%attributes) {
-    my %record = 'attributes' => %attributes;
+  multi method build(%attrs) {
+    my %record = 'attrs' => %attrs;
     self.new(:id(0), :%record);
   }
 

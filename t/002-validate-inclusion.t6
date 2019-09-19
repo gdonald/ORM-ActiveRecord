@@ -1,0 +1,28 @@
+
+use v6.d;
+use lib 'lib';
+use lib 'app';
+
+use models;
+use Test;
+
+plan 7;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my @errors;
+my Image $image;
+
+$image = Image.build({});
+ok $image.is-invalid;
+@errors = ['must be present', 'is invalid'];
+ok @errors.grep: $image.errors.format[0];
+ok @errors.grep: $image.errors.format[1];
+
+$image = Image.build({format => 'foo'});
+ok $image.is-invalid;
+ok $image.errors.format[0] eq 'is invalid';
+
+$image = Image.build({format => 'jpg'});
+ok $image.is-valid;
+nok $image.errors.format;

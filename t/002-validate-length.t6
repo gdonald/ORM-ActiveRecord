@@ -1,0 +1,37 @@
+
+use v6.d;
+use lib 'lib';
+use lib 'app';
+
+use models;
+use Test;
+
+plan 11;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my @errors;
+my Contact $contact;
+
+$contact = Contact.build({email => 'foo@bar.com', fname => 'Gregory', lname => 'Donald'});
+ok $contact.is-valid;
+
+$contact = Contact.build;
+ok $contact.is-invalid;
+@errors = ['exactly 7 characters required', 'must be present'];
+ok @errors.grep: $contact.errors.fname[0];
+ok @errors.grep: $contact.errors.fname[1];
+
+$contact = Contact.build({});
+ok $contact.is-invalid;
+@errors = ['exactly 7 characters required', 'must be present'];
+ok @errors.grep: $contact.errors.fname[0];
+ok @errors.grep: $contact.errors.fname[1];
+
+$contact = Contact.build({email => 'foo@bar.com', fname => 'x' x 8, lname => 'Donald'});
+ok $contact.is-invalid;
+ok $contact.errors.fname[0] eq 'exactly 7 characters required';
+
+$contact = Contact.build({email => 'foo@bar.com', fname => 'Gregory', lname => 'x' x 3});
+ok $contact.is-invalid;
+ok $contact.errors.lname[0] eq '4 to 32 characters required';

@@ -13,9 +13,12 @@ class Validators is export {
       for .params -> $param {
         given $param.keys.first {
           when 'presence' { self.validate-presence($obj, $field) }
-          when 'length' { self.validate-length($obj, $field, $param<length>) }
+          when 'length' { self.validate-length($obj, $field, $param) }
           when 'acceptance' { self.validate-acceptance($obj, $field) }
           when 'confirmation' { self.validate-confirmation($obj, $field) }
+          when 'exclusion' { self.validate-exclusion($obj, $field, $param<exclusion>) }
+          when 'inclusion' { self.validate-inclusion($obj, $field, $param<inclusion>) }
+          when 'format' { self.validate-format($obj, $field, $param<format>) }
           default { say 'unknown validation: ' ~ $param.keys.first; die }
         }
       }
@@ -29,9 +32,11 @@ class Validators is export {
     }
   }
 
-  method validate-length(Mu:D $obj, Str:D $field, Hash:D $length) {
-    my $max = $length<max>;
-    my $min = $length<min>;
+  method validate-length(Mu:D $obj, Str:D $field, Pair:D $params) {
+    my $max = $params<length><max>;
+    my $min = $params<length><min>;
+    my $is = $params<length><is>;
+    my $in = $params<length><in>;
 
     if $max && $obj."$field"().chars > $max {
       my $e = Error.new(:$field, :message("only $max characters allowed"));
@@ -40,6 +45,16 @@ class Validators is export {
 
     if $min && $obj."$field"().chars < $min {
       my $e = Error.new(:$field, :message("at least $min characters required"));
+      $obj.errors.push($e);
+    }
+
+    if $is && $obj."$field"().chars != $is {
+      my $e = Error.new(:$field, :message("exactly $is characters required"));
+      $obj.errors.push($e);
+    }
+
+    if $in && $obj."$field"().chars !~~ $in {
+      my $e = Error.new(:$field, :message("{$in.min} to {$in.max} characters required"));
       $obj.errors.push($e);
     }
   }
@@ -54,6 +69,27 @@ class Validators is export {
   method validate-confirmation(Mu:D $obj, Str:D $field) {
     if $obj."{$field}_confirmation"() ~~ Empty || $obj."{$field}_confirmation"() !~~ $obj."$field"() {
       my $e = Error.new(:$field, :message('must be confirmed'));
+      $obj.errors.push($e);
+    }
+  }
+
+  method validate-exclusion(Mu:D $obj, Str:D $field, Hash:D $exclusion) {
+    if $obj."$field"() ~~ Empty || $obj."$field"() (elem) $exclusion<in> {
+      my $e = Error.new(:$field, :message('is invalid'));
+      $obj.errors.push($e);
+    }
+  }
+
+  method validate-inclusion(Mu:D $obj, Str:D $field, Hash:D $inclusion) {
+    if $obj."$field"() ~~ Empty || (not $obj."$field"() (elem) $inclusion<in>) {
+      my $e = Error.new(:$field, :message('is invalid'));
+      $obj.errors.push($e);
+    }
+  }
+
+  method validate-format(Mu:D $obj, Str:D $field, Hash:D $format) {
+    if $obj."$field"() !~~ $format<with> {
+      my $e = Error.new(:$field, :message('is invalid'));
       $obj.errors.push($e);
     }
   }

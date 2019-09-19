@@ -14,7 +14,7 @@ my Contract $contract;
 
 $contract = Contract.create({name => 'Offical Document', terms => False});
 nok $contract.is-valid;
-ok $contract.errors.terms == ['must be accepted'];
+ok $contract.errors.terms[0] eq 'must be accepted';
 
 $contract = Contract.create({name => 'Offical Document', terms => True});
 ok $contract.is-valid;
