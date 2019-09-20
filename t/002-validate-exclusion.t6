@@ -10,6 +10,8 @@ plan 9;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
+Person.destroy-all;
+
 my @errors;
 my Person $person;
 

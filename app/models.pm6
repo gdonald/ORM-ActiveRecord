@@ -39,7 +39,7 @@ class Client is Model is export {
 
 class Person is Model is export {
   submethod BUILD {
-    self.validate: 'username', { :presence, exclusion => { in => <admin superuser> } }
+    self.validate: 'username', { :presence, :uniqueness, exclusion => { in => <admin superuser> } }
   }
 }
 
