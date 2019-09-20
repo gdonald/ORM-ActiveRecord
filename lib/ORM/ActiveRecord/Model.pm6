@@ -41,22 +41,19 @@ class Model is export {
   }
 
   method FALLBACK(Str:D $name, *@rest) is raw {
-    if %!attrs{$name} {
-      %!attrs{$name};
-    } else {
+    return-rw %!attrs{$name} if %!attrs{$name};
 
-      if any(%!has-manys.keys) eq $name {
-        my Str @fields = $!db.get-fields(table => $name);
-        my $fkey-name = Utils.base-name(self.fkey-name);
-        return $!db.get-objects(class => %!has-manys{$name}{'class'}, :@fields, table => $name, where => $fkey-name => $!id);
-      }
+    if any(%!has-manys.keys) eq $name {
+      my Str @fields = $!db.get-fields(table => $name);
+      my $fkey-name = Utils.base-name(self.fkey-name);
+      return $!db.get-objects(class => %!has-manys{$name}{'class'}, :@fields, table => $name, where => $fkey-name => $!id);
+    }
 
-      if any(%!belongs-tos.keys) eq $name {
-        my Str $table = $name ~ 's';
-        my Str @fields = $!db.get-fields(:$table);
-        my Int $id = %!attrs{$name ~ '_id'};
-        return $!db.get-object(class => %!belongs-tos{$name}{'class'}, :@fields, :$table, where => :$id);
-      }
+    if any(%!belongs-tos.keys) eq $name {
+      my Str $table = $name ~ 's';
+      my Str @fields = $!db.get-fields(:$table);
+      my Int $id = %!attrs{$name ~ '_id'};
+      return $!db.get-object(class => %!belongs-tos{$name}{'class'}, :@fields, :$table, where => :$id);
     }
   }
 

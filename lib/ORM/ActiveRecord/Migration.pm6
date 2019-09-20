@@ -61,15 +61,18 @@ class Migration is export {
       my $type = '';
       my $limit = '';
       my $default = '';
+      my $null = '';
 
       for $_{$name}.keys -> $attr {
         my $value = $_{$name}{$attr};
 
         given $attr {
           when 'string' { $type = 'VARCHAR' }
+          when 'integer' { $type = 'INTEGER' }
           when 'boolean' { $type = 'BOOL' }
           when 'limit' { $limit = '(' ~ $value ~ ')' }
           when 'default' { $default = $value }
+          when 'null' { $null = $value }
           when 'reference' {
             @!foreign-keys.push($name);
             $type = 'INTEGER';
@@ -87,7 +90,20 @@ class Migration is export {
         }
       }
 
-      @fields.push($name ~ ' ' ~ $type ~ $limit ~ $default);
+      if $type ~~ 'INTEGER' {
+        given $null {
+          when 'True' { $null = '' }
+          when 'False' { $null = ' NOT NULL' }
+          default { $null = '' }
+        }
+
+        given $default {
+          when /\d+/ { $default = " DEFAULT $default" }
+          default { $default = '' }
+        }
+      }
+
+      @fields.push($name ~ ' ' ~ $type ~ $limit ~ $default ~ $null);
     }
 
     @fields.join(', ').trim;

@@ -1,0 +1,59 @@
+
+use v6.d;
+use lib 'lib';
+use lib 'app';
+
+use models;
+use Test;
+
+plan 19;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my @errors;
+my Book $book;
+
+$book = Book.create({title => 'Book Title', pages => 399, sentences => 1001, words => 2000, periods => 1000, commas => 200});
+ok $book.is-valid;
+
+$book = Book.build({title => 'Book Title', pages => 399, sentences => 1001, words => 2000, periods => 1000, commas => 200});
+ok $book.is-valid;
+
+$book.pages = 400;
+ok $book.is-invalid;
+ok $book.errors.pages[0] eq 'less than 400 required';
+
+$book = Book.build({title => 'Book Title', pages => 399, sentences => 1001, words => 2000, periods => 1000, commas => 200});
+ok $book.is-valid;
+
+$book.sentences = 1000;
+ok $book.is-invalid;
+ok $book.errors.sentences[0] eq 'more than 1000 required';
+
+$book = Book.build({title => 'Book Title', pages => 399, sentences => 1001, words => 2000, periods => 1000, commas => 200});
+ok $book.is-valid;
+
+$book.words = 1999;
+ok $book.is-invalid;
+ok $book.errors.words[0] eq '2000 to 5000 required';
+
+$book = Book.build({title => 'Book Title', pages => 399, sentences => 1001, words => 2000, periods => 1000, commas => 200});
+ok $book.is-valid;
+
+$book.words = 5001;
+ok $book.is-invalid;
+ok $book.errors.words[0] eq '2000 to 5000 required';
+
+$book = Book.build({title => 'Book Title', pages => 399, sentences => 1001, words => 2000, periods => 1000, commas => 200});
+ok $book.is-valid;
+
+$book.periods = 999;
+ok $book.is-invalid;
+ok $book.errors.periods[0] eq '1000 or more required';
+
+$book = Book.build({title => 'Book Title', pages => 399, sentences => 1001, words => 2000, periods => 1000, commas => 200});
+ok $book.is-valid;
+
+$book.commas = 201;
+ok $book.is-invalid;
+ok $book.errors.commas[0] eq '200 or less required';
