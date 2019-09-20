@@ -139,7 +139,7 @@ class Model is export {
 
   method is-invalid {
     $!errors = Errors.new;
-    $!validators.validate(self);
+    $!validators.validate($!db, self);
     $!errors.errors.elems.so;
   }
 
@@ -147,5 +147,11 @@ class Model is export {
     my $klass = self.WHAT;
     my $v = Validator.new(:$klass, :$field, :$params);
     $!validators.validators.push($v);
+  }
+
+  method destroy-all {
+    my $table = Utils.table-name(self);
+    my %where = '1' => '1';
+    DB.new.delete-records(:$table, :%where);
   }
 }

@@ -157,10 +157,10 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
 
 Things to build in the near future:
 
-- [ ] Validation: uniqueness
 - [ ] Validation: on: create versus update
 - [ ] Validation: if: and unless:
 - [ ] Validation: custom error message
+- [ ] Model: implement .is-dirty for smarter uniqueness validation
 - [ ] Migration: add_column
 - [ ] Migration: drop_column
 - [ ] Migration: add_index

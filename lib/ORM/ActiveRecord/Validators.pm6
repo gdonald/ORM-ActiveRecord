@@ -1,11 +1,13 @@
 
+use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Error;
 use ORM::ActiveRecord::Validator;
+use ORM::ActiveRecord::Utils;
 
 class Validators is export {
   has @.validators of Validator;
 
-  method validate(Mu:D $obj) {
+  method validate(DB $db, Mu:D $obj) {
     for @!validators {
       next unless $obj.^name eq .klass.perl;
       my $field = .field;
@@ -20,6 +22,7 @@ class Validators is export {
           when 'inclusion' { self.validate-inclusion($obj, $field, $param<inclusion>) }
           when 'format' { self.validate-format($obj, $field, $param<format>) }
           when 'numericality' { self.validate-numericality($obj, $field, $param) }
+          when 'uniqueness' { self.validate-uniqueness($db, $obj, $field) }
           default { say 'unknown validation: ' ~ $param.keys.first; die }
         }
       }
@@ -125,6 +128,22 @@ class Validators is export {
     if $in && $obj."$field"().Int !~~ $in {
       my $e = Error.new(:$field, :message("{$in.min} to {$in.max} required"));
       $obj.errors.push($e);
+    }
+  }
+
+  method validate-uniqueness(DB $db, Mu:D $obj, Str:D $field) {
+    return if $obj.id;
+
+    if $obj."$field"() !~~ Empty {
+      my @fields = @$field;
+      my $table = Utils.table-name($obj);
+      my %where = $field => $obj."$field"();
+      my %record = $db.get-record(:@fields, :$table, :%where);
+
+      if %record{$field} ~~ $obj."$field"() {
+        my $e = Error.new(:$field, :message('must be unique'));
+        $obj.errors.push($e);
+      }
     }
   }
 }

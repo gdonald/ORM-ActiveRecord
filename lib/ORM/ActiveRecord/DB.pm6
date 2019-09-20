@@ -194,6 +194,24 @@ class DB is export {
     $!db.get-list(:$sql);
   }
 
+  method delete-records(Str:D :$table, :%where) {
+    my $where = self.build-where(%where);
+
+    my $sql = qq:to/SQL/;
+      WITH deleted AS (
+        DELETE FROM $table
+        WHERE $where
+        RETURNING *
+      ) SELECT count(*)
+        FROM deleted
+      SQL
+
+    Log.sql(:$sql);
+    my $query = $!db.prepare($sql);
+    $query.execute;
+    $query.allrows[0][0].Int; # count
+  }
+
   method connect-db {
     return if $!db.defined;
     $!db = DBIish.connect('Pg', :$!schema, :$!database, :$!user, :$!password);
