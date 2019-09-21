@@ -1,9 +1,11 @@
 
 use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Error;
+use ORM::ActiveRecord::Errors;
+use ORM::ActiveRecord::Field;
+use ORM::ActiveRecord::Utils;
 use ORM::ActiveRecord::Validator;
 use ORM::ActiveRecord::Validators;
-use ORM::ActiveRecord::Errors;
-use ORM::ActiveRecord::Utils;
 
 class Model is export {
   has DB $!db;
@@ -15,7 +17,7 @@ class Model is export {
   has %.belongs-tos;
 
   has Int $.id;
-  has Str @.fields;
+  has @.fields of Field;
   has %.attrs is rw;
 
   submethod DESTROY {
@@ -27,34 +29,34 @@ class Model is export {
     $!errors = Errors.new;
     $!validators = Validators.new;
 
-    if %!record && %!record{'attrs'} {
-      %!attrs = %!record{'attrs'};
-      if %!record{'fields'} {
-        @!fields = slip(%!record{'fields'});
-      } else {
-        @!fields = $!db.get-fields(table => self.table-name);
-      }
+    if %!record {
+      @!fields = %!record{'fields'} ?? slip(%!record{'fields'}) !! self.get-fields(self.table-name);
+      %!attrs = %!record{'attrs'} ?? %!record{'attrs'} !! self.init-attrs;
     } elsif $!id {
-      @!fields = $!db.get-fields(table => self.table-name);
-      self.get-attrs;
+      @!fields = self.get-fields(self.table-name);
+      self.get-attrs(:$!id);
     }
   }
 
   method FALLBACK(Str:D $name, *@rest) is raw {
-    return-rw %!attrs{$name} if %!attrs{$name};
+    return-rw %!attrs{$name} if %!attrs«$name»:exists;
 
     if any(%!has-manys.keys) eq $name {
-      my Str @fields = $!db.get-fields(table => $name);
       my $fkey-name = Utils.base-name(self.fkey-name);
+      my @fields = self.get-fields($name);
       return $!db.get-objects(class => %!has-manys{$name}{'class'}, :@fields, table => $name, where => $fkey-name => $!id);
     }
 
     if any(%!belongs-tos.keys) eq $name {
       my Str $table = $name ~ 's';
-      my Str @fields = $!db.get-fields(:$table);
       my Int $id = %!attrs{$name ~ '_id'};
+      my @fields = self.get-fields($table);
       return $!db.get-object(class => %!belongs-tos{$name}{'class'}, :@fields, :$table, where => :$id);
     }
+  }
+
+  method get-fields(Str:D $table) {
+    $!db.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
   }
 
   method belongs-to(*%rest) {
@@ -79,8 +81,28 @@ class Model is export {
     self.new(:$id);
   }
 
-  method get-attrs {
-    %!attrs = $!db.get-record(:@!fields, table => self.table-name, where => :$!id);
+  method init-attrs {
+    my %attrs;
+
+    for @!fields -> $field {
+      next if $field.name eq 'id';
+      given $field.type {
+        when /integer/ { %attrs{$field.name} = 0; }
+        when /character/ { %attrs{$field.name} = ''; }
+        default { say 'Unknown field type'; die; }
+      }
+    }
+
+    %attrs;
+  }
+
+  method get-attrs(:$id) {
+    my @fields = self.field-names;
+    %!attrs = $!db.get-record(:@fields, table => self.table-name, where => :$id);
+  }
+
+  method field-names {
+    @!fields.map({ $_.name });
   }
 
   method save {
@@ -143,10 +165,15 @@ class Model is export {
     $!errors.errors.elems.so;
   }
 
-  method validate(Str:D $field, Hash:D $params) {
+  method validate(Str:D $field_name, Hash:D $params) {
     my $klass = self.WHAT;
+    my $field = self.get-field($field_name);
     my $v = Validator.new(:$klass, :$field, :$params);
     $!validators.validators.push($v);
+  }
+
+  method get-field(Str:D $name) {
+    for self.fields { return $_ if .name ~~ $name }
   }
 
   method destroy-all {

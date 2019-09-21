@@ -1,6 +1,8 @@
 
+use ORM::ActiveRecord::Field;
+
 class Validator is export {
   has $.klass;
-  has Str $.field;
+  has Field $.field;
   has Hash $.params;
 }

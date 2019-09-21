@@ -1,10 +1,31 @@
 
 use v6.d;
 use lib 'lib';
-use lib 'app';
-
-use models;
+use ORM::ActiveRecord::Model;
 use Test;
+
+class Page {...} # stub
+
+class User is Model is export {
+  submethod BUILD {
+    self.has-many: pages => class => Page;
+
+    self.validate: 'fname', { :presence, length => { min => 4, max => 32 } }
+    self.validate: 'lname', { :presence, length => { min => 4, max => 32 } }
+  }
+
+  method fullname {
+    self.fname ~ ' ' ~ self.lname;
+  }
+}
+
+class Page is Model is export {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+
+    self.validate: 'name', { :presence, length => { min => 4, max => 32 } }
+  }
+}
 
 plan 5;
 

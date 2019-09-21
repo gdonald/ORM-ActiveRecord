@@ -1,5 +1,7 @@
 
+use ORM::ActiveRecord::Field;
+
 class Error is export {
-  has $.field;
-  has $.message;
+  has Field $.field;
+  has Str $.message;
 }

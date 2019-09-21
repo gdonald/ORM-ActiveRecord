@@ -1,32 +1,32 @@
 
 use v6.d;
 use lib 'lib';
-use lib 'app';
-
-use models;
+use ORM::ActiveRecord::Model;
 use Test;
 
-plan 11;
+class Contact is Model is export {
+  submethod BUILD {
+    self.validate: 'fname', { length => { is => 7 } }
+    self.validate: 'lname', { length => { in => 4..32 } }
+  }
+}
+
+plan 9;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my @errors;
 my Contact $contact;
 
-$contact = Contact.build({email => 'foo@bar.com', fname => 'Gregory', lname => 'Donald'});
+$contact = Contact.build({fname => 'Gregory', lname => 'Donald'});
 ok $contact.is-valid;
 
 $contact = Contact.build;
 ok $contact.is-invalid;
-@errors = ['exactly 7 characters required', 'must be present'];
-ok @errors.grep: $contact.errors.fname[0];
-ok @errors.grep: $contact.errors.fname[1];
+ok $contact.errors.fname[0] eq 'exactly 7 characters required';
 
 $contact = Contact.build({});
 ok $contact.is-invalid;
-@errors = ['exactly 7 characters required', 'must be present'];
-ok @errors.grep: $contact.errors.fname[0];
-ok @errors.grep: $contact.errors.fname[1];
+ok $contact.errors.fname[0] eq 'exactly 7 characters required';
 
 $contact = Contact.build({email => 'foo@bar.com', fname => 'x' x 8, lname => 'Donald'});
 ok $contact.is-invalid;

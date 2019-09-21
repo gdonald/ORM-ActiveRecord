@@ -1,0 +1,35 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model is export {
+  submethod BUILD {
+    self.validate: 'fname', { :presence, on => { :create } }
+  }
+}
+
+plan 9;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my @errors;
+my User $user;
+
+$user = User.create();
+ok $user.is-invalid;
+ok $user.errors.fname[0] eq 'must be present';
+
+$user = User.create({});
+ok $user.is-invalid;
+ok $user.errors.fname[0] eq 'must be present';
+
+$user = User.create({fname => 'Greg'});
+ok $user.is-valid;
+nok $user.errors.fname[0];
+
+$user.fname = Nil;
+ok $user.save;
+ok $user.is-valid;
+nok $user.errors.fname[0];

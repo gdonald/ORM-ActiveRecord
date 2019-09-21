@@ -1,16 +1,24 @@
 
 use v6.d;
 use lib 'lib';
-use lib 'app';
-
-use models;
+use ORM::ActiveRecord::Model;
 use Test;
+
+class Book is Model is export {
+  submethod BUILD {
+    self.validate: 'title', { :presence }
+    self.validate: 'pages', { :presence, numericality => { lt => 400 } }
+    self.validate: 'sentences', { :presence, numericality => { gt => 1000 } }
+    self.validate: 'words', { :presence, numericality => { in => 2000..5000 } }
+    self.validate: 'periods', { :presence, numericality => { gte => 1000 } }
+    self.validate: 'commas', { :presence, numericality => { lte => 200 } }
+  }
+}
 
 plan 19;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my @errors;
 my Book $book;
 
 $book = Book.create({title => 'Book Title', pages => 399, sentences => 1001, words => 2000, periods => 1000, commas => 200});
