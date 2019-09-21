@@ -1,12 +1,16 @@
 
 use v6.d;
 use lib 'lib';
-use lib 'app';
-
-use models;
+use ORM::ActiveRecord::Model;
 use Test;
 
 plan 7;
+
+class Contact is Model is export {
+  submethod BUILD {
+    self.validate: 'email', { :presence, format => { with => /:i ^<[\w]>+ '@' <[\w]>+ '.' <[\w]>+$/ } }
+  }
+}
 
 %*ENV<DISABLE-SQL-LOG> = True;
 

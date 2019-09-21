@@ -2,6 +2,7 @@
 use JSON::Tiny;
 use DBIish;
 
+use ORM::ActiveRecord::Field;
 use ORM::ActiveRecord::Log;
 use ORM::ActiveRecord::Utils;
 
@@ -45,8 +46,24 @@ class DB is export {
     $query.allrows;
   }
 
+  method build-value-sets(:%attrs) {
+    my @values;
+
+    for %attrs.keys {
+      next if $_ ~~ 'id';
+      my $value = %attrs{$_} ?? %attrs{$_} !! '';
+      @values.push: "$_ = '$value'";
+    }
+
+    @values.join(', ');
+  }
+
+  method build-values-list(:@values) {
+    @values.map({ $_ ?? "'$_'" !! "''" }).join(', ');
+  }
+
   method build-update(Str:D :$table, Int:D :$id, :%attrs) {
-    my $values = %attrs.keys.map({ "$_ = '%attrs{$_}'" }).join(', ');
+    my $values = self.build-value-sets(:%attrs);
 
     qq:to/SQL/;
       UPDATE $table
@@ -63,7 +80,8 @@ class DB is export {
   method build-insert(Str:D :$table, :%attrs) {
     my %fvs = self.without-excluded-fields(%attrs);
     my $fields = %fvs.keys.join(', ');
-    my $values = %fvs.values.map({ "'$_'" }).join(', ');
+    my @values = %fvs.values;
+    my $values = self.build-values-list(:@values);
 
     qq:to/SQL/;
       INSERT INTO $table ($fields)
@@ -73,7 +91,7 @@ class DB is export {
   }
 
   method build-select(Str:D :$table, :@fields, :%where, :@order, Int:D :$limit=0) {
-    my $select = @fields.join(', ');
+    my $select = @fields.map({ $_.name }).join(', ');
     my $where = self.build-where(%where);
     my $order = @order ?? "ORDER BY @order.join(', ')" !! '';
     my $limit_ = $limit ?? "LIMIT $limit" !! '';
@@ -143,10 +161,7 @@ class DB is export {
 
     for self.get-rows(:$sql).kv -> $k, $row {
       my %record;
-      for @fields.kv -> $kk, $field {
-        %record{@fields[$kk]} = $row[$kk];
-      }
-
+      for @fields.kv -> $kk, $field { %record{@fields[$kk].name} = $row[$kk] }
       @records.push: %record
     }
 
@@ -157,30 +172,28 @@ class DB is export {
     my $sql = self.build-select(:@fields, :$table, :%where, limit => 1);
     my $row = self.get-rows(:$sql)[0];
     my %record;
-
-    for @fields.kv -> $k, $field {
-      %record{@fields[$k]} = $row[$k];
-    }
+    for @fields.kv -> $k, $field { %record{@fields[$k].name} = $row[$k] }
 
     %record;
   }
 
   method get-fields(Str:D :$table) {
+    my $type = 'character varying';
+    my $names = <column_name data_type>;
+    my @fields = $names.map({ Field.new(:name($_), :$type) });
+
     my $sql = self.build-select(
-      fields => qw<column_name>.words,
+      :@fields,
       table => 'information_schema.columns',
-      where => {
-        'table_schema' => 'public',
-        'table_name'   => $table
-      },
+      where => { 'table_schema' => 'public', 'table_name' => $table },
       order => qw<table_name>.words
     );
 
-    self.get-list(:$sql);
+    self.get-rows(:$sql);
   }
 
   method get-list(Str:D :$sql, Int:D :$col=0) {
-    self.get-rows(:$sql).map({ $_[$col] });
+    self.get-rows(:$sql);
   }
 
   method get-table-names {

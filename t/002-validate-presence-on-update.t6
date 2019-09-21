@@ -1,0 +1,53 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Game is Model is export {
+  submethod BUILD {
+    self.validate: 'name', { :presence, on => { :update } }
+  }
+}
+
+plan 22;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my @errors;
+my Game $game;
+
+$game = Game.create();
+ok $game.id;
+ok $game.name eq '';
+ok $game.is-invalid;
+nok $game.save;
+
+$game = Game.create({});
+ok $game.id;
+ok $game.name eq '';
+ok $game.is-invalid;
+nok $game.save;
+
+$game = Game.create({name => Nil});
+ok $game.id;
+nok $game.name;
+ok $game.is-invalid;
+nok $game.save;
+ok $game.is-invalid;
+
+$game = Game.create({name => 'Frogger'});
+ok $game.name eq 'Frogger';
+
+$game.name = 'Super Metroid';
+ok $game.name eq 'Super Metroid';
+ok $game.save;
+ok $game.name eq 'Super Metroid';
+nok $game.errors.fname;
+
+$game = Game.create();
+$game.name = 'Super Metroid';
+ok $game.name eq 'Super Metroid';
+ok $game.save;
+ok $game.name eq 'Super Metroid';
+nok $game.errors.fname;

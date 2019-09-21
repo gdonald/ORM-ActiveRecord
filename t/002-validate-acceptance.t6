@@ -1,10 +1,15 @@
 
 use v6.d;
 use lib 'lib';
-use lib 'app';
-
-use models;
+use ORM::ActiveRecord::Model;
 use Test;
+
+class Contract is Model is export {
+  submethod BUILD {
+    self.validate: 'name', { :presence, length => { min => 8, max => 64 } }
+    self.validate: 'terms', { :acceptance }
+  }
+}
 
 plan 4;
 

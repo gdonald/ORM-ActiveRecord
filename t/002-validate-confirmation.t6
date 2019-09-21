@@ -1,12 +1,16 @@
 
 use v6.d;
 use lib 'lib';
-use lib 'app';
-
-use models;
+use ORM::ActiveRecord::Model;
 use Test;
 
-plan 8;
+class Client is Model is export {
+  submethod BUILD {
+    self.validate: 'email', { :presence, :confirmation }
+  }
+}
+
+plan 7;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -15,10 +19,9 @@ my Client $client;
 
 $client = Client.build({});
 ok $client.is-invalid;
-@errors = ['at least 5 characters required', 'must be present', 'must be confirmed'];
+@errors = ['must be present', 'must be confirmed'];
 ok @errors.grep: $client.errors.email[0];
 ok @errors.grep: $client.errors.email[1];
-ok @errors.grep: $client.errors.email[2];
 
 $client = Client.build({email => 'fred@aol.com'});
 ok $client.is-invalid;

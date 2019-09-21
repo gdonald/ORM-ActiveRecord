@@ -9,6 +9,6 @@ class Errors {
   }
 
   submethod FALLBACK(Str:D $name, *@rest) {
-    @!errors.map({ .message if .field eq $name });
+    @!errors.map({ .message if .field.name eq $name });
   }
 }

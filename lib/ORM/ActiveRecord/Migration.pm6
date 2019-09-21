@@ -90,13 +90,15 @@ class Migration is export {
         }
       }
 
-      if $type ~~ 'INTEGER' {
+      if $type ~~ /(INTEGER|VARCHAR)/ {
         given $null {
-          when 'True' { $null = '' }
+          when 'True' { $null = ' NULL' }
           when 'False' { $null = ' NOT NULL' }
           default { $null = '' }
         }
+      }
 
+      if $type ~~ 'INTEGER' {
         given $default {
           when /\d+/ { $default = " DEFAULT $default" }
           default { $default = '' }
