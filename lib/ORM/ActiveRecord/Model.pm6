@@ -29,11 +29,12 @@ class Model is export {
     $!errors = Errors.new;
     $!validators = Validators.new;
 
-    if %!record {
-      @!fields = %!record{'fields'} ?? slip(%!record{'fields'}) !! self.get-fields(self.table-name);
-      %!attrs = %!record{'attrs'} ?? %!record{'attrs'} !! self.init-attrs;
+    @!fields = self.get-fields(self.table-name);
+    self.init-attrs;
+
+    if %!record && %!record{'attrs'} {
+      self.merge-attrs(%!record{'attrs'});
     } elsif $!id {
-      @!fields = self.get-fields(self.table-name);
       self.get-attrs(:$!id);
     }
   }
@@ -82,18 +83,20 @@ class Model is export {
   }
 
   method init-attrs {
-    my %attrs;
-
-    for @!fields -> $field {
-      next if $field.name eq 'id';
-      given $field.type {
-        when /integer/ { %attrs{$field.name} = 0; }
-        when /character/ { %attrs{$field.name} = ''; }
-        default { say 'Unknown field type'; die; }
+    for @!fields {
+      my $name = $_.name;
+      next if $name eq 'id';
+      given .type {
+        when /integer/ { %!attrs{$name} = 0 }
+        when /character/ { %!attrs{$name} = '' }
+        when /boolean/ { %!attrs{$name} = False }
+        default { say 'Unknown field type: ' ~ .type; die; }
       }
     }
+  }
 
-    %attrs;
+  method merge-attrs(Hash:D $attrs) {
+    for $attrs.keys { %!attrs{$_} = $attrs{$_} }
   }
 
   method get-attrs(:$id) {

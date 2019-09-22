@@ -157,8 +157,6 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
 
 Things to build in the near future:
 
-- [ ] Migration: add_column
-- [ ] Migration: drop_column
 - [ ] Migration: add_index
 - [ ] Migration: drop_index
 - [ ] Migration: Irreversible
