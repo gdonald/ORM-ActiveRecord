@@ -22,7 +22,7 @@ class Migration is export {
   method do-add-foreign-keys(Str:D $table) {
     for @!foreign-keys {
       my $sql = qq:to/SQL/;
-        ALTER TABLE ONLY $table
+        ALTER TABLE $table
         ADD CONSTRAINT fk_{$_}_id
         FOREIGN KEY ({$_}_id)
         REFERENCES {$_ ~ 's'}(id)
@@ -36,7 +36,7 @@ class Migration is export {
 
   method do-add-primary-key(Str:D $table) {
     my $sql = qq:to/SQL/;
-      ALTER TABLE ONLY $table
+      ALTER TABLE $table
       ADD CONSTRAINT {$table}_pkey PRIMARY KEY (id);
       SQL
 
@@ -117,8 +117,29 @@ class Migration is export {
     my $fields = self.build-fields([$params]);
 
     my $sql = qq:to/SQL/;
-      ALTER TABLE ONLY $table
+      ALTER TABLE $table
       ADD COLUMN $fields
+      SQL
+
+    $!db.exec($sql);
+  }
+
+  method add-index(Str:D $table, |params) {
+    my $field = params.keys.first;
+    my $name = $table ~ '_' ~ $field ~ '_idx';
+    my $unique = '';
+
+    for params{$field} -> $param {
+      given $param {
+        when /:i unique/ { $unique = ' UNIQUE ' }
+        when .so {}
+        default { say 'Unknown index param: ' ~ $param; die }
+      }
+    }
+
+    my $sql = qq:to/SQL/;
+      CREATE $unique INDEX $name
+      ON $table ($field)
       SQL
 
     $!db.exec($sql);
@@ -136,8 +157,19 @@ class Migration is export {
     my $field = params.keys.first;
 
     my $sql = qq:to/SQL/;
-      ALTER TABLE ONLY $table
+      ALTER TABLE $table
       DROP COLUMN $field
+      SQL
+
+    $!db.exec($sql);
+  }
+
+  method remove-index(Str:D $table, |params) {
+    my $field = params.keys.first;
+    my $name = $table ~ '_' ~ $field ~ '_idx';
+
+    my $sql = qq:to/SQL/;
+      DROP INDEX $name
       SQL
 
     $!db.exec($sql);
