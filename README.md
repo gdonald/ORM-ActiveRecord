@@ -165,3 +165,4 @@ Things to build in the near future:
 - [ ] Migration: add_index
 - [ ] Migration: drop_index
 - [ ] Migration: Irreversable
+- docs

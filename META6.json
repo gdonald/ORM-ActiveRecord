@@ -1,7 +1,7 @@
 {
   "name": "ORM::ActiveRecord",
   "description": "Object-relational mapping",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "perl": "6.d",
   "authors": [
     "Greg Donald"
@@ -22,6 +22,7 @@
     "ORM::ActiveRecord::DB": "lib/ORM/ActiveRecord/DB.pm6",
     "ORM::ActiveRecord::Error": "lib/ORM/ActiveRecord/Error.pm6",
     "ORM::ActiveRecord::Errors": "lib/ORM/ActiveRecord/Errors.pm6",
+    "ORM::ActiveRecord::Field": "lib/ORM/ActiveRecord/Field.pm6",
     "ORM::ActiveRecord::Log": "lib/ORM/ActiveRecord/Log.pm6",
     "ORM::ActiveRecord::Migrate": "lib/ORM/ActiveRecord/Migrate.pm6",
     "ORM::ActiveRecord::Migration": "lib/ORM/ActiveRecord/Migration.pm6",
