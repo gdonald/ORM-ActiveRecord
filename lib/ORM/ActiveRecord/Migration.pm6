@@ -13,13 +13,13 @@ class Migration is export {
     $!db = DB.new;
   }
 
-  method create-table(Str $table, @params) {
+  method create-table(Str:D $table, @params) {
     self.do-create-table($table, @params);
     self.do-add-primary-key($table);
     self.do-add-foreign-keys($table);
   }
 
-  method do-add-foreign-keys(Str $table) {
+  method do-add-foreign-keys(Str:D $table) {
     for @!foreign-keys {
       my $sql = qq:to/SQL/;
         ALTER TABLE ONLY $table
@@ -34,7 +34,7 @@ class Migration is export {
     @!foreign-keys = [];
   }
 
-  method do-add-primary-key(Str $table) {
+  method do-add-primary-key(Str:D $table) {
     my $sql = qq:to/SQL/;
       ALTER TABLE ONLY $table
       ADD CONSTRAINT {$table}_pkey PRIMARY KEY (id);
@@ -43,7 +43,7 @@ class Migration is export {
     $!db.exec($sql);
   }
 
-  method do-create-table(Str $table, @params) {
+  method do-create-table(Str:D $table, @params) {
     my $fields = self.build-fields(@params);
 
     my $sql = qq:to/SQL/;
@@ -58,6 +58,8 @@ class Migration is export {
 
     for @params {
       my $name = $_.keys.first;
+      my $field_name = $name ~~ Pair ?? $name.keys.first !! $name;
+
       my $type = '';
       my $limit = '';
       my $default = '';
@@ -74,9 +76,9 @@ class Migration is export {
           when 'default' { $default = $value }
           when 'null' { $null = $value }
           when 'reference' {
-            @!foreign-keys.push($name);
+            @!foreign-keys.push($field_name);
             $type = 'INTEGER';
-            $name = $name ~ '_id';
+            $field_name = $field_name ~ '_id';
           }
           default { say 'unknown attr: ' ~ $attr ~ ' ' ~ $value; die }
         }
@@ -105,15 +107,37 @@ class Migration is export {
         }
       }
 
-      @fields.push($name ~ ' ' ~ $type ~ $limit ~ $default ~ $null);
+      @fields.push($field_name ~ ' ' ~ $type ~ $limit ~ $default ~ $null);
     }
 
     @fields.join(', ').trim;
   }
 
-  method drop-table(Str $table) {
+  method add-column(Str:D $table, Pair:D $params) {
+    my $fields = self.build-fields([$params]);
+
+    my $sql = qq:to/SQL/;
+      ALTER TABLE ONLY $table
+      ADD COLUMN $fields
+      SQL
+
+    $!db.exec($sql);
+  }
+
+  method drop-table(Str:D $table) {
     my $sql = qq:to/SQL/;
       DROP TABLE $table
+      SQL
+
+    $!db.exec($sql);
+  }
+
+  method remove-column(Str:D $table, |params) {
+    my $field = params.keys.first;
+
+    my $sql = qq:to/SQL/;
+      ALTER TABLE ONLY $table
+      DROP COLUMN $field
       SQL
 
     $!db.exec($sql);

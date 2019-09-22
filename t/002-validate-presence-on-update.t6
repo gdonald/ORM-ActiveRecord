@@ -7,6 +7,7 @@ use Test;
 class Game is Model is export {
   submethod BUILD {
     self.validate: 'name', { :presence, on => { :update } }
+    self.validate: 'year', { :presence, :numericality }
   }
 }
 
@@ -17,26 +18,26 @@ plan 22;
 my @errors;
 my Game $game;
 
-$game = Game.create();
+$game = Game.create({year => 1987});
 ok $game.id;
 ok $game.name eq '';
 ok $game.is-invalid;
 nok $game.save;
 
-$game = Game.create({});
+$game = Game.create({year => 1987});
 ok $game.id;
 ok $game.name eq '';
 ok $game.is-invalid;
 nok $game.save;
 
-$game = Game.create({name => Nil});
+$game = Game.create({name => Nil, year => 1987});
 ok $game.id;
 nok $game.name;
 ok $game.is-invalid;
 nok $game.save;
 ok $game.is-invalid;
 
-$game = Game.create({name => 'Frogger'});
+$game = Game.create({name => 'Frogger', year => 1987});
 ok $game.name eq 'Frogger';
 
 $game.name = 'Super Metroid';
@@ -45,9 +46,9 @@ ok $game.save;
 ok $game.name eq 'Super Metroid';
 nok $game.errors.fname;
 
-$game = Game.create();
+$game = Game.create({year => 1987});
 $game.name = 'Super Metroid';
 ok $game.name eq 'Super Metroid';
 ok $game.save;
 ok $game.name eq 'Super Metroid';
-nok $game.errors.fname;
+nok $game.errors.name;
