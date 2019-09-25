@@ -3,6 +3,7 @@ use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Error;
 use ORM::ActiveRecord::Errors;
 use ORM::ActiveRecord::Field;
+use ORM::ActiveRecord::ProxyHash;
 use ORM::ActiveRecord::Utils;
 use ORM::ActiveRecord::Validator;
 use ORM::ActiveRecord::Validators;
@@ -18,7 +19,7 @@ class Model is export {
 
   has Int $.id;
   has @.fields of Field;
-  has %.attrs is rw;
+  has %.attrs is ProxyHash;
 
   submethod DESTROY {
     $!db = Nil;
@@ -54,6 +55,10 @@ class Model is export {
       my @fields = self.get-fields($table);
       return $!db.get-object(class => %!belongs-tos{$name}{'class'}, :@fields, :$table, where => :$id);
     }
+  }
+
+  method is-dirty(--> Bool) {
+    %!attrs.is-dirty;
   }
 
   method get-fields(Str:D $table) {
@@ -116,6 +121,8 @@ class Model is export {
         when 0 { $!id = $!db.create-object(self) }
         default { $!db.update-object(self) }
       }
+
+      %!attrs.clean;
       return True;
     }
     False;
