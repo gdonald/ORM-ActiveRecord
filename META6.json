@@ -27,7 +27,6 @@
     "ORM::ActiveRecord::Migrate": "lib/ORM/ActiveRecord/Migrate.pm6",
     "ORM::ActiveRecord::Migration": "lib/ORM/ActiveRecord/Migration.pm6",
     "ORM::ActiveRecord::Model": "lib/ORM/ActiveRecord/Model.pm6",
-    "ORM::ActiveRecord::ProxyHash": "lib/ORM/ActiveRecord/ProxyHash.pm6",
     "ORM::ActiveRecord::Spell": "lib/ORM/ActiveRecord/Spell.pm6",
     "ORM::ActiveRecord::Utils": "lib/ORM/ActiveRecord/Utils.pm6",
     "ORM::ActiveRecord::Validator": "lib/ORM/ActiveRecord/Validator.pm6",

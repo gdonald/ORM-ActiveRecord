@@ -3,7 +3,6 @@ use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Error;
 use ORM::ActiveRecord::Errors;
 use ORM::ActiveRecord::Field;
-use ORM::ActiveRecord::ProxyHash;
 use ORM::ActiveRecord::Utils;
 use ORM::ActiveRecord::Validator;
 use ORM::ActiveRecord::Validators;
@@ -19,7 +18,8 @@ class Model is export {
 
   has Int $.id;
   has @.fields of Field;
-  has %.attrs is ProxyHash;
+  has %.attrs;
+  has %.attrs-db;
 
   submethod DESTROY {
     $!db = Nil;
@@ -33,15 +33,15 @@ class Model is export {
     @!fields = self.get-fields(self.table-name);
     self.init-attrs;
 
-    if %!record && %!record{'attrs'} {
-      self.merge-attrs(%!record{'attrs'});
+    if %!record && %!record<attrs> {
+      self.merge-attrs(%!record<attrs>);
     } elsif $!id {
       self.get-attrs(:$!id);
     }
   }
 
   method FALLBACK(Str:D $name, *@rest) is raw {
-    return-rw %!attrs{$name} if %!attrs«$name»:exists;
+    return-rw %!attrs«$name» if %!attrs«$name»:exists;
 
     if any(%!has-manys.keys) eq $name {
       my $fkey-name = Utils.base-name(self.fkey-name);
@@ -58,7 +58,8 @@ class Model is export {
   }
 
   method is-dirty(--> Bool) {
-    %!attrs.is-dirty;
+    for %!attrs.keys -> $key { return True if %!attrs«$key» !~~ %!attrs-db«$key» }
+    False;
   }
 
   method get-fields(Str:D $table) {
@@ -101,7 +102,7 @@ class Model is export {
   }
 
   method merge-attrs(Hash:D $attrs) {
-    for $attrs.keys { %!attrs{$_} = $attrs{$_} }
+    for $attrs.keys { %!attrs«$_» = $attrs«$_» }
   }
 
   method get-attrs(:$id) {
@@ -113,6 +114,10 @@ class Model is export {
     @!fields.map({ $_.name });
   }
 
+  method update-db-attrs {
+    for %!attrs.keys { %!attrs-db«$_» = %!attrs«$_» }
+  }
+
   method save {
     if self.is-valid {
       self.update-foreign-keys;
@@ -121,8 +126,7 @@ class Model is export {
         when 0 { $!id = $!db.create-object(self) }
         default { $!db.update-object(self) }
       }
-
-      %!attrs.clean;
+      self.update-db-attrs;
       return True;
     }
     False;
