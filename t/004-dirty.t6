@@ -1,0 +1,36 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model is export {
+  submethod BUILD {
+    self.validate: 'fname', { :presence }
+  }
+}
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my @errors;
+my User $user;
+my User $user2;
+
+$user = User.create({fname => 'Fred'});
+nok $user.is-dirty;
+
+$user.fname = 'John';
+ok $user.is-dirty;
+ok $user.save;
+nok $user.is-dirty;
+ok $user.fname eq 'John';
+
+$user2 = User.create({fname => 'Bob'});
+nok $user2.is-dirty;
+
+$user2.fname = 'Jim';
+ok $user2.is-dirty;
+
+nok $user.is-dirty;
