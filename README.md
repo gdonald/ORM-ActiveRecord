@@ -1,7 +1,7 @@
 
 ### ORM::ActiveRecord
 
-Object-relational mapping module for Perl 6.
+Object-relational mapping module for Raku.
 
 #### Install using zef
 
@@ -122,7 +122,7 @@ use Page;
 
 my User $user = User.create({fname => 'Greg', lname => 'Donald'});
 
-Page.create({:$user, name => 'Perl 6'});
+Page.create({:$user, name => 'Raku'});
 
 say $user.pages.first.name;
 Perl 6
@@ -147,7 +147,7 @@ $ prove6
 
 #### Status
 
-[![Build Status](https://travis-ci.org/gdonald/ORM-ActiveRecord.svg?branch=master)](https://travis-ci.org/gdonald/ORM-ActiveRecord)
+[![Build Status](https://travis-ci.org/rakuist/ORM-ActiveRecord.svg?branch=master)](https://travis-ci.org/rakuist/ORM-ActiveRecord)
 
 #### License
 
@@ -157,7 +157,6 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
 
 Things to build in the near future:
 
-- [ ] Model: .is-dirty for smarter uniqueness validation
 - [ ] Model: before_save, after_save, before_update, after_update
 - [ ] Migration: Irreversible
 - [ ] Migration/Validation: scoped uniq indexes

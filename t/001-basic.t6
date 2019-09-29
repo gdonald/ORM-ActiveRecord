@@ -34,10 +34,10 @@ plan 5;
 my User $user = User.create({fname => 'Greg', lname => 'Donald'});
 ok $user.id;
 
-Page.create({:$user, name => 'Perl 6'});
+Page.create({:$user, name => 'Raku'});
 
 my Page $page = $user.pages.first;
-ok $page.name eq 'Perl 6';
+ok $page.name eq 'Raku';
 ok $page.user.fullname eq 'Greg Donald';
 
 my User $alfred = User.create({fname => 'Alfred E.', lname => 'Neuman'});

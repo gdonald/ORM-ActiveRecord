@@ -1,12 +1,12 @@
 {
   "name": "ORM::ActiveRecord",
-  "description": "Object-relational mapping",
-  "version": "0.0.5",
+  "description": "Object-relational mapping module for Raku",
+  "version": "0.0.6",
   "perl": "6.d",
   "authors": [
     "Greg Donald"
   ],
-  "auth": "github:gdonald",
+  "auth": "github:rakuist",
   "depends": [
     "DBIish",
     "JSON::Tiny",
@@ -34,7 +34,7 @@
   },
   "resources": [],
   "support": {
-    "source": "https://github.com/gdonald/ORM-ActiveRecord/issues"
+    "source": "https://github.com/rakuist/ORM-ActiveRecord/issues"
   },
   "license": "Artistic-2.0",
   "tags": [
@@ -48,5 +48,5 @@
     "Validation",
     "Postgres"
   ],
-  "source-url": "git://github.com/gdonald/ORM-ActiveRecord.git"
+  "source-url": "git://github.com/rakuist/ORM-ActiveRecord.git"
 }
