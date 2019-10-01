@@ -3,6 +3,7 @@ use MONKEY-SEE-NO-EVAL;
 
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Colors;
+use ORM::ActiveRecord::X;
 
 class Migrate is export {
   my Str $.dir = 'db/migrate';
@@ -56,7 +57,18 @@ class Migrate is export {
       EVAL $path.IO.slurp;
 
       $!db.begin;
-      EVAL "{$<name>.Str.split('-').map({ $_.tc }).join}.new.$action";
+
+      try {
+        CATCH {
+          when X::IrreversibleMigration {
+            say 'Irreversible migration detected in ' ~ $path;
+            Exception.new.throw;
+          }
+        }
+
+        EVAL "{$<name>.Str.split('-').map({ $_.tc }).join}.new.$action";
+      }
+
       $action ~~ 'up' ?? self.add(:$version) !! self.rm(:$version);
       $!db.commit;
 

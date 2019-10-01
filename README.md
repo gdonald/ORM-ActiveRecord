@@ -157,7 +157,6 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
 
 Things to build in the near future:
 
-- [ ] Migration: Irreversible
 - [ ] Migration/Validation: scoped uniq indexes
 - [ ] Model: scopes
 - [ ] Validation: custom error message
