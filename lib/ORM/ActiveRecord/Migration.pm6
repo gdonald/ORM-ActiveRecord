@@ -70,6 +70,7 @@ class Migration is export {
 
         given $attr {
           when 'string' { $type = 'VARCHAR' }
+          when 'text' { $type = 'TEXT' }
           when 'integer' { $type = 'INTEGER' }
           when 'boolean' { $type = 'BOOL' }
           when 'limit' { $limit = '(' ~ $value ~ ')' }
