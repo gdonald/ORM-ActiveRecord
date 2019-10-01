@@ -1,0 +1,35 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Log is Model {};
+
+class Client is Model {
+  submethod BUILD {
+    self.validate: 'email', { :presence };
+    self.after-save: -> { self.log };
+  }
+
+  method log {
+    my $log = self.email ~ ' was saved';
+    Log.create({:$log});
+  }
+}
+
+plan 2;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Client.destroy-all;
+Log.destroy-all;
+
+my Client $client;
+
+$client = Client.create({ email => 'fred@aol.com' });
+ok Log.count == 1;
+
+$client.email = 'barney@compuserve.net';
+$client.save;
+ok Log.count == 2;

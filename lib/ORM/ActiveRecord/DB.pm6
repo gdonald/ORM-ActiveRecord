@@ -225,6 +225,22 @@ class DB is export {
     $query.allrows[0][0].Int; # count
   }
 
+  method count-records(Str:D :$table, :%where) {
+    my $where = self.build-where(%where);
+    $where = $where ?? " WHERE $where" !! '';
+
+    my $sql = qq:to/SQL/;
+      SELECT count(*)
+      FROM $table
+      $where
+      SQL
+
+    Log.sql(:$sql);
+    my $query = $!db.prepare($sql);
+    $query.execute;
+    $query.allrows[0][0].Int; # count
+  }
+
   method connect-db {
     return if $!db.defined;
     $!db = DBIish.connect('Pg', :$!schema, :$!database, :$!user, :$!password);

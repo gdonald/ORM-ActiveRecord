@@ -25,6 +25,10 @@ class Model is export {
   has @.before-updates;
   has @.before-creates;
 
+  has @.after-saves;
+  has @.after-updates;
+  has @.after-creates;
+
   submethod DESTROY {
     $!db = Nil;
   }
@@ -90,6 +94,18 @@ class Model is export {
     @!before-creates.push: $block;
   }
 
+  method after-save(Block $block) {
+    @!after-saves.push: $block;
+  }
+
+  method after-update(Block $block) {
+    @!after-updates.push: $block;
+  }
+
+  method after-create(Block $block) {
+    @!after-creates.push: $block;
+  }
+
   method table-name {
     self.WHAT.perl.lc ~ 's';
   }
@@ -110,7 +126,7 @@ class Model is export {
       next if $name eq 'id';
       given .type {
         when /integer/ { %!attrs{$name} = 0 }
-        when /character/ { %!attrs{$name} = '' }
+        when /(character|text)/ { %!attrs{$name} = '' }
         when /boolean/ { %!attrs{$name} = False }
         default { say 'Unknown field type: ' ~ .type; die; }
       }
@@ -137,19 +153,22 @@ class Model is export {
   method save {
     if self.is-valid {
       self.update-foreign-keys;
+      self.do-before-saves;
 
       given $!id {
-        self.do-before-saves;
-
         when 0 {
           self.do-before-creates;
           $!id = $!db.create-object(self);
+          self.do-after-creates;
         }
         default {
           self.do-before-updates;
           $!db.update-object(self);
+          self.do-after-updates;
         }
       }
+
+      self.do-after-saves;
       self.update-db-attrs;
       return True;
     }
@@ -166,6 +185,18 @@ class Model is export {
 
   method do-before-updates {
     for @!before-updates { .() }
+  }
+
+  method do-after-saves {
+    for @!after-saves { .() }
+  }
+
+  method do-after-creates {
+    for @!after-creates { .() }
+  }
+
+  method do-after-updates {
+    for @!after-updates { .() }
   }
 
   method update-foreign-keys {
@@ -224,6 +255,12 @@ class Model is export {
 
   method get-field(Str:D $name) {
     for self.fields { return $_ if .name ~~ $name }
+  }
+
+  method count {
+    my $table = Utils.table-name(self);
+    my %where; # TODO
+    DB.new.count-records(:$table, :%where);
   }
 
   method destroy-all {
