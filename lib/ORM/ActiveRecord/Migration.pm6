@@ -1,5 +1,6 @@
 
 use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::X;
 
 class Migration is export {
   has DB $!db;
@@ -174,5 +175,9 @@ class Migration is export {
       SQL
 
     $!db.exec($sql);
+  }
+
+  method irreversible-migration {
+    die X::IrreversibleMigration.new;
   }
 }
