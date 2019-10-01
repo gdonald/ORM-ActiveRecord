@@ -1,0 +1,30 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Client is Model {
+  submethod BUILD {
+    self.validate: 'email', { :presence };
+    self.before-update: -> { self.lowercase-email };
+  }
+
+  method lowercase-email {
+    self.email .= lc;
+  }
+}
+
+plan 2;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Client.destroy-all;
+
+my Client $client;
+
+$client = Client.create({ email => 'Fred@AOL.com' });
+ok $client.email eq 'Fred@AOL.com';
+
+$client.save;
+ok $client.email eq 'fred@aol.com';

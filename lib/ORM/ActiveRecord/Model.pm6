@@ -21,6 +21,10 @@ class Model is export {
   has %.attrs;
   has %.attrs-db;
 
+  has @.before-saves;
+  has @.before-updates;
+  has @.before-creates;
+
   submethod DESTROY {
     $!db = Nil;
   }
@@ -74,6 +78,18 @@ class Model is export {
     %!has-manys.push: %rest.keys.first => %rest.values.first;
   }
 
+  method before-save(Block $block) {
+    @!before-saves.push: $block;
+  }
+
+  method before-update(Block $block) {
+    @!before-updates.push: $block;
+  }
+
+  method before-create(Block $block) {
+    @!before-creates.push: $block;
+  }
+
   method table-name {
     self.WHAT.perl.lc ~ 's';
   }
@@ -123,13 +139,33 @@ class Model is export {
       self.update-foreign-keys;
 
       given $!id {
-        when 0 { $!id = $!db.create-object(self) }
-        default { $!db.update-object(self) }
+        self.do-before-saves;
+
+        when 0 {
+          self.do-before-creates;
+          $!id = $!db.create-object(self);
+        }
+        default {
+          self.do-before-updates;
+          $!db.update-object(self);
+        }
       }
       self.update-db-attrs;
       return True;
     }
     False;
+  }
+
+  method do-before-saves {
+    for @!before-saves { .() }
+  }
+
+  method do-before-creates {
+    for @!before-creates { .() }
+  }
+
+  method do-before-updates {
+    for @!before-updates { .() }
   }
 
   method update-foreign-keys {
