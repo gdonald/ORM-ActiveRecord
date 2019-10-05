@@ -6,7 +6,7 @@ use Test;
 
 class Page {...} # stub
 
-class User is Model is export {
+class User is Model {
   submethod BUILD {
     self.has-many: pages => class => Page;
 
@@ -19,7 +19,7 @@ class User is Model is export {
   }
 }
 
-class Page is Model is export {
+class Page is Model {
   submethod BUILD {
     self.belongs-to: user => class => User;
 

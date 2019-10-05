@@ -127,11 +127,22 @@ class Migration is export {
   }
 
   method add-index(Str:D $table, |params) {
+    my $params = params;
     my $field = params.keys.first;
     my $name = $table ~ '_' ~ $field ~ '_idx';
     my $unique = '';
 
-    for params{$field} -> $param {
+    if !params{$field} {
+      my ($keys, $values) = params[0].kv;
+
+      if $keys ~~ List {
+        $params = $values;
+        $name = $table ~ '_' ~ $keys.join('_') ~ '_idx';
+        $field = $keys.join(', ');
+      }
+    }
+
+    for $params -> $param {
       given $param {
         when /:i unique/ { $unique = ' UNIQUE ' }
         when .so {}

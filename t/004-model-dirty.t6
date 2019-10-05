@@ -4,7 +4,7 @@ use lib 'lib';
 use ORM::ActiveRecord::Model;
 use Test;
 
-class User is Model is export {
+class User is Model {
   submethod BUILD {
     self.validate: 'fname', { :presence }
   }

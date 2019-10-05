@@ -4,7 +4,7 @@ use lib 'lib';
 use ORM::ActiveRecord::Model;
 use Test;
 
-class Client is Model is export {
+class Client is Model {
   submethod BUILD {
     self.validate: 'email', { :presence, :confirmation }
   }

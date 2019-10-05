@@ -1,0 +1,30 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Page {...} # stub
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: pages => class => Page;
+  }
+}
+
+class Page is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+plan 3;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my User $user = User.create({fname => 'Greg', lname => 'Donald'});
+ok $user.is-valid;
+
+my $page = Page.create({:$user, name => 'Raku'});
+ok $page.is-valid;
+ok $page.user_id == $user.id;

@@ -4,7 +4,7 @@ use lib 'lib';
 use ORM::ActiveRecord::Model;
 use Test;
 
-class Contract is Model is export {
+class Contract is Model {
   submethod BUILD {
     self.validate: 'name', { :presence, length => { min => 8, max => 64 } }
     self.validate: 'terms', { :acceptance }
