@@ -4,7 +4,7 @@ use lib 'lib';
 use ORM::ActiveRecord::Model;
 use Test;
 
-class Image is Model is export {
+class Image is Model {
   submethod BUILD {
     self.validate: 'format', { :presence, inclusion => { in => <gif jpeg jpg png> } }
   }

@@ -4,7 +4,7 @@ use lib 'lib';
 use ORM::ActiveRecord::Model;
 use Test;
 
-class Game is Model is export {
+class Game is Model {
   submethod BUILD {
     self.validate: 'name', { :presence, on => { :update } }
     self.validate: 'year', { :presence, :numericality }

@@ -4,7 +4,7 @@ use lib 'lib';
 use ORM::ActiveRecord::Model;
 use Test;
 
-class Person is Model is export {
+class Person is Model {
   submethod BUILD {
     self.validate: 'username', { :uniqueness }
   }

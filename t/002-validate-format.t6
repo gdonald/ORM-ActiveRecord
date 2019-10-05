@@ -6,7 +6,7 @@ use Test;
 
 plan 7;
 
-class Contact is Model is export {
+class Contact is Model {
   submethod BUILD {
     self.validate: 'email', { :presence, format => { with => /:i ^<[\w]>+ '@' <[\w]>+ '.' <[\w]>+$/ } }
   }

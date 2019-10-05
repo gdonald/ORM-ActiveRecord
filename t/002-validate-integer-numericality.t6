@@ -4,7 +4,7 @@ use lib 'lib';
 use ORM::ActiveRecord::Model;
 use Test;
 
-class Book is Model is export {
+class Book is Model {
   submethod BUILD {
     self.validate: 'title', { :presence }
     self.validate: 'pages', { :presence, numericality => { lt => 400 } }

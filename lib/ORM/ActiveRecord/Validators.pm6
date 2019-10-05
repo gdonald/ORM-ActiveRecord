@@ -9,18 +9,18 @@ class Validators is export {
   has @.validators of Validator;
 
   method validate(DB $db, Mu:D $obj) {
-    for @!validators {
-      next unless $obj.^name eq .klass.perl;
-      my $field = .field;
+    for @!validators -> $validator {
+      next unless $obj.^name eq $validator.klass.perl;
+      my $field = $validator.field;
       my $ons = {};
 
-      for .params -> $param {
+      for $validator.params -> $param {
         given $param.keys.first {
           when 'on' { $ons = $param<on> }
         }
       }
 
-      for .params -> $param {
+      for $validator.params -> $param {
         given $param.keys.first {
           when 'presence' { self.validate-presence($obj, $field, $ons, $param) }
           when 'length' { self.validate-length($obj, $field, $ons, $param) }
@@ -30,7 +30,14 @@ class Validators is export {
           when 'inclusion' { self.validate-inclusion($obj, $field, $ons, $param<inclusion>) }
           when 'format' { self.validate-format($obj, $field, $ons, $param<format>) }
           when 'numericality' { self.validate-numericality($obj, $field, $ons, $param) }
-          when 'uniqueness' { self.validate-uniqueness($db, $obj, $field, $ons) }
+          when 'uniqueness' {
+            my ($, $scope) = $param.kv;
+            if $scope ~~ Bool {
+              self.validate-uniqueness($db, $obj, $field, $ons);
+            } else {
+              self.validate-unique-scope($db, $obj, $field, $scope, $ons);
+            }
+          }
           when 'on' {}
           default { say 'unknown validation: ' ~ $param.keys.first; die }
         }
@@ -169,20 +176,34 @@ class Validators is export {
   }
 
   method validate-uniqueness(DB $db, Mu:D $obj, Field:D $field, Hash:D $ons) {
-    return if $obj.id;
+    return if $obj.id || $obj."$field.name()"() ~~ Empty;
 
-    if $obj."$field.name()"() !~~ Empty {
-      my @fields = @$field;
-      my $table = Utils.table-name($obj);
-      my %where = $field.name => $obj."$field.name()"();
-      my %record = $db.get-record(:@fields, :$table, :%where);
+    my @fields = @$field;
+    my $table = Utils.table-name($obj);
+    my %where = $field.name => $obj."$field.name()"();
+    my %record = $db.get-record(:@fields, :$table, :%where);
 
-      my $validate-on = self.validate-on($obj, $ons);
+    my $validate-on = self.validate-on($obj, $ons);
 
-      if $validate-on && %record{$field.name} ~~ $obj."$field.name()"() {
-        my $e = Error.new(:$field, :message('must be unique'));
-        $obj.errors.push($e);
-      }
+    if $validate-on && %record{$field.name} ~~ $obj."$field.name()"() {
+      my $e = Error.new(:$field, :message('must be unique'));
+      $obj.errors.push($e);
+    }
+  }
+
+  method validate-unique-scope(DB $db, Mu:D $obj, Field:D $field, Pair:D $scope, Hash:D $ons) {
+    return if $obj.id || $obj."$field.name()"() ~~ Empty;
+
+    my @fields = @$field;
+    my $table = Utils.table-name($obj);
+    my $keys = ($field.name, slip($scope.value.keys));
+    my %where = $keys.map({ $_ => $obj."$_"() });
+    my %record = $db.get-record(:@fields, :$table, :%where);
+    my $validate-on = self.validate-on($obj, $ons);
+
+    if $validate-on && %record{$field.name} ~~ $obj."$field.name()"() {
+      my $e = Error.new(:$field, :message('must be unique'));
+      $obj.errors.push($e);
     }
   }
 }

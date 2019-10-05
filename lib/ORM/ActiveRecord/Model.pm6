@@ -49,6 +49,11 @@ class Model is export {
   }
 
   method FALLBACK(Str:D $name, *@rest) is raw {
+    if $name ~~ /_id$/ && %!attrs«$name» == 0 {
+      my $base-name = $name.subst(/_id$/, '');
+      return self."$base-name"().id;
+    }
+
     return-rw %!attrs«$name» if %!attrs«$name»:exists;
 
     if any(%!has-manys.keys) eq $name {
@@ -68,10 +73,6 @@ class Model is export {
   method is-dirty(--> Bool) {
     for %!attrs.keys -> $key { return True if %!attrs«$key» !~~ %!attrs-db«$key» }
     False;
-  }
-
-  method get-fields(Str:D $table) {
-    $!db.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
   }
 
   method belongs-to(*%rest) {
@@ -253,8 +254,13 @@ class Model is export {
     $!validators.validators.push($v);
   }
 
+  method get-fields(Str:D $table) {
+    $!db.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
+  }
+
   method get-field(Str:D $name) {
     for self.fields { return $_ if .name ~~ $name }
+    for self.fields { return $_ if .name ~~ $name ~ '_id' && .type ~~ 'integer' }
   }
 
   method count {
