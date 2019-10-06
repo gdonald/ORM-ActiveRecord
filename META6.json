@@ -1,7 +1,7 @@
 {
   "name": "ORM::ActiveRecord",
-  "description": "Object-relational mapping module for Raku",
-  "version": "0.0.6",
+  "description": "Object-relational mapping module for Rakudo Perl 6",
+  "version": "0.0.7",
   "perl": "6.d",
   "authors": [
     "Greg Donald"
