@@ -14,7 +14,6 @@ plan 3;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my @errors;
 my User $user;
 
 $user = User.create({fname => 'Fred'});
