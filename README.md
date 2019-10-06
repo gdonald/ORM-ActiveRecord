@@ -155,8 +155,7 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
 
 #### TODO
 
-- [ ] Model: scopes
-- [ ] Validation: custom error messages
 - [ ] Validation: if: and unless:
+- [ ] Model: scopes
 - [ ] Model: has-many => through
 - [ ] Documentation
