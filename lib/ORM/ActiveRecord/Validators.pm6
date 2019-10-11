@@ -14,6 +14,8 @@ class Validators is export {
       next unless $obj.^name eq $validator.klass.perl;
       my $field = $validator.field;
       my $ons = {};
+      my $if = -> { True };
+      my $unless = -> { False };
       my $exclusion = {};
       my $inclusion = {};
       my $format = {};
@@ -22,6 +24,8 @@ class Validators is export {
       for $validator.params -> $param {
         given $param.keys.first {
           when 'on' { $ons = $param<on> }
+          when /if/ { $if = $param{"if\tTrue"} }
+          when /unless/ { $unless = $param{"unless\tTrue"} }
           when 'message' { $msg = $param<message> }
           when 'exclusion' { $exclusion = $param<exclusion> }
           when 'inclusion' { $inclusion = $param<inclusion> }
@@ -31,33 +35,33 @@ class Validators is export {
 
       for $validator.params -> $param {
         given $param.keys.first {
-          when 'presence' { self.validate-presence(:$obj, :$field, :$ons, :$param, :$msg) }
-          when 'length' { self.validate-length(:$obj, :$field, :$ons, :$param, :$msg) }
-          when 'acceptance' { self.validate-acceptance(:$obj, :$field, :$ons, :$msg) }
-          when 'confirmation' { self.validate-confirmation(:$obj, :$field, :$ons, :$msg) }
-          when 'exclusion' { self.validate-exclusion(:$obj, :$field, :$ons, :$exclusion, :$msg) }
-          when 'inclusion' { self.validate-inclusion(:$obj, :$field, :$ons, :$inclusion, :$msg) }
-          when 'format' { self.validate-format(:$obj, :$field, :$ons, :$format, :$msg) }
-          when 'numericality' { self.validate-numericality(:$obj, :$field, :$ons, :$param, :$msg) }
-          when 'uniqueness' { self.validate-uniqueness(:$db, :$obj, :$field, :$ons, :$param, :$msg) }
-          when /on|message/ {}
+          when 'presence' { self.validate-presence(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
+          when 'length' { self.validate-length(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
+          when 'acceptance' { self.validate-acceptance(:$obj, :$field, :$ons, :$if, :$unless, :$msg) }
+          when 'confirmation' { self.validate-confirmation(:$obj, :$field, :$ons, :$if, :$unless, :$msg) }
+          when 'exclusion' { self.validate-exclusion(:$obj, :$field, :$ons, :$if, :$unless, :$exclusion, :$msg) }
+          when 'inclusion' { self.validate-inclusion(:$obj, :$field, :$ons, :$if, :$unless, :$inclusion, :$msg) }
+          when 'format' { self.validate-format(:$obj, :$field, :$ons, :$if, :$unless, :$format, :$msg) }
+          when 'numericality' { self.validate-numericality(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
+          when 'uniqueness' { self.validate-uniqueness(:$db, :$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
+          when /on|message|if|unless/ {}
           default { say 'unknown validation: ' ~ $param.keys.first; die }
         }
       }
     }
   }
 
-  method validate-uniqueness(DB :$db, Mu:D :$obj, Field:D :$field, Hash:D :$ons, Pair:D :$param, Str:D :$msg) {
+  method validate-uniqueness(DB :$db, Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg) {
     my ($, $scope) = $param.kv;
 
     if $scope ~~ Bool {
-      self.validate-unique(:$db, :$obj, :$field, :$ons, :$msg);
+      self.validate-unique(:$db, :$obj, :$field, :$ons, :$if, :$unless, :$msg);
     } else {
-      self.validate-unique-scope(:$db, :$obj, :$field, :$scope, :$ons, :$msg);
+      self.validate-unique-scope(:$db, :$obj, :$field, :$scope, :$ons, :$if, :$unless, :$msg);
     }
   }
 
-  method validate-unique(DB :$db, Mu:D :$obj, Field:D :$field, Hash:D :$ons, Str:D :$msg) {
+  method validate-unique(DB :$db, Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg) {
     return if $obj.id || $obj."$field.name()"() ~~ Empty;
 
     my @fields = @$field;
@@ -67,7 +71,7 @@ class Validators is export {
 
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    if $validate-on && %record{$field.name} ~~ $obj."$field.name()"() {
+    if $if() && !$unless() && $validate-on && %record{$field.name} ~~ $obj."$field.name()"() {
       my $value = '';
       my $template = $msg || 'must be unique';
       my $message = Message.build(:$template, :$obj, :$field, :$value);
@@ -76,7 +80,7 @@ class Validators is export {
     }
   }
 
-  method validate-unique-scope(DB :$db, Mu:D :$obj, Field:D :$field, Pair:D :$scope, Hash:D :$ons, Str:D :$msg) {
+  method validate-unique-scope(DB :$db, Mu:D :$obj, Field:D :$field, Pair:D :$scope, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg) {
     return if $obj.id || $obj."$field.name()"() ~~ Empty;
 
     my @fields = @$field;
@@ -86,7 +90,7 @@ class Validators is export {
     my %record = $db.get-record(:@fields, :$table, :%where);
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    if $validate-on && %record{$field.name} ~~ $obj."$field.name()"() {
+    if $if() && !$unless() && $validate-on && %record{$field.name} ~~ $obj."$field.name()"() {
       my $template = $msg || 'must be unique';
       my $message = Message.build(:$template, :$obj, :$field);
       my $e = Error.new(:$field, :$message);
@@ -94,10 +98,10 @@ class Validators is export {
     }
   }
 
-  method validate-presence(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Pair:D :$param, Str:D :$msg) {
+  method validate-presence(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    if $validate-on && !$obj."$field.name()"() {
+    if $if() && !$unless() && $validate-on && !$obj."$field.name()"() {
       my $template = $msg || 'must be present';
       my $message = Message.build(:$template, :$obj, :$field);
       my $e = Error.new(:$field, :$message);
@@ -105,7 +109,7 @@ class Validators is export {
     }
   }
 
-  method validate-length(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Pair:D :$param, Str:D :$msg) {
+  method validate-length(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     my $max = $param<length><max>;
@@ -116,7 +120,7 @@ class Validators is export {
     my $str = $obj."$field.name()"();
     my $chars = $str ?? $str.chars !! 0;
 
-    if $validate-on && $max && $chars > $max {
+    if $if() && !$unless() && $validate-on && $max && $chars > $max {
       my $value = "$max";
       my $template = $msg || 'only {value} characters allowed';
       my $message = Message.build(:$template, :$obj, :$field, :$value);
@@ -124,7 +128,7 @@ class Validators is export {
       $obj.errors.push($e);
     }
 
-    if $validate-on && $min && $chars < $min {
+    if $if() && !$unless() && $validate-on && $min && $chars < $min {
       my $value = "$min";
       my $template = $msg || 'at least {value} characters required';
       my $message = Message.build(:$template, :$obj, :$field, :$value);
@@ -132,7 +136,7 @@ class Validators is export {
       $obj.errors.push($e);
     }
 
-    if $validate-on && $is && $chars != $is {
+    if $if() && !$unless() && $validate-on && $is && $chars != $is {
       my $value = "$is";
       my $template = $msg || 'exactly {value} characters required';
       my $message = Message.build(:$template, :$obj, :$field, :$value);
@@ -140,7 +144,7 @@ class Validators is export {
       $obj.errors.push($e);
     }
 
-    if $validate-on && $in && $chars !~~ $in {
+    if $if() && !$unless() && $validate-on && $in && $chars !~~ $in {
       my $value = "{$in.min} to {$in.max}";
       my $template = $msg || '{value} characters required';
       my $message = Message.build(:$template, :$obj, :$field, :$value);
@@ -149,10 +153,10 @@ class Validators is export {
     }
   }
 
-  method validate-acceptance(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Str:D :$msg) {
+  method validate-acceptance(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    unless $validate-on && $obj."$field.name()"() {
+    unless $if() && !$unless() && $validate-on && $obj."$field.name()"() {
       my $template = $msg || 'must be accepted';
       my $message = Message.build(:$template, :$obj, :$field);
       my $e = Error.new(:$field, :$message);
@@ -160,10 +164,10 @@ class Validators is export {
     }
   }
 
-  method validate-confirmation(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Str:D :$msg) {
+  method validate-confirmation(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    if $validate-on && $obj."{$field.name()}_confirmation"() ~~ Empty || $obj."{$field.name()}_confirmation"() !~~ $obj."$field.name()"() {
+    if $if() && !$unless() && $validate-on && $obj."{$field.name()}_confirmation"() ~~ Empty || $obj."{$field.name()}_confirmation"() !~~ $obj."$field.name()"() {
       my $template = $msg || 'must be confirmed';
       my $message = Message.build(:$template, :$obj, :$field);
       my $e = Error.new(:$field, :$message);
@@ -171,10 +175,10 @@ class Validators is export {
     }
   }
 
-  method validate-exclusion(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Hash:D :$exclusion, Str:D :$msg) {
+  method validate-exclusion(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Hash:D :$exclusion, Str:D :$msg) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    if $validate-on && !$obj."$field.name()"() || $obj."$field.name()"() (elem) $exclusion<in> {
+    if $if() && !$unless() && $validate-on && !$obj."$field.name()"() || $obj."$field.name()"() (elem) $exclusion<in> {
       my $template = $msg || 'is invalid';
       my $message = Message.build(:$template, :$obj, :$field);
       my $e = Error.new(:$field, :$message);
@@ -182,10 +186,10 @@ class Validators is export {
     }
   }
 
-  method validate-inclusion(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Hash:D :$inclusion, Str:D :$msg) {
+  method validate-inclusion(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Hash:D :$inclusion, Str:D :$msg) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    if $validate-on && $obj."$field.name()"() ~~ Empty || (not $obj."$field.name()"() (elem) $inclusion<in>) {
+    if $if() && !$unless() && $validate-on && $obj."$field.name()"() ~~ Empty || (not $obj."$field.name()"() (elem) $inclusion<in>) {
       my $template = $msg || 'is invalid';
       my $message = Message.build(:$template, :$obj, :$field);
       my $e = Error.new(:$field, :$message);
@@ -193,10 +197,10 @@ class Validators is export {
     }
   }
 
-  method validate-format(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Hash:D :$format, Str:D :$msg) {
+  method validate-format(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Hash:D :$format, Str:D :$msg) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    if $validate-on && $obj."$field.name()"() !~~ $format<with> {
+    if $if() && !$unless() && $validate-on && $obj."$field.name()"() !~~ $format<with> {
       my $template = $msg || 'is invalid';
       my $message = Message.build(:$template, :$obj, :$field);
       my $e = Error.new(:$field, :$message);
@@ -204,7 +208,7 @@ class Validators is export {
     }
   }
 
-  method validate-numericality(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Pair:D :$param, Str:D :$msg) {
+  method validate-numericality(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     my $gt = $param<numericality><gt>;
@@ -215,7 +219,7 @@ class Validators is export {
 
     my $number = $obj."$field.name()"().Int;
 
-    if $validate-on && $gt && $number <= $gt {
+    if $if() && !$unless() && $validate-on && $gt && $number <= $gt {
       my $value = "$gt";
       my $template = $msg || 'more than {value} required';
       my $message = Message.build(:$template, :$obj, :$field, :$value);
@@ -223,7 +227,7 @@ class Validators is export {
       $obj.errors.push($e);
     }
 
-    if $validate-on && $gte && $number < $gte {
+    if $if() && !$unless() && $validate-on && $gte && $number < $gte {
       my $value = "$gte";
       my $template = $msg || '{value} or more required';
       my $message = Message.build(:$template, :$obj, :$field, :$value);
@@ -231,7 +235,7 @@ class Validators is export {
       $obj.errors.push($e);
     }
 
-    if $validate-on && $lt && $number >= $lt {
+    if $if() && !$unless() && $validate-on && $lt && $number >= $lt {
       my $value = "$lt";
       my $template = $msg || 'less than {value} required';
       my $message = Message.build(:$template, :$obj, :$field, :$value);
@@ -239,7 +243,7 @@ class Validators is export {
       $obj.errors.push($e);
     }
 
-    if $validate-on && $lte && $number > $lte {
+    if $if() && !$unless() && $validate-on && $lte && $number > $lte {
       my $value = "$lte";
       my $template = $msg || '{value} or less required';
       my $message = Message.build(:$template, :$obj, :$field, :$value);
@@ -247,7 +251,7 @@ class Validators is export {
       $obj.errors.push($e);
     }
 
-    if $validate-on && $in && $number !~~ $in {
+    if $if() && !$unless() && $validate-on && $in && $number !~~ $in {
       my $value = "{$in.min} to {$in.max}";
       my $template = $msg || '{value} required';
       my $message = Message.build(:$template, :$obj, :$field, :$value);

@@ -1,0 +1,31 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Book is Model {
+  submethod BUILD {
+    self.validate: 'title', { :presence, :if => { self.returns-true } }
+    self.validate: 'pages', { :presence, :if => { self.returns-false } }
+    self.validate: 'sentences', { :presence, :unless => { self.returns-true } }
+    self.validate: 'words', { :presence, :unless => { self.returns-false } }
+  }
+
+  method returns-true { True }
+  method returns-false { False }
+}
+
+plan 5;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my Book $book;
+
+$book = Book.build;
+nok $book.is-valid;
+
+ok $book.errors.title[0] eq 'must be present';
+nok $book.errors.pages;
+nok $book.errors.sentences;
+ok $book.errors.words[0] eq 'must be present';
