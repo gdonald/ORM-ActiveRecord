@@ -31,6 +31,7 @@
     "ORM::ActiveRecord::Utils": "lib/ORM/ActiveRecord/Utils.pm6",
     "ORM::ActiveRecord::Validator": "lib/ORM/ActiveRecord/Validator.pm6",
     "ORM::ActiveRecord::Validators": "lib/ORM/ActiveRecord/Validators.pm6",
+    "ORM::ActiveRecord::Where": "lib/ORM/ActiveRecord/Where.pm6",
     "ORM::ActiveRecord::X": "lib/ORM/ActiveRecord/X.pm6"
   },
   "resources": [],

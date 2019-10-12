@@ -6,6 +6,7 @@ use ORM::ActiveRecord::Field;
 use ORM::ActiveRecord::Utils;
 use ORM::ActiveRecord::Validator;
 use ORM::ActiveRecord::Validators;
+use ORM::ActiveRecord::Where;
 
 class Model is export {
   has DB $!db;
@@ -159,7 +160,7 @@ class Model is export {
       given $!id {
         when 0 {
           self.do-before-creates;
-          $!id = $!db.create-object(self);
+          %!attrs<id> = $!id = $!db.create-object(self);
           self.do-after-creates;
         }
         default {
@@ -263,9 +264,15 @@ class Model is export {
     for self.fields { return $_ if .name ~~ $name ~ '_id' && .type ~~ 'integer' }
   }
 
-  method count {
+  multi method count {
     my $table = Utils.table-name(self);
-    my %where; # TODO
+    my %where;
+    DB.new.count-records(:$table, :%where);
+  }
+
+  multi method count(Hash:D $params) {
+    my $table = Utils.table-name(self);
+    my %where = $params;
     DB.new.count-records(:$table, :%where);
   }
 
@@ -274,4 +281,13 @@ class Model is export {
     my %where = '1' => '1';
     DB.new.delete-records(:$table, :%where);
   }
+
+  method where(Hash:D $params) {
+    my $class = self;
+    Where.new(:$class, :$params);
+  }
+}
+
+multi sub infix:<==>(Model $a, Model $b --> Bool) is export {
+  $a.id == $b.id && $a.attrs == $b.attrs;
 }
