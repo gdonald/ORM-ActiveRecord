@@ -6,7 +6,7 @@ use ORM::ActiveRecord::Field;
 use ORM::ActiveRecord::Utils;
 use ORM::ActiveRecord::Validator;
 use ORM::ActiveRecord::Validators;
-use ORM::ActiveRecord::Where;
+use ORM::ActiveRecord::Query;
 
 class Model is export {
   has DB $!db;
@@ -284,10 +284,21 @@ class Model is export {
 
   method where(Hash:D $params) {
     my $class = self;
-    Where.new(:$class, :$params);
+    Query.new(:$class, :$params);
   }
 }
 
 multi sub infix:<==>(Model $a, Model $b --> Bool) is export {
-  $a.id == $b.id && $a.attrs == $b.attrs;
+  my @keys = $a.attrs.keys;
+  return False unless @keys.elems == $b.attrs.keys.elems;
+
+  for @keys -> $k {
+    given $a.attrs{$k} {
+      when Numeric { return False unless $a.attrs{$k} == $b.attrs{$k} }
+      when Str     { return False unless $a.attrs{$k} eq $b.attrs{$k} }
+      default      { say 'Unknown type: ' ~ $a.attrs{$k}.^name; die }
+    }
+  }
+
+  True;
 }

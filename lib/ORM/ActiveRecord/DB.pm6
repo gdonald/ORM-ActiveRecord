@@ -121,8 +121,8 @@ class DB is export {
     @objects;
   }
 
-  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where) {
-    my $record = self.get-record(:@fields, :$table, :%where);
+  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :@order) {
+    my $record = self.get-record(:@fields, :$table, :%where, :@order);
     $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
   }
 
@@ -168,8 +168,8 @@ class DB is export {
     @records;
   }
 
-  method get-record(Str:D :$table, :@fields, :%where) {
-    my $sql = self.build-select(:@fields, :$table, :%where, limit => 1);
+  method get-record(Str:D :$table, :@fields, :%where, :@order) {
+    my $sql = self.build-select(:@fields, :$table, :%where, :@order, limit => 1);
     my $row = self.get-rows(:$sql)[0];
     my %record;
     for @fields.kv -> $k, $field { %record{@fields[$k].name} = $row[$k] }
