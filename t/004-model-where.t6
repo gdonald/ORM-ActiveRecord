@@ -1,0 +1,32 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Page is Model {}
+class Subscription is Model {}
+
+class User is Model {
+  submethod BUILD {
+    self.validate: 'fname', { :presence }
+  }
+}
+
+plan 4;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Page.destroy-all;
+Subscription.destroy-all;
+User.destroy-all;
+
+my $fred = User.create({fname => 'Fred'});
+ok $fred.is-valid;
+my $barney = User.create({fname => 'Barney'});
+ok $barney.is-valid;
+
+ok User.count == 2;
+
+my $result = User.where({fname => 'Fred'}).first;
+ok $result == $fred;
