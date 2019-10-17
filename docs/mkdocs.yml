@@ -1,0 +1,16 @@
+site_name: ORM::ActiveRecord
+nav:
+  - Home: index.md
+  - Migrations: migrations.md
+  - Models:
+    - Info: models/models.md
+    - Callbacks: models/callbacks.md
+  - Validations:
+    - Data: validations/data.md
+    - Conditionals: validations/conditionals.md
+  - Tests: tests.md
+theme:
+  name: 'material'
+markdown_extensions:
+  - codehilite:
+      linenums: true
