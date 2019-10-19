@@ -3,6 +3,8 @@ use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Error;
 use ORM::ActiveRecord::Errors;
 use ORM::ActiveRecord::Field;
+use ORM::ActiveRecord::Scope;
+use ORM::ActiveRecord::Scopes;
 use ORM::ActiveRecord::Utils;
 use ORM::ActiveRecord::Validator;
 use ORM::ActiveRecord::Validators;
@@ -30,6 +32,8 @@ class Model is export {
   has @.after-updates;
   has @.after-creates;
 
+  my Scopes $.scopes;
+
   submethod DESTROY {
     $!db = Nil;
   }
@@ -50,6 +54,10 @@ class Model is export {
   }
 
   method FALLBACK(Str:D $name, *@rest) is raw {
+    if $?CLASS.scopes.exists($name) {
+      return $?CLASS.scopes.exec($name);
+    }
+
     if $name ~~ /_id$/ && %!attrs«$name» == 0 {
       my $base-name = $name.subst(/_id$/, '');
       return self."$base-name"().id;
@@ -69,6 +77,10 @@ class Model is export {
       my @fields = self.get-fields($table);
       return $!db.get-object(class => %!belongs-tos{$name}{'class'}, :@fields, :$table, where => :$id);
     }
+
+    return if $name ~~ /_confirmation/;
+
+    say 'Unknown attribute or method "' ~ $name ~ '"'; die;
   }
 
   method is-dirty(--> Bool) {
@@ -248,11 +260,20 @@ class Model is export {
     $!errors.errors.elems.so;
   }
 
-  method validate(Str:D $field_name, Hash:D $params) {
+  method validate(Str:D $name, Hash:D $params) {
     my $klass = self.WHAT;
-    my $field = self.get-field($field_name);
+    my $field = self.get-field($name);
+    if $field !~~ Field { say 'Field "' ~ $name ~ '" does not exist'; die }
+
     my $v = Validator.new(:$klass, :$field, :$params);
     $!validators.validators.push($v);
+  }
+
+  method scope(Str:D $name, Block:D $block) {
+    my $klass = self.WHAT;
+
+    my $s = Scope.new(:$klass, :$name, :$block);
+    $?CLASS.scopes.scopes.push($s);
   }
 
   method get-fields(Str:D $table) {
