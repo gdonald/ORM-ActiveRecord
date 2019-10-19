@@ -1,7 +1,6 @@
-
 # ORM::ActiveRecord
 
-ORM::ActiveRecord is an [object-relational mapping](https://en.wikipedia.org/wiki/Object-relational_mapping) module for Raku that mostly follows the [Active Record Pattern](https://en.wikipedia.org/wiki/Active_record_pattern).
+ORM::ActiveRecord is an [object-relational mapping](https://en.wikipedia.org/wiki/Object-relational_mapping) module for Raku that *mostly* follows the [Active Record Pattern](https://en.wikipedia.org/wiki/Active_record_pattern).
 
 ## Documentation
 
@@ -15,29 +14,26 @@ zef install --/test ORM::ActiveRecord
 
 `--/test` is suggested because you probably don't have a test database setup.
 
-## Example Usage
+## Simple Example
 
 ```perl6
-use User;
-use Page;
-
-my User $user = User.create({fname => 'Greg', lname => 'Donald'});
-
-Page.create({:$user, name => 'Raku'});
+my $user = User.create({fname => 'Greg'});
+my $page = Page.create({:$user, name => 'Rakuist'});
 
 say $user.pages.first.name;
-Perl 6
+Rakuist
 
-say $page.user.fullname;
-Greg Donald
+say $page.user.fname;
+Greg
 
-my User $alfred = User.create({fname => 'Alfred E.', lname => 'Neuman'});
+my $alfred = User.create({fname => 'Fred'});
+$page.update({user => $fred});
 
-$page.update({user => $alfred});
-
-say $page.user.fullname
-Alfred E. Neuman
+say $page.user.fname;
+Fred
 ```
+
+Please see the [documentation](http://docs.rakuist.io/orm-activerecord) for more examples.
 
 ## Build Status
 
@@ -47,9 +43,19 @@ Alfred E. Neuman
 
 ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensource.org/licenses/Artistic-2.0)
 
+## Features
+
+- [x] Migrations
+- [x] Validations
+- [x] Callbacks
+- [x] Scopes
+- [x] Dirty
+- [x] Custom Errors
+- [x] PostgreSQL support
+
 ## TODO
 
-- [ ] Model: scopes
 - [ ] Model: has-many => through
 - [ ] Migration generator
 - [ ] Model generator
+- [ ] Support for MySQL, SQLite, and Oracle.

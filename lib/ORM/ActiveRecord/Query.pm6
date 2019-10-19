@@ -18,6 +18,10 @@ class Query is export {
     DB.new.get-objects(:$!table, :$!class, :@!fields, :where($!params));
   }
 
+  method all {
+    self.perform;
+  }
+
   method count {
     DB.new.count-records(:$!table, :where($!params));
   }

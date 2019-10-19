@@ -30,7 +30,7 @@ This allows chaining method calls together like this:
 
 ```perl6
 my $user = User.create({fname => 'Greg'});
-my $page = Page.create({:$user, name => 'Raku'});
+my $page = Page.create({:$user, name => 'Rakuist'});
 
 say $user.pages.first.name;
 say $page.user.fname;
@@ -39,7 +39,7 @@ say $page.user.fname;
 Output
 
 ```shell
-Raku
+Rakuist
 Greg
 ```
 
@@ -78,6 +78,42 @@ say $result == $fred;
 Output
 
 ```shell
+True
+```
+
+## Scope
+
+Frequently used queries can be made into a `scope` for easier access.  Scopes live on the model type, not on an instance of the type, so we use `$?CLASS` to point to the existing class.  The contents of the scope is a lazy block that is only evaluated when required.
+
+```perl6
+use ORM::ActiveRecord::Model;
+
+class Image is Model {
+  $?CLASS.scope: 'jpgs', -> { $?CLASS.where({ext => 'jpg'}) }
+
+  submethod BUILD {
+    self.validate: 'name', { :presence }
+    self.validate: 'ext', { :presence, inclusion => { in => <jpg png> } }
+  }
+}
+
+my $foo = Image.create({name => 'foo', ext => 'jpg'});
+my $bar = Image.create({name => 'bar', ext => 'jpg'});
+my $baz = Image.create({name => 'baz', ext => 'png'});
+say Image.count;
+
+my @images = Image.jpgs.all;
+say any(@images) == $foo;
+say any(@images) == $bar;
+say none(@images) == $baz;
+```
+
+Output
+
+```shell
+3
+True
+True
 True
 ```
 

@@ -1,0 +1,30 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Image is Model {
+  $?CLASS.scope: 'jpgs', -> { $?CLASS.where({ext => 'jpg'}) }
+
+  submethod BUILD {
+    self.validate: 'name', { :presence }
+    self.validate: 'ext', { :presence, inclusion => { in => <gif jpeg jpg png> } }
+  }
+}
+
+plan 4;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Image.destroy-all;
+
+my $foo = Image.create({name => 'foo', ext => 'jpg'});
+my $bar = Image.create({name => 'bar', ext => 'jpg'});
+my $baz = Image.create({name => 'baz', ext => 'png'});
+ok Image.count == 3;
+
+my @images = Image.jpgs.all;
+ok any(@images) == $foo;
+ok any(@images) == $bar;
+ok none(@images) == $baz;

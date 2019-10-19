@@ -6,7 +6,7 @@ use Test;
 
 class Image is Model {
   submethod BUILD {
-    self.validate: 'format', { :presence, inclusion => { in => <gif jpeg jpg png> } }
+    self.validate: 'ext', { :presence, inclusion => { in => <gif jpeg jpg png> } }
   }
 }
 
@@ -20,13 +20,13 @@ my Image $image;
 $image = Image.build({});
 ok $image.is-invalid;
 @errors = ['must be present', 'is invalid'];
-ok @errors.grep: $image.errors.format[0];
-ok @errors.grep: $image.errors.format[1];
+ok @errors.grep: $image.errors.ext[0];
+ok @errors.grep: $image.errors.ext[1];
 
-$image = Image.build({format => 'foo'});
+$image = Image.build({ext => 'foo'});
 ok $image.is-invalid;
-ok $image.errors.format[0] eq 'is invalid';
+ok $image.errors.ext[0] eq 'is invalid';
 
-$image = Image.build({format => 'jpg'});
+$image = Image.build({ext => 'jpg'});
 ok $image.is-valid;
 nok $image.errors.format;

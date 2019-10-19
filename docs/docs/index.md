@@ -2,6 +2,8 @@
 
 The latest version of this documentation lives at [http://docs.rakuist.io/orm-activerecord/](http://docs.rakuist.io/orm-activerecord/).
 
+The homepage for ORM::ActiveRecord is [https://rakuist.io/modules/orm-activerecord](https://rakuist.io/modules/orm-activerecord).
+
 ## Synopsis
 
 ORM::ActiveRecord is an [object-relational mapping](https://en.wikipedia.org/wiki/Object-relational_mapping) module for Rakudo Perl 6 that *mostly* follows the [Active Record Pattern](https://en.wikipedia.org/wiki/Active_record_pattern).
@@ -13,7 +15,7 @@ use User;
 use Page;
 
 my User $user = User.create({fname => 'Greg'});
-my Page $page = Page.create({:$user, name => 'Raku'});
+my Page $page = Page.create({:$user, name => 'Rakuist'});
 
 say $user.pages.first.name;
 say $page.user.fname;
@@ -27,7 +29,7 @@ say $page.user.fname
 Output:
 
 ```shell
-Raku
+Rakuist
 Greg
 Alfred
 ```
