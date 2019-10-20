@@ -16,7 +16,7 @@ plan 22;
 %*ENV<DISABLE-SQL-LOG> = True;
 
 my @errors;
-my Game $game;
+my $game;
 
 $game = Game.create({year => 1987});
 ok $game.id;
@@ -52,3 +52,5 @@ ok $game.name eq 'Super Metroid';
 ok $game.save;
 ok $game.name eq 'Super Metroid';
 nok $game.errors.name;
+
+Game.destroy-all;

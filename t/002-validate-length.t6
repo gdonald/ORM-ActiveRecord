@@ -35,3 +35,5 @@ ok $contact.errors.fname[0] eq 'exactly 7 characters required';
 $contact = Contact.build({email => 'foo@bar.com', fname => 'Gregory', lname => 'x' x 3});
 ok $contact.is-invalid;
 ok $contact.errors.lname[0] eq '4 to 32 characters required';
+
+Contact.destroy-all;

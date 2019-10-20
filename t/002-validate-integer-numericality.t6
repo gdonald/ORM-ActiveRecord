@@ -65,3 +65,5 @@ ok $book.is-valid;
 $book.commas = 201;
 ok $book.is-invalid;
 ok $book.errors.commas[0] eq '200 or less required';
+
+Book.destroy-all;

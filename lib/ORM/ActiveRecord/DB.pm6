@@ -39,6 +39,13 @@ class DB is export {
     $query.execute;
   }
 
+  method rollback {
+    my $sql = 'ROLLBACK';
+    Log.sql(:$sql);
+    my $query = $!db.prepare($sql);
+    $query.execute;
+  }
+
   method exec(Str:D $sql) {
     Log.sql(:$sql);
     my $query = $!db.prepare($sql);
@@ -90,15 +97,26 @@ class DB is export {
       SQL
   }
 
-  method build-select(Str:D :$table, :@fields, :%where, :@order, Int:D :$limit=0) {
-    my $select = @fields.map({ $_.name }).join(', ');
+  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :@order, Int:D :$limit=0) {
+    my $select = @fields.map({ $table ~ '.' ~ $_.name }).join(', ');
     my $where = self.build-where(%where);
     my $order = @order ?? "ORDER BY @order.join(', ')" !! '';
     my $limit_ = $limit ?? "LIMIT $limit" !! '';
+    my $join = '';
+
+    if $join-table {
+      my $foreign-key = Utils.to-foreign-key($table);
+
+      $join = qq:to/SQL/;
+        LEFT JOIN $join-table
+        ON $table.id = $join-table.$foreign-key
+      SQL
+    }
 
     qq:to/SQL/;
       SELECT $select
 	    FROM $table
+      $join
 	    WHERE $where
       $order
       $limit_
@@ -109,8 +127,8 @@ class DB is export {
     %where.keys.map({ "$_ = '%where{$_}'" }).join(' AND ');
   }
 
-  method get-objects(Str:D :$table, Mu:U :$class, :@fields, :%where) {
-    my @records = self.get-records(:@fields, :$table, :%where);
+  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where) {
+    my @records = self.get-records(:@fields, :$table, :$join-table, :%where);
     my @objects;
 
     for @records.kv -> $k, $record {
@@ -155,9 +173,9 @@ class DB is export {
     $query.allrows;
   }
 
-  method get-records(Str:D :$table, :@fields, :%where) {
+  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where) {
     my @records;
-    my $sql = self.build-select(:@fields, :$table, :%where);
+    my $sql = self.build-select(:@fields, :$join-table, :$table, :%where);
 
     for self.get-rows(:$sql).kv -> $k, $row {
       my %record;

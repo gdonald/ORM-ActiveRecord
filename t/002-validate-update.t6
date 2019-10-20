@@ -15,7 +15,7 @@ plan 20;
 %*ENV<DISABLE-SQL-LOG> = True;
 
 my @errors;
-my User $user;
+my $user;
 
 $user = User.create({fname => 'Fred'});
 ok $user.id != 0;
@@ -43,3 +43,5 @@ nok $user.update({fname => 'x' x 33});
 ok $user.is-invalid;
 nok $user.is-valid;
 ok $user.errors.fname[0] eq 'only 32 characters allowed';
+
+User.destroy-all;

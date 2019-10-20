@@ -15,8 +15,8 @@ plan 2;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my User $user;
-
-$user = User.build({fname => 'Foo'});
+my $user = User.build({fname => 'Foo'});
 nok $user.is-valid;
 ok $user.errors.fname eq 'User fname needs at least 4 characters';
+
+User.destroy-all;

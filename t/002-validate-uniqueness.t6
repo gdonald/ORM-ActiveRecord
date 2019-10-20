@@ -16,8 +16,7 @@ plan 4;
 
 Person.destroy-all;
 
-my @errors;
-my Person $person;
+my $person;
 
 $person = Person.create({username => 'alfred'});
 ok $person.is-valid;
@@ -26,3 +25,5 @@ nok $person.errors.username;
 $person = Person.build({username => 'alfred'});
 ok $person.is-invalid;
 ok $person.errors.username[0] eq 'must be unique';
+
+Person.destroy-all;

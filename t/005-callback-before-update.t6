@@ -19,12 +19,10 @@ plan 2;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-Client.destroy-all;
-
-my Client $client;
-
-$client = Client.create({ email => 'Fred@AOL.com' });
+my $client = Client.create({ email => 'Fred@AOL.com' });
 ok $client.email eq 'Fred@AOL.com';
 
 $client.save;
 ok $client.email eq 'fred@aol.com';
+
+Client.destroy-all;

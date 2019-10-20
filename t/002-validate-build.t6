@@ -43,3 +43,5 @@ $user = User.build({fname => 'Greg', lname => 'Donald'});
 nok $user.id;
 nok $user.is-invalid;
 ok $user.is-valid;
+
+User.destroy-all;

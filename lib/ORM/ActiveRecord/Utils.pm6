@@ -11,4 +11,12 @@ class Utils is export {
   multi method table-name(Mu:U $type) {
     $type.^name.lc ~ 's';
   }
+
+  method singular(Str:D $name) {
+    $name.subst(/s$/, '');
+  }
+
+  method to-foreign-key(Str:D $name) {
+    Utils.singular($name) ~ '_id';
+  }
 }
