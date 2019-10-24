@@ -10,38 +10,25 @@ class User is Model {
   submethod BUILD {
     self.has-many: subscriptions => class => Subscription;
     self.has-many: magazines => through => :subscriptions;
-
-    self.validate: 'fname', { :presence }
   }
 }
 
-class Magazine is Model {
-  submethod BUILD {
-    self.has-many: subscriptions => class => Subscription;
-
-    self.validate: 'title', { :presence }
-  }
-}
+class Magazine is Model {}
 
 class Subscription is Model {
   submethod BUILD {
     self.belongs-to: user => class => User;
     self.belongs-to: magazine => class => Magazine;
-
-    self.validate: 'user_id', { uniqueness => scope => :magazine_id }
   }
 }
 
-plan 2;
+plan 1;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my $subscription;
-
 my $user = User.create({fname => 'Greg'});
 my $magazine = Magazine.create({title => 'Mad'});
-$subscription = Subscription.create({:$user, :$magazine});
-ok $subscription.is-valid;
+Subscription.create({:$user, :$magazine});
 
 ok $user.magazines.first == $magazine;
 

@@ -117,6 +117,44 @@ True
 True
 ```
 
+## Has Many Through
+
+You can access related models using `has-many` with `through`.
+
+In this example a `user` has access to `magazines` through the `subscriptions` model:
+
+```perl6
+class Subscription {...} # stub
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: subscriptions => class => Subscription;
+    self.has-many: magazines => through => :subscriptions;
+  }
+}
+
+class Magazine is Model {}
+
+class Subscription is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+    self.belongs-to: magazine => class => Magazine;
+  }
+}
+
+my $user = User.create({fname => 'Greg'});
+my $magazine = Magazine.create({title => 'Mad'});
+Subscription.create({:$user, :$magazine});
+
+say $user.magazines.first == $magazine;
+```
+
+Output
+
+```shell
+True
+```
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.
