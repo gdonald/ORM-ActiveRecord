@@ -30,3 +30,5 @@ ok $contact.errors.email[0] eq 'is invalid';
 $contact = Contact.create({email => 'foo@bar.com', fname => 'Gregory', lname => 'Donald'});
 ok $contact.is-valid;
 nok $contact.errors.email;
+
+Contact.destroy-all;

@@ -17,8 +17,6 @@ plan 4;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-Image.destroy-all;
-
 my $foo = Image.create({name => 'foo', ext => 'jpg'});
 my $bar = Image.create({name => 'bar', ext => 'jpg'});
 my $baz = Image.create({name => 'baz', ext => 'png'});
@@ -28,3 +26,5 @@ my @images = Image.jpgs.all;
 ok any(@images) == $foo;
 ok any(@images) == $bar;
 ok none(@images) == $baz;
+
+Image.destroy-all;

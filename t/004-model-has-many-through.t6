@@ -9,6 +9,7 @@ class Subscription {...}
 class User is Model {
   submethod BUILD {
     self.has-many: subscriptions => class => Subscription;
+    self.has-many: magazines => through => :subscriptions;
 
     self.validate: 'fname', { :presence }
   }
@@ -31,7 +32,7 @@ class Subscription is Model {
   }
 }
 
-plan 3;
+plan 2;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -42,9 +43,7 @@ my $magazine = Magazine.create({title => 'Mad'});
 $subscription = Subscription.create({:$user, :$magazine});
 ok $subscription.is-valid;
 
-$subscription = Subscription.build({:$user, :$magazine});
-nok $subscription.is-valid;
-ok $subscription.errors.user_id[0] eq 'must be unique';
+ok $user.magazines.first == $magazine;
 
 Subscription.destroy-all;
 Magazine.destroy-all;

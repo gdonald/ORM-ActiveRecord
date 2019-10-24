@@ -15,7 +15,7 @@ plan 9;
 %*ENV<DISABLE-SQL-LOG> = True;
 
 my @errors;
-my User $user;
+my $user;
 
 $user = User.create();
 ok $user.is-invalid;
@@ -33,3 +33,5 @@ $user.fname = Nil;
 ok $user.save;
 ok $user.is-valid;
 nok $user.errors.fname[0];
+
+User.destroy-all;

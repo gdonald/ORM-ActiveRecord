@@ -24,3 +24,5 @@ ok $contract.errors.terms[0] eq 'must be accepted';
 $contract = Contract.create({name => 'Offical Document', terms => True});
 ok $contract.is-valid;
 nok $contract.errors.terms;
+
+Contract.destroy-all;

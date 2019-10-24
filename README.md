@@ -45,17 +45,44 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
 
 ## Features
 
+- [x] Model:
+    - [x] belongs-to
+    - [x] has-many
+    - [x] has-many -> through
+    - [x] where: all, first, count
+    - [x] Validations
+        - [x] Conditionals: if, unless, on, create, update
+        - [x] Acceptance
+        - [x] Confirmation
+        - [x] Exclusion
+        - [x] Format
+        - [x] Inclusion
+        - [x] Length
+        - [x] Minimum
+        - [x] Maximum
+        - [x] In a range
+        - [x] Is exactly
+        - [x] Numericality
+        - [x] Less than
+        - [x] Less than or equal
+        - [x] Greater than
+        - [x] Greater than or equal
+        - [x] In a range
+        - [x] Presence
+        - [x] Uniqueness
+        - [x] Unique Scope
+    - [x] Callbacks
+        - [x] after: create, save, update
+        - [x] before: create, save, update
+    - [x] Scopes
+    - [x] Dirty
+    - [x] Custom Errors
 - [x] Migrations
-- [x] Validations
-- [x] Callbacks
-- [x] Scopes
-- [x] Dirty
-- [x] Custom Errors
 - [x] PostgreSQL support
 
 ## TODO
 
-- [ ] Model: has-many => through
+- [ ] Includes: for has-many records
 - [ ] Migration generator
 - [ ] Model generator
 - [ ] Support for MySQL, SQLite, and Oracle.

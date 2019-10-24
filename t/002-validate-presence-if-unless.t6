@@ -20,12 +20,12 @@ plan 5;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my Book $book;
-
-$book = Book.build;
+my $book = Book.build;
 nok $book.is-valid;
 
 ok $book.errors.title[0] eq 'must be present';
 nok $book.errors.pages;
 nok $book.errors.sentences;
 ok $book.errors.words[0] eq 'must be present';
+
+Book.destroy-all;

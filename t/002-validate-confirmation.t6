@@ -30,3 +30,5 @@ ok $client.errors.email[0] eq 'must be confirmed';
 $client = Client.build({email => 'fred@aol.com', email_confirmation => 'fred@aol.com'});
 ok $client.is-valid;
 nok $client.errors.email;
+
+Client.destroy-all;

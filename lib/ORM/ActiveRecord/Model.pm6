@@ -68,7 +68,21 @@ class Model is export {
     if any(%!has-manys.keys) eq $name {
       my $fkey-name = Utils.base-name(self.fkey-name);
       my @fields = self.get-fields($name);
-      return $!db.get-objects(class => %!has-manys{$name}{'class'}, :@fields, table => $name, where => $fkey-name => $!id);
+      my $class = Mu:U;
+      my $join-table = '';
+
+      for %!has-manys{$name}.keys -> $key {
+        given $key {
+          when 'class' { $class = %!has-manys{$name}{'class'} }
+          when 'through' {
+            $join-table = %!has-manys{$name}{'through'}.key;
+            $class = self.get-through-class($name, $join-table);
+          }
+          default { say 'Unknown has-many type ' ~ %!has-manys{$name}; die }
+        }
+      }
+
+      return $!db.get-objects(:$class, :@fields, :table($name), :$join-table, :where($fkey-name => $!id));
     }
 
     if any(%!belongs-tos.keys) eq $name {
@@ -81,6 +95,13 @@ class Model is export {
     return if $name ~~ /_confirmation/;
 
     say 'Unknown attribute or method "' ~ $name ~ '"'; die;
+  }
+
+  method get-through-class(Str:D $name, Str:D $join-table) {
+    my $class = %!has-manys{$join-table}{'class'};
+    my $singular = Utils.singular($name);
+
+    $class.new(:id(0)).belongs-tos{$singular}{'class'};
   }
 
   method is-dirty(--> Bool) {

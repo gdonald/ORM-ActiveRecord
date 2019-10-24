@@ -22,9 +22,12 @@ plan 3;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my User $user = User.create({fname => 'Greg', lname => 'Donald'});
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
 ok $user.is-valid;
 
 my $page = Page.create({:$user, name => 'Raku'});
 ok $page.is-valid;
 ok $page.user_id == $user.id;
+
+Page.destroy-all;
+User.destroy-all;

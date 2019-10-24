@@ -36,3 +36,5 @@ ok $person.errors.username[0] eq 'is invalid';
 $person = Person.create({username => 'alfred'});
 ok $person.is-valid;
 nok $person.errors.username;
+
+Person.destroy-all;

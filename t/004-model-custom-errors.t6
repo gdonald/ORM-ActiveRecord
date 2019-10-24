@@ -14,8 +14,8 @@ plan 2;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my User $user;
-
-$user = User.build;
+my $user = User.build;
 nok $user.is-valid;
 ok $user.errors.fname eq 'fname is required';
+
+User.destroy-all;

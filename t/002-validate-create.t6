@@ -43,3 +43,5 @@ $user = User.create({fname => 'Greg'});
 ok $user.id != 0;
 nok $user.is-invalid;
 ok $user.is-valid;
+
+User.destroy-all;

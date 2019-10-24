@@ -31,17 +31,20 @@ plan 5;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my User $user = User.create({fname => 'Greg', lname => 'Donald'});
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
 ok $user.id;
 
 Page.create({:$user, name => 'Raku'});
 
-my Page $page = $user.pages.first;
+my $page = $user.pages.first;
 ok $page.name eq 'Raku';
 ok $page.user.fullname eq 'Greg Donald';
 
-my User $alfred = User.create({fname => 'Alfred E.', lname => 'Neuman'});
+my $alfred = User.create({fname => 'Alfred E.', lname => 'Neuman'});
 ok $alfred.id;
 
 $page.update({user => $alfred});
 ok $page.user.fullname eq 'Alfred E. Neuman';
+
+Page.destroy-all;
+User.destroy-all;

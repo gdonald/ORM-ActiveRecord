@@ -14,9 +14,8 @@ plan 8;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my @errors;
-my User $user;
-my User $user2;
+my $user;
+my $user2;
 
 $user = User.create({fname => 'Fred'});
 nok $user.is-dirty;
@@ -34,3 +33,5 @@ $user2.fname = 'Jim';
 ok $user2.is-dirty;
 
 nok $user.is-dirty;
+
+User.destroy-all;

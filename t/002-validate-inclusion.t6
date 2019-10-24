@@ -30,3 +30,5 @@ ok $image.errors.ext[0] eq 'is invalid';
 $image = Image.build({ext => 'jpg'});
 ok $image.is-valid;
 nok $image.errors.format;
+
+Image.destroy-all;
