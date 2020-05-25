@@ -3,6 +3,4 @@
 config/application.json
 ORMActiveRecord.iml
 error.log
-site
 .DS_Store
-

@@ -1,8 +1,8 @@
 # ORM::ActiveRecord
 
-The latest version of this documentation lives at [http://docs.rakuist.io/orm-activerecord/](http://docs.rakuist.io/orm-activerecord/).
+The latest version of this documentation lives at [https://gdonald.github.io/ORM-ActiveRecord/](https://gdonald.github.io/ORM-ActiveRecord/).
 
-The homepage for ORM::ActiveRecord is [https://rakuist.io/modules/orm-activerecord](https://rakuist.io/modules/orm-activerecord).
+The homepage for ORM::ActiveRecord is [https://github.com/gdonald/ORM-ActiveRecord](https://github.com/gdonald/ORM-ActiveRecord).
 
 ## Synopsis
 

@@ -4,7 +4,7 @@ ORM::ActiveRecord is an [object-relational mapping](https://en.wikipedia.org/wik
 
 ## Documentation
 
-[http://docs.rakuist.io/orm-activerecord](http://docs.rakuist.io/orm-activerecord)
+[https://gdonald.github.io/ORM-ActiveRecord/](https://gdonald.github.io/ORM-ActiveRecord/)
 
 ## Install using zef
 
@@ -33,11 +33,11 @@ say $page.user.fname;
 Fred
 ```
 
-Please see the [documentation](http://docs.rakuist.io/orm-activerecord) for more examples.
+Please see the [documentation](https://gdonald.github.io/ORM-ActiveRecord/) for more examples.
 
 ## Build Status
 
-[![Build Status](https://travis-ci.org/rakuist/ORM-ActiveRecord.svg?branch=master)](https://travis-ci.org/rakuist/ORM-ActiveRecord)
+[![Build Status](https://travis-ci.org/gdonald/ORM-ActiveRecord.svg?branch=master)](https://travis-ci.org/gdonald/ORM-ActiveRecord)
 
 ## License
 
