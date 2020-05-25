@@ -1,0 +1,771 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
+    
+    
+      
+        <title>Info - ORM::ActiveRecord</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.30686662.css">
+      
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+    
+      
+    
+    
+  </head>
+  
+    <body dir="ltr">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#models" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="ORM::ActiveRecord" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              ORM::ActiveRecord
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Info
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    ORM::ActiveRecord
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../migrations/" title="Migrations" class="md-nav__link">
+      Migrations
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+    
+    <label class="md-nav__link" for="nav-3">
+      Models
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Models
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Info
+      </label>
+    
+    <a href="./" title="Info" class="md-nav__link md-nav__link--active">
+      Info
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#basic-example" class="md-nav__link">
+    Basic Example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-query" class="md-nav__link">
+    Where Query
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    Scope
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#has-many-through" class="md-nav__link">
+    Has Many Through
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#is-dirty" class="md-nav__link">
+    Is Dirty
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../callbacks/" title="Callbacks" class="md-nav__link">
+      Callbacks
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
+      Validations
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        Validations
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../validations/data/" title="Data" class="md-nav__link">
+      Data
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../validations/conditionals/" title="Conditionals" class="md-nav__link">
+      Conditionals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../tests/" title="Tests" class="md-nav__link">
+      Tests
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#basic-example" class="md-nav__link">
+    Basic Example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-query" class="md-nav__link">
+    Where Query
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    Scope
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#has-many-through" class="md-nav__link">
+    Has Many Through
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#is-dirty" class="md-nav__link">
+    Is Dirty
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <h1 id="models">Models</h1>
+<p>ORM::ActiveRecord supports model relationships, the layer of your app that is responsible for managing data and business logic.</p>
+<h2 id="basic-example">Basic Example</h2>
+<p>In this example the <code>user</code> has many <code>pages</code> and the reverse is also true, a <code>page</code> belongs to a `user.</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Page</span> {...} <span class="c1"># forward declaration</span>
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> <span class="k">is</span> <span class="k">export</span> {
+  <span class="k">submethod</span> <span class="n">BUILD</span> {
+    <span class="k">self</span>.<span class="n">has-many:</span> <span class="n">pages</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Page</span>;
+  }
+}
+
+<span class="k">class</span> <span class="n">Page</span> <span class="k">is</span> <span class="n">Model</span> <span class="k">is</span> <span class="k">export</span> {
+  <span class="k">submethod</span> <span class="n">BUILD</span> {
+    <span class="k">self</span>.<span class="n">belongs-to:</span> <span class="n">user</span> =&gt; <span class="k">class</span> =&gt; <span class="n">User</span>;
+  }
+}
+</pre></div>
+</td></tr></table>
+
+<p>Perl 6 does single-pass compilation.  You must provide forward declarations <code>{...}</code> for any models that have not been defined yet but need to be used in has-many or belongs-to relationships.</p>
+<p>This allows chaining method calls together like this:</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
+<span class="k">my</span> <span class="nv">$page</span> = <span class="n">Page</span>.<span class="n">create</span>({:<span class="nv">$user</span>, <span class="nb">name</span> =&gt; <span class="s">&#39;Rakuist&#39;</span>});
+
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">pages</span>.<span class="nb">first</span>.<span class="nb">name</span>;
+<span class="nb">say</span> <span class="nv">$page</span>.<span class="n">user</span>.<span class="n">fname</span>;
+</pre></div>
+</td></tr></table>
+
+<p>Output</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2</pre></div></td><td class="code"><div class="codehilite"><pre><span></span>Rakuist
+Greg
+</pre></div>
+</td></tr></table>
+
+<p>Access to lower level foreign key relationships is supported.</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><span class="nb">say</span> <span class="nv">$page</span>.<span class="n">user_id</span> == <span class="nv">$user</span>.<span class="n">id</span>;
+</pre></div>
+</td></tr></table>
+
+<p>Output</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="codehilite"><pre><span></span>True
+</pre></div>
+</td></tr></table>
+
+<h2 id="where-query">Where Query</h2>
+<p>To search for a particular record you can issue a <code>where</code> query with a hash for parameters.</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="n">BUILD</span> {
+    <span class="k">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span> }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$fred</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Fred&#39;</span>});
+<span class="k">my</span> <span class="nv">$barney</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Barney&#39;</span>});
+
+<span class="k">my</span> <span class="nv">$result</span> = <span class="n">User</span>.<span class="k">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Fred&#39;</span>}).<span class="nb">first</span>;
+<span class="nb">say</span> <span class="nv">$result</span> == <span class="nv">$fred</span>;
+</pre></div>
+</td></tr></table>
+
+<p>Output</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="codehilite"><pre><span></span>True
+</pre></div>
+</td></tr></table>
+
+<h2 id="scope">Scope</h2>
+<p>Frequently used queries can be made into a <code>scope</code> for easier access.  Scopes live on the model type, not on an instance of the type, so we use <code>$?CLASS</code> to point to the existing class.  The contents of the scope is a lazy block that is only evaluated when required.</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Image</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="nv">$?CLASS</span>.<span class="n">scope:</span> <span class="s">&#39;jpgs&#39;</span>, -&gt; { <span class="nv">$?CLASS</span>.<span class="k">where</span>({<span class="n">ext</span> =&gt; <span class="s">&#39;jpg&#39;</span>}) }
+
+  <span class="k">submethod</span> <span class="n">BUILD</span> {
+    <span class="k">self</span>.<span class="n">validate:</span> <span class="s">&#39;name&#39;</span>, { :<span class="n">presence</span> }
+    <span class="k">self</span>.<span class="n">validate:</span> <span class="s">&#39;ext&#39;</span>, { :<span class="n">presence</span>, <span class="n">inclusion</span> =&gt; { <span class="n">in</span> =&gt; <span class="s">&lt;jpg png&gt;</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$foo</span> = <span class="n">Image</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;foo&#39;</span>, <span class="n">ext</span> =&gt; <span class="s">&#39;jpg&#39;</span>});
+<span class="k">my</span> <span class="nv">$bar</span> = <span class="n">Image</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;bar&#39;</span>, <span class="n">ext</span> =&gt; <span class="s">&#39;jpg&#39;</span>});
+<span class="k">my</span> <span class="nv">$baz</span> = <span class="n">Image</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;baz&#39;</span>, <span class="n">ext</span> =&gt; <span class="s">&#39;png&#39;</span>});
+<span class="nb">say</span> <span class="n">Image</span>.<span class="nb">count</span>;
+
+<span class="k">my</span> <span class="nv">@images</span> = <span class="n">Image</span>.<span class="n">jpgs</span>.<span class="nb">all</span>;
+<span class="nb">say</span> <span class="nb">any</span>(<span class="nv">@images</span>) == <span class="nv">$foo</span>;
+<span class="nb">say</span> <span class="nb">any</span>(<span class="nv">@images</span>) == <span class="nv">$bar</span>;
+<span class="nb">say</span> <span class="nb">none</span>(<span class="nv">@images</span>) == <span class="nv">$baz</span>;
+</pre></div>
+</td></tr></table>
+
+<p>Output</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><span class="m">3</span>
+True
+True
+True
+</pre></div>
+</td></tr></table>
+
+<h2 id="has-many-through">Has Many Through</h2>
+<p>You can access related models using <code>has-many</code> with <code>through</code>.</p>
+<p>In this example a <code>user</code> has access to <code>magazines</code> through the <code>subscriptions</code> model:</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><span class="k">class</span> <span class="n">Subscription</span> {...} <span class="c1"># stub</span>
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="n">BUILD</span> {
+    <span class="k">self</span>.<span class="n">has-many:</span> <span class="n">subscriptions</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Subscription</span>;
+    <span class="k">self</span>.<span class="n">has-many:</span> <span class="n">magazines</span> =&gt; <span class="n">through</span> =&gt; :<span class="n">subscriptions</span>;
+  }
+}
+
+<span class="k">class</span> <span class="n">Magazine</span> <span class="k">is</span> <span class="n">Model</span> {}
+
+<span class="k">class</span> <span class="n">Subscription</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="n">BUILD</span> {
+    <span class="k">self</span>.<span class="n">belongs-to:</span> <span class="n">user</span> =&gt; <span class="k">class</span> =&gt; <span class="n">User</span>;
+    <span class="k">self</span>.<span class="n">belongs-to:</span> <span class="n">magazine</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Magazine</span>;
+  }
+}
+
+<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
+<span class="k">my</span> <span class="nv">$magazine</span> = <span class="n">Magazine</span>.<span class="n">create</span>({<span class="n">title</span> =&gt; <span class="s">&#39;Mad&#39;</span>});
+<span class="n">Subscription</span>.<span class="n">create</span>({:<span class="nv">$user</span>, :<span class="nv">$magazine</span>});
+
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">magazines</span>.<span class="nb">first</span> == <span class="nv">$magazine</span>;
+</pre></div>
+</td></tr></table>
+
+<p>Output</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="codehilite"><pre><span></span>True
+</pre></div>
+</td></tr></table>
+
+<h2 id="is-dirty">Is Dirty</h2>
+<p>If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call <code>is-dirty</code> on the model instance.</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16</pre></div></td><td class="code"><div class="codehilite"><pre><span></span><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="n">BUILD</span> {
+    <span class="k">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span> }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Fred&#39;</span>});
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-dirty</span>;
+
+<span class="nv">$user</span>.<span class="n">fname</span> = <span class="s">&#39;John&#39;</span>;
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-dirty</span>;
+
+<span class="nv">$user</span>.<span class="n">save</span>;
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-dirty</span>;
+</pre></div>
+</td></tr></table>
+
+<p>Output</p>
+<table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="codehilite"><pre><span></span>False
+True
+False
+</pre></div>
+</td></tr></table>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../../migrations/" title="Migrations" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Migrations
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../callbacks/" title="Callbacks" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Callbacks
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.ac79c3b0.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+    
+  </body>
+</html>
