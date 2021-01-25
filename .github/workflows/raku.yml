@@ -19,7 +19,7 @@ jobs:
     - name: Setup database
       run: |
         cp config/database.yml.github-actions config/database.yml
-        cp config/application.github-actions config/application.json
+        cp config/application.json.github-actions config/application.json
     - name: Runs tests
       id: tests
       uses: JJ/raku-container-action@master
