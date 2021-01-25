@@ -29,8 +29,12 @@ jobs:
       run: cp config/application.json.github-actions config/application.json
     - name: Create database
       run: |
-        PGPASSWORD=postgres psql -U postgres -c "CREATE DATABASE github-action"
-    - name: Migrate database
+        psql -U postgres -c "CREATE DATABASE github-action"
+      env:
+        POSTGRES_DB: github-action
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+   - name: Migrate database
       run: raku -Ilib bin/ar
     - name: Run Tests
       run: prove6 -l t
