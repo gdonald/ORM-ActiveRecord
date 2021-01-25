@@ -34,7 +34,7 @@ jobs:
         POSTGRES_DB: github-action
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: postgres
-   - name: Migrate database
+    - name: Migrate database
       run: raku -Ilib bin/ar
     - name: Run Tests
       run: prove6 -l t
