@@ -263,12 +263,12 @@ class DB is export {
   method connect-db {
     return if $!db.defined;
 
-    Log.sql("database params:");
-    Log.sql(:schema);
-    Log.sql(:hostname);
-    Log.sql(:database);
-    Log.sql(:user);
-    Log.sql(:password);
+    say "database params:";
+    say $!schema;
+    say $!hostname;
+    say $!database;
+    say $!user;
+    say $!password;
 
     $!db = DBIish.connect('Pg', :$!schema, :$!hostname, :$!database, :$!user, :$!password);
   }
