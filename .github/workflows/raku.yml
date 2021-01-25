@@ -9,7 +9,7 @@ jobs:
         ports:
           - 5432:5432
         env:
-          POSTGRES_DB: test
+          POSTGRES_DB: ar_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
@@ -29,10 +29,10 @@ jobs:
       run: cp config/application.json.github-actions config/application.json
     - name: Create database
       run: |
-        PGHOST=localhost PGPASSWORD=postgres PGUSER=postgres psql -c "CREATE DATABASE test"
+        PGHOST=localhost PGPASSWORD=postgres PGUSER=postgres psql -c "CREATE DATABASE ar_test"
       env:
         POSTGRES_HOST: postgres
-        POSTGRES_DB: test
+        POSTGRES_DB: ar_test
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: postgres
     - name: Migrate database
