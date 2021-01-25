@@ -16,10 +16,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Setup database
-      run: |
-        cp config/database.yml.github-actions config/database.yml
-        cp config/application.json.github-actions config/application.json
     - name: Install Raku
       uses: Raku/setup-raku@v1
       with:
@@ -28,9 +24,9 @@ jobs:
       run: zef install --/test --test-depends --deps-only .
     - name: Install App::Prove6
       run: zef install --/test App::Prove6
+    - name: Create database config
+      run: cp config/application.json.github-actions config/application.json
+    - name: Migrate database
+      run: raku -Ilib bin/ar
     - name: Run Tests
       run: prove6 -l t
-      env:
-        RAILS_ENV: test
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
