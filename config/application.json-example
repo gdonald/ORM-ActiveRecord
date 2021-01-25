@@ -2,7 +2,7 @@
     "db": {
         "schema": "public",
         "host": "localhost",
-        "name": "ar",
+        "name": "test",
         "user": "postgres",
         "password": ""
     }
