@@ -29,7 +29,7 @@ jobs:
       run: cp config/application.json.github-actions config/application.json
     - name: Create database
       run: |
-        psql -U postgres -c "CREATE DATABASE github-action"
+        PGHOST=postgres PGPASSWORD=postgres PGUSER=postgres psql -c "CREATE DATABASE github-action"
       env:
         POSTGRES_HOST: postgres
         POSTGRES_DB: github-action
