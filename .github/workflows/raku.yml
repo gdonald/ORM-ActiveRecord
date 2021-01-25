@@ -27,6 +27,9 @@ jobs:
       run: zef install --/test App::Prove6
     - name: Configure database
       run: cp config/application.json.github-actions config/application.json
+    - name: Create database
+      run: |
+        PGPASSWORD=postgres psql -U postgres -c "CREATE DATABASE github-action"
     - name: Migrate database
       run: raku -Ilib bin/ar
     - name: Run Tests
