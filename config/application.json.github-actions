@@ -1,0 +1,8 @@
+{
+    "db": {
+        "schema": "public",
+        "name": "github-actions",
+        "user": "postgres",
+        "password": "postgres"
+    }
+}
