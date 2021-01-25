@@ -31,6 +31,7 @@ jobs:
       run: |
         psql -U postgres -c "CREATE DATABASE github-action"
       env:
+        POSTGRES_HOST: postgres
         POSTGRES_DB: github-action
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: postgres
