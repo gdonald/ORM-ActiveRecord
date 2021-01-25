@@ -37,7 +37,7 @@ Please see the [documentation](https://gdonald.github.io/ORM-ActiveRecord/) for 
 
 ## Build Status
 
-[![Build Status](https://travis-ci.org/gdonald/ORM-ActiveRecord.svg?branch=master)](https://travis-ci.org/gdonald/ORM-ActiveRecord)
+[![.github/workflows/raku.yml](https://github.com/gdonald/ORM-ActiveRecord/workflows/.github/workflows/raku.yml/badge.svg)](https://github.com/gdonald/ORM-ActiveRecord/actions)
 
 ## License
 
