@@ -26,7 +26,7 @@ jobs:
     - name: Install App::Prove6
       run: zef install --/test App::Prove6
     - name: Configure database
-      run: cp config/application.json.postgress config/application.json
+      run: cp config/application.json.github-action config/application.json
     - name: Create database
       run: |
         PGHOST=localhost PGPASSWORD=postgres PGUSER=postgres psql -c "CREATE DATABASE postgres"
