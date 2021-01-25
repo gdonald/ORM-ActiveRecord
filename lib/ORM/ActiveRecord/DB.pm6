@@ -8,6 +8,7 @@ use ORM::ActiveRecord::Utils;
 
 class DB is export {
   has Str $.schema;
+  has Str $!hostname;
   has Str $!database;
   has Str $!user;
   has Str $!password;
@@ -261,7 +262,7 @@ class DB is export {
 
   method connect-db {
     return if $!db.defined;
-    $!db = DBIish.connect('Pg', :$!schema, :$!database, :$!user, :$!password);
+    $!db = DBIish.connect('Pg', :$!schema, :$!hostname, :$!database, :$!user, :$!password);
   }
 
   method get-config {
@@ -271,6 +272,7 @@ class DB is export {
 
       my $json = from-json($contents);
       $!schema   = $json{'db'}{'schema'};
+      $!hostname = $json{'db'}{'hostname'};
       $!database = $json{'db'}{'name'};
       $!user     = $json{'db'}{'user'};
       $!password = $json{'db'}{'password'};
