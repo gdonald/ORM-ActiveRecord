@@ -9,7 +9,7 @@ jobs:
         ports:
           - 5432:5432
         env:
-          POSTGRES_DB: github-action
+          POSTGRES_DB: postgres
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
@@ -26,13 +26,13 @@ jobs:
     - name: Install App::Prove6
       run: zef install --/test App::Prove6
     - name: Configure database
-      run: cp config/application.json.github-actions config/application.json
+      run: cp config/application.json.postgress config/application.json
     - name: Create database
       run: |
-        PGHOST=localhost PGPASSWORD=postgres PGUSER=postgres psql -c "CREATE DATABASE github-action"
+        PGHOST=localhost PGPASSWORD=postgres PGUSER=postgres psql -c "CREATE DATABASE postgres"
       env:
         POSTGRES_HOST: postgres
-        POSTGRES_DB: github-action
+        POSTGRES_DB: postgres
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: postgres
     - name: Migrate database

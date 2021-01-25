@@ -2,7 +2,7 @@
     "db": {
         "schema": "public",
         "host": "localhost",
-        "name": "github-actions",
+        "name": "postgres",
         "user": "postgres",
         "password": "postgres"
     }
