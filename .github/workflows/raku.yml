@@ -27,14 +27,6 @@ jobs:
       run: zef install --/test App::Prove6
     - name: Configure database
       run: cp config/application.json.github-actions config/application.json
-    - name: Create database
-      run: |
-        PGHOST=localhost PGPASSWORD=postgres PGUSER=postgres psql -c "CREATE DATABASE ar_test"
-      env:
-        POSTGRES_HOST: postgres
-        POSTGRES_DB: ar_test
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
     - name: Migrate database
       run: raku -Ilib bin/ar
     - name: Run Tests
