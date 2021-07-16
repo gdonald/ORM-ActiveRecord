@@ -86,3 +86,4 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
 - [ ] Migration generator
 - [ ] Model generator
 - [ ] Support for MySQL, SQLite, and Oracle.
+
