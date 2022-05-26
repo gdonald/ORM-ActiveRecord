@@ -1,12 +1,12 @@
 {
   "name": "ORM::ActiveRecord",
   "description": "Object-relational mapping module for Raku",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "perl": "6.d",
   "authors": [
     "Greg Donald"
   ],
-  "auth": "github:rakuist",
+  "auth": "github:gdonald",
   "depends": [
     "DBIish",
     "JSON::Tiny",
@@ -18,27 +18,27 @@
     "Test::META"
   ],
   "provides": {
-    "ORM::ActiveRecord::Colors": "lib/ORM/ActiveRecord/Colors.pm6",
-    "ORM::ActiveRecord::DB": "lib/ORM/ActiveRecord/DB.pm6",
-    "ORM::ActiveRecord::Error": "lib/ORM/ActiveRecord/Error.pm6",
-    "ORM::ActiveRecord::Errors": "lib/ORM/ActiveRecord/Errors.pm6",
-    "ORM::ActiveRecord::Field": "lib/ORM/ActiveRecord/Field.pm6",
-    "ORM::ActiveRecord::Log": "lib/ORM/ActiveRecord/Log.pm6",
-    "ORM::ActiveRecord::Migrate": "lib/ORM/ActiveRecord/Migrate.pm6",
-    "ORM::ActiveRecord::Migration": "lib/ORM/ActiveRecord/Migration.pm6",
-    "ORM::ActiveRecord::Model": "lib/ORM/ActiveRecord/Model.pm6",
-    "ORM::ActiveRecord::Query": "lib/ORM/ActiveRecord/Query.pm6",
-    "ORM::ActiveRecord::Scope": "lib/ORM/ActiveRecord/Scope.pm6",
-    "ORM::ActiveRecord::Scopes": "lib/ORM/ActiveRecord/Scopes.pm6",
-    "ORM::ActiveRecord::Spell": "lib/ORM/ActiveRecord/Spell.pm6",
-    "ORM::ActiveRecord::Utils": "lib/ORM/ActiveRecord/Utils.pm6",
-    "ORM::ActiveRecord::Validator": "lib/ORM/ActiveRecord/Validator.pm6",
-    "ORM::ActiveRecord::Validators": "lib/ORM/ActiveRecord/Validators.pm6",
-    "ORM::ActiveRecord::X": "lib/ORM/ActiveRecord/X.pm6"
+    "ORM::ActiveRecord::Colors": "lib/ORM/ActiveRecord/Colors.rakumod",
+    "ORM::ActiveRecord::DB": "lib/ORM/ActiveRecord/DB.rakumod",
+    "ORM::ActiveRecord::Error": "lib/ORM/ActiveRecord/Error.rakumod",
+    "ORM::ActiveRecord::Errors": "lib/ORM/ActiveRecord/Errors.rakumod",
+    "ORM::ActiveRecord::Field": "lib/ORM/ActiveRecord/Field.rakumod",
+    "ORM::ActiveRecord::Log": "lib/ORM/ActiveRecord/Log.rakumod",
+    "ORM::ActiveRecord::Migrate": "lib/ORM/ActiveRecord/Migrate.rakumod",
+    "ORM::ActiveRecord::Migration": "lib/ORM/ActiveRecord/Migration.rakumod",
+    "ORM::ActiveRecord::Model": "lib/ORM/ActiveRecord/Model.rakumod",
+    "ORM::ActiveRecord::Query": "lib/ORM/ActiveRecord/Query.rakumod",
+    "ORM::ActiveRecord::Scope": "lib/ORM/ActiveRecord/Scope.rakumod",
+    "ORM::ActiveRecord::Scopes": "lib/ORM/ActiveRecord/Scopes.rakumod",
+    "ORM::ActiveRecord::Spell": "lib/ORM/ActiveRecord/Spell.rakumod",
+    "ORM::ActiveRecord::Utils": "lib/ORM/ActiveRecord/Utils.rakumod",
+    "ORM::ActiveRecord::Validator": "lib/ORM/ActiveRecord/Validator.rakumod",
+    "ORM::ActiveRecord::Validators": "lib/ORM/ActiveRecord/Validators.rakumod",
+    "ORM::ActiveRecord::X": "lib/ORM/ActiveRecord/X.rakumod"
   },
   "resources": [],
   "support": {
-    "source": "https://github.com/rakuist/ORM-ActiveRecord/issues"
+    "source": "https://github.com/gdonald/ORM-ActiveRecord/issues"
   },
   "license": "Artistic-2.0",
   "tags": [
@@ -52,5 +52,5 @@
     "Validation",
     "Postgres"
   ],
-  "source-url": "git://github.com/rakuist/ORM-ActiveRecord.git"
+  "source-url": "git://github.com/gdonald/ORM-ActiveRecord.git"
 }
