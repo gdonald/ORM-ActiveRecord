@@ -4,52 +4,47 @@ use lib 'lib';
 use ORM::ActiveRecord::Model;
 use Test;
 
-say "---------------------------------------------";
-say "$_ -> %*ENV{$_}" for %*ENV.keys.sort;
-say "---------------------------------------------";
+class Page {...} # stub
 
+class User is Model {
+  submethod BUILD {
+    self.has-many: pages => class => Page;
 
-# class Page {...} # stub
+    self.validate: 'fname', { :presence, length => { min => 4, max => 32 } }
+    self.validate: 'lname', { :presence, length => { min => 4, max => 32 } }
+  }
 
-# class User is Model {
-#   submethod BUILD {
-#     self.has-many: pages => class => Page;
+  method fullname {
+    self.fname ~ ' ' ~ self.lname;
+  }
+}
 
-#     self.validate: 'fname', { :presence, length => { min => 4, max => 32 } }
-#     self.validate: 'lname', { :presence, length => { min => 4, max => 32 } }
-#   }
+class Page is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
 
-#   method fullname {
-#     self.fname ~ ' ' ~ self.lname;
-#   }
-# }
+    self.validate: 'name', { :presence, length => { min => 4, max => 32 } }
+  }
+}
 
-# class Page is Model {
-#   submethod BUILD {
-#     self.belongs-to: user => class => User;
+plan 5;
 
-#     self.validate: 'name', { :presence, length => { min => 4, max => 32 } }
-#   }
-# }
+%*ENV<DISABLE-SQL-LOG> = True;
 
-# plan 5;
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
+ok $user.id;
 
-# %*ENV<DISABLE-SQL-LOG> = True;
+Page.create({:$user, name => 'Raku'});
 
-# my $user = User.create({fname => 'Greg', lname => 'Donald'});
-# ok $user.id;
+my $page = $user.pages.first;
+ok $page.name eq 'Raku';
+ok $page.user.fullname eq 'Greg Donald';
 
-# Page.create({:$user, name => 'Raku'});
+my $alfred = User.create({fname => 'Alfred E.', lname => 'Neuman'});
+ok $alfred.id;
 
-# my $page = $user.pages.first;
-# ok $page.name eq 'Raku';
-# ok $page.user.fullname eq 'Greg Donald';
+$page.update({user => $alfred});
+ok $page.user.fullname eq 'Alfred E. Neuman';
 
-# my $alfred = User.create({fname => 'Alfred E.', lname => 'Neuman'});
-# ok $alfred.id;
-
-# $page.update({user => $alfred});
-# ok $page.user.fullname eq 'Alfred E. Neuman';
-
-# Page.destroy-all;
-# User.destroy-all;
+Page.destroy-all;
+User.destroy-all;

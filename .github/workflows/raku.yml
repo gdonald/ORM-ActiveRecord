@@ -1,11 +1,10 @@
-on: [push]
-
+on: [push, pull_request]
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:12
+        image: postgres:14.3
         ports:
           - 5432:5432
         env:
@@ -13,7 +12,6 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-    name: Tests
     steps:
     - name: Checkout
       uses: actions/checkout@v2

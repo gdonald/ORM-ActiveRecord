@@ -45,7 +45,7 @@ class Migrate is export {
     @files .= reverse if $action ~~ 'down';
 
     for @files -> $path {
-      next unless IO::Path.new($path).basename ~~ /^$<version>=(\d+) '-' $<name>=(.*) \.p6/;
+      next unless IO::Path.new($path).basename ~~ /^$<version>=(\d+) '-' $<name>=(.*) \.raku/;
       next unless $count == 0 || $cnt < $count;
 
       my $version = $<version>.Str;
@@ -97,7 +97,7 @@ class Migrate is export {
     }
 
     gather for dir $dir -> $path {
-      take $path.Str if $path.basename ~~ /^\d+ '-' <[\w\-]>+ \.p6$/;
+      take $path.Str if $path.basename ~~ /^\d+ '-' <[\w\-]>+ \.raku$/;
     }
   }
 

@@ -6,7 +6,7 @@ Migration files should contain two methods: an `up` and a `down`.  The `up` meth
 
 ## Examples
 
-db/migrate/001-create-users.pm6
+db/migrate/001-create-users.raku
 
 ```perl6
 use ORM::ActiveRecord::Migration;
@@ -25,7 +25,7 @@ class CreateUsers is Migration {
 }
 ```
 
-db/migrate/002-create-pages.pm6
+db/migrate/002-create-pages.raku
 
 ```perl6
 use ORM::ActiveRecord::Migration;
