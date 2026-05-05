@@ -44,6 +44,44 @@ class CreatePages is Migration {
 }
 ```
 
+## Timestamps
+
+Most tables benefit from `created_at` and `updated_at` columns. ORM::ActiveRecord
+adds them with `add-timestamps` and manages them automatically: `created_at` is
+set on insert, `updated_at` is set on every save. The columns are
+`TIMESTAMPTZ NOT NULL DEFAULT now()`.
+
+```perl6
+use ORM::ActiveRecord::Migration;
+
+class CreateArticles is Migration {
+  method up {
+    self.create-table: 'articles', [
+      title => { :string, limit => 64 },
+      body  => { :text },
+    ];
+    self.add-timestamps: 'articles';
+  }
+
+  method down {
+    self.drop-table: 'articles';
+  }
+}
+```
+
+You can also declare datetime columns explicitly with `:datetime` (or
+`:timestamp`):
+
+```perl6
+self.add-column: 'articles', :published_at => { :datetime }
+```
+
+To remove the timestamp columns:
+
+```perl6
+self.remove-timestamps: 'articles';
+```
+
 ## Run Migrations
 
 New migrations can be ran using the provided `ar` command.  It its most simple form `ar` will run all outstanding `up` methods.

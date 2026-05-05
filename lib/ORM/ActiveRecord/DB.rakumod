@@ -6,7 +6,19 @@ use ORM::ActiveRecord::Field;
 use ORM::ActiveRecord::Log;
 use ORM::ActiveRecord::Utils;
 
+class SqlStmt is export {
+  has Str $.sql is rw = '';
+  has @.binds is rw;
+
+  method placeholder($value --> Str) {
+    @!binds.push($value);
+    '$' ~ @!binds.elems;
+  }
+}
+
 class DB is export {
+  my DB $shared;
+
   has Str $.schema;
   has Str $!host;
   has Str $!database;
@@ -21,63 +33,75 @@ class DB is export {
     self.connect-db;
   }
 
+  # Process-wide shared connection. Use this everywhere instead of `DB.new` —
+  # creating an anonymous DB per call relies on GC-driven `dispose`, which
+  # races with in-flight `allrows` iteration in DBDish::Pg and produces
+  # "No such method 'PQgetisnull' for invocant of type 'Any'" errors.
+  method shared(--> DB) {
+    $shared //= DB.new;
+    $shared;
+  }
+
   submethod DESTROY {
-    $!db.dispose;
+    $!db.dispose if $!db.defined;
     $!db = Nil;
   }
 
   method begin {
-    my $sql = 'BEGIN';
-    Log.sql(:$sql);
-    my $query = $!db.prepare($sql);
-    $query.execute;
+    self.exec('BEGIN');
   }
 
   method commit {
-    my $sql = 'COMMIT';
-    Log.sql(:$sql);
-    my $query = $!db.prepare($sql);
-    $query.execute;
+    self.exec('COMMIT');
   }
 
   method rollback {
-    my $sql = 'ROLLBACK';
-    Log.sql(:$sql);
-    my $query = $!db.prepare($sql);
-    $query.execute;
+    self.exec('ROLLBACK');
   }
 
-  method exec(Str:D $sql) {
+  method exec(Str:D $sql, *@binds) {
     Log.sql(:$sql);
     my $query = $!db.prepare($sql);
-    $query.execute;
+    $query.execute(|@binds);
     $query.allrows;
   }
 
-  method build-value-sets(:%attrs) {
+  method exec-stmt(SqlStmt:D $stmt) {
+    Log.sql(:sql($stmt.sql));
+    my $query = $!db.prepare($stmt.sql);
+    $query.execute(|$stmt.binds);
+    $query.allrows;
+  }
+
+  method build-value-sets(SqlStmt:D $stmt, :%attrs) {
     my @values;
 
     for %attrs.keys {
       next if $_ ~~ 'id';
+      next unless %attrs{$_}.defined;
       my $value = %attrs{$_} ?? %attrs{$_} !! '';
-      @values.push: "$_ = '$value'";
+      @values.push: "$_ = " ~ $stmt.placeholder($value);
     }
 
     @values.join(', ');
   }
 
-  method build-values-list(:@values) {
-    @values.map({ $_ ?? "'$_'" !! "''" }).join(', ');
+  method build-values-list(SqlStmt:D $stmt, :@values) {
+    @values.map({ $stmt.placeholder($_ ?? $_ !! '') }).join(', ');
   }
 
-  method build-update(Str:D :$table, Int:D :$id, :%attrs) {
-    my $values = self.build-value-sets(:%attrs);
+  method build-update(Str:D :$table, Int:D :$id, :%attrs --> SqlStmt) {
+    my $stmt = SqlStmt.new;
+    my $values = self.build-value-sets($stmt, :%attrs);
+    my $id-ph = $stmt.placeholder($id);
 
-    qq:to/SQL/;
+    $stmt.sql = qq:to/SQL/;
       UPDATE $table
       SET $values
-      WHERE id = $id
+      WHERE id = $id-ph
       SQL
+
+    $stmt;
   }
 
   method without-excluded-fields(%attrs) {
@@ -85,24 +109,31 @@ class DB is export {
     %attrs;
   }
 
-  method build-insert(Str:D :$table, :%attrs) {
+  method build-insert(Str:D :$table, :%attrs --> SqlStmt) {
     my %fvs = self.without-excluded-fields(%attrs);
-    my $fields = %fvs.keys.join(', ');
-    my @values = %fvs.values;
-    my $values = self.build-values-list(:@values);
+    my @keys = %fvs.keys.grep({ %fvs{$_}.defined });
+    my $fields = @keys.join(', ');
+    my @values = @keys.map({ %fvs{$_} });
+    my $stmt = SqlStmt.new;
+    my $values = self.build-values-list($stmt, :@values);
 
-    qq:to/SQL/;
+    $stmt.sql = qq:to/SQL/;
       INSERT INTO $table ($fields)
       VALUES ($values)
       RETURNING id
       SQL
+
+    $stmt;
   }
 
-  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :@order, Int:D :$limit=0) {
+  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :@order, Int:D :$limit=0, Int:D :$offset=0 --> SqlStmt) {
+    my $stmt = SqlStmt.new;
     my $select = @fields.map({ $table ~ '.' ~ $_.name }).join(', ');
-    my $where = self.build-where(%where);
+    my $where-sql = self.build-where($stmt, %where);
+    my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
     my $order = @order ?? "ORDER BY @order.join(', ')" !! '';
     my $limit_ = $limit ?? "LIMIT $limit" !! '';
+    my $offset_ = $offset ?? "OFFSET $offset" !! '';
     my $join = '';
 
     if $join-table {
@@ -114,22 +145,26 @@ class DB is export {
       SQL
     }
 
-    qq:to/SQL/;
+    $stmt.sql = qq:to/SQL/;
       SELECT $select
 	    FROM $table
       $join
-	    WHERE $where
+      $where-clause
       $order
       $limit_
+      $offset_
       SQL
+
+    $stmt;
   }
 
-  method build-where(%where) {
-    %where.keys.map({ "$_ = '%where{$_}'" }).join(' AND ');
+  method build-where(SqlStmt:D $stmt, %where --> Str) {
+    return '' unless %where.elems;
+    %where.keys.map({ "$_ = " ~ $stmt.placeholder(%where{$_}) }).join(' AND ');
   }
 
-  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where) {
-    my @records = self.get-records(:@fields, :$table, :$join-table, :%where);
+  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :@order, Int:D :$limit=0, Int:D :$offset=0) {
+    my @records = self.get-records(:@fields, :$table, :$join-table, :%where, :@order, :$limit, :$offset);
     my @objects;
 
     for @records.kv -> $k, $record {
@@ -142,6 +177,7 @@ class DB is export {
 
   method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :@order) {
     my $record = self.get-record(:@fields, :$table, :%where, :@order);
+    return Nil unless $record && $record{'id'};
     $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
   }
 
@@ -149,36 +185,28 @@ class DB is export {
     my $table = Utils.table-name($obj);
     my %attrs = $obj.attrs;
     my $id = $obj.id;
-    my $sql = self.build-update(:$table, :%attrs, :$id);
+    my $stmt = self.build-update(:$table, :%attrs, :$id);
 
-    Log.sql(:$sql);
-    my $query = $!db.prepare($sql);
-    $query.execute;
+    self.exec-stmt($stmt);
   }
 
   method create-object(Mu:D $obj) {
     my $table = Utils.table-name($obj);
     my %attrs = $obj.attrs;
-    my $sql = self.build-insert(:$table, :%attrs);
+    my $stmt = self.build-insert(:$table, :%attrs);
 
-    Log.sql(:$sql);
-    my $query = $!db.prepare($sql);
-    $query.execute;
-    $query.allrows[0][0].Int; # insert id
+    self.exec-stmt($stmt)[0][0].Int; # insert id
   }
 
   method get-rows(Str:D :$sql) {
-    Log.sql(:$sql);
-    my $query = $!db.prepare($sql);
-    $query.execute;
-    $query.allrows;
+    self.exec($sql);
   }
 
-  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where) {
+  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :@order, Int:D :$limit=0, Int:D :$offset=0) {
     my @records;
-    my $sql = self.build-select(:@fields, :$join-table, :$table, :%where);
+    my $stmt = self.build-select(:@fields, :$join-table, :$table, :%where, :@order, :$limit, :$offset);
 
-    for self.get-rows(:$sql).kv -> $k, $row {
+    for self.exec-stmt($stmt).kv -> $k, $row {
       my %record;
       for @fields.kv -> $kk, $field { %record{@fields[$kk].name} = $row[$kk] }
       @records.push: %record
@@ -188,9 +216,11 @@ class DB is export {
   }
 
   method get-record(Str:D :$table, :@fields, :%where, :@order) {
-    my $sql = self.build-select(:@fields, :$table, :%where, :@order, limit => 1);
-    my $row = self.get-rows(:$sql)[0];
+    my $stmt = self.build-select(:@fields, :$table, :%where, :@order, limit => 1);
+    my $rows = self.exec-stmt($stmt);
     my %record;
+    return %record unless $rows.elems;
+    my $row = $rows[0];
     for @fields.kv -> $k, $field { %record{@fields[$k].name} = $row[$k] }
 
     %record;
@@ -201,74 +231,65 @@ class DB is export {
     my $names = <column_name data_type>;
     my @fields = $names.map({ Field.new(:name($_), :$type) });
 
-    my $sql = self.build-select(
+    my $stmt = self.build-select(
       :@fields,
       table => 'information_schema.columns',
       where => { 'table_schema' => 'public', 'table_name' => $table },
-      order => qw<table_name>.words
+      order => <ordinal_position>.list,
     );
 
-    self.get-rows(:$sql);
+    self.exec-stmt($stmt);
   }
 
   method get-list(Str:D :$sql, Int:D :$col=0) {
-    self.get-rows(:$sql);
+    self.exec($sql);
   }
 
   method get-table-names {
-    my $sql = $!db.build-select(
-      fields => qw<table_name>.words,
-      table  => 'information_schema.tables',
-      where  => { 'table_schema' => 'public' },
-      order  => qw<table_name>.word
+    my @fields = <table_name>.map({ Field.new(:name($_), :type('character varying')) });
+    my $stmt = self.build-select(
+      :@fields,
+      table => 'information_schema.tables',
+      where => { 'table_schema' => 'public' },
+      order => <table_name>.list,
     );
 
-    $!db.get-list(:$sql);
+    self.exec-stmt($stmt).map({ $_[0] });
   }
 
   method delete-records(Str:D :$table, :%where) {
-    my $where = self.build-where(%where);
+    my $stmt = SqlStmt.new;
+    my $where-sql = self.build-where($stmt, %where);
+    my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
 
-    my $sql = qq:to/SQL/;
+    $stmt.sql = qq:to/SQL/;
       WITH deleted AS (
         DELETE FROM $table
-        WHERE $where
+        $where-clause
         RETURNING *
       ) SELECT count(*)
         FROM deleted
       SQL
 
-    Log.sql(:$sql);
-    my $query = $!db.prepare($sql);
-    $query.execute;
-    $query.allrows[0][0].Int; # count
+    self.exec-stmt($stmt)[0][0].Int; # count
   }
 
   method count-records(Str:D :$table, :%where) {
-    my $where = self.build-where(%where);
-    $where = $where ?? " WHERE $where" !! '';
+    my $stmt = SqlStmt.new;
+    my $where-sql = self.build-where($stmt, %where);
+    my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
 
-    my $sql = qq:to/SQL/;
+    $stmt.sql = qq:to/SQL/;
       SELECT count(*)
       FROM $table
-      $where
+      $where-clause
       SQL
 
-    Log.sql(:$sql);
-    my $query = $!db.prepare($sql);
-    $query.execute;
-    $query.allrows[0][0].Int; # count
+    self.exec-stmt($stmt)[0][0].Int; # count
   }
 
   method connect-db {
     return if $!db.defined;
-
-    # say "database params:";
-    # say $!schema;
-    # say $!host;
-    # say $!database;
-    # say $!user;
-    # say $!password;
 
     $!db = DBIish.connect('Pg', :$!schema, :$!host, :$!database, :$!user, :$!password);
   }

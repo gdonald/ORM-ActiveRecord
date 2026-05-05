@@ -11,7 +11,7 @@ class Validators is export {
 
   method validate(DB $db, Mu:D $obj) {
     for @!validators -> $validator {
-      next unless $obj.^name eq $validator.klass.perl;
+      next unless $obj.^name eq $validator.klass.raku;
       my $field = $validator.field;
       my $ons = {};
       my $if = -> { True };

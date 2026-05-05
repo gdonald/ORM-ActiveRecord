@@ -5,7 +5,7 @@ class Utils is export {
   }
 
   multi method table-name(Mu:D $obj) {
-    Utils.base-name($obj.WHAT.perl.lc) ~ 's';
+    Utils.base-name($obj.WHAT.raku.lc) ~ 's';
   }
 
   multi method table-name(Mu:U $type) {

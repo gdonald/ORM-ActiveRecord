@@ -1,0 +1,47 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Article is Model {}
+
+class User is Model {
+  has Int $.before-count is rw = 0;
+  has Int $.after-count  is rw = 0;
+
+  submethod BUILD {
+    self.before-destroy: -> { self.before-count++ };
+    self.after-destroy:  -> { self.after-count++  };
+  }
+}
+
+plan 9;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+Article.destroy-all;
+
+# destroy on an unsaved record returns False, runs no callbacks
+my $unsaved = User.new(:id(0));
+ok $unsaved.destroy === False, 'destroy on unsaved record returns False';
+ok $unsaved.before-count == 0, 'before-destroy did not fire on unsaved record';
+
+# destroy on a saved record runs callbacks and removes the row
+my $alice = User.create({fname => 'Alice', lname => 'Anderson'});
+my $bob   = User.create({fname => 'Bob',   lname => 'Brown'});
+ok User.count == 2, 'two users present before destroy';
+
+ok $alice.destroy, 'destroy returns True on success';
+ok $alice.before-count == 1, 'before-destroy callback fired exactly once';
+ok $alice.after-count == 1, 'after-destroy callback fired exactly once';
+ok $alice.id == 0, 'id is cleared after destroy';
+ok User.count == 1, 'destroy removed the row';
+
+# delete: skips callbacks
+$bob.delete;
+ok $bob.before-count == 0, 'delete did not run before-destroy callback';
+
+User.destroy-all;
+Article.destroy-all;

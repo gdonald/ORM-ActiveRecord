@@ -2,7 +2,7 @@
 
 ORM::ActiveRecord supports callbacks that can be performed during various life cycle events.
 
-These callbacks currently include `after-create`, `after-save`, `after-update`, `before-create`, `before-save`, and `before-update`.
+These callbacks currently include `after-create`, `after-save`, `after-update`, `after-destroy`, `before-create`, `before-save`, `before-update`, and `before-destroy`.
 
 ## After Create
 
@@ -189,6 +189,64 @@ Output
 True
 True
 ```
+
+## After Destroy
+
+```perl6
+use ORM::ActiveRecord::Model;
+
+class Log is Model {};
+
+class Client is Model {
+  submethod BUILD {
+    self.validate: 'email', { :presence };
+    self.after-destroy: -> { self.log };
+  }
+
+  method log {
+    my $log = self.email ~ ' was destroyed';
+    Log.create({:$log});
+  }
+}
+
+my $client = Client.create({ email => 'fred@aol.com' });
+say Log.count == 0;
+
+$client.destroy;
+say Log.count == 1;
+```
+
+Output
+
+```shell
+True
+True
+```
+
+## Before Destroy
+
+```perl6
+use ORM::ActiveRecord::Model;
+
+class Client is Model {
+  submethod BUILD {
+    self.before-destroy: -> { say 'about to destroy ' ~ self.email };
+  }
+}
+
+my $client = Client.create({ email => 'fred@aol.com' });
+$client.destroy;
+```
+
+Output
+
+```shell
+about to destroy fred@aol.com
+```
+
+If you want to remove a record without firing destroy callbacks (or any other
+side effects), use `delete` instead. `delete` issues the `DELETE` directly and
+skips the `before-destroy` and `after-destroy` callbacks.
 
 ## Before Update
 

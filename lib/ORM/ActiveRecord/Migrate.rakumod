@@ -12,7 +12,7 @@ class Migrate is export {
   has DB $!db;
 
   submethod BUILD(:@!args) {
-    $!db = DB.new;
+    $!db = DB.shared;
 
     self.check-migrations-table;
     self.do-migrations;

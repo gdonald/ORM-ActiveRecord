@@ -46,10 +46,24 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
 ## Features
 
 - [x] Model:
-    - [x] belongs-to
-    - [x] has-many
-    - [x] has-many -> through
-    - [x] where: all, first, count
+    - [x] Associations
+        - [x] belongs-to
+        - [x] has-many
+        - [x] has-many -> through
+    - [x] Querying
+        - [x] where, all, first, last, count
+        - [x] find (raises `X::RecordNotFound` on miss)
+        - [x] find-by, find-by-or-die
+        - [x] take
+        - [x] exists
+        - [x] order, limit, offset, select
+        - [x] pluck, ids
+        - [x] Chainable relations (`User.where(...).order(...).limit(...).all`)
+    - [x] Persistence
+        - [x] create, save, update, build
+        - [x] save-or-die, update-or-die, create-or-die (raise `X::RecordInvalid`)
+        - [x] destroy (with callbacks), delete (skip callbacks), destroy-all
+        - [x] Automatic created_at / updated_at management
     - [x] Validations
         - [x] Conditionals: if, unless, on, create, update
         - [x] Acceptance
@@ -72,18 +86,21 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
         - [x] Uniqueness
         - [x] Unique Scope
     - [x] Callbacks
-        - [x] after: create, save, update
-        - [x] before: create, save, update
+        - [x] after: create, save, update, destroy
+        - [x] before: create, save, update, destroy
     - [x] Scopes
     - [x] Dirty
     - [x] Custom Errors
 - [x] Migrations
+    - [x] Tables, columns, indexes, foreign-key references
+    - [x] add-timestamps / remove-timestamps
+    - [x] Datetime / timestamp column type
 - [x] PostgreSQL support
+- [x] Bound parameters everywhere (SQL injection safe)
 
-## TODO
+## Roadmap
 
-- [ ] Includes: for has-many records
-- [ ] Migration generator
-- [ ] Model generator
-- [ ] Support for MySQL, SQLite, and Oracle.
+A detailed list of remaining work — including more associations, eager loading,
+locking, additional adapters, generators, and other features — lives in
+[ROADMAP.md](ROADMAP.md).
 

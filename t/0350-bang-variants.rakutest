@@ -1,0 +1,65 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::X;
+use Test;
+
+class User is Model {
+  submethod BUILD {
+    self.validate: 'fname', { :presence };
+  }
+}
+
+plan 9;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+# create-or-die: success path
+my $alice = User.create-or-die({fname => 'Alice'});
+ok $alice.id, 'create-or-die returns persisted record';
+ok $alice.is-valid, 'persisted record is valid';
+
+# create-or-die: failure raises X::RecordInvalid
+{
+  my $caught = False;
+  try {
+    User.create-or-die({fname => ''});
+    CATCH {
+      when X::RecordInvalid {
+        $caught = True;
+        ok .messages.elems > 0, 'X::RecordInvalid carries messages';
+        ok .messages.first.contains('fname'), 'message references the failing field';
+      }
+    }
+  }
+  ok $caught, 'create-or-die raised X::RecordInvalid';
+}
+
+# save-or-die: success
+ok $alice.save-or-die === $alice, 'save-or-die returns self on success';
+
+# update-or-die: failure
+{
+  my $caught = False;
+  try {
+    $alice.update-or-die({fname => ''});
+    CATCH {
+      when X::RecordInvalid {
+        $caught = True;
+      }
+    }
+  }
+  ok $caught, 'update-or-die raised X::RecordInvalid';
+}
+
+# update-or-die: success
+my $bob = User.create({fname => 'Bob'});
+$bob.update-or-die({fname => 'Robert'});
+ok User.where({fname => 'Robert'}).count == 1, 'update-or-die persisted change';
+
+ok User.count == 2, 'no rows leaked from failure paths';
+
+User.destroy-all;

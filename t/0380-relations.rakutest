@@ -1,0 +1,66 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 16;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+my $alice   = User.create({fname => 'Alice',   lname => 'Anderson'});
+my $bob     = User.create({fname => 'Bob',     lname => 'Brown'});
+my $carol   = User.create({fname => 'Carol',   lname => 'Crane'});
+my $dave    = User.create({fname => 'Dave',    lname => 'Davis'});
+my $eve     = User.create({fname => 'Eve',     lname => 'Edwards'});
+
+# Model.all
+my @everyone = User.all.all;
+ok @everyone.elems == 5, 'Model.all returns every row';
+
+# order
+my @asc = User.order('fname').all;
+ok @asc.elems == 5, 'order returned the right number of rows';
+ok @asc[0].fname eq 'Alice', 'order ascending by fname puts Alice first';
+ok @asc[*-1].fname eq 'Eve', 'order ascending puts Eve last';
+
+my @desc = User.order('fname DESC').all;
+ok @desc[0].fname eq 'Eve', 'order DESC works';
+
+# limit
+my @first-two = User.order('id').limit(2).all;
+ok @first-two.elems == 2, 'limit(2) returns 2 rows';
+ok @first-two[0].id == $alice.id, 'limit respects order';
+
+# offset
+my @skip-two = User.order('id').limit(2).offset(2).all;
+ok @skip-two.elems == 2, 'limit + offset returns 2 rows';
+ok @skip-two[0].id == $carol.id, 'offset 2 starts at the third row';
+
+# chain where + order + limit
+my @chain = User.where({lname => 'Crane'}).order('id').limit(1).all;
+ok @chain.elems == 1, 'chained where/order/limit returns one row';
+ok @chain[0].fname eq 'Carol', 'chained query found Carol';
+
+# Query.where() merges further conditions
+my @merged = User.all.where({fname => 'Bob'}).all;
+ok @merged.elems == 1, 'Query.where chained from .all narrows result';
+ok @merged[0].id == $bob.id, 'merged where matched Bob';
+
+# pluck single column
+my @fnames = User.order('fname').pluck('fname');
+ok @fnames.join(',') eq 'Alice,Bob,Carol,Dave,Eve', 'pluck single column returns ordered list';
+
+# pluck multiple columns
+my @rows = User.order('id').limit(2).pluck('fname', 'lname');
+ok @rows[0].join(' ') eq 'Alice Anderson', 'pluck multi returns row tuples';
+
+# ids
+my @ids = User.order('id').ids;
+ok @ids.join(',') eq ($alice.id, $bob.id, $carol.id, $dave.id, $eve.id).join(','), 'ids returns id column in order';
+
+User.destroy-all;

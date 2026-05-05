@@ -1,0 +1,33 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Article is Model {}
+
+plan 6;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Article.destroy-all;
+
+my $article = Article.create({ title => 'Hello', body => 'world' });
+ok $article.id, 'article was created';
+ok $article.created_at ~~ DateTime, 'created_at populated as DateTime on insert';
+ok $article.updated_at ~~ DateTime, 'updated_at populated as DateTime on insert';
+
+my $original-updated = $article.updated_at;
+my $original-created = $article.created_at;
+
+# Sleep briefly so updated_at strictly advances
+sleep 1.1;
+
+$article.update({ title => 'Hello, World' });
+
+my $reloaded = Article.find($article.id);
+ok $reloaded.created_at.posix == $original-created.posix, 'created_at preserved on update';
+ok $reloaded.updated_at.posix > $original-updated.posix, 'updated_at moved forward on update';
+ok $reloaded.title eq 'Hello, World', 'title round-trip after update';
+
+Article.destroy-all;

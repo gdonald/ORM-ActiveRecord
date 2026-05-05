@@ -9,6 +9,7 @@ use ORM::ActiveRecord::Utils;
 use ORM::ActiveRecord::Validator;
 use ORM::ActiveRecord::Validators;
 use ORM::ActiveRecord::Query;
+use ORM::ActiveRecord::X;
 
 class Model is export {
   has DB $!db;
@@ -32,6 +33,9 @@ class Model is export {
   has @.after-updates;
   has @.after-creates;
 
+  has @.before-destroys;
+  has @.after-destroys;
+
   my Scopes $.scopes;
 
   submethod DESTROY {
@@ -39,7 +43,7 @@ class Model is export {
   }
 
   submethod BUILD(Int:D :$!id, :%!record) {
-    $!db = DB.new;
+    $!db = DB.shared;
     $!errors = Errors.new;
     $!validators = Validators.new;
 
@@ -141,18 +145,69 @@ class Model is export {
     @!after-creates.push: $block;
   }
 
+  method before-destroy(Block $block) {
+    @!before-destroys.push: $block;
+  }
+
+  method after-destroy(Block $block) {
+    @!after-destroys.push: $block;
+  }
+
+  method do-before-destroys {
+    for @!before-destroys { .() }
+  }
+
+  method do-after-destroys {
+    for @!after-destroys { .() }
+  }
+
   method table-name {
-    self.WHAT.perl.lc ~ 's';
+    self.WHAT.raku.lc ~ 's';
   }
 
   method fkey-name {
-    self.WHAT.perl.lc ~ '_id';
+    self.WHAT.raku.lc ~ '_id';
   }
 
   method find(*@rest) {
     my Int $id = 0;
     $id = @rest[0] if @rest.elems == 1 && @rest[0].isa(Int);
-    self.new(:$id);
+    my $obj = self.new(:$id);
+    die X::RecordNotFound.new(:model(self.WHAT.^name), :$id)
+      unless $obj.attrs<id>;
+    $obj;
+  }
+
+  method find-by(Hash:D $params) {
+    self.where($params).first;
+  }
+
+  method find-by-or-die(Hash:D $params) {
+    my $obj = self.find-by($params);
+    die X::RecordNotFound.new(:model(self.WHAT.^name)) without $obj;
+    $obj;
+  }
+
+  method last {
+    my $table = Utils.table-name(self);
+    my @fields = DB.shared.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
+    my %where;
+    DB.shared.get-object(:$table, class => self.WHAT, :@fields, :%where, order => ('id DESC',));
+  }
+
+  method take(Int:D $limit = 1) {
+    my $table = Utils.table-name(self);
+    my @fields = DB.shared.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
+    my %where;
+    DB.shared.get-objects(:$table, class => self.WHAT, :@fields, :%where, :$limit);
+  }
+
+  multi method exists(Hash:D $params) {
+    self.where($params).count > 0;
+  }
+
+  multi method exists {
+    self.count > 0;
   }
 
   method init-attrs {
@@ -163,7 +218,18 @@ class Model is export {
         when /integer/ { %!attrs{$name} = 0 }
         when /(character|text)/ { %!attrs{$name} = '' }
         when /boolean/ { %!attrs{$name} = False }
+        when /timestamp|^date|^time/ { %!attrs{$name} = DateTime }
         default { say 'Unknown field type: ' ~ .type; die; }
+      }
+    }
+  }
+
+  method touch-timestamps {
+    my $now = DateTime.now;
+    for @!fields -> $field {
+      given $field.name {
+        when 'updated_at' { %!attrs<updated_at> = $now }
+        when 'created_at' { %!attrs<created_at> = $now if $!id == 0 }
       }
     }
   }
@@ -173,7 +239,7 @@ class Model is export {
   }
 
   method get-attrs(:$id) {
-    my @fields = self.field-names;
+    my @fields = @!fields;
     %!attrs = $!db.get-record(:@fields, table => self.table-name, where => :$id);
   }
 
@@ -189,6 +255,7 @@ class Model is export {
     if self.is-valid {
       self.update-foreign-keys;
       self.do-before-saves;
+      self.touch-timestamps;
 
       given $!id {
         when 0 {
@@ -251,6 +318,24 @@ class Model is export {
     self.save;
   }
 
+  method save-or-die {
+    self.save or self.raise-invalid;
+    self;
+  }
+
+  method update-or-die(%attrs) {
+    self.update(%attrs) or self.raise-invalid;
+    self;
+  }
+
+  method raise-invalid {
+    my @messages;
+    for $!errors.errors -> $e {
+      @messages.push: $e.field.name ~ ' ' ~ $e.message;
+    }
+    die X::RecordInvalid.new(:record(self), :@messages);
+  }
+
   multi method create(%attrs) {
     my %record = 'attrs' => %attrs;
     my $obj = self.new(:id(0), :%record);
@@ -260,6 +345,17 @@ class Model is export {
 
   multi method create {
     self.create({});
+  }
+
+  multi method create-or-die(%attrs) {
+    my %record = 'attrs' => %attrs;
+    my $obj = self.new(:id(0), :%record);
+    $obj.save-or-die;
+    $obj;
+  }
+
+  multi method create-or-die {
+    self.create-or-die({});
   }
 
   multi method build(%attrs) {
@@ -309,24 +405,72 @@ class Model is export {
   multi method count {
     my $table = Utils.table-name(self);
     my %where;
-    DB.new.count-records(:$table, :%where);
+    DB.shared.count-records(:$table, :%where);
   }
 
   multi method count(Hash:D $params) {
     my $table = Utils.table-name(self);
     my %where = $params;
-    DB.new.count-records(:$table, :%where);
+    DB.shared.count-records(:$table, :%where);
+  }
+
+  method destroy {
+    return False unless $!id;
+    self.do-before-destroys;
+    self.delete;
+    self.do-after-destroys;
+    True;
+  }
+
+  method delete {
+    return False unless $!id;
+    my $table = Utils.table-name(self);
+    my %where = id => $!id;
+    $!db.delete-records(:$table, :%where);
+    $!id = 0;
+    %!attrs<id> = 0;
+    True;
   }
 
   method destroy-all {
     my $table = Utils.table-name(self);
-    my %where = '1' => '1';
-    DB.new.delete-records(:$table, :%where);
+    my %where;
+    DB.shared.delete-records(:$table, :%where);
   }
 
   method where(Hash:D $params) {
     my $class = self;
     Query.new(:$class, :$params);
+  }
+
+  method all {
+    my $class = self;
+    my %params;
+    Query.new(:$class, :params(%params));
+  }
+
+  method order(*@cols) {
+    self.all.order(|@cols);
+  }
+
+  method limit(Int:D $n) {
+    self.all.limit($n);
+  }
+
+  method offset(Int:D $n) {
+    self.all.offset($n);
+  }
+
+  method select(*@cols) {
+    self.all.select(|@cols);
+  }
+
+  method pluck(*@cols) {
+    self.all.pluck(|@cols);
+  }
+
+  method ids {
+    self.all.ids;
   }
 }
 

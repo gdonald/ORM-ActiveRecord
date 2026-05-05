@@ -11,7 +11,7 @@ class Migration is export {
   }
 
   submethod BUILD {
-    $!db = DB.new;
+    $!db = DB.shared;
   }
 
   method create-table(Str:D $table, @params) {
@@ -74,6 +74,7 @@ class Migration is export {
           when 'text' { $type = 'TEXT' }
           when 'integer' { $type = 'INTEGER' }
           when 'boolean' { $type = 'BOOL' }
+          when 'datetime' | 'timestamp' { $type = 'TIMESTAMPTZ' }
           when 'limit' { $limit = '(' ~ $value ~ ')' }
           when 'default' { $default = $value }
           when 'null' { $null = $value }
@@ -183,6 +184,26 @@ class Migration is export {
 
     my $sql = qq:to/SQL/;
       DROP INDEX $name
+      SQL
+
+    $!db.exec($sql);
+  }
+
+  method add-timestamps(Str:D $table) {
+    my $sql = qq:to/SQL/;
+      ALTER TABLE $table
+      ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      SQL
+
+    $!db.exec($sql);
+  }
+
+  method remove-timestamps(Str:D $table) {
+    my $sql = qq:to/SQL/;
+      ALTER TABLE $table
+      DROP COLUMN created_at,
+      DROP COLUMN updated_at
       SQL
 
     $!db.exec($sql);

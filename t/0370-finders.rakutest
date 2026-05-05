@@ -1,0 +1,74 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::X;
+use Test;
+
+class User is Model {}
+
+plan 14;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'Anderson'});
+my $bob   = User.create({fname => 'Bob',   lname => 'Brown'});
+my $carol = User.create({fname => 'Carol', lname => 'Crane'});
+
+# find by id
+my $found = User.find($bob.id);
+ok $found.id == $bob.id, 'find returns the matching record';
+ok $found.fname eq 'Bob', 'find populated attributes';
+
+# find raises on miss
+{
+  my $caught = False;
+  try {
+    User.find(999_999);
+    CATCH {
+      when X::RecordNotFound {
+        $caught = True;
+        ok .id == 999_999, 'X::RecordNotFound carries the id';
+        ok .model eq 'User', 'X::RecordNotFound carries the model name';
+      }
+    }
+  }
+  ok $caught, 'find raised X::RecordNotFound for missing id';
+}
+
+# find-by
+my $by-fname = User.find-by({fname => 'Carol'});
+ok $by-fname.id == $carol.id, 'find-by returns first match';
+
+ok !User.find-by({fname => 'Nobody'}).defined, 'find-by returns Nil on miss';
+
+# find-by-or-die
+{
+  my $caught = False;
+  try {
+    User.find-by-or-die({fname => 'Nobody'});
+    CATCH {
+      when X::RecordNotFound { $caught = True }
+    }
+  }
+  ok $caught, 'find-by-or-die raised X::RecordNotFound';
+}
+
+# last
+my $last = User.last;
+ok $last.id == $carol.id, 'last returns highest-id record';
+
+# take
+my @took = User.take(2);
+ok @took.elems == 2, 'take(2) returns two records';
+my @one  = User.take;
+ok @one.elems == 1, 'take defaults to one record';
+
+# exists
+ok User.exists, 'exists with no args is True when rows present';
+ok User.exists({fname => 'Alice'}), 'exists with conditions matches';
+ok !User.exists({fname => 'Nobody'}), 'exists returns False when no match';
+
+User.destroy-all;

@@ -4,6 +4,9 @@ nav:
   - Migrations: migrations.md
   - Models:
     - Info: models/models.md
+    - Finders: models/finders.md
+    - Relations: models/relations.md
+    - Persistence: models/persistence.md
     - Callbacks: models/callbacks.md
   - Validations:
     - Data: validations/data.md
