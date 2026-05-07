@@ -1,7 +1,10 @@
 use BDD::Behave;
 use ORM::ActiveRecord::Model;
 
-# Someday, when EVAL is actually useful :(
+%*ENV<DISABLE-SQL-LOG> = True;
+
+class Page {...}
+
 class User is Model {
   submethod BUILD {
     self.has-many: pages => class => Page;
@@ -23,10 +26,31 @@ class Page is Model {
   }
 }
 
-describe -> 'User' {
-  let(:user) => { Behavior::User.create({fname => 'Greg', lname => 'Donald'}) };
+describe 'User', {
+  before-each {
+    Page.destroy-all;
+    User.destroy-all;
+  }
 
-  it -> 'is persisted' {
-    expect(:user.fname).to.eq('Greg');
+  after-each {
+    Page.destroy-all;
+    User.destroy-all;
+  }
+
+  it 'persists fname and lname on create', {
+    my $user = User.create({fname => 'Greg', lname => 'Donald'});
+    expect($user.id > 0).to.be(True);
+    expect($user.fname).to.be('Greg');
+    expect($user.lname).to.be('Donald');
+  }
+
+  it 'exposes a fullname helper', {
+    my $user = User.create({fname => 'Greg', lname => 'Donald'});
+    expect($user.fullname).to.be('Greg Donald');
+  }
+
+  it 'rejects an empty fname', {
+    my $user = User.build({fname => '', lname => 'Donald'});
+    expect($user.is-invalid).to.be(True);
   }
 }

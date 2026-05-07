@@ -14,6 +14,80 @@ class SqlStmt is export {
     @!binds.push($value);
     '$' ~ @!binds.elems;
   }
+
+  method !walk(Str:D $template, &on-placeholder, &on-named --> Str) {
+    my $out = '';
+    my $i = 0;
+    my $len = $template.chars;
+    while $i < $len {
+      my $c = $template.substr($i, 1);
+      if $c eq "'" {
+        $out ~= $c;
+        $i++;
+        while $i < $len {
+          my $cc = $template.substr($i, 1);
+          $out ~= $cc;
+          $i++;
+          if $cc eq "'" {
+            if $i < $len && $template.substr($i, 1) eq "'" {
+              $out ~= "'";
+              $i++;
+            } else {
+              last;
+            }
+          }
+        }
+      } elsif $c eq '?' {
+        $out ~= on-placeholder();
+        $i++;
+      } elsif $c eq ':'
+            && $i + 1 < $len
+            && $template.substr($i + 1, 1) ~~ /<[A..Za..z_]>/ {
+        my $j = $i + 1;
+        while $j < $len && $template.substr($j, 1) ~~ /<[A..Za..z0..9_]>/ {
+          $j++;
+        }
+        my $name = $template.substr($i + 1, $j - $i - 1);
+        $out ~= on-named($name);
+        $i = $j;
+      } else {
+        $out ~= $c;
+        $i++;
+      }
+    }
+    $out;
+  }
+
+  method sanitize-array(@parts --> SqlStmt) {
+    die 'sanitize-sql-array requires at least the SQL template' unless @parts.elems;
+    my $template = @parts[0];
+    my @args = @parts[1..*];
+
+    if @args.elems == 1 && @args[0] ~~ Hash {
+      my %named = @args[0];
+      $!sql ~= self!walk(
+        $template,
+        { die "sanitize-sql-array: '?' placeholder is not allowed with named binds" },
+        -> $name {
+          die "sanitize-sql-array: missing bind for ':$name'" unless %named{$name}:exists;
+          self.placeholder(%named{$name});
+        },
+      );
+    } else {
+      my $i = 0;
+      $!sql ~= self!walk(
+        $template,
+        {
+          die "sanitize-sql-array: too few binds for '?' placeholders" if $i >= @args.elems;
+          self.placeholder(@args[$i++]);
+        },
+        -> $name { die "sanitize-sql-array: ':$name' is not allowed with positional binds" },
+      );
+      die "sanitize-sql-array: too many binds (used $i, given " ~ @args.elems ~ ')'
+        if $i < @args.elems;
+    }
+    self;
+  }
 }
 
 class DB is export {
@@ -47,6 +121,40 @@ class DB is export {
     $!db = Nil;
   }
 
+  method is-connected(--> Bool) {
+    $!db.defined.so;
+  }
+
+  method disconnect {
+    return False unless $!db.defined;
+    $!db.dispose;
+    $!db = Nil;
+    True;
+  }
+
+  method reconnect {
+    self.disconnect;
+    self.connect-db;
+    self;
+  }
+
+  method !ensure-connected {
+    self.connect-db unless $!db.defined;
+  }
+
+  method sanitize-sql-array(@parts --> SqlStmt) {
+    SqlStmt.new.sanitize-array(@parts);
+  }
+
+  method sanitize-sql($input --> SqlStmt) {
+    given $input {
+      when SqlStmt    { $input }
+      when Positional { self.sanitize-sql-array($input.list) }
+      when Str        { my $stmt = SqlStmt.new; $stmt.sql = $input; $stmt }
+      default         { die 'sanitize-sql: unsupported input type ' ~ $input.^name }
+    }
+  }
+
   method begin {
     self.exec('BEGIN');
   }
@@ -60,6 +168,7 @@ class DB is export {
   }
 
   method exec(Str:D $sql, *@binds) {
+    self!ensure-connected;
     Log.sql(:$sql);
     my $query = $!db.prepare($sql);
     $query.execute(|@binds);
@@ -67,6 +176,7 @@ class DB is export {
   }
 
   method exec-stmt(SqlStmt:D $stmt) {
+    self!ensure-connected;
     Log.sql(:sql($stmt.sql));
     my $query = $!db.prepare($stmt.sql);
     $query.execute(|$stmt.binds);

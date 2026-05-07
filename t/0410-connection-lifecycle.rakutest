@@ -1,0 +1,33 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::DB;
+use Test;
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $db = DB.shared;
+
+# A query at startup forces the lazy connect (BUILD already does it, but be explicit)
+$db.exec('SELECT 1');
+ok $db.is-connected, 'shared DB is connected after first query';
+
+# Clean shutdown
+ok $db.disconnect, 'disconnect returns True when there was a live handle';
+nok $db.is-connected, 'is-connected reports false after disconnect';
+nok $db.disconnect, 'second disconnect is a no-op and returns False';
+
+# Reconnect path
+$db.reconnect;
+ok $db.is-connected, 'reconnect restores the connection';
+
+my @rows = $db.exec('SELECT 1');
+is @rows[0][0].Int, 1, 'a query succeeds after reconnect';
+
+# Auto-reconnect: after disconnect, the next exec brings the connection back
+$db.disconnect;
+nok $db.is-connected, 'disconnected before auto-reconnect probe';
+my @rows2 = $db.exec('SELECT 2');
+is @rows2[0][0].Int, 2, 'exec auto-reconnects when handle is nil';

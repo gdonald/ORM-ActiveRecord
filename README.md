@@ -97,10 +97,7 @@ ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensourc
     - [x] Datetime / timestamp column type
 - [x] PostgreSQL support
 - [x] Bound parameters everywhere (SQL injection safe)
-
-## Roadmap
-
-A detailed list of remaining work — including more associations, eager loading,
-locking, additional adapters, generators, and other features — lives in
-[ROADMAP.md](ROADMAP.md).
-
+    - [x] `sanitize-sql` / `sanitize-sql-array` for raw fragments (`?` and
+          `:name` rewritten to `$N` bound params)
+- [x] Connection lifecycle: `disconnect`, `reconnect`, `is-connected`, with
+      auto-reconnect on the next query
