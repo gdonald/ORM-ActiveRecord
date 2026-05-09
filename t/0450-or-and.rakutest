@@ -1,0 +1,49 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 9;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Anderson'});
+User.create({fname => 'Bob',   lname => 'Brown'});
+User.create({fname => 'Carol', lname => 'Crane'});
+User.create({fname => 'Dave',  lname => 'Davis'});
+
+# or with two simple wheres
+my @or = User.where({fname => 'Alice'}).or(User.where({fname => 'Carol'})).order('fname').all;
+ok @or.elems == 2, 'or merges two relations into a disjunction';
+ok @or.map({ .fname }).join(',') eq 'Alice,Carol', 'or returned both alternates';
+
+# or chained twice
+my @or3 = User.where({fname => 'Alice'})
+              .or(User.where({fname => 'Bob'}))
+              .or(User.where({fname => 'Dave'}))
+              .order('fname').all;
+ok @or3.elems == 3, 'or chained twice produces three alternates';
+ok @or3.map({ .fname }).join(',') eq 'Alice,Bob,Dave', 'or chained twice returned the right names';
+
+# or honors where.not in either side
+my @or-not = User.where({fname => 'Alice'}).or(User.where.not({fname => 'Carol'})).order('fname').all;
+ok @or-not.elems == 3, 'or honors negation in the rhs';
+ok (none @or-not.map: { .fname eq 'Carol' }), 'Carol is excluded by the rhs negation';
+
+# count works with or
+ok User.where({fname => 'Alice'}).or(User.where({fname => 'Bob'})).count == 2, 'count honors or';
+
+# and combines two relations' wheres (intersection-ish)
+my @and = User.where({lname => 'Anderson'}).and(User.where({fname => 'Alice'})).all;
+ok @and.elems == 1 && @and[0].fname eq 'Alice', 'and ANDed conditions from both relations';
+
+# and on conflicting key: rhs wins (rewhere semantics)
+my @and-conflict = User.where({fname => 'Alice'}).and(User.where({fname => 'Bob'})).all;
+ok @and-conflict.elems == 1 && @and-conflict[0].fname eq 'Bob', 'and overrides on conflicting key';
+
+User.destroy-all;

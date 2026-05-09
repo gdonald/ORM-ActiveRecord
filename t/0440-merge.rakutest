@@ -1,0 +1,46 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Anderson'});
+User.create({fname => 'Bob',   lname => 'Brown'});
+User.create({fname => 'Carol', lname => 'Anderson'});
+User.create({fname => 'Dave',  lname => 'Davis'});
+
+# merge two simple wheres - keys do not collide → AND together
+my @both = User.where({lname => 'Anderson'}).merge(User.where({fname => 'Alice'})).all;
+ok @both.elems == 1, 'merge ANDs disjoint conditions';
+ok @both[0].fname eq 'Alice', 'merge picked Alice';
+
+# merge with overlapping key → other wins (rewhere semantics)
+my @over = User.where({fname => 'Alice'}).merge(User.where({fname => 'Bob'})).all;
+ok @over.elems == 1 && @over[0].fname eq 'Bob', 'merge overrides on conflicting where';
+
+# merge with where.not from other clears the matching where on self
+my @neg = User.where({fname => 'Alice'}).merge(User.where.not({fname => 'Alice'})).all;
+ok @neg.elems == 3, 'merge with not-on-same-col flips condition';
+ok (none @neg.map: { .fname eq 'Alice' }), 'no Alice in merged result';
+
+# merge limit overrides
+my @l = User.limit(10).merge(User.limit(2)).order('id').all;
+ok @l.elems == 2, 'merge takes other.limit when set';
+
+# merge order appends
+my @o = User.order('lname').merge(User.order('fname')).all;
+ok @o[0].lname eq 'Anderson' && @o[0].fname eq 'Alice', 'merge appends order: Anderson then by fname picks Alice first';
+
+# merge offset overrides
+my @off = User.merge(User.offset(2)).order('id').all;
+ok @off.elems == 2, 'merge takes other.offset when set';
+
+User.destroy-all;

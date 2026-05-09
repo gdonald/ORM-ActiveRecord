@@ -236,10 +236,10 @@ class DB is export {
     $stmt;
   }
 
-  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :@order, Int:D :$limit=0, Int:D :$offset=0 --> SqlStmt) {
+  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0 --> SqlStmt) {
     my $stmt = SqlStmt.new;
     my $select = @fields.map({ $table ~ '.' ~ $_.name }).join(', ');
-    my $where-sql = self.build-where($stmt, %where);
+    my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups);
     my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
     my $order = @order ?? "ORDER BY @order.join(', ')" !! '';
     my $limit_ = $limit ?? "LIMIT $limit" !! '';
@@ -268,13 +268,30 @@ class DB is export {
     $stmt;
   }
 
-  method build-where(SqlStmt:D $stmt, %where --> Str) {
-    return '' unless %where.elems;
-    %where.keys.map({ "$_ = " ~ $stmt.placeholder(%where{$_}) }).join(' AND ');
+  method build-where(SqlStmt:D $stmt, %where, %where-not = {}, :@or-groups --> Str) {
+    my @parts;
+    @parts.append: %where.keys.map({ "$_ = " ~ $stmt.placeholder(%where{$_}) }) if %where.elems;
+    @parts.append: %where-not.keys.map({ "$_ != " ~ $stmt.placeholder(%where-not{$_}) }) if %where-not.elems;
+    my $base = @parts.elems ?? @parts.join(' AND ') !! '';
+
+    return $base unless @or-groups.elems;
+
+    my @clauses;
+    @clauses.push: $base if $base;
+    for @or-groups -> %g {
+      my @gp;
+      my %w  = %g<where>     // {};
+      my %wn = %g<where-not> // {};
+      @gp.append: %w.keys.map({  "$_ = "  ~ $stmt.placeholder(%w{$_})  }) if %w.elems;
+      @gp.append: %wn.keys.map({ "$_ != " ~ $stmt.placeholder(%wn{$_}) }) if %wn.elems;
+      @clauses.push: @gp.join(' AND ') if @gp.elems;
+    }
+    return '' unless @clauses.elems;
+    @clauses.elems == 1 ?? @clauses[0] !! @clauses.map({ "($_)" }).join(' OR ');
   }
 
-  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :@order, Int:D :$limit=0, Int:D :$offset=0) {
-    my @records = self.get-records(:@fields, :$table, :$join-table, :%where, :@order, :$limit, :$offset);
+  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0) {
+    my @records = self.get-records(:@fields, :$table, :$join-table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset);
     my @objects;
 
     for @records.kv -> $k, $record {
@@ -285,8 +302,8 @@ class DB is export {
     @objects;
   }
 
-  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :@order) {
-    my $record = self.get-record(:@fields, :$table, :%where, :@order);
+  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :%where-not, :@or-groups, :@order) {
+    my $record = self.get-record(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order);
     return Nil unless $record && $record{'id'};
     $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
   }
@@ -312,9 +329,9 @@ class DB is export {
     self.exec($sql);
   }
 
-  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :@order, Int:D :$limit=0, Int:D :$offset=0) {
+  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0) {
     my @records;
-    my $stmt = self.build-select(:@fields, :$join-table, :$table, :%where, :@order, :$limit, :$offset);
+    my $stmt = self.build-select(:@fields, :$join-table, :$table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset);
 
     for self.exec-stmt($stmt).kv -> $k, $row {
       my %record;
@@ -325,8 +342,8 @@ class DB is export {
     @records;
   }
 
-  method get-record(Str:D :$table, :@fields, :%where, :@order) {
-    my $stmt = self.build-select(:@fields, :$table, :%where, :@order, limit => 1);
+  method get-record(Str:D :$table, :@fields, :%where, :%where-not, :@or-groups, :@order) {
+    my $stmt = self.build-select(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, limit => 1);
     my $rows = self.exec-stmt($stmt);
     my %record;
     return %record unless $rows.elems;
@@ -367,9 +384,9 @@ class DB is export {
     self.exec-stmt($stmt).map({ $_[0] });
   }
 
-  method delete-records(Str:D :$table, :%where) {
+  method delete-records(Str:D :$table, :%where, :%where-not) {
     my $stmt = SqlStmt.new;
-    my $where-sql = self.build-where($stmt, %where);
+    my $where-sql = self.build-where($stmt, %where, %where-not);
     my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
 
     $stmt.sql = qq:to/SQL/;
@@ -384,9 +401,9 @@ class DB is export {
     self.exec-stmt($stmt)[0][0].Int; # count
   }
 
-  method count-records(Str:D :$table, :%where) {
+  method count-records(Str:D :$table, :%where, :%where-not, :@or-groups) {
     my $stmt = SqlStmt.new;
-    my $where-sql = self.build-where($stmt, %where);
+    my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups);
     my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
 
     $stmt.sql = qq:to/SQL/;

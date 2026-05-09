@@ -438,7 +438,7 @@ class Model is export {
     DB.shared.delete-records(:$table, :%where);
   }
 
-  method where(Hash:D $params) {
+  method where(Hash:D $params = {}) {
     my $class = self;
     Query.new(:$class, :$params);
   }
@@ -471,6 +471,10 @@ class Model is export {
 
   method ids {
     self.all.ids;
+  }
+
+  method merge(Query:D $other) {
+    self.all.merge($other);
   }
 }
 

@@ -1,0 +1,48 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 10;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'Anderson'});
+my $bob   = User.create({fname => 'Bob',   lname => 'Brown'});
+my $carol = User.create({fname => 'Carol', lname => 'Crane'});
+my $dave  = User.create({fname => 'Dave',  lname => 'Davis'});
+
+# Model.where.not(...)
+my @not-bob = User.where.not({fname => 'Bob'}).order('fname').all;
+ok @not-bob.elems == 3, 'where.not excludes one row';
+ok @not-bob.map({ .fname }).join(',') eq 'Alice,Carol,Dave', 'where.not returns the rest';
+
+# count honors not
+ok User.where.not({fname => 'Bob'}).count == 3, 'count honors where.not';
+
+# .where(...).not(...) chain
+my @adults = User.where({lname => 'Anderson'}).not({fname => 'Bob'}).all;
+ok @adults.elems == 1, 'where + not chain narrows correctly';
+ok @adults[0].fname eq 'Alice', 'where + not picked Alice';
+
+# multiple not keys
+my @two-out = User.where.not({fname => 'Bob', lname => 'Crane'}).order('fname').all;
+ok @two-out.elems == 2, 'multiple not keys ANDed';
+ok @two-out.map({ .fname }).join(',') eq 'Alice,Dave', 'multiple not keys excluded both';
+
+# first / last respect not
+my $not-alice-first = User.where.not({fname => 'Alice'}).order('fname').first;
+ok $not-alice-first.fname eq 'Bob', 'first honors where.not';
+my $not-dave-last = User.where.not({fname => 'Dave'}).last;
+ok $not-dave-last.fname eq 'Carol', 'last honors where.not';
+
+# pluck respects not
+my @names = User.where.not({fname => 'Bob'}).order('fname').pluck('fname');
+ok @names.join(',') eq 'Alice,Carol,Dave', 'pluck honors where.not';
+
+User.destroy-all;

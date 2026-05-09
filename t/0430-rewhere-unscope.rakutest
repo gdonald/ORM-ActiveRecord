@@ -1,0 +1,59 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 14;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'Anderson'});
+my $bob   = User.create({fname => 'Bob',   lname => 'Brown'});
+my $carol = User.create({fname => 'Carol', lname => 'Anderson'});
+
+# rewhere replaces existing where on a column
+my @rw = User.where({fname => 'Alice'}).rewhere({fname => 'Bob'}).all;
+ok @rw.elems == 1, 'rewhere returned one row';
+ok @rw[0].fname eq 'Bob', 'rewhere swapped Alice for Bob';
+
+# rewhere preserves untouched columns
+my @rw2 = User.where({fname => 'Alice', lname => 'Anderson'}).rewhere({fname => 'Carol'}).all;
+ok @rw2.elems == 1, 'rewhere preserved untouched lname';
+ok @rw2[0].fname eq 'Carol' && @rw2[0].lname eq 'Anderson', 'rewhere kept Anderson, swapped to Carol';
+
+# rewhere also clears not-conditions for the same column
+my @rw3 = User.where.not({fname => 'Alice'}).rewhere({fname => 'Alice'}).all;
+ok @rw3.elems == 1, 'rewhere cleared the negation';
+ok @rw3[0].fname eq 'Alice', 'rewhere flipped back to Alice';
+
+# unscope(:where) drops all conditions
+my @us-where = User.where({fname => 'Alice'}).unscope(:where).all;
+ok @us-where.elems == 3, 'unscope(:where) cleared the where conditions';
+
+# unscope('where') positional form
+my @us-pos = User.where({fname => 'Alice'}).unscope('where').all;
+ok @us-pos.elems == 3, 'unscope positional Str also clears where';
+
+# unscope on a single column
+my @us-col = User.where({fname => 'Alice', lname => 'Anderson'}).unscope(where => 'fname').all;
+ok @us-col.elems == 2, 'unscope of one column kept the other condition';
+ok @us-col.map({ .lname }).all eq 'Anderson', 'all remaining rows match the kept condition';
+
+# unscope multiple columns at once
+my @us-cols = User.where({fname => 'Alice', lname => 'Anderson'}).unscope(where => <fname lname>).all;
+ok @us-cols.elems == 3, 'unscope(<fname lname>) cleared both conditions';
+
+# unscope :order
+my @us-order = User.order('fname DESC').unscope(:order).order('id').all;
+ok @us-order[0].id == $alice.id, 'unscope cleared the previous order';
+
+# unscope :limit and :offset
+ok User.limit(1).unscope(:limit).all.elems == 3, 'unscope(:limit) drops limit';
+ok User.offset(2).unscope(:offset).all.elems == 3, 'unscope(:offset) drops offset';
+
+User.destroy-all;
