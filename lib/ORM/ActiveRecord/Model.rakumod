@@ -17,7 +17,7 @@ class Model is export {
   has Validators $.validators;
 
   has %.record is rw;
-  has %!has-manys;
+  has %.has-manys;
   has %.belongs-tos;
 
   has Int $.id;
@@ -515,6 +515,14 @@ class Model is export {
 
   method having(*@parts) {
     self.all.having(|@parts);
+  }
+
+  method joins(*@args, *%kw) {
+    self.all.joins(|@args, |%kw);
+  }
+
+  method left-outer-joins(*@args, *%kw) {
+    self.all.left-outer-joins(|@args, |%kw);
   }
 
   method pluck(*@cols) {

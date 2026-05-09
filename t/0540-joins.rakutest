@@ -1,0 +1,113 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Subscription {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: subscriptions => class => Subscription;
+    self.has-many: magazines => through => :subscriptions;
+  }
+}
+
+class Magazine is Model {}
+
+class Subscription is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+    self.belongs-to: magazine => class => Magazine;
+  }
+}
+
+plan 17;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Subscription.destroy-all;
+User.destroy-all;
+Magazine.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+my $bob   = User.create({fname => 'Bob',   lname => 'B'});
+my $carol = User.create({fname => 'Carol', lname => 'C'});
+
+my $mad  = Magazine.create({title => 'Mad'});
+my $time = Magazine.create({title => 'Time'});
+
+Subscription.create({user => $alice, magazine => $mad});
+Subscription.create({user => $alice, magazine => $time});
+Subscription.create({user => $bob,   magazine => $mad});
+
+# 1.4.1 joins(symbol) — string arg, belongs_to direction
+ok Subscription.joins('user').count == 3,
+   'joins(string) on belongs_to includes all subscriptions';
+
+# 1.4.1 joins(symbol) — named arg, has_many direction
+ok User.joins(:subscriptions).count == 3,
+   'joins(:assoc) on has_many counts join rows (one per sub)';
+
+# 1.4.1 has_many :through (single arg)
+ok User.joins(:magazines).count == 3,
+   'joins(:through-assoc) joins through the join table';
+
+# distinct narrows joined has_many to base records
+ok User.joins(:subscriptions).distinct.count == 2,
+   'joins + distinct returns base record count';
+
+# 1.4.2 joins(string) raw clause
+my $raw = 'INNER JOIN subscriptions ON subscriptions.user_id = users.id';
+ok User.joins($raw).count == 3,
+   'joins(raw SQL) emits the literal JOIN clause';
+
+# 1.4.3 nested-hash form: joins(subscriptions: :magazine)
+ok User.joins(:subscriptions(:magazine)).count == 3,
+   'nested joins recurse through the chain';
+
+# nested-hash limited by where on the leaf
+ok User.joins(:subscriptions(:magazine)).where({magazines => {title => 'Mad'}}).distinct.count == 2,
+   'nested join filters via where on leaf table';
+
+# 1.4.4 left_outer_joins keeps unmatched rows
+ok User.left-outer-joins(:subscriptions).count == 4,
+   'left-outer-joins keeps users with no subscriptions';
+
+ok User.left-outer-joins(:subscriptions).distinct.count == 3,
+   'left-outer-joins + distinct returns every user';
+
+# 1.4.5 nested-hash where for joined tables
+ok Subscription.joins(:user).where({users => {fname => 'Alice'}}).count == 2,
+   'where(table => {col => val}) filters on joined table';
+
+ok Subscription.joins(:user).where({users => {fname => 'Bob'}}).count == 1,
+   'nested-hash where narrows via joined column';
+
+# nested-hash where with where-not
+ok Subscription.joins(:user).where({users => {fname => 'Alice'}}).count == 2,
+   'nested-hash where works with positive match';
+
+# joins-values is observable
+my $q = User.joins(:subscriptions);
+ok $q.joins-values.elems == 1, 'joins-values reflects added join';
+ok $q.joins-values[0].contains('INNER JOIN subscriptions'),
+   'joins-values stores rendered join SQL';
+
+# unscope(:joins) drops the joins
+ok User.joins(:subscriptions).unscope(:joins).all.elems == 3,
+   'unscope(:joins) returns to plain query';
+
+# merge propagates joins
+my $j = User.joins(:subscriptions);
+my $f = User.where({fname => 'Alice'});
+ok $f.merge($j).distinct.count == 1,
+   'merge propagates joins from other relation';
+
+# explicit qualified column on base table still works under join
+ok User.joins(:subscriptions).where({fname => 'Alice'}).distinct.count == 1,
+   'where on base column under join is auto-qualified';
+
+Subscription.destroy-all;
+User.destroy-all;
+Magazine.destroy-all;

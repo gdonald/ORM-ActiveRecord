@@ -21,6 +21,7 @@ class Query is export {
   has Str $!from-alias;
   has @!references;
   has Bool $!readonly = False;
+  has @!joins;
 
   submethod BUILD(Mu:U :$!class, Hash:D :$!params) {
     $!table = Utils.table-name($!class);
@@ -42,6 +43,7 @@ class Query is export {
   method from-alias       { $!from-alias }
   method references-values { @!references }
   method readonly-value    { $!readonly }
+  method joins-values      { @!joins }
 
   method or-groups-payload {
     @!or-relations.map({
@@ -107,6 +109,7 @@ class Query is export {
     }
     @!references.append: $other.references-values if $other.references-values.elems;
     $!readonly = True if $other.readonly-value;
+    @!joins.append: $other.joins-values if $other.joins-values.elems;
     self;
   }
 
@@ -141,6 +144,7 @@ class Query is export {
         when 'from'       { $!from-source = Str; $!from-alias = Str }
         when 'references' { @!references = () }
         when 'readonly'   { $!readonly = False }
+        when 'joins'      { @!joins = () }
         default { die "unscope: unknown scope kind '$kind'" }
       }
     }
@@ -241,6 +245,93 @@ class Query is export {
     $obj;
   }
 
+  method joins(*@args, *%kw) {
+    self!collect-joins('INNER JOIN', @args, %kw);
+    self;
+  }
+
+  method left-outer-joins(*@args, *%kw) {
+    self!collect-joins('LEFT OUTER JOIN', @args, %kw);
+    self;
+  }
+
+  method !collect-joins(Str:D $kind, @args, %kw) {
+    for @args -> $a {
+      self!add-join-arg($kind, $a, $!class, $!table);
+    }
+    for %kw.kv -> $k, $v {
+      self!add-named-join($kind, $k, $v, $!class, $!table);
+    }
+  }
+
+  method !add-named-join(Str:D $kind, $k, $v, Mu $base-class, Str $base-table) {
+    my ($child-class, $child-table) = self!add-assoc-join($kind, $k.Str, $base-class, $base-table);
+    self!add-join-arg($kind, $v, $child-class, $child-table) unless $v === True;
+  }
+
+  method !add-join-arg(Str:D $kind, $arg, Mu $base-class, Str $base-table) {
+    given $arg {
+      when Pair {
+        self!add-named-join($kind, $arg.key, $arg.value, $base-class, $base-table);
+      }
+      when Hash {
+        for $arg.kv -> $k, $v {
+          self!add-named-join($kind, $k, $v, $base-class, $base-table);
+        }
+      }
+      when Iterable {
+        for $arg.list -> $sub { self!add-join-arg($kind, $sub, $base-class, $base-table) }
+      }
+      when Str {
+        if $arg.contains(' ') || $arg.contains("\t") || $arg.uc.contains('JOIN') {
+          @!joins.push: $arg;
+        } else {
+          self!add-assoc-join($kind, $arg, $base-class, $base-table);
+        }
+      }
+      when Bool { }
+      default {
+        self!add-assoc-join($kind, $arg.Str, $base-class, $base-table);
+      }
+    }
+  }
+
+  method !add-assoc-join(Str:D $kind, Str:D $name, Mu $base-class, Str $base-table) {
+    my $stub = $base-class.new(:id(0));
+    if $stub.belongs-tos{$name}:exists {
+      my $other-class = $stub.belongs-tos{$name}{'class'};
+      my $other-table = Utils.table-name($other-class);
+      my $fkey = $name ~ '_id';
+      @!joins.push: "$kind $other-table ON $other-table.id = $base-table.$fkey";
+      return ($other-class, $other-table);
+    }
+    if $stub.has-manys{$name}:exists {
+      my $hm = $stub.has-manys{$name};
+      if $hm{'through'}:exists {
+        my $through-name = $hm{'through'}.key.Str;
+        my ($mid-class, $mid-table) = self!add-assoc-join($kind, $through-name, $base-class, $base-table);
+        my $singular = Utils.singular($name);
+        my $mid-stub = $mid-class.new(:id(0));
+        if $mid-stub.belongs-tos{$singular}:exists {
+          my $other-class = $mid-stub.belongs-tos{$singular}{'class'};
+          my $other-table = Utils.table-name($other-class);
+          my $fkey = $singular ~ '_id';
+          @!joins.push: "$kind $other-table ON $other-table.id = $mid-table.$fkey";
+          return ($other-class, $other-table);
+        }
+        die "joins: cannot resolve has_many :through '$name' on " ~ $base-class.^name;
+      }
+      if $hm{'class'}:exists {
+        my $other-class = $hm{'class'};
+        my $other-table = Utils.table-name($other-class);
+        my $fkey = Utils.to-foreign-key($base-table);
+        @!joins.push: "$kind $other-table ON $other-table.$fkey = $base-table.id";
+        return ($other-class, $other-table);
+      }
+    }
+    die "joins: unknown association '$name' on " ~ $base-class.^name;
+  }
+
   method having(*@parts) {
     die 'having requires at least a SQL fragment' unless @parts.elems;
     if @parts.elems == 1 && @parts[0] ~~ Str {
@@ -269,6 +360,7 @@ class Query is export {
       distinct => $!distinct,
       group => @!group, having => @!having,
       from-source => $!from-source, from-alias => $!from-alias,
+      joins => @!joins,
     );
     if $!readonly {
       .make-readonly for @objects;
@@ -287,13 +379,14 @@ class Query is export {
       distinct => $!distinct, select => @!select,
       group => @!group, having => @!having,
       from-source => $!from-source, from-alias => $!from-alias,
+      joins => @!joins,
     );
   }
 
   method first {
     my @order = @!order.elems ?? @!order !! ('id',);
     my @or-groups = self.or-groups-payload;
-    my $obj = DB.shared.get-object(:$!table, :$!class, :@!fields, where => $!params, where-not => $!not-params, :@or-groups, :@order, distinct => $!distinct, group => @!group, having => @!having, from-source => $!from-source, from-alias => $!from-alias);
+    my $obj = DB.shared.get-object(:$!table, :$!class, :@!fields, where => $!params, where-not => $!not-params, :@or-groups, :@order, distinct => $!distinct, group => @!group, having => @!having, from-source => $!from-source, from-alias => $!from-alias, joins => @!joins);
     $obj.make-readonly if $obj.defined && $!readonly;
     $obj;
   }
@@ -303,7 +396,7 @@ class Query is export {
       ?? @!order
       !! ('id DESC',);
     my @or-groups = self.or-groups-payload;
-    my $obj = DB.shared.get-object(:$!table, :$!class, :@!fields, where => $!params, where-not => $!not-params, :@or-groups, :@order, distinct => $!distinct, group => @!group, having => @!having, from-source => $!from-source, from-alias => $!from-alias);
+    my $obj = DB.shared.get-object(:$!table, :$!class, :@!fields, where => $!params, where-not => $!not-params, :@or-groups, :@order, distinct => $!distinct, group => @!group, having => @!having, from-source => $!from-source, from-alias => $!from-alias, joins => @!joins);
     $obj.make-readonly if $obj.defined && $!readonly;
     $obj;
   }
@@ -319,6 +412,7 @@ class Query is export {
         distinct => $!distinct,
         group => @!group, having => @!having,
         from-source => $!from-source, from-alias => $!from-alias,
+        joins => @!joins,
       )
     );
     if @names.elems == 1 {

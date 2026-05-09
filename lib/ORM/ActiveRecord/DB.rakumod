@@ -251,13 +251,14 @@ class DB is export {
     $stmt;
   }
 
-  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias --> SqlStmt) {
+  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins --> SqlStmt) {
     my $stmt = SqlStmt.new;
     my $select-keyword = $distinct ?? 'SELECT DISTINCT' !! 'SELECT';
     my $qualifier = $from-alias.defined ?? $from-alias !! $table;
     my $select = @fields.map({ $qualifier ~ '.' ~ $_.name }).join(', ');
     my $from-clause = $from-source.defined ?? "FROM $from-source" !! "FROM $table";
-    my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups);
+    my $where-qualifier = @joins.elems ?? $qualifier !! Str;
+    my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups, qualifier => $where-qualifier);
     my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
     my $group-clause = @group ?? "GROUP BY @group.join(', ')" !! '';
     my $having-clause = self.build-having($stmt, @having);
@@ -275,10 +276,13 @@ class DB is export {
       SQL
     }
 
+    my $joins-sql = @joins.elems ?? @joins.join("\n") !! '';
+
     $stmt.sql = qq:to/SQL/;
       $select-keyword $select
 	    $from-clause
       $join
+      $joins-sql
       $where-clause
       $group-clause
       $having-clause
@@ -322,10 +326,10 @@ class DB is export {
     "ORDER BY " ~ @fragments.join(', ');
   }
 
-  method build-where(SqlStmt:D $stmt, %where, %where-not = {}, :@or-groups --> Str) {
+  method build-where(SqlStmt:D $stmt, %where, %where-not = {}, :@or-groups, Str :$qualifier --> Str) {
     my @parts;
-    @parts.append: %where.keys.map({ "$_ = " ~ $stmt.placeholder(%where{$_}) }) if %where.elems;
-    @parts.append: %where-not.keys.map({ "$_ != " ~ $stmt.placeholder(%where-not{$_}) }) if %where-not.elems;
+    @parts.append: self!where-fragments($stmt, %where,     '=',  :$qualifier) if %where.elems;
+    @parts.append: self!where-fragments($stmt, %where-not, '!=', :$qualifier) if %where-not.elems;
     my $base = @parts.elems ?? @parts.join(' AND ') !! '';
 
     return $base unless @or-groups.elems;
@@ -336,16 +340,31 @@ class DB is export {
       my @gp;
       my %w  = %g<where>     // {};
       my %wn = %g<where-not> // {};
-      @gp.append: %w.keys.map({  "$_ = "  ~ $stmt.placeholder(%w{$_})  }) if %w.elems;
-      @gp.append: %wn.keys.map({ "$_ != " ~ $stmt.placeholder(%wn{$_}) }) if %wn.elems;
+      @gp.append: self!where-fragments($stmt, %w,  '=',  :$qualifier) if %w.elems;
+      @gp.append: self!where-fragments($stmt, %wn, '!=', :$qualifier) if %wn.elems;
       @clauses.push: @gp.join(' AND ') if @gp.elems;
     }
     return '' unless @clauses.elems;
     @clauses.elems == 1 ?? @clauses[0] !! @clauses.map({ "($_)" }).join(' OR ');
   }
 
-  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias) {
-    my @records = self.get-records(:@fields, :$table, :$join-table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias);
+  method !where-fragments(SqlStmt:D $stmt, %h, Str:D $op, Str :$qualifier) {
+    my @out;
+    for %h.kv -> $k, $v {
+      if $v ~~ Hash {
+        for $v.kv -> $col, $val {
+          @out.push: "$k.$col $op " ~ $stmt.placeholder($val);
+        }
+      } else {
+        my $col = $qualifier.defined ?? "$qualifier.$k" !! $k;
+        @out.push: "$col $op " ~ $stmt.placeholder($v);
+      }
+    }
+    @out;
+  }
+
+  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
+    my @records = self.get-records(:@fields, :$table, :$join-table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins);
     my @objects;
 
     for @records.kv -> $k, $record {
@@ -356,8 +375,8 @@ class DB is export {
     @objects;
   }
 
-  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias) {
-    my $record = self.get-record(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, :$distinct, :@group, :@having, :$from-source, :$from-alias);
+  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
+    my $record = self.get-record(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins);
     return Nil unless $record && $record{'id'};
     $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
   }
@@ -383,9 +402,9 @@ class DB is export {
     self.exec($sql);
   }
 
-  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias) {
+  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
     my @records;
-    my $stmt = self.build-select(:@fields, :$join-table, :$table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias);
+    my $stmt = self.build-select(:@fields, :$join-table, :$table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins);
 
     for self.exec-stmt($stmt).kv -> $k, $row {
       my %record;
@@ -396,8 +415,8 @@ class DB is export {
     @records;
   }
 
-  method get-record(Str:D :$table, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias) {
-    my $stmt = self.build-select(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, limit => 1, :$distinct, :@group, :@having, :$from-source, :$from-alias);
+  method get-record(Str:D :$table, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
+    my $stmt = self.build-select(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, limit => 1, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins);
     my $rows = self.exec-stmt($stmt);
     my %record;
     return %record unless $rows.elems;
@@ -455,18 +474,22 @@ class DB is export {
     self.exec-stmt($stmt)[0][0].Int; # count
   }
 
-  method count-records(Str:D :$table, :%where, :%where-not, :@or-groups, Bool:D :$distinct=False, :@select, :@group, :@having, Str :$from-source, Str :$from-alias) {
+  method count-records(Str:D :$table, :%where, :%where-not, :@or-groups, Bool:D :$distinct=False, :@select, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
     my $from-clause = $from-source.defined ?? "FROM $from-source" !! "FROM $table";
+    my $qualifier = $from-alias.defined ?? $from-alias !! $table;
+    my $where-qualifier = @joins.elems ?? $qualifier !! Str;
+    my $joins-sql = @joins.elems ?? @joins.join("\n") !! '';
 
     if @group.elems || @having.elems {
       my $inner = SqlStmt.new;
-      my $where-sql = self.build-where($inner, %where, %where-not, :@or-groups);
+      my $where-sql = self.build-where($inner, %where, %where-not, :@or-groups, qualifier => $where-qualifier);
       my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
       my $group-clause = @group.elems ?? "GROUP BY @group.join(', ')" !! '';
       my $having-clause = self.build-having($inner, @having);
       $inner.sql = qq:to/SQL/;
         SELECT count(*) FROM (
           SELECT 1 $from-clause
+          $joins-sql
           $where-clause
           $group-clause
           $having-clause
@@ -476,23 +499,34 @@ class DB is export {
     }
 
     my $stmt = SqlStmt.new;
-    my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups);
+    my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups, qualifier => $where-qualifier);
     my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
 
     if $distinct {
-      my $cols = @select.elems ?? @select.join(', ') !! '*';
-      $stmt.sql = qq:to/SQL/;
-        SELECT count(*)
-        FROM (
-          SELECT DISTINCT $cols
+      if @joins.elems && !@select.elems {
+        $stmt.sql = qq:to/SQL/;
+          SELECT count(DISTINCT $qualifier.id)
           $from-clause
+          $joins-sql
           $where-clause
-        ) sub
-        SQL
+          SQL
+      } else {
+        my $cols = @select.elems ?? @select.join(', ') !! '*';
+        $stmt.sql = qq:to/SQL/;
+          SELECT count(*)
+          FROM (
+            SELECT DISTINCT $cols
+            $from-clause
+            $joins-sql
+            $where-clause
+          ) sub
+          SQL
+      }
     } else {
       $stmt.sql = qq:to/SQL/;
         SELECT count(*)
         $from-clause
+        $joins-sql
         $where-clause
         SQL
     }
