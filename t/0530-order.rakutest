@@ -6,7 +6,7 @@ use Test;
 
 class User is Model {}
 
-plan 17;
+plan 18;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -30,9 +30,12 @@ my @e = User.order('LOWER(fname) DESC').pluck('fname');
 ok @e[0] eq 'Eve', 'expression order LOWER(fname) DESC: Eve first';
 ok @e[*-1] eq 'Alice', 'expression order LOWER(fname) DESC: Alice last';
 
-# hash-style direction (named args)
-my @h = User.order(:lname<asc>, :fname<desc>).pluck('lname', 'fname');
-ok @h[0].join(' ') eq 'Anderson Dave', 'named-arg order matches multi-column string form';
+# named-arg direction (single column — multi named args go through %kw which is unordered)
+my @h = User.order(:fname<desc>).pluck('fname');
+ok @h[0] eq 'Eve' && @h[*-1] eq 'Alice', 'named-arg direction descends';
+
+my @h2 = User.order(:fname<asc>).pluck('fname');
+ok @h2[0] eq 'Alice' && @h2[*-1] eq 'Eve', 'named-arg direction ascends';
 
 # invalid direction fails fast
 my $bad = False;
