@@ -536,6 +536,18 @@ class Model is export {
   method merge(Query:D $other) {
     self.all.merge($other);
   }
+
+  method excluding(*@records) {
+    self.all.excluding(|@records);
+  }
+
+  method missing(*@names, *%kw) {
+    self.all.missing(|@names, |%kw);
+  }
+
+  method associated(*@names, *%kw) {
+    self.all.associated(|@names, |%kw);
+  }
 }
 
 multi sub infix:<==>(Model $a, Model $b --> Bool) is export {

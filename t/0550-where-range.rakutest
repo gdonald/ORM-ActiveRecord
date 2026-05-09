@@ -1,0 +1,54 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Book is Model {}
+
+plan 12;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Book.destroy-all;
+
+my %defaults = sentences => 1, words => 1, periods => 1, commas => 1;
+Book.create({title => 'A', pages => 50,  |%defaults});
+Book.create({title => 'B', pages => 100, |%defaults});
+Book.create({title => 'C', pages => 200, |%defaults});
+Book.create({title => 'D', pages => 300, |%defaults});
+Book.create({title => 'E', pages => 400, |%defaults});
+
+# inclusive range
+my @mid = Book.where({pages => 100..300}).order('pages').all;
+ok @mid.elems == 3, 'inclusive range matched 3 rows';
+ok @mid.map({ .title }).join(',') eq 'B,C,D', 'inclusive range returned correct rows';
+
+# exclusive-max range (..^)
+my @half-open = Book.where({pages => 100..^300}).order('pages').all;
+ok @half-open.elems == 2, 'exclusive-max range matched 2 rows';
+ok @half-open.map({ .title }).join(',') eq 'B,C', 'exclusive-max range returned B,C';
+
+# exclusive-min range (^..)
+my @lower-open = Book.where({pages => 100^..300}).order('pages').all;
+ok @lower-open.elems == 2, 'exclusive-min range matched 2 rows';
+ok @lower-open.map({ .title }).join(',') eq 'C,D', 'exclusive-min range returned C,D';
+
+# fully exclusive (^..^)
+my @both-open = Book.where({pages => 100^..^300}).order('pages').all;
+ok @both-open.elems == 1, 'fully-exclusive range matched 1 row';
+ok @both-open[0].title eq 'C', 'fully-exclusive range returned C';
+
+# count honors range
+ok Book.where({pages => 100..300}).count == 3, 'count honors range';
+
+# where.not with range — outside the range
+my @outside = Book.where.not({pages => 100..300}).order('pages').all;
+ok @outside.elems == 2, 'where.not with range excluded 3 rows';
+ok @outside.map({ .title }).join(',') eq 'A,E', 'where.not with range returned outliers';
+
+# range combined with another where
+my @combo = Book.where({pages => 100..400}).where({title => 'D'}).all;
+ok @combo.elems == 1 && @combo[0].title eq 'D', 'range AND scalar condition narrows';
+
+Book.destroy-all;

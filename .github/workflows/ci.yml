@@ -1,0 +1,33 @@
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: ar_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Raku
+        uses: Raku/setup-raku@v1
+        with:
+          raku-version: 'latest'
+      - name: Raku version
+        run: raku --version
+      - name: Install Dependencies
+        run: zef install --/test --test-depends --deps-only .
+      - name: Install App::Prove6
+        run: zef install --/test App::Prove6
+      - name: Configure database
+        run: cp config/application.json.github-actions config/application.json
+      - name: Migrate database
+        run: raku -Ilib bin/ar
+      - name: Run Tests and Specs
+        run: ./test.raku

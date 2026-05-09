@@ -1,0 +1,77 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Subscription {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: subscriptions => class => Subscription;
+  }
+}
+
+class Magazine is Model {}
+
+class Subscription is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+    self.belongs-to: magazine => class => Magazine;
+  }
+}
+
+plan 9;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Subscription.destroy-all;
+User.destroy-all;
+Magazine.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+my $bob   = User.create({fname => 'Bob',   lname => 'B'});
+
+my $mad  = Magazine.create({title => 'Mad'});
+my $time = Magazine.create({title => 'Time'});
+
+Subscription.create({user => $alice, magazine => $mad});
+Subscription.create({user => $alice, magazine => $time});
+Subscription.create({user => $bob,   magazine => $mad});
+
+# where(belongs-to: instance) → assoc_id = id
+my @alice-subs = Subscription.where({user => $alice}).all;
+ok @alice-subs.elems == 2, 'where(assoc: instance) finds rows by FK';
+
+my @bob-subs = Subscription.where({user => $bob}).all;
+ok @bob-subs.elems == 1, 'where(assoc: instance) on second instance';
+
+# count honors instance shorthand
+ok Subscription.where({user => $alice}).count == 2, 'count honors instance shorthand';
+
+# multiple instance keys
+my @one = Subscription.where({user => $alice, magazine => $time}).all;
+ok @one.elems == 1, 'two assoc instances ANDed together';
+
+# array of instances → IN
+my @both-users = Subscription.where({user => [$alice, $bob]}).all;
+ok @both-users.elems == 3, 'where(assoc: @instances) emits IN with their ids';
+
+# where.not on instance
+my @not-alice = Subscription.where.not({user => $alice}).all;
+ok @not-alice.elems == 1, 'where.not(assoc: instance) excludes by FK';
+
+# raw FK still works alongside instance shorthand
+ok Subscription.where({user_id => $alice.id}).count == 2, 'raw user_id still works';
+
+# instance shorthand on where chain after another where
+my @chained = Subscription.where({magazine => $mad}).where({user => $alice}).all;
+ok @chained.elems == 1, 'instance shorthand chains with another where';
+
+# rewhere replaces the FK condition
+my @rewhered = Subscription.where({user => $alice}).rewhere({user => $bob}).all;
+ok @rewhered.elems == 1 && @rewhered[0].user_id == $bob.id, 'rewhere replaces the FK';
+
+Subscription.destroy-all;
+User.destroy-all;
+Magazine.destroy-all;

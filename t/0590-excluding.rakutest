@@ -1,0 +1,43 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 9;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+my $bob   = User.create({fname => 'Bob',   lname => 'B'});
+my $carol = User.create({fname => 'Carol', lname => 'C'});
+my $dave  = User.create({fname => 'Dave',  lname => 'D'});
+
+# excluding(record) — single instance
+my @no-bob = User.excluding($bob).order('fname').all;
+ok @no-bob.elems == 3, 'excluding(record) drops one row';
+ok @no-bob.map({ .fname }).join(',') eq 'Alice,Carol,Dave', 'excluding returned the rest';
+
+# excluding(records) — multiple instances
+my @two = User.excluding($alice, $dave).order('fname').all;
+ok @two.elems == 2, 'excluding(@records) drops the listed rows';
+ok @two.map({ .fname }).join(',') eq 'Bob,Carol', 'excluding returned the rest';
+
+# excluding(@ids) — raw ids
+my @by-id = User.excluding($bob.id, $carol.id).order('fname').all;
+ok @by-id.elems == 2, 'excluding(@ids) drops by id';
+ok @by-id.map({ .fname }).join(',') eq 'Alice,Dave', 'excluding(@ids) returned the rest';
+
+# count honors excluding
+ok User.excluding($alice).count == 3, 'count honors excluding';
+
+# excluding chained off where
+my @after-filter = User.where({lname => ['A', 'B', 'C']}).excluding($alice).order('fname').all;
+ok @after-filter.elems == 2, 'excluding works after where';
+ok @after-filter.map({ .fname }).join(',') eq 'Bob,Carol', 'where + excluding combine';
+
+User.destroy-all;

@@ -1,0 +1,77 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Subscription {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: subscriptions => class => Subscription;
+    self.has-many: magazines => through => :subscriptions;
+  }
+}
+
+class Magazine is Model {}
+
+class Subscription is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+    self.belongs-to: magazine => class => Magazine;
+  }
+}
+
+plan 12;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Subscription.destroy-all;
+User.destroy-all;
+Magazine.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+my $bob   = User.create({fname => 'Bob',   lname => 'B'});
+my $carol = User.create({fname => 'Carol', lname => 'C'});
+
+my $mad  = Magazine.create({title => 'Mad'});
+my $time = Magazine.create({title => 'Time'});
+
+Subscription.create({user => $alice, magazine => $mad});
+Subscription.create({user => $bob,   magazine => $time});
+
+# where.missing(:has-many) → users with no subscriptions
+my @no-subs = User.where.missing(:subscriptions).order('fname').all;
+ok @no-subs.elems == 1, 'where.missing(:has-many) finds users with no rows';
+ok @no-subs[0].fname eq 'Carol', 'returned the user with no subscriptions';
+
+# where.missing on belongs-to direction (insert raw to skip nullable defaults)
+DB.shared.exec('INSERT INTO subscriptions (user_id, magazine_id) VALUES (NULL, NULL)');
+my @no-user = Subscription.where.missing(:user).all;
+ok @no-user.elems == 1, 'where.missing(:belongs-to) finds rows with NULL FK';
+ok @no-user[0].id > 0, 'returned the orphan subscription';
+DB.shared.exec('DELETE FROM subscriptions WHERE user_id IS NULL');
+
+# where.associated(:has-many) → users who have at least one subscription
+my @subbed = User.where.associated(:subscriptions).distinct.order('fname').all;
+ok @subbed.elems == 2, 'where.associated(:has-many) finds users with rows';
+ok @subbed.map({ .fname }).join(',') eq 'Alice,Bob', 'returned the subscribed users';
+
+# where.associated through belongs-to
+ok Subscription.where.associated(:user).count == 2, 'where.associated narrows to FK-present rows';
+
+# count honors missing/associated
+ok User.where.missing(:subscriptions).count == 1, 'count honors missing';
+ok User.where.associated(:subscriptions).distinct.count == 2, 'count honors associated';
+
+# missing through has_many :through
+ok User.where.missing(:magazines).count == 1, 'missing on has_many :through finds users with no magazines';
+
+# Model.missing/associated shortcuts
+ok User.missing(:subscriptions).count == 1, 'Model.missing shortcut works';
+ok User.associated(:subscriptions).distinct.count == 2, 'Model.associated shortcut works';
+
+Subscription.destroy-all;
+User.destroy-all;
+Magazine.destroy-all;

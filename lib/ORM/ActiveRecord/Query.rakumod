@@ -23,10 +23,12 @@ class Query is export {
   has Bool $!readonly = False;
   has @!joins;
 
-  submethod BUILD(Mu:U :$!class, Hash:D :$!params) {
+  submethod BUILD(Mu:U :$!class, Hash:D :$params) {
     $!table = Utils.table-name($!class);
+    $!params = {};
     $!not-params = {};
     @!fields = DB.shared.get-fields(:$!table).map({ Field.new(:name($_[0]), :type($_[1])) });
+    for self!normalize-assoc-params($params).kv -> $k, $v { $!params{$k} = $v }
   }
 
   method where-values     { $!params }
@@ -52,20 +54,79 @@ class Query is export {
   }
 
   method where(Hash:D $more = {}) {
-    for $more.kv -> $k, $v { $!params{$k} = $v }
+    for self!normalize-assoc-params($more).kv -> $k, $v { $!params{$k} = $v }
     self;
   }
 
   method not(Hash:D $more) {
-    for $more.kv -> $k, $v { $!not-params{$k} = $v }
+    for self!normalize-assoc-params($more).kv -> $k, $v { $!not-params{$k} = $v }
     self;
   }
 
   method rewhere(Hash:D $more) {
-    for $more.kv -> $k, $v {
+    for self!normalize-assoc-params($more).kv -> $k, $v {
       $!params{$k}:delete;
       $!not-params{$k}:delete;
       $!params{$k} = $v;
+    }
+    self;
+  }
+
+  method !normalize-assoc-params(Hash:D $h --> Hash) {
+    my %out;
+    my $stub = $!class.new(:id(0));
+    for $h.kv -> $k, $v {
+      if $stub.belongs-tos{$k}:exists {
+        %out{$k ~ '_id'} = self!coerce-id-value($v);
+      } else {
+        %out{$k} = $v;
+      }
+    }
+    %out;
+  }
+
+  method !coerce-id-value($v) {
+    given $v {
+      when Array | List | Seq {
+        $v.list.map({ .defined && .^can('id') ?? .id !! $_ }).list;
+      }
+      default {
+        $v.defined && $v.^can('id') ?? $v.id !! $v;
+      }
+    }
+  }
+
+  method excluding(*@records) {
+    return self unless @records.elems;
+    my @ids = @records.map({ .^can('id') ?? .id !! $_ });
+    my %prev = $!not-params{'id'}:exists ?? %( id => $!not-params{'id'} ) !! %();
+    if %prev<id>:exists {
+      my @existing = %prev<id> ~~ Positional ?? %prev<id>.list !! (%prev<id>,);
+      $!not-params{'id'} = (|@existing, |@ids).unique.list;
+    } else {
+      $!not-params{'id'} = @ids.list;
+    }
+    self;
+  }
+
+  method missing(*@names, *%kw) {
+    my @all = @names.map(*.Str);
+    for %kw.kv -> $k, $v { @all.push: $k if $v }
+    die 'missing requires at least one association' unless @all.elems;
+    for @all -> $assoc {
+      my ($other-class, $other-table) = self!add-assoc-join('LEFT OUTER JOIN', $assoc, $!class, $!table);
+      $!params{$other-table} //= {};
+      $!params{$other-table}{'id'} = Any;
+    }
+    self;
+  }
+
+  method associated(*@names, *%kw) {
+    my @all = @names.map(*.Str);
+    for %kw.kv -> $k, $v { @all.push: $k if $v }
+    die 'associated requires at least one association' unless @all.elems;
+    for @all -> $assoc {
+      self!add-assoc-join('INNER JOIN', $assoc, $!class, $!table);
     }
     self;
   }

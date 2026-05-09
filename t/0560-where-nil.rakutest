@@ -1,0 +1,39 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Game is Model {}
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Game.destroy-all;
+
+Game.create({name => 'Chess', year => 1500});
+Game.create({name => 'Go',    year => Nil});
+Game.create({name => Nil,     year => 1800});
+Game.create({name => 'Poker', year => 1810});
+
+# Nil shorthand on a string column
+my @nameless = Game.where({name => Nil}).all;
+ok @nameless.elems == 1, 'where(col: Nil) finds NULL rows';
+ok ! @nameless[0].name, 'returned row has NULL name';
+
+# Nil shorthand on an integer column
+my @yearless = Game.where({year => Nil}).all;
+ok @yearless.elems == 1, 'where(col: Nil) on integer finds NULL';
+ok @yearless[0].name eq 'Go', 'returned row matches';
+
+# where.not(col => Nil) → IS NOT NULL
+my @named = Game.where.not({name => Nil}).order('name').all;
+ok @named.elems == 3, 'where.not(col: Nil) finds non-NULL rows';
+ok @named.map({ .name }).join(',') eq 'Chess,Go,Poker', 'returns correctly';
+
+# count honors Nil
+ok Game.where({name => Nil}).count == 1, 'count honors Nil shorthand';
+ok Game.where.not({name => Nil}).count == 3, 'count honors IS NOT NULL';
+
+Game.destroy-all;

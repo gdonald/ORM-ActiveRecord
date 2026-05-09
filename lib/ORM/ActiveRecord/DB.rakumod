@@ -353,14 +353,43 @@ class DB is export {
     for %h.kv -> $k, $v {
       if $v ~~ Hash {
         for $v.kv -> $col, $val {
-          @out.push: "$k.$col $op " ~ $stmt.placeholder($val);
+          @out.push: self!fragment-for($stmt, "$k.$col", $op, $val);
         }
       } else {
         my $col = $qualifier.defined ?? "$qualifier.$k" !! $k;
-        @out.push: "$col $op " ~ $stmt.placeholder($v);
+        @out.push: self!fragment-for($stmt, $col, $op, $v);
       }
     }
     @out;
+  }
+
+  method !fragment-for(SqlStmt:D $stmt, Str:D $col, Str:D $op, $v --> Str) {
+    my $negate = $op eq '!=';
+    return $negate ?? "$col IS NOT NULL" !! "$col IS NULL"
+      unless $v.defined;
+    given $v {
+      when Range {
+        my $lo = $v.min;
+        my $hi = $v.max;
+        my $lo-op = $v.excludes-min ?? '>'  !! '>=';
+        my $hi-op = $v.excludes-max ?? '<'  !! '<=';
+        my $inner = "$col $lo-op " ~ $stmt.placeholder($lo)
+                  ~ " AND $col $hi-op " ~ $stmt.placeholder($hi);
+        $negate ?? "NOT ($inner)" !! $inner;
+      }
+      when Positional {
+        my @vals = $v.list;
+        unless @vals.elems {
+          return $negate ?? 'TRUE' !! 'FALSE';
+        }
+        my $list = @vals.map({ $stmt.placeholder($_) }).join(', ');
+        my $inop = $negate ?? 'NOT IN' !! 'IN';
+        "$col $inop ($list)";
+      }
+      default {
+        "$col $op " ~ $stmt.placeholder($v);
+      }
+    }
   }
 
   method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
