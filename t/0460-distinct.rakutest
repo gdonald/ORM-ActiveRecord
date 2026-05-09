@@ -1,0 +1,51 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 11;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Anderson'});
+User.create({fname => 'Bob',   lname => 'Anderson'});
+User.create({fname => 'Carol', lname => 'Brown'});
+User.create({fname => 'Carol', lname => 'Brown'});
+
+ok User.all.all.elems == 4, 'baseline: 4 rows';
+
+# distinct on full row set: ids differ, so no collapse
+ok User.distinct.all.elems == 4, 'distinct over all columns keeps every row';
+
+# distinct on a single selected column
+my @lnames = User.select('lname').distinct.pluck('lname').sort;
+ok @lnames.elems == 2, 'distinct + select(lname) collapses to 2 lnames';
+ok @lnames.join(',') eq 'Anderson,Brown', 'distinct lnames are Anderson and Brown';
+
+# distinct(False) turns it off
+my @lnames-all = User.select('lname').distinct.distinct(False).pluck('lname');
+ok @lnames-all.elems == 4, 'distinct(False) re-enables duplicates';
+
+# count without select counts distinct rows
+ok User.distinct.count == 4, 'distinct.count without select == row count';
+
+# count with select counts distinct of those columns
+ok User.select('lname').distinct.count == 2, 'distinct count over lname == 2';
+ok User.select('fname').distinct.count == 3, 'distinct count over fname == 3';
+
+# unscope drops distinct
+ok User.distinct.unscope(:distinct).distinct-value == False, 'unscope(:distinct) clears the flag';
+
+# merge propagates distinct
+ok User.all.merge(User.distinct).distinct-value == True, 'merge propagates distinct';
+
+# chainable with where
+my @anders = User.where({lname => 'Anderson'}).select('lname').distinct.pluck('lname');
+ok @anders.elems == 1 && @anders[0] eq 'Anderson', 'distinct composes with where';
+
+User.destroy-all;

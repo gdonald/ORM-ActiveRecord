@@ -1,0 +1,55 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+role Pagination {
+  method page(Int:D $n, Int:D :$per = 2) {
+    self.limit($per).offset(($n - 1) * $per);
+  }
+}
+
+role NameOnly {
+  method names {
+    self.pluck('fname');
+  }
+}
+
+plan 6;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'A'});
+User.create({fname => 'Bob',   lname => 'B'});
+User.create({fname => 'Carol', lname => 'C'});
+User.create({fname => 'Dave',  lname => 'D'});
+
+# extending mixes in a role and exposes its method
+my @page1 = User.order('id').extending(Pagination).page(1).all;
+ok @page1.elems == 2, 'page(1) returns the first 2 rows';
+ok @page1[0].fname eq 'Alice' && @page1[1].fname eq 'Bob', 'page(1) is Alice + Bob';
+
+my @page2 = User.order('id').extending(Pagination).page(2).all;
+ok @page2.map({ .fname }).join(',') eq 'Carol,Dave', 'page(2) is Carol + Dave';
+
+# multiple roles
+my @names = User.order('id').extending(Pagination, NameOnly).page(1).names;
+ok @names.join(',') eq 'Alice,Bob', 'mixed-in NameOnly.names + Pagination.page composes';
+
+# original query is left functional
+ok User.all.count == 4, 'baseline query still works';
+
+# extending without args fails fast
+my $err = False;
+{
+  CATCH { default { $err = True } }
+  User.all.extending;
+}
+ok $err, 'extending requires at least one role';
+
+User.destroy-all;

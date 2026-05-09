@@ -1,0 +1,39 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Anderson'});
+User.create({fname => 'Bob',   lname => 'Brown'});
+User.create({fname => 'Carol', lname => 'Carter'});
+
+# from-source defaults to undef
+ok !User.all.from-source.defined, 'from-source is undef by default';
+
+# from with explicit table acts identically to the default
+ok User.from('users').count == 3, 'from(users) counts all rows';
+ok User.from('users').all.elems == 3, 'from(users) returns all rows';
+
+# from with a subquery aliased to the model name
+my @rows = User.from('(SELECT * FROM users WHERE lname != ' ~ "'Brown') users").all;
+ok @rows.elems == 2, 'from(subquery aliased as users) filters rows';
+ok (none @rows.map: { .lname eq 'Brown' }), 'no Brown survived the subquery filter';
+
+# from with explicit alias used to qualify selects
+my $q = User.from('users AS u', 'u');
+ok $q.from-alias eq 'u', 'from-alias is captured';
+ok $q.count == 3, 'count works with aliased from';
+
+# unscope drops from
+ok User.from('(SELECT 1) sub').unscope(:from).from-source.WHAT === Str, 'unscope(:from) clears the source';
+
+User.destroy-all;

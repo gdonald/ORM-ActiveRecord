@@ -24,6 +24,7 @@ class Model is export {
   has @.fields of Field;
   has %.attrs;
   has %.attrs-db;
+  has Bool $!readonly = False;
 
   has @.before-saves;
   has @.before-updates;
@@ -111,6 +112,15 @@ class Model is export {
   method is-dirty(--> Bool) {
     for %!attrs.keys -> $key { return True if %!attrs«$key» !~~ %!attrs-db«$key» }
     False;
+  }
+
+  method is-readonly(--> Bool) {
+    $!readonly;
+  }
+
+  method make-readonly {
+    $!readonly = True;
+    self;
   }
 
   method belongs-to(*%rest) {
@@ -252,6 +262,7 @@ class Model is export {
   }
 
   method save {
+    die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!readonly;
     if self.is-valid {
       self.update-foreign-keys;
       self.do-before-saves;
@@ -423,6 +434,7 @@ class Model is export {
   }
 
   method delete {
+    die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!readonly;
     return False unless $!id;
     my $table = Utils.table-name(self);
     my %where = id => $!id;
@@ -463,6 +475,38 @@ class Model is export {
 
   method select(*@cols) {
     self.all.select(|@cols);
+  }
+
+  method distinct(Bool:D $on = True) {
+    self.all.distinct($on);
+  }
+
+  method group(*@cols) {
+    self.all.group(|@cols);
+  }
+
+  method regroup(*@cols) {
+    self.all.regroup(|@cols);
+  }
+
+  method from($source, Str $alias?) {
+    self.all.from($source, $alias);
+  }
+
+  method references(*@names) {
+    self.all.references(|@names);
+  }
+
+  method readonly(Bool:D $on = True) {
+    self.all.readonly($on);
+  }
+
+  method extending(*@roles) {
+    self.all.extending(|@roles);
+  }
+
+  method having(*@parts) {
+    self.all.having(|@parts);
   }
 
   method pluck(*@cols) {

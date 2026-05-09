@@ -1,0 +1,59 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::X;
+use Test;
+
+class User is Model {}
+
+plan 9;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Anderson'});
+User.create({fname => 'Bob',   lname => 'Brown'});
+
+# default: not readonly
+my $user = User.find-by({fname => 'Alice'});
+ok !$user.is-readonly, 'fresh fetch is not readonly';
+$user.fname = 'Alicia';
+ok $user.save, 'normal save still works';
+
+# readonly through the relation
+my @users = User.readonly.all;
+ok @users.elems == 2, 'readonly query still returns rows';
+ok @users.map({ .is-readonly }).all, 'every record from readonly relation is flagged';
+
+# saving a readonly record raises
+my $ro = @users[0];
+$ro.fname = 'Nope';
+my $caught = False;
+{
+  CATCH { when X::ReadOnlyRecord { $caught = True } }
+  $ro.save;
+}
+ok $caught, 'save on readonly record raises X::ReadOnlyRecord';
+
+# delete also raises
+my $deleted = False;
+{
+  CATCH { when X::ReadOnlyRecord { $deleted = True } }
+  $ro.delete;
+}
+ok $deleted, 'delete on readonly record raises X::ReadOnlyRecord';
+
+# readonly via .first
+my $f = User.readonly.first;
+ok $f.is-readonly, 'first picks up readonly flag';
+
+# unscope drops the flag — newly fetched records are writable again
+my @writeable = User.readonly.unscope(:readonly).all;
+ok (none @writeable.map: { .is-readonly }), 'unscope(:readonly) clears the flag';
+
+# merge propagates readonly
+ok User.all.merge(User.readonly).readonly-value == True, 'merge propagates readonly';
+
+User.destroy-all;

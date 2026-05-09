@@ -16,3 +16,10 @@ class X::RecordNotFound is Exception is export {
     "Couldn't find {$!model}" ~ ($!id.defined ?? " with id={$!id}" !! '');
   }
 }
+
+class X::ReadOnlyRecord is Exception is export {
+  has Str $.model;
+  method message {
+    $!model.defined ?? "$!model is marked as readonly" !! 'Record is marked as readonly';
+  }
+}

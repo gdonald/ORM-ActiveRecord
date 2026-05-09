@@ -1,0 +1,35 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 5;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Anderson'});
+User.create({fname => 'Adam',  lname => 'Anderson'});
+User.create({fname => 'Bob',   lname => 'Brown'});
+User.create({fname => 'Carol', lname => 'Carter'});
+
+# regroup replaces an existing group
+my @lnames = User.group('fname').regroup('lname').pluck('lname').sort;
+ok @lnames.elems == 3, 'regroup collapsed to 3 lname groups';
+ok @lnames.join(',') eq 'Anderson,Brown,Carter', 'regroup picked the right column';
+
+# regroup also works as a starting point (empty initial group)
+ok User.regroup('lname').count == 3, 'regroup acts as group when no prior group';
+
+# regroup with multiple columns replaces in full
+my @rows = User.group('lname').regroup('lname', 'fname').pluck('lname', 'fname');
+ok @rows.elems == 4, 'regroup(lname, fname) yields one row per (lname, fname) pair';
+
+# group-values reflects the replacement
+ok User.group('fname').regroup('lname').group-values.join(',') eq 'lname', 'group-values shows replaced columns';
+
+User.destroy-all;

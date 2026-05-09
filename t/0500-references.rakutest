@@ -1,0 +1,44 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+# `references` is a metadata-only slot at this stage; it stores association
+# names so they can be honoured later when eager-loading lands. The wiring
+# we test here is the chainability and merge / unscope semantics.
+
+class User is Model {}
+
+plan 7;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Anderson'});
+
+ok User.all.references-values.elems == 0, 'references is empty by default';
+
+ok User.references('posts').references-values.join(',') eq 'posts',
+  'references stores a single association name';
+
+ok User.references('posts', 'comments').references-values.join(',') eq 'posts,comments',
+  'references stores multiple association names';
+
+# multiple references calls accumulate
+ok User.references('posts').references('comments').references-values.join(',')
+  eq 'posts,comments', 'references is additive';
+
+# does not affect the underlying query
+ok User.references('posts').count == 1, 'references does not alter row counts';
+
+# merge propagates references
+ok User.references('posts').merge(User.references('comments')).references-values.join(',')
+  eq 'posts,comments', 'merge appends references';
+
+# unscope drops references
+ok User.references('posts').unscope(:references).references-values.elems == 0,
+  'unscope(:references) clears them';
+
+User.destroy-all;
