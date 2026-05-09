@@ -261,7 +261,7 @@ class DB is export {
     my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
     my $group-clause = @group ?? "GROUP BY @group.join(', ')" !! '';
     my $having-clause = self.build-having($stmt, @having);
-    my $order = @order ?? "ORDER BY @order.join(', ')" !! '';
+    my $order = self.build-order($stmt, @order);
     my $limit_ = $limit ?? "LIMIT $limit" !! '';
     my $offset_ = $offset ?? "OFFSET $offset" !! '';
     my $join = '';
@@ -304,6 +304,22 @@ class DB is export {
       }
     }
     "HAVING " ~ @fragments.map({ "($_)" }).join(' AND ');
+  }
+
+  method build-order(SqlStmt:D $stmt, @order --> Str) {
+    return '' unless @order.elems;
+    my @fragments;
+    for @order -> $entry {
+      given $entry {
+        when Str        { @fragments.push: $entry }
+        when Positional {
+          my @parts = $entry.list;
+          @fragments.push: $stmt.interpolate(@parts[0].Str, |@parts[1..*]);
+        }
+        default { die "build-order: unsupported entry type " ~ $entry.^name }
+      }
+    }
+    "ORDER BY " ~ @fragments.join(', ');
   }
 
   method build-where(SqlStmt:D $stmt, %where, %where-not = {}, :@or-groups --> Str) {

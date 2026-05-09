@@ -1,0 +1,83 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 17;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Brown'});
+User.create({fname => 'Bob',   lname => 'Brown'});
+User.create({fname => 'Carol', lname => 'Anderson'});
+User.create({fname => 'Dave',  lname => 'Anderson'});
+User.create({fname => 'Eve',   lname => 'Carter'});
+
+# multi-column order: lname ASC then fname DESC
+my @r = User.order('lname', 'fname DESC').pluck('lname', 'fname');
+ok @r[0].join(' ') eq 'Anderson Dave', 'multi-column order: Anderson Dave first';
+ok @r[1].join(' ') eq 'Anderson Carol', 'multi-column order: Anderson Carol second';
+ok @r[2].join(' ') eq 'Brown Bob', 'multi-column order: Brown Bob third';
+ok @r[*-1].join(' ') eq 'Carter Eve', 'multi-column order: Carter Eve last';
+
+# expression order (raw SQL)
+my @e = User.order('LOWER(fname) DESC').pluck('fname');
+ok @e[0] eq 'Eve', 'expression order LOWER(fname) DESC: Eve first';
+ok @e[*-1] eq 'Alice', 'expression order LOWER(fname) DESC: Alice last';
+
+# hash-style direction (named args)
+my @h = User.order(:lname<asc>, :fname<desc>).pluck('lname', 'fname');
+ok @h[0].join(' ') eq 'Anderson Dave', 'named-arg order matches multi-column string form';
+
+# invalid direction fails fast
+my $bad = False;
+{
+  CATCH { default { $bad = True } }
+  User.order(:fname<sideways>).all;
+}
+ok $bad, 'invalid order direction is rejected';
+
+# reorder replaces an existing order
+my @ro = User.order('fname').reorder('lname').pluck('lname');
+ok @ro[0] eq 'Anderson', 'reorder cleared previous order';
+
+# reorder works as a starting order too
+my @ro2 = User.reorder('fname DESC').pluck('fname');
+ok @ro2[0] eq 'Eve', 'reorder works without prior order';
+
+# reorder with multi-column string form (named args lose order across slurpy hash)
+my @ro3 = User.order('fname').reorder('lname DESC', 'fname ASC').pluck('lname', 'fname');
+ok @ro3[0].join(' ') eq 'Carter Eve', 'reorder with multi-column string form';
+
+# unscope(:order) still clears order set via reorder
+my @us = User.reorder('fname DESC').unscope(:order).order('id').all;
+ok @us[0].fname eq 'Alice', 'unscope(:order) clears reorder result';
+
+# in-order-of orders by the supplied list, with bound values
+my @io = User.in-order-of('fname', ['Carol', 'Alice', 'Bob']).pluck('fname');
+ok @io[0] eq 'Carol' && @io[1] eq 'Alice' && @io[2] eq 'Bob',
+  'in-order-of puts the listed values in the requested order';
+ok @io.elems == 5, 'in-order-of does not filter by default';
+
+# unlisted values fall to the end (deterministic via the ELSE branch)
+my @io-set = @io[3..4].sort;
+ok @io-set.elems == 2, 'in-order-of leaves remaining rows after the listed ones';
+
+# in-order-of composes with where (only matching values stay)
+my @io-w = User.where({lname => 'Anderson'}).in-order-of('fname', ['Dave', 'Carol']).pluck('fname');
+ok @io-w.join(',') eq 'Dave,Carol', 'in-order-of composes with where';
+
+# in-order-of without values fails fast
+my $iobad = False;
+{
+  CATCH { default { $iobad = True } }
+  User.in-order-of('fname', []);
+}
+ok $iobad, 'in-order-of requires at least one value';
+
+User.destroy-all;

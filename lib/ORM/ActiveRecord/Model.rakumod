@@ -461,8 +461,16 @@ class Model is export {
     Query.new(:$class, :params(%params));
   }
 
-  method order(*@cols) {
-    self.all.order(|@cols);
+  method order(*@cols, *%kw) {
+    self.all.order(|@cols, |%kw);
+  }
+
+  method reorder(*@cols, *%kw) {
+    self.all.reorder(|@cols, |%kw);
+  }
+
+  method in-order-of($col, @values) {
+    self.all.in-order-of($col, @values);
   }
 
   method limit(Int:D $n) {

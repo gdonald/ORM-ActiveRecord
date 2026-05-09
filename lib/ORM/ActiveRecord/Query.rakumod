@@ -147,9 +147,45 @@ class Query is export {
     self;
   }
 
-  method order(*@cols) {
-    @!order.append: @cols.map({ .Str });
+  method order(*@cols, *%kw) {
+    for @cols -> $c {
+      given $c {
+        when Pair { @!order.push: self!format-direction(.key, .value) }
+        when Str  { @!order.push: $c }
+        default   { @!order.push: $c.Str }
+      }
+    }
+    for %kw.kv -> $k, $v { @!order.push: self!format-direction($k, $v) }
     self;
+  }
+
+  method reorder(*@cols, *%kw) {
+    @!order = ();
+    self.order(|@cols, |%kw);
+  }
+
+  method in-order-of($col, @values) {
+    die 'in-order-of requires at least one value' unless @values.elems;
+    my @parts = ('CASE',);
+    for @values.kv -> $i, $v {
+      @parts.push: "WHEN {$col.Str} = ? THEN $i";
+    }
+    @parts.push: "ELSE { @values.elems }";
+    @parts.push: 'END';
+    @!order.push: ((@parts.join(' '), |@values).List);
+    self;
+  }
+
+  method !format-direction($col, $dir --> Str) {
+    my $d;
+    given $dir {
+      when Bool { $d = 'ASC' }
+      when Pair { $d = $dir.key.Str.uc }
+      default   { $d = $dir.Str.uc }
+    }
+    die "order: invalid direction '$dir' for {$col.Str}"
+      unless $d eq 'ASC' || $d eq 'DESC';
+    "{$col.Str} $d";
   }
 
   method limit(Int:D $n) {
