@@ -2,8 +2,8 @@
 use MONKEY-SEE-NO-EVAL;
 
 use ORM::ActiveRecord::DB;
-use ORM::ActiveRecord::Colors;
-use ORM::ActiveRecord::X;
+use ORM::ActiveRecord::Support::Colors;
+use ORM::ActiveRecord::Errors::X;
 
 class Migrate is export {
   my Str $.dir = 'db/migrate';

@@ -1,5 +1,5 @@
 
-use ORM::ActiveRecord::Field;
+use ORM::ActiveRecord::Schema::Field;
 
 class Error is export {
   has Field $.field;

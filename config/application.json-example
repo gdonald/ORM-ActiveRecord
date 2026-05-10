@@ -1,9 +1,10 @@
 {
-    "db": {
-        "schema": "public",
-        "host": "localhost",
-        "name": "ar_test",
-        "user": "postgres",
-        "password": ""
-    }
+  "db": {
+    "adapter": "pg",
+    "schema": "public",
+    "host": "localhost",
+    "name": "ar_test",
+    "user": "postgres",
+    "password": ""
+  }
 }

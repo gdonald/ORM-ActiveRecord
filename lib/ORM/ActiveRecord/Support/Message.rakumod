@@ -1,5 +1,5 @@
 
-use ORM::ActiveRecord::Field;
+use ORM::ActiveRecord::Schema::Field;
 
 class Message is export {
 

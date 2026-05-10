@@ -1,4 +1,4 @@
-use ORM::ActiveRecord::Migration;
+use ORM::ActiveRecord::Schema::Migration;
 
 class CreateArticles is Migration {
   method up {

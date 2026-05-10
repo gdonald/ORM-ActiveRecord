@@ -1,0 +1,125 @@
+
+class SqlStmt { ... }
+
+role Adapter is export {
+  # Connection lifecycle — engine-specific
+  method connect()              { ... }
+  method is-connected(--> Bool) { ... }
+  method disconnect(--> Bool)   { ... }
+  method reconnect()            { ... }
+
+  # Statement execution — engine-specific (uses driver handle)
+  method exec(Str:D $sql, *@binds)  { ... }
+  method exec-stmt(SqlStmt:D $stmt) { ... }
+
+  # Bind placeholder syntax: '$N' (PG) vs '?' (SQLite, MySQL)
+  method bind-placeholder(Int:D $n --> Str) { ... }
+
+  # Schema introspection — varies (information_schema vs pragma_table_info)
+  method get-fields(Str:D :$table)  { ... }
+  method get-table-names()          { ... }
+
+  # CRUD primitives whose SQL shape varies by dialect
+  method build-insert(Str:D :$table, :%attrs --> SqlStmt) { ... }
+  method delete-records(Str:D :$table, :%where, :%where-not --> Int) { ... }
+}
+
+class SqlStmt is export {
+  has Adapter:D $.adapter is required;
+  has Str  $.sql is rw = '';
+  has      @.binds is rw;
+
+  method placeholder($value --> Str) {
+    @!binds.push($value);
+    $!adapter.bind-placeholder(@!binds.elems);
+  }
+
+  method !walk(Str:D $template, &on-placeholder, &on-named --> Str) {
+    my $out = '';
+    my $i = 0;
+    my $len = $template.chars;
+    while $i < $len {
+      my $c = $template.substr($i, 1);
+      if $c eq "'" {
+        $out ~= $c;
+        $i++;
+        while $i < $len {
+          my $cc = $template.substr($i, 1);
+          $out ~= $cc;
+          $i++;
+          if $cc eq "'" {
+            if $i < $len && $template.substr($i, 1) eq "'" {
+              $out ~= "'";
+              $i++;
+            } else {
+              last;
+            }
+          }
+        }
+      } elsif $c eq '?' {
+        $out ~= on-placeholder();
+        $i++;
+      } elsif $c eq ':'
+            && $i + 1 < $len
+            && $template.substr($i + 1, 1) ~~ /<[A..Za..z_]>/ {
+        my $j = $i + 1;
+        while $j < $len && $template.substr($j, 1) ~~ /<[A..Za..z0..9_]>/ {
+          $j++;
+        }
+        my $name = $template.substr($i + 1, $j - $i - 1);
+        $out ~= on-named($name);
+        $i = $j;
+      } else {
+        $out ~= $c;
+        $i++;
+      }
+    }
+    $out;
+  }
+
+  method interpolate(Str:D $template, *@binds --> Str) {
+    my $i = 0;
+    my $out = self!walk(
+      $template,
+      {
+        die "interpolate: too few binds for '?' placeholders" if $i >= @binds.elems;
+        self.placeholder(@binds[$i++]);
+      },
+      -> $name { die "interpolate: ':$name' is not allowed with positional binds" },
+    );
+    die "interpolate: too many binds (used $i, given " ~ @binds.elems ~ ')'
+      if $i < @binds.elems;
+    $out;
+  }
+
+  method sanitize-array(@parts --> SqlStmt) {
+    die 'sanitize-sql-array requires at least the SQL template' unless @parts.elems;
+    my $template = @parts[0];
+    my @args = @parts[1..*];
+
+    if @args.elems == 1 && @args[0] ~~ Hash {
+      my %named = @args[0];
+      $!sql ~= self!walk(
+        $template,
+        { die "sanitize-sql-array: '?' placeholder is not allowed with named binds" },
+        -> $name {
+          die "sanitize-sql-array: missing bind for ':$name'" unless %named{$name}:exists;
+          self.placeholder(%named{$name});
+        },
+      );
+    } else {
+      my $i = 0;
+      $!sql ~= self!walk(
+        $template,
+        {
+          die "sanitize-sql-array: too few binds for '?' placeholders" if $i >= @args.elems;
+          self.placeholder(@args[$i++]);
+        },
+        -> $name { die "sanitize-sql-array: ':$name' is not allowed with positional binds" },
+      );
+      die "sanitize-sql-array: too many binds (used $i, given " ~ @args.elems ~ ')'
+        if $i < @args.elems;
+    }
+    self;
+  }
+}

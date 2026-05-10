@@ -1,7 +1,7 @@
 #!raku
 
 use v6.d;
-use ORM::ActiveRecord::Migrate;
+use ORM::ActiveRecord::Schema::Migrate;
 
 sub MAIN(*@args) {
   Migrate.new(:@args)

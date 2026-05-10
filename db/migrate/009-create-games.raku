@@ -1,5 +1,5 @@
 
-use ORM::ActiveRecord::Migration;
+use ORM::ActiveRecord::Schema::Migration;
 
 class CreateGames is Migration {
   method up {

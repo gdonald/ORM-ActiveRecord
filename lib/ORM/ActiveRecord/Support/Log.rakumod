@@ -3,7 +3,7 @@ use Log::Async;
 logger.send-to($*OUT, :level(INFO));
 logger.send-to('log/error.log', :level(ERROR));
 
-use ORM::ActiveRecord::Colors;
+use ORM::ActiveRecord::Support::Colors;
 
 class Log is export {
   method sql(Str:D :$sql) {

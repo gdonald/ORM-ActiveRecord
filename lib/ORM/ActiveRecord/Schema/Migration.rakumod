@@ -1,6 +1,6 @@
 
 use ORM::ActiveRecord::DB;
-use ORM::ActiveRecord::X;
+use ORM::ActiveRecord::Errors::X;
 
 class Migration is export {
   has DB $!db;

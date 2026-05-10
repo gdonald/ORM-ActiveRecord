@@ -1,10 +1,10 @@
 
 use ORM::ActiveRecord::DB;
-use ORM::ActiveRecord::Error;
-use ORM::ActiveRecord::Field;
-use ORM::ActiveRecord::Message;
-use ORM::ActiveRecord::Validator;
-use ORM::ActiveRecord::Utils;
+use ORM::ActiveRecord::Errors::Error;
+use ORM::ActiveRecord::Schema::Field;
+use ORM::ActiveRecord::Support::Message;
+use ORM::ActiveRecord::Validations::Validator;
+use ORM::ActiveRecord::Support::Utils;
 
 class Validators is export {
   has @.validators of Validator;

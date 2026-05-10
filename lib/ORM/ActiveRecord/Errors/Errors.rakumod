@@ -1,5 +1,5 @@
 
-use ORM::ActiveRecord::Error;
+use ORM::ActiveRecord::Errors::Error;
 
 class Errors {
   has @.errors of Error;

@@ -1,7 +1,7 @@
 
-use ORM::ActiveRecord::Field;
+use ORM::ActiveRecord::Schema::Field;
 use ORM::ActiveRecord::DB;
-use ORM::ActiveRecord::Utils;
+use ORM::ActiveRecord::Support::Utils;
 
 class Query is export {
   has Mu $!class;

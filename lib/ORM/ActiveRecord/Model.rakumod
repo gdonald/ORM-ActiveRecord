@@ -1,15 +1,15 @@
 
 use ORM::ActiveRecord::DB;
-use ORM::ActiveRecord::Error;
-use ORM::ActiveRecord::Errors;
-use ORM::ActiveRecord::Field;
-use ORM::ActiveRecord::Scope;
-use ORM::ActiveRecord::Scopes;
-use ORM::ActiveRecord::Utils;
-use ORM::ActiveRecord::Validator;
-use ORM::ActiveRecord::Validators;
-use ORM::ActiveRecord::Query;
-use ORM::ActiveRecord::X;
+use ORM::ActiveRecord::Errors::Error;
+use ORM::ActiveRecord::Errors::Errors;
+use ORM::ActiveRecord::Errors::X;
+use ORM::ActiveRecord::Schema::Field;
+use ORM::ActiveRecord::Relation::Query;
+use ORM::ActiveRecord::Relation::Scope;
+use ORM::ActiveRecord::Relation::Scopes;
+use ORM::ActiveRecord::Support::Utils;
+use ORM::ActiveRecord::Validations::Validator;
+use ORM::ActiveRecord::Validations::Validators;
 
 class Model is export {
   has DB $!db;

@@ -1,5 +1,5 @@
 
-use ORM::ActiveRecord::Scope;
+use ORM::ActiveRecord::Relation::Scope;
 
 class Scopes is export {
   my @.scopes of Scope;
