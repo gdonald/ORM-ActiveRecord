@@ -1,0 +1,79 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $host     = %*ENV<MYSQL_HOST>     // 'localhost';
+my $port     = (%*ENV<MYSQL_PORT>    // 3306).Int;
+my $user     = %*ENV<MYSQL_USER>     // 'root';
+my $password = %*ENV<MYSQL_PASSWORD> // '';
+my $database = %*ENV<MYSQL_DATABASE> // 'ar_test';
+
+use ORM::ActiveRecord::Adapter::MySql;
+use ORM::ActiveRecord::DB;
+
+my $mysql = try MySqlAdapter.new(:$host, :$port, :$user, :$password, :$database);
+
+unless $mysql.defined && $mysql.is-connected {
+  plan 1;
+  skip 'No reachable MySQL server (set MYSQL_HOST/USER/PASSWORD/DATABASE to enable)';
+  exit 0;
+}
+DB.set-shared(DB.new(adapter => $mysql));
+
+$mysql.exec('DROP TABLE IF EXISTS widgets');
+
+$mysql.ddl-create-table('widgets', [
+  name   => { :string, limit => 64 },
+  qty    => { :integer, default => 0 },
+  active => { :boolean, default => True },
+]);
+$mysql.ddl-add-timestamps('widgets');
+
+use ORM::ActiveRecord::Model;
+
+class Widget is Model {
+  submethod BUILD {
+    self.validate: 'name', { :presence }
+  }
+}
+
+plan 16;
+
+my $w = Widget.create({ name => 'Alpha', qty => 3, active => True });
+ok $w.id, 'create returns surrogate id from LAST_INSERT_ID()';
+is $w.name, 'Alpha', 'name persisted';
+is $w.qty, 3, 'qty persisted';
+is $w.active, True, 'active persisted as True';
+
+my $found = Widget.find($w.id);
+is $found.name, 'Alpha', 'find by id round-trips name';
+isa-ok $found.active, Bool, 'active reads back as Bool through information_schema introspection';
+is $found.active, True, 'active value preserved on read';
+isa-ok $found.created_at, DateTime, 'created_at reads back as DateTime';
+
+$w.update({ active => False, qty => 9 });
+my $reloaded = Widget.find($w.id);
+is $reloaded.active, False, 'update to False preserved';
+is $reloaded.qty, 9, 'qty updated';
+
+Widget.create({ name => 'Beta',  qty => 1, active => False });
+Widget.create({ name => 'Gamma', qty => 5, active => True });
+
+is Widget.count, 3, 'count after three inserts';
+is Widget.where({ active => True }).count, 1, 'where(active => True) narrows correctly';
+is Widget.where({ active => False }).count, 2, 'where(active => False) narrows correctly';
+
+my $by-name = Widget.find-by({ name => 'Gamma' });
+is $by-name.qty, 5, 'find-by hits the right row';
+
+$by-name.destroy;
+is Widget.count, 2, 'destroy removed exactly one row';
+
+Widget.destroy-all;
+is Widget.count, 0, 'destroy-all clears the table';
+
+$mysql.exec('DROP TABLE widgets');
+DB.set-shared(Nil);

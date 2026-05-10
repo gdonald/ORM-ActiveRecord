@@ -4,6 +4,7 @@ use JSON::Tiny;
 use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::Adapter::Pg;
 use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::Adapter::MySql;
 
 class DB is export {
   my DB $shared;
@@ -51,6 +52,16 @@ class DB is export {
       when 'sqlite' | 'sqlite3' {
         SqliteAdapter.new(
           database => %config<name> // %config<database> // ':memory:',
+        );
+      }
+      when 'mysql' | 'mysql2' | 'mariadb' {
+        MySqlAdapter.new(
+          host     => %config<host>     // 'localhost',
+          port     => (%config<port> // 3306).Int,
+          database => %config<name>     // %config<database>,
+          user     => %config<user>,
+          password => %config<password>,
+          socket   => %config<socket>,
         );
       }
       default { die "DB: unsupported adapter '$kind'" }

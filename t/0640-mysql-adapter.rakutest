@@ -1,0 +1,137 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $host     = %*ENV<MYSQL_HOST>     // 'localhost';
+my $port     = (%*ENV<MYSQL_PORT>    // 3306).Int;
+my $user     = %*ENV<MYSQL_USER>     // 'root';
+my $password = %*ENV<MYSQL_PASSWORD> // '';
+my $database = %*ENV<MYSQL_DATABASE> // 'ar_test';
+
+# Construct the adapter — that runs the libmysqlclient discovery and DBIish
+# connect. Failure here means no reachable MySQL server in this environment.
+use ORM::ActiveRecord::Adapter::MySql;
+my $can-connect = try {
+  my $probe = MySqlAdapter.new(:$host, :$port, :$user, :$password, :$database);
+  $probe.disconnect;
+  True;
+} // False;
+
+unless $can-connect {
+  plan 1;
+  skip 'No reachable MySQL server (set MYSQL_HOST/USER/PASSWORD/DATABASE to enable)';
+  exit 0;
+}
+
+plan 29;
+
+my $mysql = MySqlAdapter.new(:$host, :$port, :$user, :$password, :$database);
+ok $mysql.is-connected, 'connects from BUILD';
+
+is $mysql.bind-placeholder(1), '?', 'bind-placeholder for n=1 is ?';
+is $mysql.bind-placeholder(7), '?', 'bind-placeholder for n=7 is also ?';
+
+is $mysql.quote-identifier('foo'), '`foo`', 'identifier quoting wraps in backticks';
+is $mysql.quote-identifier('a`b'), '`a``b`', 'embedded backtick is doubled';
+
+# Drop any leftover from a previous run, then recreate.
+$mysql.exec('DROP TABLE IF EXISTS widgets');
+
+$mysql.ddl-create-table('widgets', [
+  name   => { :string, limit => 64 },
+  qty    => { :integer, default => 0 },
+  active => { :boolean, default => True },
+  body   => { :text },
+]);
+$mysql.ddl-add-timestamps('widgets');
+
+my @fields = $mysql.get-fields(table => 'widgets');
+my %types-by-name = @fields.map({ $_[0] => $_[1] });
+
+ok %types-by-name<id>:exists, 'introspection sees id column';
+is %types-by-name<id>, 'integer', 'id normalized to integer (matches PG/SQLite)';
+is %types-by-name<name>, 'character varying', 'VARCHAR normalized to character varying';
+is %types-by-name<qty>, 'integer', 'INT normalized to integer';
+is %types-by-name<active>, 'boolean', 'boolean column normalized from TINYINT(1)';
+is %types-by-name<body>, 'text', 'TEXT preserved as text';
+is %types-by-name<created_at>, 'datetime', 'DATETIME preserved';
+
+my @tables = $mysql.get-table-names;
+ok 'widgets' (elem) @tables, 'information_schema lists the new table';
+
+my %types = name => 'VARCHAR', qty => 'INT', active => 'TINYINT(1)', body => 'TEXT';
+my $stmt = $mysql.build-insert(
+  table => 'widgets',
+  attrs => { name => 'alpha', qty => 3, active => True, body => 'lorem' },
+  :%types,
+);
+
+ok $stmt.sql.contains('?'),       'INSERT uses ? placeholders, not $N';
+nok $stmt.sql.contains('RETURNING'), 'INSERT does not use RETURNING (MySQL has no RETURNING)';
+
+$mysql.exec-stmt($stmt);
+my $id1 = $mysql.exec('SELECT LAST_INSERT_ID()')[0][0].Int;
+ok $id1 > 0, 'first surrogate id assigned via LAST_INSERT_ID()';
+
+my $stmt2 = $mysql.build-insert(
+  table => 'widgets',
+  attrs => { name => 'beta', qty => 7, active => False, body => 'ipsum' },
+  :%types,
+);
+$mysql.exec-stmt($stmt2);
+my $id2 = $mysql.exec('SELECT LAST_INSERT_ID()')[0][0].Int;
+ok $id2 == $id1 + 1, 'AUTO_INCREMENT advances by one';
+
+my @intro-fields = $mysql.get-fields(table => 'widgets').map({ $_ });
+my @field-objs = @intro-fields.map({
+  use ORM::ActiveRecord::Schema::Field;
+  Field.new(name => $_[0], type => $_[1]);
+});
+
+my $row = $mysql.get-record(
+  table  => 'widgets',
+  fields => @field-objs,
+  where  => { id => $id1 },
+);
+
+isa-ok $row<active>, Bool, 'TINYINT(1) coerces back to Bool through "boolean" label';
+is $row<active>, True, 'True round-trip preserved';
+is $row<qty>, 3, 'integer round-trip preserved as Int';
+is $row<name>, 'alpha', 'string round-trip preserved';
+
+my $row2 = $mysql.get-record(
+  table  => 'widgets',
+  fields => @field-objs,
+  where  => { id => $id2 },
+);
+is $row2<active>, False, 'False round-trip preserved';
+
+isa-ok $row<created_at>, DateTime, 'CURRENT_TIMESTAMP default coerces to DateTime';
+
+my $now = DateTime.new('2026-05-09T12:34:56Z');
+my $dt-stmt = $mysql.build-update(
+  :table('widgets'),
+  :id($id1),
+  attrs => { created_at => $now },
+  types => { created_at => 'DATETIME' },
+);
+ok $dt-stmt.binds.elems == 2, 'UPDATE binds value + id';
+
+my $deleted = $mysql.delete-records(table => 'widgets', where => { id => $id1 });
+is $deleted, 1, 'delete-records returns affected row count';
+my @remaining = $mysql.get-records(
+  table  => 'widgets',
+  fields => @field-objs,
+);
+is @remaining.elems, 1, 'one row left after deleting id1';
+
+ok $mysql.disconnect, 'disconnect succeeds';
+nok $mysql.is-connected, 'is-connected reports false after disconnect';
+$mysql.reconnect;
+ok $mysql.is-connected, 'reconnect re-establishes connection';
+
+$mysql.exec('DROP TABLE widgets');
+$mysql.disconnect;
