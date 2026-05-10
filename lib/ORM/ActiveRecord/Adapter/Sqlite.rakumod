@@ -43,6 +43,12 @@ class SqliteAdapter is SqlAdapter is export {
 
   method bind-placeholder(Int:D $n --> Str) { '?' }
 
+  method limit-offset-clause(Int:D :$limit = 0, Int:D :$offset = 0 --> Str) {
+    return '' unless $limit || $offset;
+    my $l = $limit ?? $limit !! -1;
+    "LIMIT $l OFFSET $offset";
+  }
+
   method coerce-read($value, Str :$type) {
     return $value without $value;
     return $value unless $type.defined;

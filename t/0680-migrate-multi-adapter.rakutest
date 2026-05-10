@@ -1,0 +1,64 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migrate;
+
+plan 11;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+my $migrate = Migrate.new(:args([]));
+
+nok $migrate.migrations-table-exists,
+  'migrations table absent on a fresh SQLite db';
+
+$migrate.create-migrations-table;
+
+ok $migrate.migrations-table-exists,
+  'create-migrations-table installs the table on SQLite';
+
+ok 'migrations' (elem) $sqlite.get-table-names,
+  'migrations appears in get-table-names';
+
+my @cols = $sqlite.get-fields(table => 'migrations').map({ $_[0] });
+ok 'id'      (elem) @cols, 'migrations has id column';
+ok 'version' (elem) @cols, 'migrations has version column';
+
+ok $migrate.last eq '', 'last is empty before any version recorded';
+
+$migrate.add(version => '20260101000001');
+is $migrate.last, '20260101000001', 'add inserts and last reads it back';
+
+$migrate.add(version => '20260201000002');
+is $migrate.last, '20260201000002', 'last returns most-recent version';
+
+$migrate.rm(version => '20260201000002');
+is $migrate.last, '20260101000001', 'rm removes the matching row';
+
+$migrate.rm(version => '20260101000001');
+ok $migrate.last eq '', 'rm of the only remaining row clears history';
+
+ok $migrate.migrations-table-exists,
+  'migrations-table-exists still True after add/rm cycle';
+
+DB.set-shared(Nil);

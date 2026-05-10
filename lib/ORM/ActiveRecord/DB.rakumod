@@ -5,6 +5,7 @@ use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::Adapter::Pg;
 use ORM::ActiveRecord::Adapter::Sqlite;
 use ORM::ActiveRecord::Adapter::MySql;
+use ORM::ActiveRecord::Support::DatabaseUrl;
 
 class DB is export {
   my DB $shared;
@@ -37,40 +38,52 @@ class DB is export {
     $shared;
   }
 
-  method !build-adapter(%config) {
+  method adapter-class-for(%config) {
     my $kind = (%config<adapter> // 'pg').lc;
     given $kind {
-      when 'pg' | 'postgres' | 'postgresql' {
-        PgAdapter.new(
-          schema   => %config<schema>,
-          host     => %config<host>,
-          database => %config<name>,
-          user     => %config<user>,
-          password => %config<password>,
-        );
-      }
-      when 'sqlite' | 'sqlite3' {
-        SqliteAdapter.new(
-          database => %config<name> // %config<database> // ':memory:',
-        );
-      }
-      when 'mysql' | 'mysql2' | 'mariadb' {
-        MySqlAdapter.new(
-          host     => %config<host>     // 'localhost',
-          port     => (%config<port> // 3306).Int,
-          database => %config<name>     // %config<database>,
-          user     => %config<user>,
-          password => %config<password>,
-          socket   => %config<socket>,
-        );
-      }
+      when 'pg' | 'postgres' | 'postgresql' { PgAdapter }
+      when 'sqlite' | 'sqlite3'             { SqliteAdapter }
+      when 'mysql' | 'mysql2' | 'mariadb'   { MySqlAdapter }
       default { die "DB: unsupported adapter '$kind'" }
     }
   }
 
-  method read-config {
+  method !build-adapter(%config) {
+    my $cls = self.adapter-class-for(%config);
+    given $cls {
+      when PgAdapter {
+        PgAdapter.new(
+          schema   => %config<schema>   // 'public',
+          host     => %config<host>     // 'localhost',
+          database => %config<name>     // %config<database>,
+          user     => %config<user>     // '',
+          password => %config<password> // '',
+        );
+      }
+      when SqliteAdapter {
+        SqliteAdapter.new(
+          database => %config<name> // %config<database> // ':memory:',
+        );
+      }
+      when MySqlAdapter {
+        MySqlAdapter.new(
+          host     => %config<host>     // 'localhost',
+          port     => (%config<port> // 3306).Int,
+          database => %config<name>     // %config<database>,
+          user     => %config<user>     // 'root',
+          password => %config<password> // '',
+          socket   => %config<socket>   // '',
+        );
+      }
+    }
+  }
+
+  method read-config(Str :$path = 'config/application.json') {
+    if my $url = %*ENV<DATABASE_URL> {
+      return parse-database-url($url);
+    }
     my %config;
-    if (my $fh = open 'config/application.json', :r) {
+    if (my $fh = open $path, :r) {
       my $contents = $fh.slurp-rest;
       $fh.close;
       my $json = from-json($contents);

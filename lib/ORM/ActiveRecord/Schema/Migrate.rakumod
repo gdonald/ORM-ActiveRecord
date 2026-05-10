@@ -13,7 +13,9 @@ class Migrate is export {
 
   submethod BUILD(:@!args) {
     $!db = DB.shared;
+  }
 
+  method run {
     self.check-migrations-table;
     self.do-migrations;
   }
@@ -119,27 +121,12 @@ class Migrate is export {
   }
 
   method create-migrations-table {
-    my $sql = qq:to/SQL/;
-      CREATE TABLE migrations (
-        id serial,
-        version character varying
-      )
-      SQL
-
-    $!db.exec($sql);
+    $!db.ddl-create-table('migrations', [
+      version => { :string },
+    ]);
   }
 
-  method migrations-table-exists {
-    my $sql = qq:to/SQL/;
-      SELECT EXISTS (
-        SELECT 1
-        FROM pg_tables
-        WHERE schemaname = '{$!db.schema}'
-        AND tablename = 'migrations'
-      )
-      SQL
-
-    my @res = $!db.exec($sql);
-    @res[0][0];
+  method migrations-table-exists(--> Bool) {
+    so $!db.get-table-names.grep(* eq 'migrations').elems;
   }
 }

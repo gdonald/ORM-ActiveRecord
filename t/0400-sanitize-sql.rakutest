@@ -8,27 +8,26 @@ plan 18;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-# Positional ? placeholders
+my $p1 = DB.shared.bind-placeholder(1);
+my $p2 = DB.shared.bind-placeholder(2);
+
 my $a = DB.shared.sanitize-sql-array(['name = ? AND age = ?', 'Bob', 30]);
-is $a.sql, 'name = $1 AND age = $2', 'positional ? produces $N placeholders in order';
+is $a.sql, "name = $p1 AND age = $p2", 'positional ? produces adapter placeholders in order';
 is $a.binds.elems, 2, 'two positional binds captured';
 is $a.binds[0], 'Bob', 'first positional bind';
 is $a.binds[1], 30, 'second positional bind';
 
-# Named placeholders
 my $b = DB.shared.sanitize-sql-array(['name = :name AND age = :age', { name => 'Bob', age => 30 }]);
-ok $b.sql ~~ /^ 'name = $' \d+ ' AND age = $' \d+ $/, 'named template substituted with $N placeholders';
+ok $b.sql ~~ /^ 'name = ' .+? ' AND age = ' .+? $/, 'named template substituted with adapter placeholders';
 is $b.binds.elems, 2, 'two named binds captured';
 
-# Single quoted literals leave ? and :foo alone inside them
 my $c = DB.shared.sanitize-sql-array([q{name = ? AND label = '???' AND tag = ':notbound'}, 'Bob']);
-is $c.sql, q{name = $1 AND label = '???' AND tag = ':notbound'}, 'string literals are passed through verbatim';
+is $c.sql, qq{name = $p1 AND label = '???' AND tag = ':notbound'}, 'string literals are passed through verbatim';
 is $c.binds.elems, 1, 'only the unquoted ? consumed a bind';
 is $c.binds[0], 'Bob', 'the captured bind is correct';
 
-# Doubled '' inside a literal does not end the literal
 my $d = DB.shared.sanitize-sql-array([q{name = ? AND note = 'O''Neill''s ?'}, 'Bob']);
-is $d.sql, q{name = $1 AND note = 'O''Neill''s ?'}, 'escaped quotes inside literal preserved';
+is $d.sql, qq{name = $p1 AND note = 'O''Neill''s ?'}, 'escaped quotes inside literal preserved';
 is $d.binds.elems, 1, 'only one bind consumed despite ? inside literal';
 
 # Arity mismatches raise

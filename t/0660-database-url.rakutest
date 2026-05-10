@@ -1,0 +1,76 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Support::DatabaseUrl;
+
+plan 39;
+
+# postgres:// — full authority + query
+my %pg = parse-database-url('postgres://alice:secret@db.example.com:5433/myapp?schema=public&sslmode=require');
+is %pg<adapter>,  'pg',             'postgres:// → adapter pg';
+is %pg<user>,     'alice',          'user parsed';
+is %pg<password>, 'secret',         'password parsed';
+is %pg<host>,     'db.example.com', 'host parsed';
+is %pg<port>,     5433,             'port parsed as Int';
+isa-ok %pg<port>, Int,              'port is Int';
+is %pg<name>,     'myapp',          'database name parsed';
+is %pg<schema>,   'public',         'query param schema preserved';
+is %pg<sslmode>,  'require',        'second query param preserved';
+
+# postgresql:// alias
+is parse-database-url('postgresql://h/db')<adapter>, 'pg', 'postgresql:// alias → pg';
+
+# host-only / no auth / no port
+my %hp = parse-database-url('postgres://localhost/foo');
+is %hp<host>, 'localhost', 'plain host';
+is %hp<name>, 'foo',       'database name';
+nok %hp<port>:exists,     'no port when not given';
+nok %hp<user>:exists,     'no user when not given';
+nok %hp<password>:exists, 'no password when not given';
+
+# empty authority (unix socket / local)
+my %loc = parse-database-url('postgres:///mydb');
+is %loc<name>, 'mydb', 'database with empty authority';
+nok %loc<host>:exists, 'host absent for empty authority';
+
+# port without user
+my %po = parse-database-url('postgres://h:6543/db');
+is %po<host>, 'h',    'host without user';
+is %po<port>, 6543,   'port-only authority';
+
+# percent-decoding in user / password
+is parse-database-url('postgres://u:p%40ss@h/db')<password>, 'p@ss', 'percent-decoded password';
+is parse-database-url('postgres://u%2Bv@h/db')<user>,        'u+v',  'percent-decoded user';
+
+# mysql family
+my %my = parse-database-url('mysql://root@127.0.0.1/ar_test');
+is %my<adapter>, 'mysql',     'mysql:// → adapter mysql';
+is %my<user>,    'root',      'mysql user';
+is %my<host>,    '127.0.0.1', 'mysql host';
+is %my<name>,    'ar_test',   'mysql database';
+nok %my<password>:exists,    'no password when not given';
+is parse-database-url('mysql2://root@h/db')<adapter>,  'mysql', 'mysql2:// alias → mysql';
+is parse-database-url('mariadb://root@h/db')<adapter>, 'mysql', 'mariadb:// alias → mysql';
+
+# sqlite forms
+is parse-database-url('sqlite::memory:')<adapter>,            'sqlite',          'sqlite::memory: adapter';
+is parse-database-url('sqlite::memory:')<database>,           ':memory:',        ':memory: literal preserved';
+is parse-database-url('sqlite:db/test.sqlite')<database>,     'db/test.sqlite',  'sqlite relative path';
+is parse-database-url('sqlite:./local.db')<database>,         './local.db',      'sqlite ./relative';
+is parse-database-url('sqlite:///srv/data/app.db')<database>, '/srv/data/app.db', 'sqlite:/// absolute path';
+is parse-database-url('sqlite3:foo.db')<adapter>,             'sqlite',          'sqlite3:// alias';
+
+# error cases
+dies-ok { parse-database-url('not-a-url') },     'no scheme separator → dies';
+dies-ok { parse-database-url('mongo://h/db') },  'unsupported scheme → dies';
+dies-ok { parse-database-url('redis://h:6379') },'redis scheme → dies';
+
+# DB.read-config picks up DATABASE_URL when set
+{
+  use ORM::ActiveRecord::DB;
+  temp %*ENV<DATABASE_URL> = 'sqlite::memory:';
+  my %c = DB.read-config;
+  is %c<adapter>,  'sqlite',   'DB.read-config honours DATABASE_URL';
+  is %c<database>, ':memory:', 'DB.read-config carries database from URL';
+}

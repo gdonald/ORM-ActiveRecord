@@ -35,6 +35,7 @@
     "ORM::ActiveRecord::Schema::Migrate": "lib/ORM/ActiveRecord/Schema/Migrate.rakumod",
     "ORM::ActiveRecord::Schema::Migration": "lib/ORM/ActiveRecord/Schema/Migration.rakumod",
     "ORM::ActiveRecord::Support::Colors": "lib/ORM/ActiveRecord/Support/Colors.rakumod",
+    "ORM::ActiveRecord::Support::DatabaseUrl": "lib/ORM/ActiveRecord/Support/DatabaseUrl.rakumod",
     "ORM::ActiveRecord::Support::Log": "lib/ORM/ActiveRecord/Support/Log.rakumod",
     "ORM::ActiveRecord::Support::Message": "lib/ORM/ActiveRecord/Support/Message.rakumod",
     "ORM::ActiveRecord::Support::Spell": "lib/ORM/ActiveRecord/Support/Spell.rakumod",

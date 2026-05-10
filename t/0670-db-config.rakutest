@@ -1,0 +1,78 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Adapter::Pg;
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::Adapter::MySql;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+plan 22;
+
+is DB.adapter-class-for({adapter => 'pg'}),         PgAdapter,    'adapter pg → PgAdapter';
+is DB.adapter-class-for({adapter => 'postgres'}),   PgAdapter,    'adapter postgres → PgAdapter';
+is DB.adapter-class-for({adapter => 'postgresql'}), PgAdapter,    'adapter postgresql → PgAdapter';
+is DB.adapter-class-for({adapter => 'PG'}),         PgAdapter,    'adapter is case-insensitive';
+
+is DB.adapter-class-for({adapter => 'sqlite'}),  SqliteAdapter, 'adapter sqlite → SqliteAdapter';
+is DB.adapter-class-for({adapter => 'sqlite3'}), SqliteAdapter, 'adapter sqlite3 → SqliteAdapter';
+
+is DB.adapter-class-for({adapter => 'mysql'}),   MySqlAdapter, 'adapter mysql → MySqlAdapter';
+is DB.adapter-class-for({adapter => 'mysql2'}),  MySqlAdapter, 'adapter mysql2 → MySqlAdapter';
+is DB.adapter-class-for({adapter => 'mariadb'}), MySqlAdapter, 'adapter mariadb → MySqlAdapter';
+
+is DB.adapter-class-for({}),                            PgAdapter, 'empty config defaults to PgAdapter';
+is DB.adapter-class-for({host => 'h', name => 'foo'}),  PgAdapter, 'missing adapter key defaults to PgAdapter';
+
+dies-ok { DB.adapter-class-for({adapter => 'mongo'}) },  'unknown adapter dies';
+throws-like
+  { DB.adapter-class-for({adapter => 'redis'}) },
+  Exception,
+  message => /'redis'/,
+  'unknown adapter message names the bad adapter';
+
+my $tmp = $*TMPDIR.add("ar-config-{$*PID}-{(now * 1000).Int}.json");
+LEAVE { $tmp.unlink if $tmp.e }
+
+%*ENV<DATABASE_URL>:delete;
+
+$tmp.spurt: q:to/JSON/;
+{
+  "db": {
+    "adapter": "sqlite",
+    "name": ":memory:"
+  }
+}
+JSON
+
+my %c = DB.read-config(path => $tmp.Str);
+is %c<adapter>, 'sqlite',  'read-config(:path) parses adapter';
+is %c<name>,    ':memory:', 'read-config(:path) parses name';
+is DB.adapter-class-for(%c), SqliteAdapter, 'JSON config drives adapter selection';
+
+$tmp.spurt: q:to/JSON/;
+{
+  "db": {
+    "adapter": "mysql",
+    "host": "db.internal",
+    "port": 3307,
+    "name": "shop",
+    "user": "app",
+    "password": "s3cret"
+  }
+}
+JSON
+
+my %m = DB.read-config(path => $tmp.Str);
+is %m<adapter>, 'mysql',       'mysql adapter parsed';
+is %m<host>,    'db.internal', 'host parsed';
+is %m<port>,    3307,          'port parsed';
+is %m<name>,    'shop',        'name parsed';
+is DB.adapter-class-for(%m), MySqlAdapter, 'mysql JSON drives MySqlAdapter';
+
+%*ENV<DATABASE_URL> = 'sqlite::memory:';
+my %u = DB.read-config(path => $tmp.Str);
+is %u<adapter>, 'sqlite', 'DATABASE_URL overrides on-disk JSON when both present';
+%*ENV<DATABASE_URL>:delete;

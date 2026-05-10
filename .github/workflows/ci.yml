@@ -1,33 +1,70 @@
 on: [push, pull_request]
+
 jobs:
   test:
+    name: ${{ matrix.db }}
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_DB: ar_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [postgres, mysql, sqlite]
+        include:
+          - db: postgres
+            database_url: postgres://postgres:postgres@localhost:5432/ar_test?schema=public
+          - db: mysql
+            database_url: mysql://root:root@127.0.0.1:3306/ar_test
+          - db: sqlite
+            database_url: sqlite:db/test.sqlite3
+    env:
+      DATABASE_URL: ${{ matrix.database_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Start PostgreSQL
+        if: matrix.db == 'postgres'
+        run: |
+          docker run -d --name pg \
+            -e POSTGRES_DB=ar_test \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            -p 5432:5432 \
+            postgres:17
+          for i in $(seq 1 30); do
+            docker exec pg pg_isready -U postgres && exit 0
+            sleep 1
+          done
+          echo "PostgreSQL did not become ready" && exit 1
+
+      - name: Start MySQL
+        if: matrix.db == 'mysql'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-libmysqlclient-dev
+          docker run -d --name mysql \
+            -e MYSQL_ROOT_PASSWORD=root \
+            -e MYSQL_DATABASE=ar_test \
+            -p 3306:3306 \
+            mysql:8.4
+          for i in $(seq 1 60); do
+            docker exec mysql mysqladmin ping -uroot -proot --silent 2>/dev/null && exit 0
+            sleep 1
+          done
+          echo "MySQL did not become ready" && exit 1
+
       - name: Install Raku
         uses: Raku/setup-raku@v1
         with:
           raku-version: 'latest'
+
       - name: Raku version
         run: raku --version
+
       - name: Install Dependencies
         run: zef install --/test --test-depends --deps-only .
+
       - name: Install App::Prove6
         run: zef install --/test App::Prove6
-      - name: Configure database
-        run: cp config/application.json.github-actions config/application.json
-      - name: Migrate database
-        run: raku -Ilib bin/ar
-      - name: Run Tests and Specs
+
+      - name: Run tests (${{ matrix.db }})
         run: ./test.raku

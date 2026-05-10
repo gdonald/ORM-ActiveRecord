@@ -1,23 +1,35 @@
 # Tests
 
-ORM::ActiveRecord includes a full test suite.  To run it you need to first configure a local test database.
+ORM::ActiveRecord includes a full test suite. It runs against PostgreSQL, MySQL,
+and SQLite. `./test.raku` cycles through all three; any adapter that isn't
+reachable is skipped with a message describing how to enable it.
 
 ## Database configuration
 
-A database configuration file is expected to be at `config/application.json`.  The format looks like this:
+There are two ways to point the suite at a database:
 
-```json
-{
-    "db": {
-        "schema": "public",
-        "name": "ar",
-        "user": "postgres",
-        "password": ""
-    }
-}
+**1. `DATABASE_URL` env var** (preferred — what `./test.raku` and CI use):
+
+```
+DATABASE_URL=postgres://user:pass@localhost:5432/ar_test?schema=public
+DATABASE_URL=mysql://root:root@127.0.0.1:3306/ar_test
+DATABASE_URL=sqlite:db/test.sqlite3
 ```
 
-You can copy the `config/application.json-example` file to `config/application.json` and then change the parameters as required for your particular setup.
+For local multi-adapter runs, `./test.raku` reads per-adapter overrides from
+`AR_PG_URL`, `AR_MYSQL_URL`, and `AR_SQLITE_URL`. The PostgreSQL default is
+built from `config/application.json` if present.
+
+**2. `config/application.json`** (single-adapter; what `bin/ar` reads when
+`DATABASE_URL` is unset). Pick the example matching your adapter:
+
+```
+cp config/application.json-pg-example     config/application.json
+cp config/application.json-mysql-example  config/application.json
+cp config/application.json-sqlite-example config/application.json
+```
+
+Then edit credentials as needed.
 
 ## Running with prove6
 

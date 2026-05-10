@@ -73,9 +73,15 @@ class SqlAdapter does Adapter is export {
     }
   }
 
-  method begin    { self.exec('BEGIN') }
-  method commit   { self.exec('COMMIT') }
-  method rollback { self.exec('ROLLBACK') }
+  method begin    { self!txn-exec('BEGIN') }
+  method commit   { self!txn-exec('COMMIT') }
+  method rollback { self!txn-exec('ROLLBACK') }
+
+  method !txn-exec(Str:D $sql) {
+    self!ensure-connected;
+    Log.sql(:$sql);
+    $!db.execute($sql);
+  }
 
   method !bind-typed(SqlStmt:D $stmt, $value, Str :$type --> Str) {
     my $coerced = self.coerce-write($value, :$type);
@@ -133,8 +139,7 @@ class SqlAdapter does Adapter is export {
     my $group-clause = @group ?? "GROUP BY @group.join(', ')" !! '';
     my $having-clause = self.build-having($stmt, @having);
     my $order = self.build-order($stmt, @order);
-    my $limit_ = $limit ?? "LIMIT $limit" !! '';
-    my $offset_ = $offset ?? "OFFSET $offset" !! '';
+    my $limit_offset = self.limit-offset-clause(:$limit, :$offset);
     my $join = '';
 
     if $join-table {
@@ -157,11 +162,16 @@ class SqlAdapter does Adapter is export {
       $group-clause
       $having-clause
       $order
-      $limit_
-      $offset_
+      $limit_offset
       SQL
 
     $stmt;
+  }
+
+  method limit-offset-clause(Int:D :$limit = 0, Int:D :$offset = 0 --> Str) {
+    my $l = $limit  ?? "LIMIT $limit"   !! '';
+    my $o = $offset ?? "OFFSET $offset" !! '';
+    ($l, $o).grep(*.chars).join(' ');
   }
 
   method build-having(SqlStmt:D $stmt, @having --> Str) {

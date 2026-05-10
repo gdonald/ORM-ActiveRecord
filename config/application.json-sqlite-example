@@ -1,0 +1,6 @@
+{
+  "db": {
+    "adapter": "sqlite",
+    "name": "db/test.sqlite3"
+  }
+}

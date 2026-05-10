@@ -4,3 +4,4 @@ config/application.json
 ORMActiveRecord.iml
 error.log
 .DS_Store
+db/test.sqlite3

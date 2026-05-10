@@ -4,5 +4,5 @@ use v6.d;
 use ORM::ActiveRecord::Schema::Migrate;
 
 sub MAIN(*@args) {
-  Migrate.new(:@args)
+  Migrate.new(:@args).run
 }

@@ -2,23 +2,33 @@
 use v6.d;
 use lib 'lib';
 use Test;
+use ORM::ActiveRecord::Support::DatabaseUrl;
+use ORM::ActiveRecord::Adapter::MySql;
+use ORM::ActiveRecord::DB;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my $host     = %*ENV<MYSQL_HOST>     // 'localhost';
-my $port     = (%*ENV<MYSQL_PORT>    // 3306).Int;
-my $user     = %*ENV<MYSQL_USER>     // 'root';
-my $password = %*ENV<MYSQL_PASSWORD> // '';
-my $database = %*ENV<MYSQL_DATABASE> // 'ar_test';
+my %c;
+if my $url = %*ENV<DATABASE_URL> {
+  %c = parse-database-url($url);
+  unless %c<adapter> eq 'mysql' {
+    plan 1;
+    skip "DATABASE_URL adapter is %c<adapter>, not mysql";
+    exit 0;
+  }
+}
 
-use ORM::ActiveRecord::Adapter::MySql;
-use ORM::ActiveRecord::DB;
+my $host     = %c<host>     // 'localhost';
+my $port     = (%c<port>    // 3306).Int;
+my $user     = %c<user>     // 'root';
+my $password = %c<password> // '';
+my $database = %c<name>     // 'ar_test';
 
 my $mysql = try MySqlAdapter.new(:$host, :$port, :$user, :$password, :$database);
 
 unless $mysql.defined && $mysql.is-connected {
   plan 1;
-  skip 'No reachable MySQL server (set MYSQL_HOST/USER/PASSWORD/DATABASE to enable)';
+  skip "No reachable MySQL at $host:$port (set DATABASE_URL=mysql://USER:PASS\@HOST:PORT/DB to enable)";
   exit 0;
 }
 DB.set-shared(DB.new(adapter => $mysql));

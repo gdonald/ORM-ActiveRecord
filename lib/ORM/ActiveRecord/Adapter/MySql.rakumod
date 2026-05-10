@@ -45,8 +45,10 @@ class MySqlAdapter is SqlAdapter is export {
   # fall back to the bare name 'mysqlclient' on Linux (where the dynamic
   # linker has the right paths and a wider version range is enough).
   method !discover-libmysql(--> Str) {
-    for </opt/homebrew/opt/mysql/lib/libmysqlclient.dylib
+    for </opt/homebrew/opt/mysql-client/lib/libmysqlclient.dylib
+    /opt/homebrew/opt/mysql/lib/libmysqlclient.dylib
     /opt/homebrew/lib/libmysqlclient.dylib
+    /usr/local/opt/mysql-client/lib/libmysqlclient.dylib
     /usr/local/opt/mysql/lib/libmysqlclient.dylib
     /usr/local/lib/libmysqlclient.dylib
     /opt/homebrew/lib/libmariadb.dylib
@@ -57,6 +59,12 @@ class MySqlAdapter is SqlAdapter is export {
   }
 
   method bind-placeholder(Int:D $n --> Str) { '?' }
+
+  method limit-offset-clause(Int:D :$limit = 0, Int:D :$offset = 0 --> Str) {
+    return '' unless $limit || $offset;
+    my $l = $limit ?? $limit !! 18446744073709551615;
+    "LIMIT $l OFFSET $offset";
+  }
 
   method quote-identifier(Str:D $name --> Str) {
     my $escaped = $name.subst('`', '``', :g);
@@ -112,10 +120,11 @@ class MySqlAdapter is SqlAdapter is export {
       }
       when /:i datetime | timestamp | ^ date | ^ time / {
         if $value ~~ DateTime {
-          my $iso = $value.utc.Str;
+          my $local = $value.in-timezone($*TZ);
+          my $iso = $local.Str;
           $iso ~~ s/'T'/ /;
+          $iso ~~ s/<[+\-]> \d\d ':' \d\d $//;
           $iso ~~ s/'Z'$//;
-          $iso ~~ s/'+00:00'$//;
           return $iso;
         }
         return $value.Str if $value ~~ Date;
@@ -242,8 +251,8 @@ class MySqlAdapter is SqlAdapter is export {
       method ddl-add-timestamps(Str:D $table) {
         self.exec(qq:to/SQL/);
       ALTER TABLE $table
-       ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-       ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+       ADD COLUMN created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+       ADD COLUMN updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
       SQL
         }
 
@@ -268,7 +277,7 @@ class MySqlAdapter is SqlAdapter is export {
                 when 'text'      { $type = 'TEXT' }
                 when 'integer'   { $type = 'INT' }
                 when 'boolean'   { $type = 'TINYINT'; $is-bool = True }
-                when 'datetime' | 'timestamp' { $type = 'DATETIME' }
+                when 'datetime' | 'timestamp' { $type = 'DATETIME(6)' }
                 when 'limit'     { $limit = '(' ~ $value ~ ')' }
                 when 'default'   { $default = $value }
                 when 'null'      { $null = $value }
