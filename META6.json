@@ -39,6 +39,7 @@
     "ORM::ActiveRecord::Support::Log": "lib/ORM/ActiveRecord/Support/Log.rakumod",
     "ORM::ActiveRecord::Support::Message": "lib/ORM/ActiveRecord/Support/Message.rakumod",
     "ORM::ActiveRecord::Support::Spell": "lib/ORM/ActiveRecord/Support/Spell.rakumod",
+    "ORM::ActiveRecord::Support::TestSkip": "lib/ORM/ActiveRecord/Support/TestSkip.rakumod",
     "ORM::ActiveRecord::Support::Utils": "lib/ORM/ActiveRecord/Support/Utils.rakumod",
     "ORM::ActiveRecord::Validations::Validator": "lib/ORM/ActiveRecord/Validations/Validator.rakumod",
     "ORM::ActiveRecord::Validations::Validators": "lib/ORM/ActiveRecord/Validations/Validators.rakumod"

@@ -1,0 +1,14 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Support::TestSkip;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+%*ENV<DATABASE_URL> = 'sqlite::memory:';
+
+skip-on(:adapter<sqlite>, :reason('demo: feature unavailable on sqlite'));
+
+# This line MUST NOT execute. If it does, the test prints `not ok` and fails.
+plan 1;
+ok False, 'skip-on did not exit when it should have';

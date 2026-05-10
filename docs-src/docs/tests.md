@@ -71,3 +71,64 @@ $ raku -Ilib t/0020-basic.rakutest
 Test files live under `t/` and use the `.rakutest` extension. They follow the
 naming pattern `NNNN-name.rakutest` where `NNNN` is a sort key, not a stable
 identifier — feel free to renumber when reorganising.
+
+## Adapter-aware test skipping
+
+Some tests only make sense against one adapter — a test that exercises a
+PostgreSQL `RETURNING` quirk has nothing to assert against MySQL, and a test
+for a MySQL `TINYINT(1)` round-trip has nothing to assert against PostgreSQL.
+`ORM::ActiveRecord::Support::TestSkip` provides four subs to express that
+without re-implementing the same `parse-database-url + plan + skip + exit`
+boilerplate in every file.
+
+```raku
+use Test;
+use ORM::ActiveRecord::Support::TestSkip;
+
+# 1. "skip the rest of this file when the active adapter is sqlite"
+skip-on(:adapter<sqlite>);
+
+# 2. "only run if the active adapter is mysql"
+only-on(:adapter<mysql>);
+
+# 3. multi-adapter form — accepts a list
+skip-on(:adapter<<sqlite mysql>>);
+only-on(:adapter<<pg mysql>>);
+
+# 4. predicates if you want to branch instead of bail
+if adapter-matches(:adapter<pg>) {
+  # PG-only setup
+}
+
+my $name = configured-adapter-name();   # 'pg' | 'mysql' | 'sqlite' | Str
+```
+
+**Active adapter resolution** — `configured-adapter-name` reads
+`DATABASE_URL` and normalises the scheme alias (`postgres`, `postgresql`,
+`mysql2`, `mariadb`, `sqlite3`, …) to one of `pg` / `mysql` / `sqlite`. It
+returns `Str` (undefined) when no `DATABASE_URL` is set.
+
+The project's own `config/application.json` is **not** consulted by default,
+because that would silently route every test through one adapter even when
+the developer wanted to exercise another. To opt in (e.g. for a CLI tool or
+runtime-style test that does follow the project config), pass
+`:config-path('config/application.json')` or `:check-config`.
+
+**Skip semantics** — both `skip-on` and `only-on`:
+
+- emit a single `plan 1; skip "…"; exit 0` when they decide to skip
+- return `False` (and do nothing else) when they decide to continue, so they
+  can be called unconditionally at the top of a file
+- treat "no `DATABASE_URL` set" as "let the test decide" — neither will skip
+  in that case, so adapter-specific tests can still try a localhost default
+  and fall back to a connect-probe skip of their own
+
+**Recognised aliases** — both the user-supplied `:adapter` argument and the
+configured-adapter value are normalised through the same map, so any of these
+work and mean the same thing:
+
+| Canonical | Aliases accepted                |
+| --------- | ------------------------------- |
+| `pg`      | `postgres`, `postgresql`        |
+| `mysql`   | `mysql2`, `mariadb`             |
+| `sqlite`  | `sqlite3`                       |

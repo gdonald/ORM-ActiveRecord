@@ -3,19 +3,14 @@ use v6.d;
 use lib 'lib';
 use Test;
 use ORM::ActiveRecord::Support::DatabaseUrl;
+use ORM::ActiveRecord::Support::TestSkip;
 use ORM::ActiveRecord::Adapter::MySql;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my %c;
-if my $url = %*ENV<DATABASE_URL> {
-  %c = parse-database-url($url);
-  unless %c<adapter> eq 'mysql' {
-    plan 1;
-    skip "DATABASE_URL adapter is %c<adapter>, not mysql";
-    exit 0;
-  }
-}
+only-on(:adapter<mysql>);
+
+my %c = %*ENV<DATABASE_URL> ?? parse-database-url(%*ENV<DATABASE_URL>) !! {};
 
 my $host     = %c<host>     // 'localhost';
 my $port     = (%c<port>    // 3306).Int;

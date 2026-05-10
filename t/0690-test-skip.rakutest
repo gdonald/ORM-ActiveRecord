@@ -1,0 +1,138 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Support::TestSkip;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $saved-url = %*ENV<DATABASE_URL>;
+
+# Run from /tmp so the local config/application.json never participates.
+my $cwd = $*CWD;
+my $tmp = $*TMPDIR.add("ar-test-skip-{$*PID}");
+$tmp.mkdir;
+
+LEAVE {
+  chdir $cwd;
+  $tmp.rmdir;
+  if $saved-url.defined {
+    %*ENV<DATABASE_URL> = $saved-url;
+  } else {
+    %*ENV<DATABASE_URL>:delete;
+  }
+}
+
+chdir $tmp;
+
+plan 29;
+
+is normalize-adapter-name('Postgres'),  'pg',     'Postgres normalizes to pg';
+is normalize-adapter-name('postgresql'),'pg',     'postgresql normalizes to pg';
+is normalize-adapter-name('PG'),        'pg',     'PG normalizes to pg';
+is normalize-adapter-name('mysql2'),    'mysql',  'mysql2 normalizes to mysql';
+is normalize-adapter-name('MariaDB'),   'mysql',  'MariaDB normalizes to mysql';
+is normalize-adapter-name('sqlite3'),   'sqlite', 'sqlite3 normalizes to sqlite';
+
+%*ENV<DATABASE_URL>:delete;
+nok configured-adapter-name().defined,
+  'configured-adapter-name returns undefined with no env and no config';
+
+%*ENV<DATABASE_URL> = 'postgres://localhost/x';
+is configured-adapter-name(), 'pg',
+  'DATABASE_URL=postgres://... resolves to pg';
+
+%*ENV<DATABASE_URL> = 'mysql://localhost/x';
+is configured-adapter-name(), 'mysql',
+  'DATABASE_URL=mysql://... resolves to mysql';
+
+%*ENV<DATABASE_URL> = 'sqlite::memory:';
+is configured-adapter-name(), 'sqlite',
+  'DATABASE_URL=sqlite:... resolves to sqlite';
+
+%*ENV<DATABASE_URL> = 'mysql://localhost/x';
+ok  adapter-matches(:adapter<mysql>),  'adapter-matches single-string match';
+nok adapter-matches(:adapter<sqlite>), 'adapter-matches single-string mismatch';
+ok  adapter-matches(:adapter<<mysql sqlite>>),
+  'adapter-matches list with current adapter present';
+nok adapter-matches(:adapter<<sqlite pg>>),
+  'adapter-matches list without current adapter';
+ok  adapter-matches(:adapter<MariaDB>),
+  'adapter-matches normalizes user-supplied alias';
+
+%*ENV<DATABASE_URL>:delete;
+nok adapter-matches(:adapter<pg>),
+  'adapter-matches is False when no adapter configured';
+
+# only-on: should NOT skip when configured adapter is in the allow-list.
+%*ENV<DATABASE_URL> = 'mysql://localhost/x';
+my $only-on-result = only-on(:adapter<mysql>);
+is $only-on-result, False, 'only-on returns False without exiting when adapter matches';
+
+# only-on: should NOT skip when no adapter is configured (lets test self-decide).
+%*ENV<DATABASE_URL>:delete;
+$only-on-result = only-on(:adapter<mysql>);
+is $only-on-result, False, 'only-on returns False without exiting when no adapter is configured';
+
+# skip-on: should NOT skip when configured adapter is not in the skip list.
+%*ENV<DATABASE_URL> = 'mysql://localhost/x';
+my $skip-on-result = skip-on(:adapter<sqlite>);
+is $skip-on-result, False, 'skip-on returns False without exiting when adapter does not match';
+
+# skip-on: should NOT skip when no adapter is configured.
+%*ENV<DATABASE_URL>:delete;
+$skip-on-result = skip-on(:adapter<sqlite>);
+is $skip-on-result, False, 'skip-on returns False without exiting when no adapter is configured';
+
+# Default behavior: config file is NOT consulted unless explicitly opted in,
+# so a project's `config/application.json` does not silently change which
+# adapter a test believes is active.
+my $cfg = $tmp.add('app.json');
+$cfg.spurt(q:to/JSON/);
+{ "db": { "adapter": "sqlite", "name": ":memory:" } }
+JSON
+%*ENV<DATABASE_URL>:delete;
+nok configured-adapter-name().defined,
+  'config file is ignored unless :config-path or :check-config is set';
+
+# Opt-in config-path lookup: picks up adapter from a JSON config.
+%*ENV<DATABASE_URL>:delete;
+is configured-adapter-name(:config-path($cfg.absolute)), 'sqlite',
+  'configured-adapter-name reads adapter from JSON config when :config-path is given';
+
+# DATABASE_URL wins over config file.
+%*ENV<DATABASE_URL> = 'postgres://localhost/x';
+is configured-adapter-name(:config-path($cfg.absolute)), 'pg',
+  'DATABASE_URL takes precedence over config file';
+
+# Config file with non-canonical adapter spelling.
+$cfg.spurt(q:to/JSON/);
+{ "db": { "adapter": "PostgreSQL", "name": "x" } }
+JSON
+%*ENV<DATABASE_URL>:delete;
+is configured-adapter-name(:config-path($cfg.absolute)), 'pg',
+  'config file adapter values are normalized';
+
+# Missing config file: falls back to undefined.
+$cfg.unlink;
+%*ENV<DATABASE_URL>:delete;
+nok configured-adapter-name(:config-path($cfg.absolute)).defined,
+  'no env, no file → undefined';
+
+# Mixed URL forms.
+%*ENV<DATABASE_URL> = 'postgresql://u:p@h:5432/n';
+is configured-adapter-name(), 'pg',
+  'postgresql:// scheme resolves to pg';
+
+%*ENV<DATABASE_URL> = 'mysql2://localhost/x';
+nok adapter-matches(:adapter<pg>),
+  'mysql2 URL scheme does not match pg';
+
+%*ENV<DATABASE_URL> = 'mysql2://localhost/x';
+ok adapter-matches(:adapter<mysql>),
+  'mysql2 URL scheme matches mysql';
+
+# Empty adapter list rejects everything.
+%*ENV<DATABASE_URL> = 'mysql://localhost/x';
+nok adapter-matches(:adapter([])),
+  'adapter-matches with empty list returns False';
