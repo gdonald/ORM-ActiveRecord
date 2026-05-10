@@ -31,67 +31,43 @@ cp config/application.json-sqlite-example config/application.json
 
 Then edit credentials as needed.
 
-## Running with prove6
+## Running the suite
 
-You can run the entire test suite with `prove6` from [TAP::Harness](https://github.com/perl6/tap-harness6).
+`./test.raku` is the canonical entry point. With no `DATABASE_URL` set, it
+cycles through PostgreSQL, MySQL, and SQLite — probing each first and skipping
+unreachable adapters with a message describing how to enable them. With
+`DATABASE_URL` set, it runs once against that adapter (this is what CI does
+per matrix entry).
 
 ```shell
-$ prove6
+$ ./test.raku
 ```
 
-You should get output similar to this:
+When all three adapters are reachable you get a runtimes summary at the end:
 
 ```shell
-t/000-meta.t6 ........................... ok
-t/001-basic.t6 .......................... ok
-t/002-validate-acceptance.t6 ............ ok
-t/002-validate-build-save.t6 ............ ok
-t/002-validate-build.t6 ................. ok
-t/002-validate-confirmation.t6 .......... ok
-t/002-validate-create.t6 ................ ok
-t/002-validate-exclusion.t6 ............. ok
-t/002-validate-format.t6 ................ ok
-t/002-validate-inclusion.t6 ............. ok
-t/002-validate-integer-numericality.t6 .. ok
-t/002-validate-length.t6 ................ ok
-t/002-validate-presence-if-unless.t6 .... ok
-t/002-validate-presence-on-create.t6 .... ok
-t/002-validate-presence-on-update.t6 .... ok
-t/002-validate-unique-scope.t6 .......... ok
-t/002-validate-uniqueness.t6 ............ ok
-t/002-validate-update.t6 ................ ok
-t/003-update-save.t6 .................... ok
-t/004-model-custom-errors.t6 ............ ok
-t/004-model-dynamic-errors.t6 ........... ok
-t/004-model-foreign-key.t6 .............. ok
-t/004-model-is-dirty.t6 ................. ok
-t/004-model-where.t6 .................... ok
-t/005-callback-after-create.t6 .......... ok
-t/005-callback-after-save.t6 ............ ok
-t/005-callback-after-update.t6 .......... ok
-t/005-callback-before-create.t6 ......... ok
-t/005-callback-before-save.t6 ........... ok
-t/005-callback-before-update.t6 ......... ok
-All tests successful.
-Files=30, Tests=220,  15 wallclock secs
-Result: PASS
+==> Runtimes
+  postgres    26.60s
+  mysql       26.37s
+  sqlite      22.59s
+  total       75.65s
+```
+
+## Running with prove6
+
+To run the suite once against your default adapter — what `config/application.json`
+or `DATABASE_URL` points at — invoke `prove6` directly:
+
+```shell
+$ prove6 -Ilib t
 ```
 
 ## Running a single test file
 
-You can run a single test file using Rakudo Perl 6:
-
 ```shell
-perl6 -Ilib t/001-basic.t6
+$ raku -Ilib t/0020-basic.rakutest
 ```
 
-You should get output similar to this:
-
-```shell
-1..5
-ok 1 -
-ok 2 -
-ok 3 -
-ok 4 -
-ok 5 -
-```
+Test files live under `t/` and use the `.rakutest` extension. They follow the
+naming pattern `NNNN-name.rakutest` where `NNNN` is a sort key, not a stable
+identifier — feel free to renumber when reorganising.

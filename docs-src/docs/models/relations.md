@@ -1,16 +1,30 @@
 # Relations
 
 `User.where(...)`, `User.order(...)`, and friends return a chainable relation
-that defers running SQL until you ask for results. Realise the relation by
-calling `.all`, `.first`, `.last`, `.count`, `.pluck`, `.ids`, or `.exists`.
+that defers running SQL until you ask for results. Relations compose: every
+scope-narrowing call returns a new relation, leaving the original untouched.
 
 ```perl6
-my @recent = User
-  .where({active => True})
-  .order('created_at DESC')
-  .limit(10)
-  .all;
+my $active = User.where({active => True});
+my $recent = $active.order('created_at DESC').limit(10);
+
+# $active and $recent are independent relations; neither has hit the DB yet.
+my @rows = $recent.all;   # one query, fired here
 ```
+
+## Realising a relation
+
+Relations stay lazy until you call one of these methods:
+
+| Method        | Returns                                    |
+| ------------- | ------------------------------------------ |
+| `.all`        | List of model instances                    |
+| `.first`      | One instance ordered by `id` ASC, or `Nil` |
+| `.last`       | One instance ordered by `id` DESC, or `Nil`|
+| `.count`      | `Int` — `COUNT(*)`                         |
+| `.exists`     | `Bool`                                     |
+| `.pluck(...)` | List of raw column values                  |
+| `.ids`        | List of `id` column values (= `pluck('id')`) |
 
 ## where
 
@@ -29,6 +43,19 @@ $q = $q.where({fname => 'Greg'}) if $only-greg;
 my @users = $q.all;
 ```
 
+`where` accepts several value shorthands beyond a literal scalar:
+
+```perl6
+User.where({age   => 18..65});           # BETWEEN
+User.where({email => Nil});              # IS NULL
+User.where({id    => [1, 2, 3]});        # IN
+User.where({user  => $alice});           # auto-uses $alice.id as user_id
+```
+
+See [Queries](queries.md) for the full filtering vocabulary, including
+`where.not`, `where.missing`, `where.associated`, `or`, `and`, `merge`,
+`rewhere`, `unscope`, and `excluding`.
+
 ## order
 
 `order(*@cols)` adds `ORDER BY` clauses. Pass column names or fully formed
@@ -40,6 +67,14 @@ User.order('lname', 'fname');
 User.order('created_at DESC');
 ```
 
+`reorder(...)` replaces any prior `order` clauses. `in-order-of(:col, [...])`
+orders rows to match an explicit value list.
+
+```perl6
+User.order('lname').reorder('id');                       # only 'id' is applied
+User.in-order-of(:id, [3, 1, 2]).all;                    # rows in [3, 1, 2] order
+```
+
 ## limit and offset
 
 `limit(N)` and `offset(N)` add `LIMIT` and `OFFSET`. Useful for pagination.
@@ -49,6 +84,9 @@ sub page-of-users(Int :$page = 1, Int :$per = 20) {
   User.order('id').limit($per).offset(($page - 1) * $per).all;
 }
 ```
+
+SQLite and MySQL require a `LIMIT` whenever an `OFFSET` is set; the adapter
+adds a synthetic unbounded `LIMIT` when you pass `offset` alone.
 
 ## all
 

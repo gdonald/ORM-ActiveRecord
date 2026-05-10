@@ -1,11 +1,15 @@
 site_name: ORM::ActiveRecord
 nav:
   - Home: index.md
+  - Adapters: adapters.md
   - Migrations: migrations.md
   - Models:
     - Info: models/models.md
     - Finders: models/finders.md
     - Relations: models/relations.md
+    - Queries: models/queries.md
+    - Joins: models/joins.md
+    - Aggregation: models/aggregation.md
     - Persistence: models/persistence.md
     - Callbacks: models/callbacks.md
   - Validations:

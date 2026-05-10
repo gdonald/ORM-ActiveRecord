@@ -9,7 +9,7 @@ Migration files should contain two methods: an `up` and a `down`.  The `up` meth
 db/migrate/001-create-users.raku
 
 ```perl6
-use ORM::ActiveRecord::Migration;
+use ORM::ActiveRecord::Schema::Migration;
 
 class CreateUsers is Migration {
   method up {
@@ -28,7 +28,7 @@ class CreateUsers is Migration {
 db/migrate/002-create-pages.raku
 
 ```perl6
-use ORM::ActiveRecord::Migration;
+use ORM::ActiveRecord::Schema::Migration;
 
 class CreatePages is Migration {
   method up {
@@ -48,11 +48,18 @@ class CreatePages is Migration {
 
 Most tables benefit from `created_at` and `updated_at` columns. ORM::ActiveRecord
 adds them with `add-timestamps` and manages them automatically: `created_at` is
-set on insert, `updated_at` is set on every save. The columns are
-`TIMESTAMPTZ NOT NULL DEFAULT now()`.
+set on insert, `updated_at` is set on every save.
+
+The exact column type is adapter-aware:
+
+| Adapter    | Generated DDL                                                                |
+| ---------- | ---------------------------------------------------------------------------- |
+| PostgreSQL | `TIMESTAMPTZ NOT NULL DEFAULT now()`                                         |
+| MySQL      | `DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)` (microsecond precision)  |
+| SQLite     | `DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`                                |
 
 ```perl6
-use ORM::ActiveRecord::Migration;
+use ORM::ActiveRecord::Schema::Migration;
 
 class CreateArticles is Migration {
   method up {

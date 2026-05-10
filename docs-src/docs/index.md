@@ -6,7 +6,11 @@ The homepage for ORM::ActiveRecord is [https://github.com/gdonald/ORM-ActiveReco
 
 ## Synopsis
 
-ORM::ActiveRecord is an [object-relational mapping](https://en.wikipedia.org/wiki/Object-relational_mapping) module for Rakudo Perl 6 that *mostly* follows the [Active Record Pattern](https://en.wikipedia.org/wiki/Active_record_pattern).
+ORM::ActiveRecord is an [object-relational mapping](https://en.wikipedia.org/wiki/Object-relational_mapping) module for Raku that *mostly* follows the [Active Record Pattern](https://en.wikipedia.org/wiki/Active_record_pattern).
+
+It supports **PostgreSQL**, **MySQL**, and **SQLite** through a common adapter
+layer. Application code is the same regardless of the backend; pick one with
+`DATABASE_URL` or `config/application.json`. See [Adapters](adapters.md).
 
 ## Example Usage
 
