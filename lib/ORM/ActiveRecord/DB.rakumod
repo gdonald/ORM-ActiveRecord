@@ -3,15 +3,20 @@ use JSON::Tiny;
 
 use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::Adapter::Pg;
+use ORM::ActiveRecord::Adapter::Sqlite;
 
 class DB is export {
   my DB $shared;
 
   has Adapter $.adapter handles *;
 
-  submethod BUILD {
-    my %config = self.read-config;
-    $!adapter = self!build-adapter(%config);
+  submethod BUILD(Adapter :$adapter) {
+    if $adapter.defined {
+      $!adapter = $adapter;
+    } else {
+      my %config = self.read-config;
+      $!adapter = self!build-adapter(%config);
+    }
   }
 
   # Process-wide shared connection. Use this everywhere instead of `DB.new` —
@@ -20,6 +25,14 @@ class DB is export {
   # "No such method 'PQgetisnull' for invocant of type 'Any'" errors.
   method shared(--> DB) {
     $shared //= DB.new;
+    $shared;
+  }
+
+  # Test seam: swap the shared singleton to point at a hand-built DB
+  # (e.g. one wrapping a SqliteAdapter against `:memory:`). Pass `Nil` to
+  # clear and force the next `.shared` to rebuild from config.
+  method set-shared($db --> DB) {
+    $shared = $db;
     $shared;
   }
 
@@ -33,6 +46,11 @@ class DB is export {
           database => %config<name>,
           user     => %config<user>,
           password => %config<password>,
+        );
+      }
+      when 'sqlite' | 'sqlite3' {
+        SqliteAdapter.new(
+          database => %config<name> // %config<database> // ':memory:',
         );
       }
       default { die "DB: unsupported adapter '$kind'" }

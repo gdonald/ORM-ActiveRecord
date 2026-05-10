@@ -1,0 +1,87 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+# Skip the whole file when DBDish::SQLite isn't installed.
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+
+# Swap the shared singleton to point at a fresh in-memory SQLite before any
+# Model class loads its schema. Order matters: Model.BUILD calls DB.shared.
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+# Bring up a tiny schema directly through the adapter (the Migration class
+# would do the same thing, just routed through this same `ddl-*` interface).
+$sqlite.ddl-create-table('widgets', [
+  name   => { :string, limit => 64 },
+  qty    => { :integer, default => 0 },
+  active => { :boolean, default => True },
+]);
+$sqlite.ddl-add-timestamps('widgets');
+
+use ORM::ActiveRecord::Model;
+
+class Widget is Model {
+  submethod BUILD {
+    self.validate: 'name', { :presence }
+  }
+}
+
+plan 16;
+
+# ---- create + find ----
+my $w = Widget.create({ name => 'Alpha', qty => 3, active => True });
+ok $w.id, 'create returns surrogate id from RETURNING/last_insert_rowid';
+is $w.name, 'Alpha', 'name persisted';
+is $w.qty, 3, 'qty persisted';
+is $w.active, True, 'active persisted as True';
+
+my $found = Widget.find($w.id);
+is $found.name, 'Alpha', 'find by id round-trips name';
+isa-ok $found.active, Bool, 'active reads back as Bool through PRAGMA-driven schema';
+is $found.active, True, 'active value preserved on read';
+isa-ok $found.created_at, DateTime, 'created_at reads back as DateTime';
+
+# ---- update + Bool=False round-trip (the bug PgAdapter also had) ----
+$w.update({ active => False, qty => 9 });
+my $reloaded = Widget.find($w.id);
+is $reloaded.active, False, 'update to False preserved (no longer mangled)';
+is $reloaded.qty, 9, 'qty updated';
+
+# ---- where / count / find-by ----
+Widget.create({ name => 'Beta',  qty => 1, active => False });
+Widget.create({ name => 'Gamma', qty => 5, active => True });
+
+is Widget.count, 3, 'count after three inserts';
+is Widget.where({ active => True }).count, 1, 'where(active => True) narrows correctly';
+is Widget.where({ active => False }).count, 2, 'where(active => False) narrows correctly';
+
+my $by-name = Widget.find-by({ name => 'Gamma' });
+is $by-name.qty, 5, 'find-by hits the right row';
+
+# ---- destroy ----
+$by-name.destroy;
+is Widget.count, 2, 'destroy removed exactly one row';
+
+Widget.destroy-all;
+is Widget.count, 0, 'destroy-all clears the table';
+
+# Reset the shared singleton so other tests see the regular config.
+DB.set-shared(Nil);

@@ -1,0 +1,128 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Adapter::Sqlite;
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+# Skip the whole file when DBDish::SQLite isn't installed in the runtime.
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+plan 27;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+ok $sqlite.is-connected, 'connects to :memory: from BUILD';
+ok $sqlite.sqlite-version.chars > 0, 'sqlite_version() reachable';
+
+is $sqlite.bind-placeholder(1), '?', 'bind-placeholder for n=1 is ?';
+is $sqlite.bind-placeholder(7), '?', 'bind-placeholder for n=7 is also ?';
+
+$sqlite.ddl-create-table('widgets', [
+  name      => { :string, limit => 64 },
+  qty       => { :integer, default => 0 },
+  active    => { :boolean, default => True },
+  body      => { :text },
+]);
+$sqlite.ddl-add-timestamps('widgets');
+
+my @fields = $sqlite.get-fields(table => 'widgets');
+my %types-by-name = @fields.map({ $_[0] => $_[1] });
+
+ok %types-by-name<id>:exists, 'introspection sees id column';
+is %types-by-name<id>, 'integer', 'id has INTEGER affinity (normalized lowercase)';
+is %types-by-name<name>, 'text', 'string column emitted as TEXT';
+is %types-by-name<qty>, 'integer', 'integer column emitted as INTEGER';
+is %types-by-name<active>, 'boolean', 'boolean column labeled BOOLEAN (NUMERIC affinity, stored as 0/1)';
+is %types-by-name<created_at>, 'datetime', 'timestamp column labeled DATETIME (NUMERIC affinity, stored as TEXT)';
+
+my @tables = $sqlite.get-table-names;
+ok 'widgets' (elem) @tables, 'sqlite_master lists the new table';
+ok !('sqlite_sequence' (elem) @tables), 'internal sqlite_% tables are filtered out';
+
+my %types = name => 'TEXT', qty => 'INTEGER', active => 'INTEGER', body => 'TEXT';
+my $stmt = $sqlite.build-insert(
+  table => 'widgets',
+  attrs => { name => 'alpha', qty => 3, active => True, body => 'lorem' },
+  :%types,
+);
+
+ok $stmt.sql.contains('?'), 'INSERT uses ? placeholders, not $N';
+
+my $rows = $sqlite.exec-stmt($stmt);
+my $id1 = $sqlite.sqlite-version ge '3.35.0' && $rows.elems
+  ?? $rows[0][0].Int
+  !! $sqlite.exec('SELECT last_insert_rowid()')[0][0].Int;
+ok $id1 > 0, 'first surrogate id assigned';
+
+my $stmt2 = $sqlite.build-insert(
+  table => 'widgets',
+  attrs => { name => 'beta', qty => 7, active => False, body => 'ipsum' },
+  :%types,
+);
+my $rows2 = $sqlite.exec-stmt($stmt2);
+my $id2 = $sqlite.sqlite-version ge '3.35.0' && $rows2.elems
+  ?? $rows2[0][0].Int
+  !! $sqlite.exec('SELECT last_insert_rowid()')[0][0].Int;
+ok $id2 == $id1 + 1, 'AUTOINCREMENT advances by one';
+
+my @intro-fields = $sqlite.get-fields(table => 'widgets').map({ $_ });
+my @field-objs = @intro-fields.map({
+  use ORM::ActiveRecord::Schema::Field;
+  Field.new(name => $_[0], type => $_[1]);
+});
+
+my $row = $sqlite.get-record(
+  table  => 'widgets',
+  fields => @field-objs,
+  where  => { id => $id1 },
+);
+
+isa-ok $row<active>, Bool, 'INTEGER column with boolean type coerces back to Bool';
+is $row<active>, True, 'True round-trip preserved';
+is $row<qty>, 3, 'integer round-trip preserved as Int';
+is $row<name>, 'alpha', 'string round-trip preserved';
+
+my $row2 = $sqlite.get-record(
+  table  => 'widgets',
+  fields => @field-objs,
+  where  => { id => $id2 },
+);
+is $row2<active>, False, 'False round-trip preserved (no longer mangled to "")';
+
+isa-ok $row<created_at>, DateTime, 'CURRENT_TIMESTAMP TEXT default coerces to DateTime';
+
+my $now = DateTime.new('2026-05-09T12:34:56Z');
+my $dt-stmt = SqliteAdapter.new(database => ':memory:').build-update(
+  :table('widgets'),
+  :id($id1),
+  attrs => { created_at => $now },
+  types => { created_at => 'TEXT' },
+);
+ok $dt-stmt.binds.elems == 2, 'UPDATE binds value + id';
+
+my $deleted = $sqlite.delete-records(table => 'widgets', where => { id => $id1 });
+is $deleted, 1, 'delete-records returns affected row count';
+my @remaining = $sqlite.get-records(
+  table  => 'widgets',
+  fields => @field-objs,
+);
+is @remaining.elems, 1, 'one row left after deleting id1';
+
+ok $sqlite.disconnect, 'disconnect succeeds';
+nok $sqlite.is-connected, 'is-connected reports false after disconnect';
+$sqlite.reconnect;
+ok $sqlite.is-connected, 'reconnect re-establishes connection';
+
+$sqlite.disconnect;

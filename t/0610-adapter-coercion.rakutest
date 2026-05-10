@@ -1,0 +1,57 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Contract is Model {
+  submethod BUILD { }
+}
+
+class Article is Model {
+  submethod BUILD { }
+}
+
+plan 12;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+# Boolean round-trip — write True / False, read back as Bool
+
+Contract.destroy-all;
+
+my $c = Contract.create({ name => 'Round-trip True', terms => True });
+ok $c.id, 'contract with terms=True created';
+
+my $found = Contract.find($c.id);
+isa-ok $found.attrs<terms>, Bool, 'terms read back as Bool when stored True';
+is $found.attrs<terms>, True, 'terms preserved as True';
+
+my $c2 = Contract.create({ name => 'Round-trip False', terms => False });
+ok $c2.id, 'contract with terms=False created (False no longer mangled to "")';
+
+my $found2 = Contract.find($c2.id);
+isa-ok $found2.attrs<terms>, Bool, 'terms read back as Bool when stored False';
+is $found2.attrs<terms>, False, 'terms preserved as False';
+
+# Update path also threads booleans through coerce-write
+$c.update({ terms => False });
+my $reloaded = Contract.find($c.id);
+isa-ok $reloaded.attrs<terms>, Bool, 'updated terms read back as Bool';
+is $reloaded.attrs<terms>, False, 'update from True to False persisted';
+
+Contract.destroy-all;
+
+# Timestamp round-trip — Article has created_at/updated_at populated by touch-timestamps
+
+Article.destroy-all;
+
+my $a = Article.create({ title => 'Coercion', body => 'check' });
+isa-ok $a.attrs<created_at>, DateTime, 'created_at materialized as DateTime on insert';
+
+my $found-a = Article.find($a.id);
+isa-ok $found-a.attrs<created_at>, DateTime, 'created_at read back as DateTime';
+isa-ok $found-a.attrs<updated_at>, DateTime, 'updated_at read back as DateTime';
+ok $found-a.attrs<created_at>.posix > 0, 'created_at carries a real epoch value';
+
+Article.destroy-all;

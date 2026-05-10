@@ -20,6 +20,8 @@
   "provides": {
     "ORM::ActiveRecord::Adapter": "lib/ORM/ActiveRecord/Adapter.rakumod",
     "ORM::ActiveRecord::Adapter::Pg": "lib/ORM/ActiveRecord/Adapter/Pg.rakumod",
+    "ORM::ActiveRecord::Adapter::Sql": "lib/ORM/ActiveRecord/Adapter/Sql.rakumod",
+    "ORM::ActiveRecord::Adapter::Sqlite": "lib/ORM/ActiveRecord/Adapter/Sqlite.rakumod",
     "ORM::ActiveRecord::DB": "lib/ORM/ActiveRecord/DB.rakumod",
     "ORM::ActiveRecord::Errors::Error": "lib/ORM/ActiveRecord/Errors/Error.rakumod",
     "ORM::ActiveRecord::Errors::Errors": "lib/ORM/ActiveRecord/Errors/Errors.rakumod",
@@ -53,7 +55,8 @@
     "Object",
     "Migration",
     "Validation",
-    "Postgres"
+    "Postgres",
+    "SQLite"
   ],
   "source-url": "git://github.com/gdonald/ORM-ActiveRecord.git"
 }

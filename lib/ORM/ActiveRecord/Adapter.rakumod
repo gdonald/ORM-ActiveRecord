@@ -20,8 +20,14 @@ role Adapter is export {
   method get-table-names()          { ... }
 
   # CRUD primitives whose SQL shape varies by dialect
-  method build-insert(Str:D :$table, :%attrs --> SqlStmt) { ... }
+  method build-insert(Str:D :$table, :%attrs, :%types --> SqlStmt) { ... }
   method delete-records(Str:D :$table, :%where, :%where-not --> Int) { ... }
+
+  # Type coercion across the read/write boundary. Defaults pass through;
+  # adapters override per dialect (e.g. SQLite stores Bool as INTEGER 0/1
+  # and DATETIME as ISO TEXT, MySQL uses TINYINT(1) for Bool).
+  method coerce-read($value, Str :$type)  { $value }
+  method coerce-write($value, Str :$type) { $value }
 }
 
 class SqlStmt is export {
