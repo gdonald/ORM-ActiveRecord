@@ -27,7 +27,7 @@ unless $user.save {
 exception carries the failing record and a list of human-readable messages.
 
 ```perl6
-use ORM::ActiveRecord::X;
+use ORM::ActiveRecord::Errors::X;
 
 try {
   User.create-or-die({fname => ''});
@@ -44,6 +44,33 @@ try {
 
 `create-or-die` is a class-level convenience that builds the record, runs
 validations, and raises if it could not be saved.
+
+## Build
+
+`build` constructs an in-memory record without touching the database. It's
+the right choice when you want to populate a record, run validations against
+it, and only save once everything checks out.
+
+```perl6
+my $user = User.build({fname => 'Greg', lname => 'Donald'});
+
+$user.is-valid;     # True / False — runs validators without persisting
+$user.id;           # 0 — unsaved
+$user.save;         # persists; id becomes the new surrogate key
+```
+
+`build` with no arguments returns a record with default attributes:
+
+```perl6
+my $blank = User.build;
+$blank.fname = 'Alice';
+$blank.save;
+```
+
+The difference from `create`: `create` builds **and** saves in one step (and
+returns whether the save succeeded via the resulting record's `id`), while
+`build` is purely in-memory. Reach for `build` when you need to inspect or
+mutate the record before deciding to save.
 
 ## Destroy and Delete
 

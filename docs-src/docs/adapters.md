@@ -117,3 +117,97 @@ unbounded in SQLite.)
 
 The `database` field accepts a file path (created on first connect) or the
 literal `":memory:"` for an ephemeral in-process database — useful in tests.
+
+## Connection lifecycle
+
+The adapter on `DB.shared` exposes four lifecycle primitives. The shared
+handle connects lazily on first use, so most callers never touch these — they
+exist for tests, long-running daemons, and code that needs to recycle a
+connection after an out-of-band drop.
+
+```perl6
+use ORM::ActiveRecord::DB;
+
+my $db = DB.shared;
+
+$db.exec('SELECT 1');     # forces the lazy connect
+$db.is-connected;         # True
+
+$db.disconnect;           # closes the handle, returns True
+$db.is-connected;         # False
+$db.disconnect;           # no-op on an already-closed handle, returns False
+
+$db.reconnect;            # disconnect (if needed) + connect
+$db.is-connected;         # True
+```
+
+**Auto-reconnect** — once a handle has been built, the next `exec` /
+`exec-stmt` after a `disconnect` will re-establish the connection
+automatically. The example above could drop the explicit `reconnect` call
+and the next query would still succeed.
+
+```perl6
+$db.disconnect;
+my @rows = $db.exec('SELECT 2');   # exec auto-reconnects, returns 2
+```
+
+## Raw SQL with bound parameters
+
+`sanitize-sql` and `sanitize-sql-array` turn a SQL fragment + values into a
+ready-to-execute statement with adapter-correct placeholders. They're how
+ORM::ActiveRecord avoids string-interpolating values into SQL internally; the
+same helpers are available for application code that needs to drop down to
+raw SQL.
+
+### Positional `?` placeholders
+
+```perl6
+my $stmt = DB.shared.sanitize-sql-array([
+  'name = ? AND age = ?',
+  'Bob', 30,
+]);
+
+DB.shared.exec-stmt($stmt);
+```
+
+Each `?` consumes the next value in order. PostgreSQL rewrites them to `$N`;
+MySQL and SQLite keep them as `?`. An arity mismatch (too many or too few
+values for the `?`s in the template) raises.
+
+### Named `:name` placeholders
+
+```perl6
+my $stmt = DB.shared.sanitize-sql-array([
+  'name = :name AND age = :age',
+  { name => 'Bob', age => 30 },
+]);
+```
+
+Names that appear in the template but are missing from the hash raise.
+You can't mix `?` and `:name` in the same template.
+
+### String-literal preservation
+
+Anything inside single quotes — including `?` characters that look like
+placeholders, escaped quotes (`''`), and `:name`-shaped tokens — is passed
+through verbatim. `sanitize-sql-array` only substitutes placeholders that
+appear outside string literals.
+
+```perl6
+DB.shared.sanitize-sql-array([
+  q{name = ? AND label = '???' AND tag = ':notbound'},
+  'Bob',
+]);
+# → only one ? was actually a placeholder; one bind, 'Bob'
+```
+
+### `sanitize-sql` dispatch
+
+`sanitize-sql` accepts any of three shapes and dispatches on type:
+
+| Input        | Behavior                                                          |
+| ------------ | ----------------------------------------------------------------- |
+| `Str`        | Wraps the SQL with no binds — useful for static `SELECT 1`-style queries. |
+| `Positional` | Equivalent to `sanitize-sql-array`.                               |
+| `SqlStmt`    | Returned unchanged.                                               |
+
