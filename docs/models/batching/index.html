@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../validations/conditionals/">
+        <link rel="prev" href="../aggregation/">
       
       
-        <link rel="next" href="../tests/">
+        <link rel="next" href="../persistence/">
       
       
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Errors - ORM::ActiveRecord</title>
+        <title>Batching - ORM::ActiveRecord</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
       
 
@@ -46,7 +46,7 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#errors" class="md-skip">
+        <a href="#batching" class="md-skip">
           Skip to content
         </a>
       
@@ -80,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href="../.." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Errors
+              Batching
             
           </span>
         </div>
@@ -178,7 +178,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -196,7 +196,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -223,7 +223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../adapters/" class="md-nav__link">
+      <a href="../../adapters/" class="md-nav__link">
         
   
   
@@ -250,7 +250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../migrations/" class="md-nav__link">
+      <a href="../../migrations/" class="md-nav__link">
         
   
   
@@ -274,18 +274,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
           <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
@@ -306,7 +308,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -324,7 +326,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/models/" class="md-nav__link">
+      <a href="../models/" class="md-nav__link">
         
   
   
@@ -352,7 +354,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/finders/" class="md-nav__link">
+      <a href="../finders/" class="md-nav__link">
         
   
   
@@ -380,7 +382,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/relations/" class="md-nav__link">
+      <a href="../relations/" class="md-nav__link">
         
   
   
@@ -408,7 +410,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/queries/" class="md-nav__link">
+      <a href="../queries/" class="md-nav__link">
         
   
   
@@ -436,7 +438,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/joins/" class="md-nav__link">
+      <a href="../joins/" class="md-nav__link">
         
   
   
@@ -464,7 +466,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/aggregation/" class="md-nav__link">
+      <a href="../aggregation/" class="md-nav__link">
         
   
   
@@ -489,10 +491,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../models/batching/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Batching
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -508,6 +537,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#find-each" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        find-each
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#find-in-batches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        find-in-batches
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#in-batches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        in-batches
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-batching-iterates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How batching iterates
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -520,7 +613,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/persistence/" class="md-nav__link">
+      <a href="../persistence/" class="md-nav__link">
         
   
   
@@ -548,7 +641,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/callbacks/" class="md-nav__link">
+      <a href="../callbacks/" class="md-nav__link">
         
   
   
@@ -630,7 +723,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../validations/data/" class="md-nav__link">
+      <a href="../../validations/data/" class="md-nav__link">
         
   
   
@@ -658,7 +751,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../validations/conditionals/" class="md-nav__link">
+      <a href="../../validations/conditionals/" class="md-nav__link">
         
   
   
@@ -690,37 +783,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Errors
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../errors/" class="md-nav__link">
         
   
   
@@ -736,70 +802,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#xrecordnotfound" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        X::RecordNotFound
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xrecordinvalid" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        X::RecordInvalid
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xreadonlyrecord" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        X::ReadOnlyRecord
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xirreversiblemigration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        X::IrreversibleMigration
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -811,7 +813,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tests/" class="md-nav__link">
+      <a href="../../tests/" class="md-nav__link">
         
   
   
@@ -858,10 +860,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#xrecordnotfound" class="md-nav__link">
+  <a href="#find-each" class="md-nav__link">
     <span class="md-ellipsis">
       
-        X::RecordNotFound
+        find-each
       
     </span>
   </a>
@@ -869,10 +871,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#xrecordinvalid" class="md-nav__link">
+  <a href="#find-in-batches" class="md-nav__link">
     <span class="md-ellipsis">
       
-        X::RecordInvalid
+        find-in-batches
       
     </span>
   </a>
@@ -880,10 +882,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#xreadonlyrecord" class="md-nav__link">
+  <a href="#in-batches" class="md-nav__link">
     <span class="md-ellipsis">
       
-        X::ReadOnlyRecord
+        in-batches
       
     </span>
   </a>
@@ -891,10 +893,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#xirreversiblemigration" class="md-nav__link">
+  <a href="#how-batching-iterates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        X::IrreversibleMigration
+        How batching iterates
       
     </span>
   </a>
@@ -918,45 +920,55 @@
 
 
 
-<h1 id="errors">Errors</h1>
-<p>ORM::ActiveRecord raises typed exceptions for the failure modes that callers
-typically want to handle (a missing row, a record that failed validation, a
-modification attempt on a <code>readonly</code> record, an irreversible migration). All
-of them live in one module:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
+<h1 id="batching">Batching</h1>
+<p>Loading every row of a large table at once is expensive. The batching methods
+walk the table in fixed-size chunks, keyed off the primary key, so memory stays
+bounded regardless of table size.</p>
+<p>All three methods accept a relation: any <code>where</code>, <code>joins</code>, or other filter you
+chain in front of them applies to every batch. They ignore any <code>order</code>, <code>limit</code>,
+or <code>offset</code> already on the relation — batching always orders by <code>id ASC</code> and
+uses the batch size as its <code>LIMIT</code>.</p>
+<h2 id="find-each">find-each</h2>
+<p><code>find-each(:batch-size = 1000)</code> returns a lazy sequence of records. Each row is
+yielded once, in <code>id</code> ASC order. The query runs one batch at a time under the
+hood; the caller sees a flat stream of model instances.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">for</span> <span class="n">User</span>.<span class="n">find-each</span>(:<span class="n">batch-size</span>(<span class="mi">500</span>)) -&gt; <span class="nv">$u</span> {
+  <span class="nv">$u</span>.<span class="n">update</span>({<span class="n">last_seen</span> =&gt; <span class="nb">DateTime</span>.<span class="nb">now</span>});
+}
+
+<span class="c1"># WHERE conditions narrow the iteration set</span>
+<span class="k">for</span> <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">find-each</span> -&gt; <span class="nv">$u</span> {
+  <span class="n">process</span>(<span class="nv">$u</span>);
+}
 </code></pre></div></td></tr></table></div>
 
-<p>Each exception is a regular Raku <code>Exception</code>, so the usual <code>try { … CATCH { when … } }</code>
-idiom applies. The table below summarises which methods raise which exception;
-the sections that follow document the attributes each one carries.</p>
-<table>
-<thead>
-<tr>
-<th>Exception</th>
-<th>Raised by</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>X::RecordNotFound</code></td>
-<td><code>find</code>, <code>find-by-or-die</code></td>
-</tr>
-<tr>
-<td><code>X::RecordInvalid</code></td>
-<td><code>save-or-die</code>, <code>update-or-die</code>, <code>create-or-die</code></td>
-</tr>
-<tr>
-<td><code>X::ReadOnlyRecord</code></td>
-<td><code>save</code> / <code>update</code> / <code>destroy</code> / <code>delete</code> on a record from a <code>readonly</code> relation</td>
-</tr>
-<tr>
-<td><code>X::IrreversibleMigration</code></td>
-<td><code>self.irreversible-migration</code> inside a migration <code>down</code></td>
-</tr>
-</tbody>
-</table>
-<h2 id="xrecordnotfound">X::RecordNotFound</h2>
-<p>Raised when a finder can prove the row does not exist.</p>
+<p><code>find-each</code> on <code>.none</code> yields nothing. Passing <code>batch-size =&gt; 0</code> (or negative)
+raises an exception.</p>
+<h2 id="find-in-batches">find-in-batches</h2>
+<p><code>find-in-batches(:batch-size = 1000)</code> yields arrays of records, one array per
+batch. Use it when a step works naturally on a slice — bulk emailing, batched
+API calls, anything that benefits from amortising fixed overhead across a
+group.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">for</span> <span class="n">User</span>.<span class="n">find-in-batches</span>(:<span class="n">batch-size</span>(<span class="mi">1000</span>)) -&gt; <span class="nv">@batch</span> {
+  <span class="n">send-digest</span>(<span class="nv">@batch</span>);
+}
+</code></pre></div></td></tr></table></div>
+
+<p>The final batch is whatever is left over; it may have fewer rows than
+<code>batch-size</code>. An empty relation produces zero batches.</p>
+<h2 id="in-batches">in-batches</h2>
+<p><code>in-batches(:of = 1000, :load = False)</code> yields a relation per batch instead of
+materialised records. Each yielded relation is scoped to its slice of <code>id</code>s,
+so you can chain further operations on it.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -966,125 +978,29 @@ the sections that follow document the attributes each one carries.</p>
 <span class="normal"> 7</span>
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Default: yield Query relations</span>
+<span class="k">for</span> <span class="n">User</span>.<span class="n">in-batches</span>(:<span class="n">of</span>(<span class="mi">500</span>)) -&gt; <span class="nv">$rel</span> {
+  <span class="nb">say</span> <span class="nv">$rel</span>.<span class="nb">count</span>;
+  <span class="nv">$rel</span>.<span class="n">pluck</span>(<span class="s">&#39;email&#39;</span>).<span class="n">map</span>({ ... });
+}
 
-<span class="k">try</span> {
-  <span class="n">User</span>.<span class="n">find</span>(<span class="mi">0</span>);
-
-  <span class="k">CATCH</span> {
-    <span class="k">when</span> <span class="o">X</span>::<span class="n">RecordNotFound</span> {
-      <span class="nb">say</span> .<span class="nb">message</span>;   <span class="c1"># Couldn&#39;t find User with id=0</span>
-      <span class="nb">say</span> .<span class="n">model</span>;     <span class="c1"># User</span>
-      <span class="nb">say</span> .<span class="nb">id</span>;        <span class="c1"># 0</span>
-    }
-  }
+<span class="c1"># With :load, yield arrays of already-loaded records</span>
+<span class="k">for</span> <span class="n">User</span>.<span class="n">in-batches</span>(:<span class="n">of</span>(<span class="mi">500</span>), :<span class="n">load</span>) -&gt; <span class="nv">@batch</span> {
+  <span class="n">process</span>(<span class="nv">@batch</span>);
 }
 </code></pre></div></td></tr></table></div>
 
-<p><code>find($id)</code> always raises on a miss. <code>find-by(%conditions)</code> returns <code>Nil</code>
-instead — use <code>find-by-or-die(%conditions)</code> if you want the loud variant.</p>
-<h2 id="xrecordinvalid">X::RecordInvalid</h2>
-<p>Raised by the <code>-or-die</code> persistence methods when validations fail. The
-exception carries both the failing record and a list of human-readable
-messages built from the model's <code>errors</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
-
-<span class="k">try</span> {
-  <span class="n">User</span>.<span class="n">create-or-die</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;&#39;</span>});
-
-  <span class="k">CATCH</span> {
-    <span class="k">when</span> <span class="o">X</span>::<span class="n">RecordInvalid</span> {
-      <span class="nb">say</span> .<span class="nb">message</span>;        <span class="c1"># Validation failed: fname must be present</span>
-      <span class="nb">say</span> .<span class="n">messages</span>;       <span class="c1"># (fname must be present)</span>
-      <span class="nb">say</span> .<span class="n">record</span>.<span class="n">fname</span>;   <span class="c1"># &#39;&#39;</span>
-    }
-  }
-}
-</code></pre></div></td></tr></table></div>
-
-<p><code>save</code> / <code>update</code> / <code>create</code> (without <code>-or-die</code>) return <code>False</code> on validation
-failure instead of raising — inspect <code>.errors</code> on the record to see what went
-wrong. See <a href="../models/persistence/">Persistence</a> for the full quiet-vs-loud
-breakdown.</p>
-<h2 id="xreadonlyrecord">X::ReadOnlyRecord</h2>
-<p>Raised when any write method (<code>save</code>, <code>update</code>, <code>destroy</code>, <code>delete</code>) is
-invoked on a record that was fetched through a <code>readonly</code> relation.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
-
-<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="nb">readonly</span>.<span class="nb">first</span>;
-
-<span class="k">try</span> {
-  <span class="nv">$user</span>.<span class="n">save</span>;
-
-  <span class="k">CATCH</span> {
-    <span class="k">when</span> <span class="o">X</span>::<span class="n">ReadOnlyRecord</span> {
-      <span class="nb">say</span> .<span class="nb">message</span>;   <span class="c1"># User is marked as readonly</span>
-      <span class="nb">say</span> .<span class="n">model</span>;     <span class="c1"># User</span>
-    }
-  }
-}
-</code></pre></div></td></tr></table></div>
-
-<p>Clear the flag with <code>unscope(:readonly)</code> on the relation before fetching if
-you want a writable record. See <a href="../models/aggregation/#readonly">Aggregation &raquo; readonly</a>.</p>
-<h2 id="xirreversiblemigration">X::IrreversibleMigration</h2>
-<p>Raised from inside a migration <code>down</code> to signal that the change can't be
-rolled back automatically. The <code>ar</code> runner catches it, reports which file
-fired, and aborts the rollback.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Schema::Migration</span>;
-
-<span class="k">class</span> <span class="n">DropLegacyAuditLog</span> <span class="k">is</span> <span class="n">Migration</span> {
-  <span class="k">method</span> <span class="n">up</span> {
-    <span class="nb">self</span>.<span class="n">drop-table:</span> <span class="s">&#39;legacy_audit_log&#39;</span>;
-  }
-
-  <span class="k">method</span> <span class="n">down</span> {
-    <span class="nb">self</span>.<span class="n">irreversible-migration</span>;
-  }
-}
-</code></pre></div></td></tr></table></div>
-
-<p><code>self.irreversible-migration</code> is a one-liner that constructs and throws the
-exception — it exists so the intent reads as a migration step rather than
-manual exception plumbing. See <a href="../migrations/#irreversible-migrations">Migrations &raquo; Irreversible migrations</a>.</p>
+<p><code>:load</code> is the same shape as <code>find-in-batches</code> — convenient when you already
+know you want the records and not the relation.</p>
+<h2 id="how-batching-iterates">How batching iterates</h2>
+<p>All three methods order by <code>id ASC</code> and walk forward using <code>id &gt; cursor</code>,
+where <code>cursor</code> is the id of the last row in the previous batch. This is a
+keyset scan: each batch is a single index lookup, with no growing <code>OFFSET</code>
+penalty as you advance through the table.</p>
+<p>Because batching owns the <code>id</code> column for its cursor, a <code>where(id: ...)</code>
+condition on the relation is replaced by the cursor's id range. Filter on
+other columns (or pre-filter into a CTE) if you need to constrain the id
+domain.</p>
 
 
 
@@ -1134,10 +1050,10 @@ manual exception plumbing. See <a href="../migrations/#irreversible-migrations">
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

@@ -1,0 +1,125 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Relation::Query;
+use Test;
+
+class User is Model {}
+
+plan 22;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+my @created;
+for 1..12 -> $i {
+  @created.push: User.create({fname => "F$i", lname => "L$i"});
+}
+my @expected-ids = @created.map(*.id).sort;
+
+# find-each iterates every record once
+my @seen-ids;
+for User.find-each(:batch-size(5)) -> $u {
+  @seen-ids.push: $u.id;
+}
+ok @seen-ids.elems == 12, 'find-each yields every record';
+ok @seen-ids.sort.join(',') eq @expected-ids.join(','), 'find-each covers all ids';
+ok @seen-ids.unique.elems == 12, 'find-each does not duplicate records';
+ok @seen-ids.join(',') eq @seen-ids.sort.join(','), 'find-each yields rows in id ASC order';
+
+# find-each default batch-size works (single batch when records fit)
+my @small;
+for User.where({fname => ['F1', 'F2', 'F3']}).find-each -> $u {
+  @small.push: $u.id;
+}
+ok @small.elems == 3, 'find-each honors WHERE filter';
+
+# find-in-batches yields arrays
+my @batches;
+for User.find-in-batches(:batch-size(5)) -> @batch {
+  @batches.push: @batch.elems;
+}
+ok @batches.elems == 3, 'find-in-batches produces ceil(12/5) = 3 batches';
+ok @batches[0] == 5 && @batches[1] == 5 && @batches[2] == 2,
+   'find-in-batches batch sizes are 5,5,2';
+
+# find-in-batches with batch-size == row count → exactly one batch
+my @one-batch;
+for User.find-in-batches(:batch-size(12)) -> @batch {
+  @one-batch.push: @batch;
+}
+ok @one-batch.elems == 1 && @one-batch[0].elems == 12,
+   'find-in-batches with batch-size = row count emits one batch';
+
+# find-in-batches with batch-size > row count → one batch
+my @over;
+for User.find-in-batches(:batch-size(50)) -> @batch {
+  @over.push: @batch.elems;
+}
+ok @over.elems == 1 && @over[0] == 12, 'find-in-batches with batch-size > rows emits one batch';
+
+# find-in-batches honors WHERE
+my @filtered;
+for User.where({fname => ['F1','F2','F3','F4','F5','F6','F7']}).find-in-batches(:batch-size(3)) -> @batch {
+  @filtered.push: @batch.elems;
+}
+ok @filtered.elems == 3 && @filtered[0] == 3 && @filtered[1] == 3 && @filtered[2] == 1,
+   'find-in-batches honors WHERE';
+
+# in-batches yields Query objects by default
+my @relations;
+for User.in-batches(:of(5)) -> $rel {
+  @relations.push: $rel;
+}
+ok @relations.elems == 3, 'in-batches yields 3 relations for 12 rows / 5';
+ok @relations.all ~~ Query, 'in-batches yields Query objects';
+ok @relations[0].all.elems == 5, 'first batch relation has 5 rows';
+ok @relations[2].all.elems == 2, 'last batch relation has remainder';
+
+# Same id coverage via in-batches
+my @rel-ids;
+for User.in-batches(:of(4)) -> $rel {
+  @rel-ids.append: $rel.ids;
+}
+ok @rel-ids.elems == 12, 'in-batches relations cover all rows';
+ok @rel-ids.sort.join(',') eq @expected-ids.join(','), 'in-batches relations cover all ids';
+
+# in-batches with :load yields arrays of records
+my @loaded;
+for User.in-batches(:of(5), :load) -> @batch {
+  @loaded.push: @batch.elems;
+}
+ok @loaded.elems == 3 && @loaded[0] == 5 && @loaded[2] == 2,
+   'in-batches with :load yields arrays sized by :of';
+
+# none short-circuits
+my @nothing;
+for User.none.find-each -> $u { @nothing.push: $u }
+ok @nothing.elems == 0, 'find-each on none is empty';
+
+my @no-batches;
+for User.none.find-in-batches(:batch-size(5)) -> @b { @no-batches.push: @b }
+ok @no-batches.elems == 0, 'find-in-batches on none is empty';
+
+my @no-rels;
+for User.none.in-batches(:of(5)) -> $r { @no-rels.push: $r }
+ok @no-rels.elems == 0, 'in-batches on none is empty';
+
+# Invalid batch size
+my $threw = False;
+try {
+  for User.find-in-batches(:batch-size(0)) -> @b { }
+  CATCH { default { $threw = True } }
+}
+ok $threw, 'find-in-batches with batch-size 0 dies';
+
+$threw = False;
+try {
+  for User.in-batches(:of(-1)) -> $r { }
+  CATCH { default { $threw = True } }
+}
+ok $threw, 'in-batches with :of <= 0 dies';
+
+User.destroy-all;

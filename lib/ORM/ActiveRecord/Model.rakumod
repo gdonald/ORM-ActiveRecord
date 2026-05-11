@@ -602,6 +602,18 @@ class Model is export {
   method associated(*@names, *%kw) {
     self.all.associated(|@names, |%kw);
   }
+
+  method find-each(Int:D :$batch-size = 1000) {
+    self.all.find-each(:$batch-size);
+  }
+
+  method find-in-batches(Int:D :$batch-size = 1000) {
+    self.all.find-in-batches(:$batch-size);
+  }
+
+  method in-batches(Int:D :$of = 1000, Bool:D :$load = False) {
+    self.all.in-batches(:$of, :$load);
+  }
 }
 
 multi sub infix:<==>(Model $a, Model $b --> Bool) is export {

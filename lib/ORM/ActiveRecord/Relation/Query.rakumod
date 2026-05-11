@@ -51,6 +51,35 @@ class Query is export {
   method joins-values      { @!joins }
   method is-none-value     { $!is-none }
   method create-with-attrs { $!create-with-attrs }
+  method class-of          { $!class }
+  method table-of          { $!table }
+  method fields-of         { @!fields }
+
+  method clone-query(--> Query) {
+    my $copy = Query.new(:class($!class), :params({}));
+    $copy!load-from(self);
+    $copy;
+  }
+
+  method !load-from(Query:D $src) {
+    $!params           = $src.where-values.clone;
+    $!not-params       = $src.where-not-values.clone;
+    @!or-relations     = $src.or-relations.clone;
+    @!order            = $src.order-values.clone;
+    $!limit            = $src.limit-value;
+    $!offset           = $src.offset-value;
+    @!select           = $src.select-values.clone;
+    $!distinct         = $src.distinct-value;
+    @!group            = $src.group-values.clone;
+    @!having           = $src.having-values.clone;
+    $!from-source      = $src.from-source;
+    $!from-alias       = $src.from-alias;
+    @!references       = $src.references-values.clone;
+    $!readonly         = $src.readonly-value;
+    @!joins            = $src.joins-values.clone;
+    $!is-none          = $src.is-none-value;
+    $!create-with-attrs = $src.create-with-attrs.clone;
+  }
 
   method create-with(Hash:D $attrs) {
     for $attrs.kv -> $k, $v { $!create-with-attrs{$k} = $v }
@@ -685,5 +714,80 @@ class Query is export {
 
   method exists {
     self.count > 0;
+  }
+
+  method find-in-batches(Int:D :$batch-size = 1000) {
+    die "find-in-batches: batch-size must be > 0" if $batch-size <= 0;
+    return Seq.new(().iterator) if $!is-none;
+
+    my $table       = $!table;
+    my $class       = $!class;
+    my @fields      = @!fields;
+    my %where-base  = %( $!params );
+    my %where-not   = $!not-params;
+    my @or-groups   = self.or-groups-payload;
+    my $distinct    = $!distinct;
+    my @group       = @!group;
+    my @having      = @!having;
+    my $from-source = $!from-source;
+    my $from-alias  = $!from-alias;
+    my @joins       = @!joins;
+    my $readonly    = $!readonly;
+
+    gather {
+      my $cursor = 0;
+      loop {
+        my %w = %where-base;
+        %w<id> = Range.new($cursor, Inf, :excludes-min);
+        my @order = ('id ASC',);
+        my @objects = DB.shared.get-objects(
+          :$table, :$class, :@fields,
+          where => %w, where-not => %where-not, :@or-groups,
+          :@order, limit => $batch-size, offset => 0,
+          distinct => $distinct,
+          group => @group, having => @having,
+          from-source => $from-source, from-alias => $from-alias,
+          joins => @joins,
+        );
+        last unless @objects.elems;
+        if $readonly { .make-readonly for @objects }
+        take @objects.Array;
+        last if @objects.elems < $batch-size;
+        $cursor = @objects[*-1].id;
+      }
+    }
+  }
+
+  method find-each(Int:D :$batch-size = 1000) {
+    gather for self.find-in-batches(:$batch-size) -> @batch {
+      take $_ for @batch;
+    }
+  }
+
+  method in-batches(Int:D :$of = 1000, Bool:D :$load = False) {
+    die "in-batches: :of must be > 0" if $of <= 0;
+    return Seq.new(().iterator) if $!is-none;
+
+    gather {
+      my $cursor = 0;
+      loop {
+        my $batch = self.clone-query;
+        $batch.where({ id => Range.new($cursor, Inf, :excludes-min) });
+        $batch.reorder('id ASC');
+        $batch.limit($of);
+
+        my @objects = $batch.perform;
+        last unless @objects.elems;
+
+        if $load {
+          take @objects.Array;
+        } else {
+          take $batch;
+        }
+
+        last if @objects.elems < $of;
+        $cursor = @objects[*-1].id;
+      }
+    }
   }
 }

@@ -10,6 +10,7 @@ nav:
     - Queries: models/queries.md
     - Joins: models/joins.md
     - Aggregation: models/aggregation.md
+    - Batching: models/batching.md
     - Persistence: models/persistence.md
     - Callbacks: models/callbacks.md
   - Validations:
