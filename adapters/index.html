@@ -1,0 +1,1518 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../migrations/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Adapters - ORM::ActiveRecord</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#adapters" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ORM::ActiveRecord
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Adapters
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ORM::ActiveRecord
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapters
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#selecting-an-adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Selecting an adapter
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Selecting an adapter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#database_url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DATABASE_URL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configapplicationjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        config/application.json
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adapter-specific-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adapter-specific notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adapter-specific notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PostgreSQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mysql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MySQL
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MySQL">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#libmysqlclient-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        libmysqlclient discovery
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#connection-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#raw-sql-with-bound-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raw SQL with bound parameters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Raw SQL with bound parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#positional-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Positional ? placeholders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#named-name-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named :name placeholders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#string-literal-preservation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        String-literal preservation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sanitize-sql-dispatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sanitize-sql dispatch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Info
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/finders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/relations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Relations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/queries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/joins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/aggregation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aggregation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/batching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Batching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/raw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Raw SQL & CTEs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/persistence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persistence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/callbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Validations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validations/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validations/conditionals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conditionals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#selecting-an-adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Selecting an adapter
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Selecting an adapter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#database_url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DATABASE_URL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configapplicationjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        config/application.json
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adapter-specific-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adapter-specific notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adapter-specific notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PostgreSQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mysql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MySQL
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MySQL">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#libmysqlclient-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        libmysqlclient discovery
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#connection-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#raw-sql-with-bound-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raw SQL with bound parameters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Raw SQL with bound parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#positional-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Positional ? placeholders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#named-name-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named :name placeholders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#string-literal-preservation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        String-literal preservation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sanitize-sql-dispatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sanitize-sql dispatch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="adapters">Adapters</h1>
+<p>ORM::ActiveRecord supports three database backends out of the box: PostgreSQL,
+MySQL, and SQLite. Tests run against all three on every CI build, and the
+adapter API is designed so application code is the same regardless of the
+backend.</p>
+<h2 id="selecting-an-adapter">Selecting an adapter</h2>
+<p>Two mechanisms drive adapter selection. They're checked in this order:</p>
+<ol>
+<li><strong><code>DATABASE_URL</code> environment variable</strong> (preferred)</li>
+<li><strong><code>config/application.json</code></strong> (fallback)</li>
+</ol>
+<h3 id="database_url">DATABASE_URL</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">DATABASE_URL</span><span class="o">=</span>postgres://user:pass@host:5432/dbname?schema<span class="o">=</span>public
+<span class="nv">DATABASE_URL</span><span class="o">=</span>mysql://root:secret@127.0.0.1:3306/dbname
+<span class="nv">DATABASE_URL</span><span class="o">=</span>sqlite:db/test.sqlite3
+<span class="nv">DATABASE_URL</span><span class="o">=</span>sqlite::memory:
+</code></pre></div></td></tr></table></div>
+
+<p>Recognised schemes:</p>
+<table>
+<thead>
+<tr>
+<th>Scheme(s)</th>
+<th>Adapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pg</code>, <code>postgres</code>, <code>postgresql</code></td>
+<td>PostgreSQL</td>
+</tr>
+<tr>
+<td><code>mysql</code>, <code>mysql2</code>, <code>mariadb</code></td>
+<td>MySQL</td>
+</tr>
+<tr>
+<td><code>sqlite</code>, <code>sqlite3</code></td>
+<td>SQLite</td>
+</tr>
+</tbody>
+</table>
+<p>Query-string parameters are passed through as adapter options (<code>?schema=public</code>,
+<code>?sslmode=require</code>, etc.).</p>
+<h3 id="configapplicationjson">config/application.json</h3>
+<p>If <code>DATABASE_URL</code> is unset, ORM::ActiveRecord reads <code>config/application.json</code>.
+Three example templates live in <code>config/</code>:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>cp<span class="w"> </span>config/application.json-pg-example<span class="w">     </span>config/application.json
+cp<span class="w"> </span>config/application.json-mysql-example<span class="w">  </span>config/application.json
+cp<span class="w"> </span>config/application.json-sqlite-example<span class="w"> </span>config/application.json
+</code></pre></div></td></tr></table></div>
+
+<p>The shape:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;db&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;port&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5432</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ar_test&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;postgres&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;public&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>adapter</code> must be one of <code>pg</code> / <code>mysql</code> / <code>sqlite</code> (the same aliases as
+<code>DATABASE_URL</code> schemes are accepted). MySQL has no separate schema concept —
+the <code>name</code> field IS the schema. SQLite only needs <code>name</code> (the file path) or
+<code>":memory:"</code>.</p>
+<h2 id="adapter-specific-notes">Adapter-specific notes</h2>
+<h3 id="postgresql">PostgreSQL</h3>
+<p>The default adapter. Uses <code>$N</code> bind placeholders and emits
+<code>INSERT … RETURNING id</code> for surrogate-key reads. Schema introspection goes
+through <code>information_schema</code>. Boolean and timestamp values round-trip directly.</p>
+<h3 id="mysql">MySQL</h3>
+<p>Uses <code>?</code> bind placeholders and <code>LAST_INSERT_ID()</code> for surrogate-key reads
+(MySQL has no <code>RETURNING</code>). Booleans are stored as <code>TINYINT(1)</code>. Identifiers
+are quoted with backticks.</p>
+<p>Two MySQL-specific behaviours to be aware of:</p>
+<ul>
+<li><strong>Timestamps use <code>DATETIME(6)</code></strong>. Plain <code>DATETIME</code> truncates fractional
+  seconds, which would cause <code>created_at</code> drift on round-trip. Microsecond
+  precision avoids it.</li>
+<li><strong><code>DATETIME</code> columns are written and read in the local timezone</strong>. DBDish::mysql
+  parses <code>DATETIME</code> values with <code>:timezone($*TZ)</code>, so <code>coerce-write</code> emits
+  local-TZ strings to keep round-trips symmetric.</li>
+</ul>
+<h4 id="libmysqlclient-discovery">libmysqlclient discovery</h4>
+<p>DBDish::mysql searches for <code>libmysqlclient</code> versions 16..21 by default. Recent
+installs ship version 24+, which falls outside that range. ORM::ActiveRecord's
+<code>MySqlAdapter.connect</code> works around this by setting <code>DBIISH_MYSQL_LIB</code>
+automatically, checking common Homebrew/apt paths.</p>
+<p>If it still can't find the library, set <code>DBIISH_MYSQL_LIB</code> yourself:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># macOS / Homebrew</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">DBIISH_MYSQL_LIB</span><span class="o">=</span><span class="k">$(</span>brew<span class="w"> </span>--prefix<span class="w"> </span>mysql-client<span class="k">)</span>/lib/libmysqlclient.dylib
+
+<span class="c1"># Debian/Ubuntu</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">DBIISH_MYSQL_LIB</span><span class="o">=</span>/usr/lib/x86_64-linux-gnu/libmysqlclient.so
+</code></pre></div></td></tr></table></div>
+
+<h3 id="sqlite">SQLite</h3>
+<p>Uses <code>?</code> bind placeholders. Surrogate keys come from
+<code>INSERT … RETURNING id</code> on SQLite ≥ 3.35; older versions fall back to
+<code>last_insert_rowid()</code>. Schema introspection goes through <code>pragma_table_info</code>.
+Booleans are stored as <code>INTEGER 0/1</code> and dates/datetimes as ISO <code>TEXT</code>.</p>
+<p>SQLite requires <code>LIMIT</code> whenever <code>OFFSET</code> is used, so the adapter emits
+<code>LIMIT -1 OFFSET N</code> when an offset is set without a limit. (<code>-1</code> means
+unbounded in SQLite.)</p>
+<p>The <code>database</code> field accepts a file path (created on first connect) or the
+literal <code>":memory:"</code> for an ephemeral in-process database — useful in tests.</p>
+<h2 id="connection-lifecycle">Connection lifecycle</h2>
+<p>The adapter on <code>DB.shared</code> exposes four lifecycle primitives. The shared
+handle connects lazily on first use, so most callers never touch these — they
+exist for tests, long-running daemons, and code that needs to recycle a
+connection after an out-of-band drop.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::DB</span>;
+
+<span class="k">my</span> <span class="nv">$db</span> = <span class="n">DB</span>.<span class="n">shared</span>;
+
+<span class="nv">$db</span>.<span class="n">exec</span>(<span class="s">&#39;SELECT 1&#39;</span>);     <span class="c1"># forces the lazy connect</span>
+<span class="nv">$db</span>.<span class="n">is-connected</span>;         <span class="c1"># True</span>
+
+<span class="nv">$db</span>.<span class="n">disconnect</span>;           <span class="c1"># closes the handle, returns True</span>
+<span class="nv">$db</span>.<span class="n">is-connected</span>;         <span class="c1"># False</span>
+<span class="nv">$db</span>.<span class="n">disconnect</span>;           <span class="c1"># no-op on an already-closed handle, returns False</span>
+
+<span class="nv">$db</span>.<span class="n">reconnect</span>;            <span class="c1"># disconnect (if needed) + connect</span>
+<span class="nv">$db</span>.<span class="n">is-connected</span>;         <span class="c1"># True</span>
+</code></pre></div></td></tr></table></div>
+
+<p><strong>Auto-reconnect</strong> — once a handle has been built, the next <code>exec</code> /
+<code>exec-stmt</code> after a <code>disconnect</code> will re-establish the connection
+automatically. The example above could drop the explicit <code>reconnect</code> call
+and the next query would still succeed.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$db</span>.<span class="n">disconnect</span>;
+<span class="k">my</span> <span class="nv">@rows</span> = <span class="nv">$db</span>.<span class="n">exec</span>(<span class="s">&#39;SELECT 2&#39;</span>);   <span class="c1"># exec auto-reconnects, returns 2</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="raw-sql-with-bound-parameters">Raw SQL with bound parameters</h2>
+<p><code>sanitize-sql</code> and <code>sanitize-sql-array</code> turn a SQL fragment + values into a
+ready-to-execute statement with adapter-correct placeholders. They're how
+ORM::ActiveRecord avoids string-interpolating values into SQL internally; the
+same helpers are available for application code that needs to drop down to
+raw SQL.</p>
+<h3 id="positional-placeholders">Positional <code>?</code> placeholders</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$stmt</span> = <span class="n">DB</span>.<span class="n">shared</span>.<span class="n">sanitize-sql-array</span>([
+  <span class="s">&#39;name = ? AND age = ?&#39;</span>,
+  <span class="s">&#39;Bob&#39;</span>, <span class="mi">30</span>,
+]);
+
+<span class="n">DB</span>.<span class="n">shared</span>.<span class="n">exec-stmt</span>(<span class="nv">$stmt</span>);
+</code></pre></div></td></tr></table></div>
+
+<p>Each <code>?</code> consumes the next value in order. PostgreSQL rewrites them to <code>$N</code>;
+MySQL and SQLite keep them as <code>?</code>. An arity mismatch (too many or too few
+values for the <code>?</code>s in the template) raises.</p>
+<h3 id="named-name-placeholders">Named <code>:name</code> placeholders</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$stmt</span> = <span class="n">DB</span>.<span class="n">shared</span>.<span class="n">sanitize-sql-array</span>([
+  <span class="s">&#39;name = :name AND age = :age&#39;</span>,
+  { <span class="nb">name</span> =&gt; <span class="s">&#39;Bob&#39;</span>, <span class="n">age</span> =&gt; <span class="mi">30</span> },
+]);
+</code></pre></div></td></tr></table></div>
+
+<p>Names that appear in the template but are missing from the hash raise.
+You can't mix <code>?</code> and <code>:name</code> in the same template.</p>
+<h3 id="string-literal-preservation">String-literal preservation</h3>
+<p>Anything inside single quotes — including <code>?</code> characters that look like
+placeholders, escaped quotes (<code>''</code>), and <code>:name</code>-shaped tokens — is passed
+through verbatim. <code>sanitize-sql-array</code> only substitutes placeholders that
+appear outside string literals.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">DB</span>.<span class="n">shared</span>.<span class="n">sanitize-sql-array</span>([
+  <span class="s">q{name = ? AND label = &#39;???&#39; AND tag = &#39;:notbound&#39;}</span>,
+  <span class="s">&#39;Bob&#39;</span>,
+]);
+<span class="c1"># → only one ? was actually a placeholder; one bind, &#39;Bob&#39;</span>
+</code></pre></div></td></tr></table></div>
+
+<h3 id="sanitize-sql-dispatch"><code>sanitize-sql</code> dispatch</h3>
+<p><code>sanitize-sql</code> accepts any of three shapes and dispatches on type:</p>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Str</code></td>
+<td>Wraps the SQL with no binds — useful for static <code>SELECT 1</code>-style queries.</td>
+</tr>
+<tr>
+<td><code>Positional</code></td>
+<td>Equivalent to <code>sanitize-sql-array</code>.</td>
+</tr>
+<tr>
+<td><code>SqlStmt</code></td>
+<td>Returned unchanged.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

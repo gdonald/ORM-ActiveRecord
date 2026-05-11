@@ -1,0 +1,1953 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../models/callbacks/">
+      
+      
+        <link rel="next" href="../conditionals/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Data - ORM::ActiveRecord</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#data-validations" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ORM::ActiveRecord
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Data
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ORM::ActiveRecord
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../migrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Info
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/finders/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/relations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Relations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/queries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/joins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/aggregation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aggregation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/batching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Batching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/raw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Raw SQL & CTEs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/persistence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persistence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/callbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Validations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confirmation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confirmation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#length" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Length
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Length">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#minimum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimum
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maximum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maximum
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-a-range" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In a range
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#is-exactly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Is exactly
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#numericality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Numericality
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Numericality">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#less-than" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Less than
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#less-than-or-equal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Less than or equal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#greater-than" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Greater than
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#greater-than-or-equal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Greater than or equal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-a-range_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In a range
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#presence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Presence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uniqueness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Uniqueness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unique-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unique Scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conditionals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conditionals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confirmation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confirmation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#length" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Length
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Length">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#minimum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimum
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maximum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maximum
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-a-range" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In a range
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#is-exactly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Is exactly
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#numericality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Numericality
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Numericality">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#less-than" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Less than
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#less-than-or-equal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Less than or equal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#greater-than" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Greater than
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#greater-than-or-equal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Greater than or equal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-a-range_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In a range
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#presence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Presence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uniqueness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Uniqueness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unique-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unique Scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="data-validations">Data Validations</h1>
+<p>ORM::ActiveRecord supports many forms of data validations, when they occur and if they occur at all.</p>
+<h2 id="acceptance">Acceptance</h2>
+<p>The <code>acceptance</code> validation requires a field value to be <code>True</code> for the <code>Model</code> instance to be valid.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Contract</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;terms&#39;</span>, { :<span class="n">acceptance</span> }
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<p>A value of <code>False</code> will make the instance invalid and the validated field will contain an error.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$contract</span> = <span class="n">Contract</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;Offical Document&#39;</span>, <span class="n">terms</span> =&gt; <span class="nb">False</span>});
+<span class="nb">say</span> <span class="nv">$contract</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$contract</span>.<span class="n">errors</span>.<span class="n">terms</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+must<span class="w"> </span>be<span class="w"> </span>accepted
+</code></pre></div></td></tr></table></div>
+
+<h2 id="confirmation">Confirmation</h2>
+<p>The <code>confirmation</code> validation requires a field to be "confirmed" for the <code>Model</code> instance to be valid.  A virtual field with a suffix of "_confirmed" is required.  Combining <code>confirmation</code> with <code>presence</code> is usually helpful.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Client</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;email&#39;</span>, { :<span class="n">presence</span>, :<span class="n">confirmation</span> }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$client</span> = <span class="n">Client</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;fred@aol.com&#39;</span>});
+<span class="nb">say</span> <span class="nv">$client</span>.<span class="n">is-invalid</span>;
+<span class="nb">say</span> <span class="nv">$client</span>.<span class="n">errors</span>.<span class="n">email</span>[<span class="mi">0</span>];
+
+<span class="nv">$client</span> = <span class="n">Client</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;fred@aol.com&#39;</span>, <span class="n">email_confirmation</span> =&gt; <span class="s">&#39;fred@aol.com&#39;</span>});
+<span class="nb">say</span> <span class="nv">$client</span>.<span class="n">is-valid</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+must<span class="w"> </span>be<span class="w"> </span>confirmed
+True
+</code></pre></div></td></tr></table></div>
+
+<h2 id="exclusion">Exclusion</h2>
+<p>The <code>exclusion</code> validation prevents certain values from being entered.  The excluded values are defined using <code>in</code>.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Person</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;username&#39;</span>, { <span class="n">exclusion</span> =&gt; { <span class="nb">in</span> =&gt; <span class="s">&lt;admin superuser&gt;</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$person</span> = <span class="n">Person</span>.<span class="n">build</span>({<span class="n">username</span> =&gt; <span class="s">&#39;admin&#39;</span>});
+<span class="nb">say</span> <span class="nv">$person</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$person</span>.<span class="n">errors</span>.<span class="n">username</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+is<span class="w"> </span>invalid
+</code></pre></div></td></tr></table></div>
+
+<h2 id="format">Format</h2>
+<p>The <code>format</code> validation requires a field value match a specific regular expression.  The format is defined using <code>with</code>.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Contact</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;email&#39;</span>, { <span class="nb">format</span> =&gt; { <span class="k">with</span> =&gt; /:<span class="n">i</span> ^<span class="s">&lt;[\w]&gt;</span>+ <span class="s">&#39;@&#39;</span> <span class="s">&lt;[\w]&gt;</span>+ <span class="s">&#39;.&#39;</span> <span class="s">&lt;[\w]&gt;</span>+<span class="vg">$/</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$contact</span> = <span class="n">Contact</span>.<span class="n">create</span>({<span class="n">email</span> =&gt; <span class="s">&#39;foo&#39;</span>});
+<span class="nb">say</span> <span class="nv">$contact</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$contact</span>.<span class="n">errors</span>.<span class="n">email</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+is<span class="w"> </span>invalid
+</code></pre></div></td></tr></table></div>
+
+<h2 id="inclusion">Inclusion</h2>
+<p>The <code>inclusion</code> validation requires a field value exist in a list of pre-defined values.  The allowed values are defined using <code>in</code>.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Image</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;format&#39;</span>, { <span class="n">inclusion</span> =&gt; { <span class="nb">in</span> =&gt; <span class="s">&lt;gif jpeg jpg png&gt;</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$image</span> = <span class="n">Image</span>.<span class="n">build</span>({<span class="nb">format</span> =&gt; <span class="s">&#39;foo&#39;</span>});
+<span class="nb">say</span> <span class="nv">$image</span>.<span class="n">is-invalid</span>;
+<span class="nb">say</span> <span class="nv">$image</span>.<span class="n">errors</span>.<span class="nb">format</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+is<span class="w"> </span>invalid
+</code></pre></div></td></tr></table></div>
+
+<h2 id="length">Length</h2>
+<p>The <code>length</code> validation requires a field value to be a certain length to be valid.</p>
+<p>Valid values are defined using <code>min</code>, <code>max</code>, <code>is</code>, or <code>in</code>.</p>
+<h3 id="minimum">Minimum</h3>
+<p>A <code>min</code> length validation requires the length of the field value be a specified minimum:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { <span class="n">length</span> =&gt; { <span class="nb">min</span> =&gt; <span class="mi">4</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">build</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Joe&#39;</span>});
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">fname</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+at<span class="w"> </span>least<span class="w"> </span><span class="m">4</span><span class="w"> </span>characters<span class="w"> </span>required
+</code></pre></div></td></tr></table></div>
+
+<h3 id="maximum">Maximum</h3>
+<p>A <code>max</code> length validation requires a field value length be less than a specified value.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { <span class="n">length</span> =&gt; { <span class="nb">max</span> =&gt; <span class="mi">12</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">build</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Michaelangelo&#39;</span>});
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">fname</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+only<span class="w"> </span><span class="m">12</span><span class="w"> </span>characters<span class="w"> </span>allowed
+</code></pre></div></td></tr></table></div>
+
+<h3 id="in-a-range">In a range</h3>
+<p>An <code>in</code> length validation requires the field value length be within a specified range.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { <span class="n">length</span> =&gt; { <span class="nb">in</span> =&gt; <span class="mi">4</span><span class="o">..</span><span class="mi">32</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">build</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Joe&#39;</span>});
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">fname</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+<span class="m">4</span><span class="w"> </span>to<span class="w"> </span><span class="m">32</span><span class="w"> </span>characters<span class="w"> </span>required
+</code></pre></div></td></tr></table></div>
+
+<h3 id="is-exactly">Is exactly</h3>
+<p>An <code>is</code> length validation requires a value be an exact size:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { <span class="n">length</span> =&gt; { <span class="k">is</span> =&gt; <span class="mi">8</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">build</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Joe&#39;</span>});
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">fname</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+exactly<span class="w"> </span><span class="m">8</span><span class="w"> </span>characters<span class="w"> </span>required
+</code></pre></div></td></tr></table></div>
+
+<h2 id="numericality">Numericality</h2>
+<p>The <code>numericality</code> validation requires a field value to be numerical and of a specific value or in a specific range.  Values can be specified using <code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>, as well as <code>in</code> for ranges.</p>
+<h3 id="less-than">Less than</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Book</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;pages&#39;</span>, { <span class="n">numericality</span> =&gt; { <span class="o">lt</span> =&gt; <span class="mi">400</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$book</span> = <span class="n">Book</span>.<span class="n">create</span>({<span class="n">pages</span> =&gt; <span class="mi">400</span>});
+<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">errors</span>.<span class="n">pages</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+less<span class="w"> </span>than<span class="w"> </span><span class="m">400</span><span class="w"> </span>required
+</code></pre></div></td></tr></table></div>
+
+<h3 id="less-than-or-equal">Less than or equal</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Book</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;pages&#39;</span>, { <span class="n">numericality</span> =&gt; { <span class="n">lte</span> =&gt; <span class="mi">400</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$book</span> = <span class="n">Book</span>.<span class="n">create</span>({<span class="n">pages</span> =&gt; <span class="mi">401</span>});
+<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">errors</span>.<span class="n">pages</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+<span class="m">400</span><span class="w"> </span>or<span class="w"> </span>less<span class="w"> </span>required
+</code></pre></div></td></tr></table></div>
+
+<h3 id="greater-than">Greater than</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Book</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;pages&#39;</span>, { <span class="n">numericality</span> =&gt; { <span class="o">gt</span> =&gt; <span class="mi">400</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$book</span> = <span class="n">Book</span>.<span class="n">create</span>({<span class="n">pages</span> =&gt; <span class="mi">400</span>});
+<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">errors</span>.<span class="n">pages</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+more<span class="w"> </span>than<span class="w"> </span><span class="m">400</span><span class="w"> </span>required
+</code></pre></div></td></tr></table></div>
+
+<h3 id="greater-than-or-equal">Greater than or equal</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Book</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;pages&#39;</span>, { <span class="n">numericality</span> =&gt; { <span class="n">gte</span> =&gt; <span class="mi">400</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$book</span> = <span class="n">Book</span>.<span class="n">create</span>({<span class="n">pages</span> =&gt; <span class="mi">399</span>});
+<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">errors</span>.<span class="n">pages</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+<span class="m">400</span><span class="w"> </span>or<span class="w"> </span>more<span class="w"> </span>required
+</code></pre></div></td></tr></table></div>
+
+<h3 id="in-a-range_1">In a range</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Book</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;pages&#39;</span>, { <span class="n">numericality</span> =&gt; { <span class="nb">in</span> =&gt; <span class="mi">400</span><span class="o">..</span><span class="mi">1000</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$book</span> = <span class="n">Book</span>.<span class="n">create</span>({<span class="n">pages</span> =&gt; <span class="mi">399</span>});
+<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">errors</span>.<span class="n">pages</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+<span class="m">400</span><span class="w"> </span>to<span class="w"> </span><span class="m">1000</span><span class="w"> </span>required
+</code></pre></div></td></tr></table></div>
+
+<h2 id="presence">Presence</h2>
+<p>The <code>presence</code> validation requires a field value to simply exist for the <code>Model</code> instance to be valid.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span> }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">build</span>;
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">fname</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
+must<span class="w"> </span>be<span class="w"> </span>present
+</code></pre></div></td></tr></table></div>
+
+<h2 id="uniqueness">Uniqueness</h2>
+<p>The <code>uniqueness</code> validation requires a field value to be unique with respect to existing field value data in the database.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Person</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;username&#39;</span>, { :<span class="n">uniqueness</span> }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$person</span> = <span class="n">Person</span>.<span class="n">create</span>({<span class="n">username</span> =&gt; <span class="s">&#39;alfred&#39;</span>});
+<span class="nb">say</span> <span class="nv">$person</span>.<span class="n">is-valid</span>;
+
+<span class="k">my</span> <span class="nv">$person_2</span> = <span class="n">Person</span>.<span class="n">build</span>({<span class="n">username</span> =&gt; <span class="s">&#39;alfred&#39;</span>});
+<span class="nb">say</span> <span class="nv">$person_2</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$person_2</span>.<span class="n">errors</span>.<span class="n">username</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>True
+False
+must<span class="w"> </span>be<span class="w"> </span>unique
+</code></pre></div></td></tr></table></div>
+
+<h2 id="unique-scope">Unique Scope</h2>
+<p>The <code>uniqueness</code> validation can also contain a scope.  This, for example, can be used for validating uniqueness within a specific foreign key.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Subscription</span> {...}
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">subscriptions</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Subscription</span>;   
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span> }
+  }
+}
+
+<span class="k">class</span> <span class="n">Magazine</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">subscriptions</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Subscription</span>;
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;title&#39;</span>, { :<span class="n">presence</span> }
+  }
+}
+
+<span class="k">class</span> <span class="n">Subscription</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">user</span> =&gt; <span class="k">class</span> =&gt; <span class="n">User</span>;
+    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">magazine</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Magazine</span>;
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;user_id&#39;</span>, { <span class="n">uniqueness</span> =&gt; <span class="nb">scope</span> =&gt; :<span class="n">magazine_id</span> }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
+<span class="k">my</span> <span class="nv">$magazine</span> = <span class="n">Magazine</span>.<span class="n">create</span>({<span class="n">title</span> =&gt; <span class="s">&#39;Mad&#39;</span>});
+<span class="k">my</span> <span class="nv">$subscription</span> = <span class="n">Subscription</span>.<span class="n">create</span>({:<span class="nv">$user</span>, :<span class="nv">$magazine</span>});
+<span class="nb">say</span> <span class="nv">$subscription</span>.<span class="n">is-valid</span>;
+
+<span class="k">my</span> <span class="nv">$subscription_2</span> = <span class="n">Subscription</span>.<span class="n">build</span>({:<span class="nv">$user</span>, :<span class="nv">$magazine</span>});
+<span class="nb">say</span> <span class="nv">$subscription_2</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$subscription_2</span>.<span class="n">errors</span>.<span class="n">user_id</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>True
+False
+must<span class="w"> </span>be<span class="w"> </span>unique
+</code></pre></div></td></tr></table></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
