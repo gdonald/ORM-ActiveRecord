@@ -165,6 +165,15 @@ class SqliteAdapter is SqlAdapter is export {
     @$rows.map({ $_[0] });
   }
 
+  method ddl-drop-all-tables(--> List) {
+    my @tables = self.get-table-names.list;
+    return @tables unless @tables.elems;
+    self.exec('PRAGMA foreign_keys = OFF');
+    LEAVE self.exec('PRAGMA foreign_keys = ON');
+    self.exec("DROP TABLE IF EXISTS {$_}") for @tables;
+    @tables;
+  }
+
   method delete-records(Str:D :$table, :%where, :%where-not) {
     my $stmt = SqlStmt.new(:adapter(self));
     my $where-sql = self.build-where($stmt, %where, %where-not);

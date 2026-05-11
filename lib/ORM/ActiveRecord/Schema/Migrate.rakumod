@@ -16,8 +16,49 @@ class Migrate is export {
   }
 
   method run {
+    if @!args.elems && @!args[0] eq 'reset' {
+      return self.reset(args => @!args[1..*]);
+    }
     self.check-migrations-table;
     self.do-migrations;
+  }
+
+  # Drop every table the adapter can see. Confirmation is interactive
+  # ([Y/n]); pass `--yes` (or set AR_ASSUME_YES=1) to skip the prompt.
+  # Returns the dropped tables for the caller (mainly for tests).
+  method reset(:@args = [], :$in = $*IN, :$out = $*OUT --> List) {
+    my $assume-yes = (@args.first({ $_ eq '--yes' || $_ eq '-y' }).defined)
+                     || (%*ENV<AR_ASSUME_YES> // '') eq '1';
+
+    my @tables = $!db.get-table-names.list;
+    unless @tables.elems {
+      $out.say('Nothing to drop — no tables present.');
+      return ();
+    }
+
+    $out.say('About to DROP these tables:');
+    $out.say('  ' ~ $_) for @tables;
+    unless $assume-yes {
+      $out.print('Proceed? [Y/n] ');
+      $out.flush;
+      my $answer = $in.get // '';
+      unless self!is-yes($answer) {
+        $out.say(red('Aborted. No tables were dropped.'));
+        return ();
+      }
+    }
+
+    my @dropped = $!db.ddl-drop-all-tables.list;
+    $out.say(green('Dropped ' ~ @dropped.elems ~ ' table' ~ (@dropped.elems == 1 ?? '' !! 's') ~ '.'));
+    @dropped;
+  }
+
+  # Empty input (just Enter) and a leading Y/y both confirm. Anything else
+  # stops.
+  method !is-yes(Str:D $answer --> Bool) {
+    return True if $answer eq '';
+    my $first = $answer.substr(0, 1);
+    $first eq 'Y' || $first eq 'y';
   }
 
   method do-migrations {

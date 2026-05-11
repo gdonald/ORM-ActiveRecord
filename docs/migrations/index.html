@@ -386,6 +386,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reset
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -624,6 +635,34 @@
     
   
     Batching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/raw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Raw SQL & CTEs
   
 
     
@@ -967,6 +1006,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reset
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1268,6 +1318,68 @@ hits this. See <a href="../errors/#xirreversiblemigration">Errors &raquo; X::Irr
 $<span class="w"> </span>ar<span class="w"> </span>down<span class="w">    </span><span class="c1"># resets all migrations, be careful!</span>
 $<span class="w"> </span>ar<span class="w"> </span>up:1<span class="w">    </span><span class="c1"># runs 1 pending migrations</span>
 $<span class="w"> </span>ar<span class="w"> </span>down:2<span class="w">  </span><span class="c1"># resets 2 previously completed migrations</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="reset">Reset</h2>
+<p><code>ar reset</code> drops every table in the database (including the bookkeeping
+<code>migrations</code> table) so the next <code>ar</code> run reapplies every migration from
+scratch. The drop ignores foreign-key dependencies: PostgreSQL uses
+<code>DROP TABLE ... CASCADE</code>, MySQL temporarily flips <code>FOREIGN_KEY_CHECKS = 0</code>,
+SQLite turns off <code>PRAGMA foreign_keys</code>.</p>
+<p>Reset is a deliberate, destructive action. It prints the tables it is
+about to drop and prompts:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>reset
+About<span class="w"> </span>to<span class="w"> </span>DROP<span class="w"> </span>these<span class="w"> </span>tables:
+<span class="w">  </span>articles
+<span class="w">  </span>books
+<span class="w">  </span>…
+<span class="w">  </span>users
+Proceed?<span class="w"> </span><span class="o">[</span>Y/n<span class="o">]</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Pressing <code>Y</code> or <code>Enter</code> proceeds (the default is yes). Anything else
+aborts immediately:</p>
+<table>
+<thead>
+<tr>
+<th>Reply</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Y</code> / <code>y</code></td>
+<td>Drop tables</td>
+</tr>
+<tr>
+<td><code>&lt;enter&gt;</code> (empty)</td>
+<td>Drop tables</td>
+</tr>
+<tr>
+<td><code>n</code></td>
+<td>Abort</td>
+</tr>
+<tr>
+<td>anything else</td>
+<td>Abort</td>
+</tr>
+</tbody>
+</table>
+<p>To bypass the prompt in scripts, pass <code>--yes</code> (or set <code>AR_ASSUME_YES=1</code>):</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>reset<span class="w"> </span>--yes
+$<span class="w"> </span><span class="nv">AR_ASSUME_YES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>ar<span class="w"> </span>reset
+</code></pre></div></td></tr></table></div>
+
+<p><code>ar reset</code> does <strong>not</strong> re-run migrations. Pair it with a plain <code>ar</code> when
+you want a clean slate plus a fresh schema:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>reset<span class="w"> </span>--yes<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>ar
 </code></pre></div></td></tr></table></div>
 
 

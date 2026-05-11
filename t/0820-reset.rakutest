@@ -1,0 +1,171 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+# Drive every reset case against an isolated in-memory SQLite so the run
+# never touches the configured database for the suite. This file does not
+# depend on any pre-existing schema, every case builds its own tables.
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migrate;
+
+plan 21;
+
+# Duck-typed stand-in for IO::Handle. Captures output and feeds one line
+# at a time from a fixed reply string. Reset's signature accepts any
+# object that responds to .get / .print / .say / .flush.
+class FakeHandle {
+  has Str $.captured is rw = '';
+  has Str @!lines;
+  has Int $!pos = 0;
+
+  submethod BUILD(Str :$reply = '') {
+    @!lines = $reply.lines;
+  }
+
+  method get {
+    return Str unless $!pos < @!lines.elems;
+    @!lines[$!pos++];
+  }
+
+  method print(*@parts) {
+    $!captured ~= @parts.map(*.Str).join;
+    True;
+  }
+
+  method say(*@parts) {
+    self.print(@parts);
+    $!captured ~= "\n";
+    True;
+  }
+
+  method flush() { True }
+}
+
+sub fresh-db(--> DB) {
+  my $sqlite = SqliteAdapter.new(database => ':memory:');
+  my $db = DB.new(adapter => $sqlite);
+  DB.set-shared($db);
+  $db;
+}
+
+sub seed-tables($db, *@names) {
+  for @names -> $t {
+    $db.ddl-create-table($t, [ name => { :string } ]);
+  }
+}
+
+sub run-reset($db, :@args = [], Str :$reply = '') {
+  my $io = FakeHandle.new(:$reply);
+  my @dropped = Migrate.new(args => ()).reset(:@args, in => $io, out => $io);
+  { out => $io.captured, dropped => @dropped.list };
+}
+
+# 1. Pressing Enter (empty reply) confirms and drops all tables.
+{
+  my $db = fresh-db;
+  seed-tables($db, 'foos', 'bars', 'bazes');
+  my %r = run-reset($db, reply => "\n");
+  ok %r<dropped>.elems == 3, 'enter confirms and drops all tables';
+  ok %r<dropped>.Set === <foos bars bazes>.Set, 'every seeded table is dropped';
+  ok %r<out>.contains('About to DROP'), 'prompt mentions the action';
+  ok %r<out>.contains('Dropped 3 tables'), 'success message reports count';
+  ok $db.get-table-names.elems == 0, 'database has zero tables after reset';
+}
+
+# 2. 'Y' confirms.
+{
+  my $db = fresh-db;
+  seed-tables($db, 'alpha');
+  my %r = run-reset($db, reply => "Y\n");
+  ok %r<dropped>.elems == 1, 'Y confirms';
+  ok $db.get-table-names.elems == 0, 'reset cleared the table';
+}
+
+# 3. 'y' (lower-case) confirms.
+{
+  my $db = fresh-db;
+  seed-tables($db, 'alpha');
+  my %r = run-reset($db, reply => "y\n");
+  ok %r<dropped>.elems == 1, 'y also confirms';
+}
+
+# 4. 'n' aborts and nothing is dropped.
+{
+  my $db = fresh-db;
+  seed-tables($db, 'alpha', 'beta');
+  my %r = run-reset($db, reply => "n\n");
+  ok %r<dropped>.elems == 0, 'n aborts the reset';
+  ok %r<out>.contains('Aborted'), 'abort path prints the aborted message';
+  ok $db.get-table-names.elems == 2, 'tables are preserved on abort';
+}
+
+# 5. Any non-Y character aborts.
+for <q maybe 0> -> $reply {
+  my $db = fresh-db;
+  seed-tables($db, 'alpha');
+  my %r = run-reset($db, reply => "$reply\n");
+  ok %r<dropped>.elems == 0, "reply '$reply' is treated as a refusal";
+}
+
+# Whitespace before letters should NOT count as Y either.
+{
+  my $db = fresh-db;
+  seed-tables($db, 'alpha');
+  my %r = run-reset($db, reply => " y\n");
+  ok %r<dropped>.elems == 0, 'leading whitespace before y is NOT treated as yes';
+}
+
+# 6. --yes flag bypasses the prompt even when stdin would refuse.
+{
+  my $db = fresh-db;
+  seed-tables($db, 'alpha', 'beta');
+  my %r = run-reset($db, args => ['--yes'], reply => "n\n");
+  ok %r<dropped>.elems == 2, '--yes drops tables without consulting stdin';
+  ok !%r<out>.contains('Proceed?'), '--yes suppresses the prompt';
+}
+
+# 7. -y short flag also bypasses the prompt.
+{
+  my $db = fresh-db;
+  seed-tables($db, 'alpha');
+  my %r = run-reset($db, args => ['-y'], reply => "n\n");
+  ok %r<dropped>.elems == 1, '-y short flag bypasses the prompt';
+}
+
+# 8. AR_ASSUME_YES=1 env var bypasses the prompt.
+{
+  my $db = fresh-db;
+  seed-tables($db, 'alpha');
+  %*ENV<AR_ASSUME_YES> = '1';
+  LEAVE %*ENV<AR_ASSUME_YES>:delete;
+  my %r = run-reset($db, reply => "n\n");
+  ok %r<dropped>.elems == 1, 'AR_ASSUME_YES=1 env var bypasses the prompt';
+}
+
+# 9. Empty database reports nothing to drop and never prompts.
+{
+  my $db = fresh-db;
+  my %r = run-reset($db, reply => "y\n");
+  ok %r<dropped>.elems == 0, 'empty database has nothing to drop';
+  ok %r<out>.contains('Nothing to drop'), 'empty case prints the no-op notice';
+}
+
+DB.set-shared(Nil);

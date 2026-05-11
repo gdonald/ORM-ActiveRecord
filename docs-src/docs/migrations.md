@@ -217,3 +217,48 @@ $ ar down    # resets all migrations, be careful!
 $ ar up:1    # runs 1 pending migrations
 $ ar down:2  # resets 2 previously completed migrations
 ```
+
+## Reset
+
+`ar reset` drops every table in the database (including the bookkeeping
+`migrations` table) so the next `ar` run reapplies every migration from
+scratch. The drop ignores foreign-key dependencies: PostgreSQL uses
+`DROP TABLE ... CASCADE`, MySQL temporarily flips `FOREIGN_KEY_CHECKS = 0`,
+SQLite turns off `PRAGMA foreign_keys`.
+
+Reset is a deliberate, destructive action. It prints the tables it is
+about to drop and prompts:
+
+```shell
+$ ar reset
+About to DROP these tables:
+  articles
+  books
+  …
+  users
+Proceed? [Y/n]
+```
+
+Pressing `Y` or `Enter` proceeds (the default is yes). Anything else
+aborts immediately:
+
+| Reply            | Outcome      |
+| ---------------- | ------------ |
+| `Y` / `y`        | Drop tables  |
+| `<enter>` (empty)| Drop tables  |
+| `n`              | Abort        |
+| anything else    | Abort        |
+
+To bypass the prompt in scripts, pass `--yes` (or set `AR_ASSUME_YES=1`):
+
+```shell
+$ ar reset --yes
+$ AR_ASSUME_YES=1 ar reset
+```
+
+`ar reset` does **not** re-run migrations. Pair it with a plain `ar` when
+you want a clean slate plus a fresh schema:
+
+```shell
+$ ar reset --yes && ar
+```

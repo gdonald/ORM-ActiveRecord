@@ -1,4 +1,5 @@
 
+use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::Schema::Field;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
@@ -25,6 +26,9 @@ class Query is export {
   has @!joins;
   has Bool $!is-none = False;
   has Hash $!create-with-attrs = {};
+  has @!ctes;
+  has @!annotations;
+  has @!optimizer-hints;
 
   submethod BUILD(Mu:U :$!class, Hash:D :$params) {
     $!table = Utils.table-name($!class);
@@ -51,6 +55,9 @@ class Query is export {
   method joins-values      { @!joins }
   method is-none-value     { $!is-none }
   method create-with-attrs { $!create-with-attrs }
+  method ctes-values       { @!ctes }
+  method annotations-values { @!annotations }
+  method optimizer-hints-values { @!optimizer-hints }
   method class-of          { $!class }
   method table-of          { $!table }
   method fields-of         { @!fields }
@@ -79,6 +86,9 @@ class Query is export {
     @!joins            = $src.joins-values.clone;
     $!is-none          = $src.is-none-value;
     $!create-with-attrs = $src.create-with-attrs.clone;
+    @!ctes             = $src.ctes-values.clone;
+    @!annotations      = $src.annotations-values.clone;
+    @!optimizer-hints  = $src.optimizer-hints-values.clone;
   }
 
   method create-with(Hash:D $attrs) {
@@ -217,7 +227,67 @@ class Query is export {
     @!joins.append: $other.joins-values if $other.joins-values.elems;
     $!is-none = True if $other.is-none-value;
     for $other.create-with-attrs.kv -> $k, $v { $!create-with-attrs{$k} = $v }
+    @!ctes.append: $other.ctes-values if $other.ctes-values.elems;
+    @!annotations.append: $other.annotations-values if $other.annotations-values.elems;
+    @!optimizer-hints.append: $other.optimizer-hints-values if $other.optimizer-hints-values.elems;
     self;
+  }
+
+  method with(*%kw) {
+    die 'with requires at least one CTE' unless %kw.elems;
+    for %kw.kv -> $k, $v { @!ctes.push: %( name => $k.Str, sub => $v, recursive => False ) }
+    self;
+  }
+
+  method with-recursive(*%kw) {
+    die 'with-recursive requires at least one CTE' unless %kw.elems;
+    for %kw.kv -> $k, $v { @!ctes.push: %( name => $k.Str, sub => $v, recursive => True ) }
+    self;
+  }
+
+  method annotate(*@comments) {
+    die 'annotate requires at least one comment' unless @comments.elems;
+    @!annotations.append: @comments.map({ .Str });
+    self;
+  }
+
+  method optimizer-hints(*@hints) {
+    die 'optimizer-hints requires at least one hint' unless @hints.elems;
+    @!optimizer-hints.append: @hints.map({ .Str });
+    self;
+  }
+
+  # Build this query's SELECT body into the given shared SqlStmt, returning
+  # the SQL fragment. Used by adapters to emit CTE sub-queries that share
+  # bind numbering with the outer SELECT.
+  method to-sql-into(SqlStmt:D $stmt --> Str) {
+    my @or-groups = self.or-groups-payload;
+    DB.shared.build-select-body(
+      $stmt,
+      :$!table, :@!fields,
+      where => $!params, where-not => $!not-params, :@or-groups,
+      order => @!order, limit => $!limit, offset => $!offset,
+      distinct => $!distinct, group => @!group, having => @!having,
+      from-source => $!from-source, from-alias => $!from-alias,
+      joins => @!joins,
+      optimizer-hints => @!optimizer-hints,
+    );
+  }
+
+  method to-sql(--> Str) {
+    my @or-groups = self.or-groups-payload;
+    my $stmt = DB.shared.build-select(
+      :$!table, :@!fields,
+      where => $!params, where-not => $!not-params, :@or-groups,
+      order => @!order, limit => $!limit, offset => $!offset,
+      distinct => $!distinct, group => @!group, having => @!having,
+      from-source => $!from-source, from-alias => $!from-alias,
+      joins => @!joins,
+      ctes => @!ctes,
+      annotations => @!annotations,
+      optimizer-hints => @!optimizer-hints,
+    );
+    $stmt.sql;
   }
 
   method unscope(*@kinds, *%kw) {
@@ -252,6 +322,9 @@ class Query is export {
         when 'references' { @!references = () }
         when 'readonly'   { $!readonly = False }
         when 'joins'      { @!joins = () }
+        when 'with'       { @!ctes = () }
+        when 'annotate'   { @!annotations = () }
+        when 'optimizer-hints' { @!optimizer-hints = () }
         default { die "unscope: unknown scope kind '$kind'" }
       }
     }
@@ -475,6 +548,9 @@ class Query is export {
       group => @!group, having => @!having,
       from-source => $!from-source, from-alias => $!from-alias,
       joins => @!joins,
+      ctes => @!ctes,
+      annotations => @!annotations,
+      optimizer-hints => @!optimizer-hints,
     );
     if $!readonly {
       .make-readonly for @objects;
@@ -506,6 +582,9 @@ class Query is export {
       group => @!group, having => @!having,
       from-source => $!from-source, from-alias => $!from-alias,
       joins => @!joins,
+      ctes => @!ctes,
+      annotations => @!annotations,
+      optimizer-hints => @!optimizer-hints,
     );
   }
 
@@ -539,6 +618,9 @@ class Query is export {
       group => @!group, having => @!having,
       from-source => $!from-source, from-alias => $!from-alias,
       joins => @!joins,
+      ctes => @!ctes,
+      annotations => @!annotations,
+      optimizer-hints => @!optimizer-hints,
     );
   }
 
@@ -546,7 +628,7 @@ class Query is export {
     return Any if $!is-none;
     my @order = @!order.elems ?? @!order !! ('id',);
     my @or-groups = self.or-groups-payload;
-    my $obj = DB.shared.get-object(:$!table, :$!class, :@!fields, where => $!params, where-not => $!not-params, :@or-groups, :@order, distinct => $!distinct, group => @!group, having => @!having, from-source => $!from-source, from-alias => $!from-alias, joins => @!joins);
+    my $obj = DB.shared.get-object(:$!table, :$!class, :@!fields, where => $!params, where-not => $!not-params, :@or-groups, :@order, distinct => $!distinct, group => @!group, having => @!having, from-source => $!from-source, from-alias => $!from-alias, joins => @!joins, ctes => @!ctes, annotations => @!annotations, optimizer-hints => @!optimizer-hints);
     $obj.make-readonly if $obj.defined && $!readonly;
     $obj;
   }
@@ -565,6 +647,9 @@ class Query is export {
       group => @!group, having => @!having,
       from-source => $!from-source, from-alias => $!from-alias,
       joins => @!joins,
+      ctes => @!ctes,
+      annotations => @!annotations,
+      optimizer-hints => @!optimizer-hints,
     );
     if $!readonly {
       .make-readonly for @objects;
@@ -578,7 +663,7 @@ class Query is export {
       ?? @!order
       !! ('id DESC',);
     my @or-groups = self.or-groups-payload;
-    my $obj = DB.shared.get-object(:$!table, :$!class, :@!fields, where => $!params, where-not => $!not-params, :@or-groups, :@order, distinct => $!distinct, group => @!group, having => @!having, from-source => $!from-source, from-alias => $!from-alias, joins => @!joins);
+    my $obj = DB.shared.get-object(:$!table, :$!class, :@!fields, where => $!params, where-not => $!not-params, :@or-groups, :@order, distinct => $!distinct, group => @!group, having => @!having, from-source => $!from-source, from-alias => $!from-alias, joins => @!joins, ctes => @!ctes, annotations => @!annotations, optimizer-hints => @!optimizer-hints);
     $obj.make-readonly if $obj.defined && $!readonly;
     $obj;
   }
@@ -599,6 +684,9 @@ class Query is export {
       group => @!group, having => @!having,
       from-source => $!from-source, from-alias => $!from-alias,
       joins => @!joins,
+      ctes => @!ctes,
+      annotations => @!annotations,
+      optimizer-hints => @!optimizer-hints,
     );
     if $!readonly {
       .make-readonly for @objects;
@@ -629,6 +717,9 @@ class Query is export {
       group => @!group, having => @!having,
       from-source => $!from-source, from-alias => $!from-alias,
       joins => @!joins,
+      ctes => @!ctes,
+      annotations => @!annotations,
+      optimizer-hints => @!optimizer-hints,
     );
     die X::RecordNotFound.new(:model($!class.^name)) unless @rows.elems;
     die X::SoleRecordExceeded.new(:model($!class.^name)) if @rows.elems > 1;
@@ -650,6 +741,9 @@ class Query is export {
         group => @!group, having => @!having,
         from-source => $!from-source, from-alias => $!from-alias,
         joins => @!joins,
+        ctes => @!ctes,
+        annotations => @!annotations,
+        optimizer-hints => @!optimizer-hints,
       )
     );
     if @names.elems == 1 {
@@ -732,6 +826,9 @@ class Query is export {
     my $from-source = $!from-source;
     my $from-alias  = $!from-alias;
     my @joins       = @!joins;
+    my @ctes        = @!ctes;
+    my @annotations = @!annotations;
+    my @optimizer-hints = @!optimizer-hints;
     my $readonly    = $!readonly;
 
     gather {
@@ -748,6 +845,7 @@ class Query is export {
           group => @group, having => @having,
           from-source => $from-source, from-alias => $from-alias,
           joins => @joins,
+          :@ctes, :@annotations, :@optimizer-hints,
         );
         last unless @objects.elems;
         if $readonly { .make-readonly for @objects }

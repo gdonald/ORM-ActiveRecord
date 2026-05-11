@@ -257,13 +257,6 @@ sub run-once(Str:D :$name, Str:D :$url --> Int) {
   say "==> [{format-ts()}] adapter=$name DATABASE_URL=$url";
   %*ENV<DATABASE_URL> = $url;
 
-  if $name eq 'sqlite' {
-    my $path = parse-database-url($url)<database>;
-    if $path && $path ne ':memory:' && $path.IO.e {
-      $path.IO.unlink;
-    }
-  }
-
   my $migrate = run 'raku', '-Ilib', 'bin/ar';
   return $migrate.exitcode unless $migrate.exitcode == 0;
 

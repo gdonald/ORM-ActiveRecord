@@ -207,6 +207,15 @@ class MySqlAdapter is SqlAdapter is export {
       @$rows.map({ self!stringify($_[0]) });
     }
 
+    method ddl-drop-all-tables(--> List) {
+      my @tables = self.get-table-names.list;
+      return @tables unless @tables.elems;
+      self.exec('SET FOREIGN_KEY_CHECKS = 0');
+      LEAVE self.exec('SET FOREIGN_KEY_CHECKS = 1');
+      self.exec("DROP TABLE IF EXISTS `{$_}`") for @tables;
+      @tables;
+    }
+
     # DBDish::mysql returns information_schema text columns as Buf — decode
     # them once at the introspection boundary so consumers see plain Str.
     method !stringify($v --> Str) {

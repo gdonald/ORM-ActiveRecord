@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../finders/">
+        <link rel="prev" href="../batching/">
       
       
-        <link rel="next" href="../queries/">
+        <link rel="next" href="../persistence/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Relations - ORM::ActiveRecord</title>
+        <title>Raw SQL & CTEs - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#relations" class="md-skip">
+        <a href="#raw-sql-and-ctes" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Relations
+              Raw SQL & CTEs
             
           </span>
         </div>
@@ -379,37 +379,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Relations
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../relations/" class="md-nav__link">
         
   
   
@@ -425,114 +398,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#realising-a-relation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Realising a relation
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#order" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        order
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#limit-and-offset" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        limit and offset
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#all" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        all
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#none" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        none
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pluck-and-ids" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        pluck and ids
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#count-and-exists" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        count and exists
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -654,10 +519,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../raw/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Raw SQL & CTEs
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -673,6 +565,103 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#find-by-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        find-by-sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#select-all" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        select-all
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#with" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        with
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#with-recursive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        with-recursive
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#annotate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annotate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optimizer-hints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        optimizer-hints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#to-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to-sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -932,10 +921,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#realising-a-relation" class="md-nav__link">
+  <a href="#find-by-sql" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Realising a relation
+        find-by-sql
       
     </span>
   </a>
@@ -943,10 +932,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#where" class="md-nav__link">
+  <a href="#select-all" class="md-nav__link">
     <span class="md-ellipsis">
       
-        where
+        select-all
       
     </span>
   </a>
@@ -954,10 +943,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#order" class="md-nav__link">
+  <a href="#with" class="md-nav__link">
     <span class="md-ellipsis">
       
-        order
+        with
       
     </span>
   </a>
@@ -965,10 +954,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#limit-and-offset" class="md-nav__link">
+  <a href="#with-recursive" class="md-nav__link">
     <span class="md-ellipsis">
       
-        limit and offset
+        with-recursive
       
     </span>
   </a>
@@ -976,10 +965,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#all" class="md-nav__link">
+  <a href="#annotate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        all
+        annotate
       
     </span>
   </a>
@@ -987,10 +976,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#none" class="md-nav__link">
+  <a href="#optimizer-hints" class="md-nav__link">
     <span class="md-ellipsis">
       
-        none
+        optimizer-hints
       
     </span>
   </a>
@@ -998,21 +987,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pluck-and-ids" class="md-nav__link">
+  <a href="#to-sql" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pluck and ids
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#count-and-exists" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        count and exists
+        to-sql
       
     </span>
   </a>
@@ -1036,169 +1014,116 @@
 
 
 
-<h1 id="relations">Relations</h1>
-<p><code>User.where(...)</code>, <code>User.order(...)</code>, and friends return a chainable relation
-that defers running SQL until you ask for results. Relations compose: every
-scope-narrowing call returns a new relation, leaving the original untouched.</p>
+<h1 id="raw-sql-and-ctes">Raw SQL and CTEs</h1>
+<p>When the chainable relation DSL is not enough, ORM::ActiveRecord exposes a
+handful of escape hatches that let you reach for raw SQL or Common Table
+Expressions while still getting model instances back.</p>
+<h2 id="find-by-sql">find-by-sql</h2>
+<p><code>find-by-sql(...)</code> runs an arbitrary SELECT and returns an array of model
+instances. The columns of the result set are mapped onto the model's attrs,
+so any column the model already knows about is coerced through its declared
+type; extra columns are passed through as raw values.</p>
+<p>The variadic form takes a SQL string with <code>?</code> placeholders and the bind
+values inline:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@users</span> = <span class="n">User</span>.<span class="n">find-by-sql</span>(<span class="s">&#39;SELECT * FROM users WHERE fname = ?&#39;</span>, <span class="s">&#39;Bob&#39;</span>);
+</code></pre></div></td></tr></table></div>
+
+<p>The array form is identical to <code>sanitize-sql-array</code>: positional <code>?</code> binds or
+<code>:name</code> binds with a trailing hash.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">find-by-sql</span>([<span class="s">&#39;SELECT * FROM users WHERE fname = ?&#39;</span>,  <span class="s">&#39;Bob&#39;</span>]);
+<span class="n">User</span>.<span class="n">find-by-sql</span>([<span class="s">&#39;SELECT * FROM users WHERE fname = :n&#39;</span>, { <span class="n">n</span> =&gt; <span class="s">&#39;Bob&#39;</span> }]);
+</code></pre></div></td></tr></table></div>
+
+<h2 id="select-all">select-all</h2>
+<p><code>select-all(...)</code> runs a SELECT and returns the rows as plain hashes (no
+model instantiation). Same calling conventions as <code>find-by-sql</code>:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@rows</span> = <span class="n">User</span>.<span class="n">select-all</span>(<span class="s">&#39;SELECT fname, count(*) AS n FROM users GROUP BY fname&#39;</span>);
+<span class="nb">say</span> <span class="nv">@rows</span>[<span class="mi">0</span>]&lt;<span class="n">n</span>&gt;;     <span class="c1"># 3</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Useful for reports or any query whose columns don't line up with the model.</p>
+<h2 id="with">with</h2>
+<p><code>with(%name-to-sub-query)</code> adds Common Table Expressions to the outer
+relation. Each value may be either another <code>Query</code> (a relation) or a raw SQL
+string:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$heavy</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
+<span class="n">User</span>.<span class="k">with</span>(<span class="n">matches</span> =&gt; <span class="nv">$heavy</span>).<span class="n">where</span>({<span class="n">lname</span> =&gt; <span class="s">&#39;Donald&#39;</span>}).<span class="nb">all</span>;
+
+<span class="n">User</span>.<span class="k">with</span>(<span class="n">top</span> =&gt; <span class="s">&#39;SELECT * FROM users ORDER BY id LIMIT 10&#39;</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>When the CTE has the same name as the model's table, the outer SELECT reads
+from the CTE instead of the table. To reference a CTE under a different
+name, use <code>.from('cte_name', 'qualifier_alias')</code> so the SELECT list still
+qualifies columns correctly:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="k">with</span>(<span class="n">top</span> =&gt; <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">limit</span>(<span class="mi">10</span>))
+    .<span class="nb">from</span>(<span class="s">&#39;top&#39;</span>, <span class="s">&#39;users&#39;</span>)
+    .<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>The sub-query's bind values are inserted into the outer statement ahead of
+the outer query's binds — placeholder numbering is handled automatically,
+including under PostgreSQL's <code>$N</code> bind syntax.</p>
+<h2 id="with-recursive">with-recursive</h2>
+<p><code>with-recursive(%name-to-sub-query)</code> emits <code>WITH RECURSIVE ...</code>. Recursive
+CTEs typically reference their own name inside the sub-query, so a raw SQL
+string is the natural form:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$active</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>});
-<span class="k">my</span> <span class="nv">$recent</span> = <span class="nv">$active</span>.<span class="n">order</span>(<span class="s">&#39;created_at DESC&#39;</span>).<span class="n">limit</span>(<span class="mi">10</span>);
-
-<span class="c1"># $active and $recent are independent relations; neither has hit the DB yet.</span>
-<span class="k">my</span> <span class="nv">@rows</span> = <span class="nv">$recent</span>.<span class="nb">all</span>;   <span class="c1"># one query, fired here</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@ints</span> = <span class="n">User</span>.<span class="n">with-recursive</span>(<span class="n">nums</span> =&gt; <span class="s">q:to/SUB/).from(&#39;nums&#39;).pluck(&#39;nums.n&#39;);</span>
+<span class="s">  SELECT 1 AS n</span>
+<span class="s">  UNION ALL</span>
+<span class="s">  SELECT n + 1 FROM nums WHERE n &lt; 10</span>
+<span class="s">  SUB</span>
 </code></pre></div></td></tr></table></div>
 
-<h2 id="realising-a-relation">Realising a relation</h2>
-<p>Relations stay lazy until you call one of these methods:</p>
-<table>
-<thead>
-<tr>
-<th>Method</th>
-<th>Returns</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>.all</code></td>
-<td>List of model instances</td>
-</tr>
-<tr>
-<td><code>.first</code></td>
-<td>One instance ordered by <code>id</code> ASC, or <code>Nil</code></td>
-</tr>
-<tr>
-<td><code>.last</code></td>
-<td>One instance ordered by <code>id</code> DESC, or <code>Nil</code></td>
-</tr>
-<tr>
-<td><code>.count</code></td>
-<td><code>Int</code> — <code>COUNT(*)</code></td>
-</tr>
-<tr>
-<td><code>.exists</code></td>
-<td><code>Bool</code></td>
-</tr>
-<tr>
-<td><code>.pluck(...)</code></td>
-<td>List of raw column values</td>
-</tr>
-<tr>
-<td><code>.ids</code></td>
-<td>List of <code>id</code> column values (= <code>pluck('id')</code>)</td>
-</tr>
-</tbody>
-</table>
-<h2 id="where">where</h2>
-<p><code>where(%conditions)</code> adds equality conditions joined with <code>AND</code>. Conditions
-are bound as parameters, never interpolated, so user-supplied values are safe.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>, <span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
-</code></pre></div></td></tr></table></div>
-
-<p>You can chain further <code>.where(...)</code> calls to merge in additional conditions.</p>
+<h2 id="annotate">annotate</h2>
+<p><code>annotate("comment")</code> attaches an SQL comment to the emitted query. Useful
+for tagging queries in logs and APM tooling so you can trace a slow query
+back to the call site that produced it.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$q</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>});
-<span class="nv">$q</span> = <span class="nv">$q</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>}) <span class="k">if</span> <span class="nv">$only-greg</span>;
-<span class="k">my</span> <span class="nv">@users</span> = <span class="nv">$q</span>.<span class="nb">all</span>;
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">annotate</span>(<span class="s">&#39;reports#monthly&#39;</span>).<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="nb">all</span>;
+<span class="c1"># SELECT ... FROM users WHERE active = $1 /* reports#monthly */</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>where</code> accepts several value shorthands beyond a literal scalar:</p>
+<p>Multiple annotations stack in declaration order. Embedded <code>*/</code> is
+neutralised so a comment can't terminate the block prematurely.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">age</span>   =&gt; <span class="mi">18</span><span class="o">..</span><span class="mi">65</span>});           <span class="c1"># BETWEEN</span>
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">email</span> =&gt; <span class="nb">Nil</span>});              <span class="c1"># IS NULL</span>
-<span class="n">User</span>.<span class="n">where</span>({<span class="nb">id</span>    =&gt; [<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>]});        <span class="c1"># IN</span>
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">user</span>  =&gt; <span class="nv">$alice</span>});           <span class="c1"># auto-uses $alice.id as user_id</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">annotate</span>(<span class="s">&#39;first&#39;</span>).<span class="n">annotate</span>(<span class="s">&#39;second&#39;</span>).<span class="nb">all</span>;
+<span class="c1"># ... /* first */ /* second */</span>
 </code></pre></div></td></tr></table></div>
 
-<p>See <a href="../queries/">Queries</a> for the full filtering vocabulary, including
-<code>where.not</code>, <code>where.missing</code>, <code>where.associated</code>, <code>or</code>, <code>and</code>, <code>merge</code>,
-<code>rewhere</code>, <code>unscope</code>, and <code>excluding</code>.</p>
-<h2 id="order">order</h2>
-<p><code>order(*@cols)</code> adds <code>ORDER BY</code> clauses. Pass column names or fully formed
-fragments like <code>'fname DESC'</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>);
-<span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>, <span class="s">&#39;fname&#39;</span>);
-<span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;created_at DESC&#39;</span>);
-</code></pre></div></td></tr></table></div>
-
-<p><code>reorder(...)</code> replaces any prior <code>order</code> clauses. <code>in-order-of(:col, [...])</code>
-orders rows to match an explicit value list.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">reorder</span>(<span class="s">&#39;id&#39;</span>);                       <span class="c1"># only &#39;id&#39; is applied</span>
-<span class="n">User</span>.<span class="n">in-order-of</span>(:<span class="n">id</span>, [<span class="mi">3</span>, <span class="mi">1</span>, <span class="mi">2</span>]).<span class="nb">all</span>;                    <span class="c1"># rows in [3, 1, 2] order</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="limit-and-offset">limit and offset</h2>
-<p><code>limit(N)</code> and <code>offset(N)</code> add <code>LIMIT</code> and <code>OFFSET</code>. Useful for pagination.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">sub</span> <span class="n">page-of-users</span>(<span class="nb">Int</span> :<span class="nv">$page</span> = <span class="mi">1</span>, <span class="nb">Int</span> :<span class="nv">$per</span> = <span class="mi">20</span>) {
-  <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">limit</span>(<span class="nv">$per</span>).<span class="nb">offset</span>((<span class="nv">$page</span> - <span class="mi">1</span>) * <span class="nv">$per</span>).<span class="nb">all</span>;
-}
-</code></pre></div></td></tr></table></div>
-
-<p>SQLite and MySQL require a <code>LIMIT</code> whenever an <code>OFFSET</code> is set; the adapter
-adds a synthetic unbounded <code>LIMIT</code> when you pass <code>offset</code> alone.</p>
-<h2 id="all">all</h2>
-<p><code>Model.all</code> returns a relation that, once realised, returns every row. You can
-chain conditions onto it just like <code>where</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="nb">all</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>).<span class="nb">all</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="none">none</h2>
-<p><code>Model.none</code> returns a chainable null relation. Every operation that would
-hit the database returns the empty result for its return type (<code>[]</code>, <code>0</code>,
-<code>False</code>, <code>Nil</code>, …) without issuing SQL. Useful as a "no match" return value
-from helper methods that must still hand back a chainable relation.</p>
+<h2 id="optimizer-hints">optimizer-hints</h2>
+<p><code>optimizer-hints("...")</code> emits a <code>/*+ ... */</code> block immediately after the
+<code>SELECT</code> keyword, where MySQL (and Postgres with <code>pg_hint_plan</code>) look for
+planner directives.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">sub</span> <span class="n">recent-for</span>(<span class="nv">$user</span>) {
-  <span class="k">return</span> <span class="n">User</span>.<span class="nb">none</span> <span class="k">unless</span> <span class="nv">$user</span>.<span class="nb">defined</span> &amp;&amp; <span class="nv">$user</span>.<span class="n">active</span>;
-  <span class="n">User</span>.<span class="n">where</span>({<span class="n">author_id</span> =&gt; <span class="nv">$user</span>.<span class="nb">id</span>}).<span class="n">order</span>(<span class="s">&#39;created_at DESC&#39;</span>);
-}
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">optimizer-hints</span>(<span class="s">&#39;NO_INDEX_MERGE(users)&#39;</span>).<span class="nb">all</span>;
+<span class="c1"># SELECT /*+ NO_INDEX_MERGE(users) */ users.id, ... FROM users</span>
 
-<span class="n">recent-for</span>(<span class="nb">Nil</span>).<span class="nb">count</span>;     <span class="c1"># 0, no query issued</span>
-<span class="n">recent-for</span>(<span class="nb">Nil</span>).<span class="nb">all</span>;       <span class="c1"># ()</span>
+<span class="n">User</span>.<span class="n">optimizer-hints</span>(<span class="s">&#39;MAX_EXECUTION_TIME(1000)&#39;</span>, <span class="s">&#39;NO_ICP(users)&#39;</span>).<span class="nb">all</span>;
+<span class="c1"># SELECT /*+ MAX_EXECUTION_TIME(1000) NO_ICP(users) */ ...</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>none</code> is sticky once set; further <code>where</code>, <code>order</code>, etc. compose but the
-result stays empty. <code>merge(other.none)</code> propagates the null relation.</p>
-<h2 id="pluck-and-ids">pluck and ids</h2>
-<p><code>pluck</code> returns raw column values without instantiating model objects. It is
-much cheaper than materialising records and dropping everything but one
-column.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@fnames</span> = <span class="n">User</span>.<span class="n">pluck</span>(<span class="s">&#39;fname&#39;</span>);
-<span class="c1"># (Alice Bob Carol Dave Eve)</span>
-
-<span class="k">my</span> <span class="nv">@rows</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">pluck</span>(<span class="s">&#39;fname&#39;</span>, <span class="s">&#39;lname&#39;</span>);
-<span class="c1"># ((Alice Anderson) (Bob Brown) ...)</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>ids</code> is the common shorthand for <code>pluck('id')</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@ids</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">ids</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="count-and-exists">count and exists</h2>
-<p><code>count</code> returns the number of matching rows. <code>exists</code> returns <code>True</code> if any
-row matches.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="nb">count</span>;
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">exists</span>;
+<p>Multiple hints share one <code>/*+ ... */</code> block. Engines that don't understand
+the hint syntax treat it as an ordinary comment, so the query still runs.</p>
+<h2 id="to-sql">to-sql</h2>
+<p><code>to-sql</code> returns the SQL string that the relation would execute, with
+adapter-specific placeholders (<code>$N</code> for PostgreSQL, <code>?</code> for SQLite and
+MySQL) left in. Bind values are not inlined.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">say</span> <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">annotate</span>(<span class="s">&#39;debug&#39;</span>).<span class="n">to-sql</span>;
 </code></pre></div></td></tr></table></div>
 
 

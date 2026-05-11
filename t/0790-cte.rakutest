@@ -1,0 +1,70 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Game is Model {}
+
+plan 11;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Game.destroy-all;
+
+Game.create({name => 'Chess', year => 1500});
+Game.create({name => 'Go',    year => 2200});
+Game.create({name => 'Poker', year => 1810});
+Game.create({name => 'Magic', year => 1993});
+
+# with(name => relation) emits a CTE and the outer query still selects games
+my $cte = Game.where({name => ['Chess', 'Go']});
+my @from-cte = Game.with(recent => $cte).where({name => ['Chess', 'Go']}).order('year').all;
+ok @from-cte.elems == 2, 'with(cte) still returns outer-table rows';
+ok @from-cte[0].name eq 'Chess', 'first row from CTE+outer query is Chess';
+ok @from-cte[1].name eq 'Go', 'second row is Go';
+
+# CTE binds and outer binds interleave correctly (PG uses $1,$2,...)
+my @count = Game.with(early => Game.where({year => 1000..1900})).where({year => 1900..2200}).all;
+ok @count.elems == 2, 'CTE binds + outer binds combine without collision';
+
+# from('cte_name AS alias', 'alias') reads rows out of a CTE while keeping
+# column qualifiers consistent with the model's table name.
+my @from-source = Game.with(filtered => Game.where({name => 'Go'}))
+                      .from('filtered AS games', 'games').all;
+ok @from-source.elems == 1 && @from-source[0].name eq 'Go',
+   'from(cte-alias) reads rows out of the CTE';
+
+# count works with a CTE
+ok Game.with(early => Game.where({year => 1000..1900})).where({year => 1000..1900}).count == 2,
+   'count works with a CTE';
+
+# Aggregations work with a CTE
+ok Game.with(yrs => Game.all).where({name => 'Go'}).sum('year') == 2200,
+   'sum works alongside a CTE';
+
+# Raw-string CTE is accepted
+my @raw = Game.with(allrows => 'SELECT * FROM games')
+              .from('allrows AS games', 'games')
+              .where({name => 'Magic'}).all;
+ok @raw.elems == 1 && @raw[0].name eq 'Magic',
+   'with(name => "raw SQL") accepts a string sub-query';
+
+# with-recursive emits WITH RECURSIVE — use a string sub-query that
+# references the CTE name from within (typical recursive shape). The pluck
+# qualifies columns with the model's table name, so we pluck "nums.n" to
+# force the unqualified path through the SQL builder.
+my @ints = Game.with-recursive(nums => q:to/SUB/).from('nums').pluck('nums.n');
+  SELECT 1 AS n
+  UNION ALL
+  SELECT n + 1 FROM nums WHERE n < 4
+  SUB
+ok @ints.elems == 4, 'with-recursive yields recursive rows';
+ok @ints.sort.join(',') eq '1,2,3,4', 'recursive CTE generates 1..4';
+
+# with requires at least one CTE
+my $threw = False;
+try { Game.all.with(); CATCH { default { $threw = True } } }
+ok $threw, 'with() with no args dies';
+
+Game.destroy-all;

@@ -56,6 +56,14 @@ class SqlAdapter does Adapter is export {
     $query.allrows;
   }
 
+  method exec-stmt-hash(SqlStmt:D $stmt) {
+    self!ensure-connected;
+    Log.sql(:sql($stmt.sql));
+    my $query = $!db.prepare($stmt.sql);
+    $query.execute(|$stmt.binds);
+    $query.allrows(:array-of-hash);
+  }
+
   method sanitize-sql-array(@parts --> SqlStmt) {
     SqlStmt.new(:adapter(self)).sanitize-array(@parts);
   }
@@ -127,9 +135,25 @@ class SqlAdapter does Adapter is export {
     %attrs;
   }
 
-  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins --> SqlStmt) {
+  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints --> SqlStmt) {
     my $stmt = SqlStmt.new(:adapter(self));
+    my $cte-prefix = self.build-ctes($stmt, :@ctes);
+    my $body = self.build-select-body(
+      $stmt, :$table, :$join-table, :@fields, :%where, :%where-not, :@or-groups,
+      :@order, :$limit, :$offset, :$distinct, :@group, :@having,
+      :$from-source, :$from-alias, :@joins, :@optimizer-hints,
+    );
+    my $annotated = self.attach-annotations($body, :@annotations);
+    $stmt.sql = $cte-prefix
+      ?? "$cte-prefix\n$annotated"
+      !! $annotated;
+    $stmt;
+  }
+
+  method build-select-body(SqlStmt:D $stmt, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@optimizer-hints --> Str) {
     my $select-keyword = $distinct ?? 'SELECT DISTINCT' !! 'SELECT';
+    my $hints = self.format-optimizer-hints(@optimizer-hints);
+    $select-keyword ~= " $hints" if $hints;
     my $qualifier = $from-alias.defined ?? $from-alias !! $table;
     my $select = @fields.map({
       my $n = $_.name;
@@ -157,7 +181,7 @@ class SqlAdapter does Adapter is export {
 
     my $joins-sql = @joins.elems ?? @joins.join("\n") !! '';
 
-    $stmt.sql = qq:to/SQL/;
+    qq:to/SQL/;
       $select-keyword $select
 	    $from-clause
       $join
@@ -168,8 +192,45 @@ class SqlAdapter does Adapter is export {
       $order
       $limit_offset
       SQL
+  }
 
-    $stmt;
+  method build-ctes(SqlStmt:D $stmt, :@ctes --> Str) {
+    return '' unless @ctes.elems;
+    my $is-recursive = @ctes.first({ $_<recursive> }).so;
+    my @parts;
+    for @ctes -> %cte {
+      my $name = %cte<name>;
+      my $sub = %cte<sub>;
+      my $sub-sql;
+      given $sub {
+        when Str { $sub-sql = $sub.trim }
+        default {
+          if $sub.^can('to-sql-into') {
+            $sub-sql = $sub.to-sql-into($stmt).trim;
+          } else {
+            die "with: unsupported CTE sub-query type {$sub.^name}";
+          }
+        }
+      }
+      @parts.push: "$name AS ($sub-sql)";
+    }
+    ($is-recursive ?? 'WITH RECURSIVE ' !! 'WITH ') ~ @parts.join(', ');
+  }
+
+  method format-optimizer-hints(@hints --> Str) {
+    return '' unless @hints.elems;
+    '/*+ ' ~ @hints.join(' ') ~ ' */';
+  }
+
+  method attach-annotations(Str:D $sql, :@annotations --> Str) {
+    return $sql unless @annotations.elems;
+    my $trimmed = $sql.subst(/\s+$/, '');
+    my $tags = @annotations.map({ '/* ' ~ self!sanitize-comment($_) ~ ' */' }).join(' ');
+    "$trimmed $tags\n";
+  }
+
+  method !sanitize-comment(Str:D $c --> Str) {
+    $c.subst('*/', '* /', :g);
   }
 
   method limit-offset-clause(Int:D :$limit = 0, Int:D :$offset = 0 --> Str) {
@@ -296,8 +357,8 @@ class SqlAdapter does Adapter is export {
     }
   }
 
-  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
-    my @records = self.get-records(:@fields, :$table, :$join-table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins);
+  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints) {
+    my @records = self.get-records(:@fields, :$table, :$join-table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints);
     my @objects;
 
     for @records.kv -> $k, $record {
@@ -308,8 +369,8 @@ class SqlAdapter does Adapter is export {
     @objects;
   }
 
-  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
-    my $record = self.get-record(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins);
+  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints) {
+    my $record = self.get-record(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints);
     return Nil unless $record && $record{'id'};
     $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
   }
@@ -334,9 +395,9 @@ class SqlAdapter does Adapter is export {
     self.exec($sql);
   }
 
-  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
+  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints) {
     my @records;
-    my $stmt = self.build-select(:@fields, :$join-table, :$table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins);
+    my $stmt = self.build-select(:@fields, :$join-table, :$table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints);
 
     for self.exec-stmt($stmt).kv -> $k, $row {
       my %record;
@@ -349,8 +410,8 @@ class SqlAdapter does Adapter is export {
     @records;
   }
 
-  method get-record(Str:D :$table, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
-    my $stmt = self.build-select(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, limit => 1, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins);
+  method get-record(Str:D :$table, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints) {
+    my $stmt = self.build-select(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, limit => 1, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints);
     my $rows = self.exec-stmt($stmt);
     my %record;
     return %record unless $rows.elems;
@@ -366,20 +427,23 @@ class SqlAdapter does Adapter is export {
     self.exec($sql);
   }
 
-  method count-records(Str:D :$table, :%where, :%where-not, :@or-groups, Bool:D :$distinct=False, :@select, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
+  method count-records(Str:D :$table, :%where, :%where-not, :@or-groups, Bool:D :$distinct=False, :@select, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints) {
     my $from-clause = $from-source.defined ?? "FROM $from-source" !! "FROM $table";
     my $qualifier = $from-alias.defined ?? $from-alias !! $table;
     my $where-qualifier = @joins.elems ?? $qualifier !! Str;
     my $joins-sql = @joins.elems ?? @joins.join("\n") !! '';
+    my $hints = self.format-optimizer-hints(@optimizer-hints);
+    my $hints-sp = $hints ?? " $hints" !! '';
 
     if @group.elems || @having.elems {
       my $inner = SqlStmt.new(:adapter(self));
+      my $cte-prefix = self.build-ctes($inner, :@ctes);
       my $where-sql = self.build-where($inner, %where, %where-not, :@or-groups, qualifier => $where-qualifier);
       my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
       my $group-clause = @group.elems ?? "GROUP BY @group.join(', ')" !! '';
       my $having-clause = self.build-having($inner, @having);
-      $inner.sql = qq:to/SQL/;
-        SELECT count(*) FROM (
+      my $body = qq:to/SQL/;
+        SELECT count(*)$hints-sp FROM (
           SELECT 1 $from-clause
           $joins-sql
           $where-clause
@@ -387,25 +451,29 @@ class SqlAdapter does Adapter is export {
           $having-clause
         ) sub
         SQL
+      my $annotated = self.attach-annotations($body, :@annotations);
+      $inner.sql = $cte-prefix ?? "$cte-prefix\n$annotated" !! $annotated;
       return self.exec-stmt($inner)[0][0].Int;
     }
 
     my $stmt = SqlStmt.new(:adapter(self));
+    my $cte-prefix = self.build-ctes($stmt, :@ctes);
     my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups, qualifier => $where-qualifier);
     my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
+    my $body;
 
     if $distinct {
       if @joins.elems && !@select.elems {
-        $stmt.sql = qq:to/SQL/;
-          SELECT count(DISTINCT $qualifier.id)
+        $body = qq:to/SQL/;
+          SELECT count(DISTINCT $qualifier.id)$hints-sp
           $from-clause
           $joins-sql
           $where-clause
           SQL
       } else {
         my $cols = @select.elems ?? @select.join(', ') !! '*';
-        $stmt.sql = qq:to/SQL/;
-          SELECT count(*)
+        $body = qq:to/SQL/;
+          SELECT count(*)$hints-sp
           FROM (
             SELECT DISTINCT $cols
             $from-clause
@@ -415,19 +483,23 @@ class SqlAdapter does Adapter is export {
           SQL
       }
     } else {
-      $stmt.sql = qq:to/SQL/;
-        SELECT count(*)
+      $body = qq:to/SQL/;
+        SELECT count(*)$hints-sp
         $from-clause
         $joins-sql
         $where-clause
         SQL
     }
 
+    my $annotated = self.attach-annotations($body, :@annotations);
+    $stmt.sql = $cte-prefix ?? "$cte-prefix\n$annotated" !! $annotated;
     self.exec-stmt($stmt)[0][0].Int;
   }
 
-  method aggregate(Str:D :$table, Str:D :$op, :$col is copy, :%where, :%where-not, :@or-groups, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
+  method aggregate(Str:D :$table, Str:D :$op, :$col is copy, :%where, :%where-not, :@or-groups, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints) {
     my $stmt = SqlStmt.new(:adapter(self));
+    my $cte-prefix = self.build-ctes($stmt, :@ctes);
+    my $hints = self.format-optimizer-hints(@optimizer-hints);
     my $qualifier = $from-alias.defined ?? $from-alias !! $table;
     my $from-clause = $from-source.defined ?? "FROM $from-source" !! "FROM $table";
     my $joins-sql = @joins.elems ?? @joins.join("\n") !! '';
@@ -442,15 +514,18 @@ class SqlAdapter does Adapter is export {
     my $having-clause = self.build-having($stmt, @having);
 
     my $select-cols = @group.elems ?? "$group-list, $agg-col" !! $agg-col;
+    my $select-keyword = $hints ?? "SELECT $hints" !! 'SELECT';
 
-    $stmt.sql = qq:to/SQL/;
-      SELECT $select-cols
+    my $body = qq:to/SQL/;
+      $select-keyword $select-cols
       $from-clause
       $joins-sql
       $where-clause
       $group-clause
       $having-clause
       SQL
+    my $annotated = self.attach-annotations($body, :@annotations);
+    $stmt.sql = $cte-prefix ?? "$cte-prefix\n$annotated" !! $annotated;
 
     my @rows = self.exec-stmt($stmt);
 
@@ -512,6 +587,14 @@ class SqlAdapter does Adapter is export {
 
   method ddl-drop-table(Str:D $table) {
     self.exec("DROP TABLE $table");
+  }
+
+  # Drop every table the adapter can see. Adapters override to disable FK
+  # checks for the duration of the drops so order does not matter.
+  method ddl-drop-all-tables(--> List) {
+    my @tables = self.get-table-names.list;
+    self.ddl-drop-table($_) for @tables;
+    @tables;
   }
 
   method ddl-remove-column(Str:D $table, $field) {

@@ -132,6 +132,12 @@ class PgAdapter is SqlAdapter is export {
     self.exec-stmt($stmt);
   }
 
+  method ddl-drop-all-tables(--> List) {
+    my @tables = self.get-table-names.list;
+    self.exec("DROP TABLE IF EXISTS {$_} CASCADE") for @tables;
+    @tables;
+  }
+
   method get-table-names {
     my @fields = <table_name>.map({ Field.new(:name($_), :type('character varying')) });
     my $stmt = self.build-select(

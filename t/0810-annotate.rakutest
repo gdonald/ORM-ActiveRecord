@@ -1,0 +1,64 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 13;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Anderson'});
+User.create({fname => 'Bob',   lname => 'Brown'});
+User.create({fname => 'Carol', lname => 'Carter'});
+
+# annotate attaches /* comment */ to the SQL
+my $sql = User.annotate('by reports controller').to-sql;
+ok $sql.contains('/* by reports controller */'), 'annotate appends a /* comment */';
+
+# multiple annotations stack in declaration order
+my $sql2 = User.annotate('first').annotate('second').to-sql;
+ok $sql2.contains('/* first */'), 'first annotation present';
+ok $sql2.contains('/* second */'), 'second annotation present';
+ok $sql2.index('/* first */') < $sql2.index('/* second */'),
+   'annotations preserve declaration order';
+
+# annotate does not change result rows
+my @rows = User.annotate('observability').order('fname').all;
+ok @rows.elems == 3, 'annotate does not affect row count';
+ok @rows[0].fname eq 'Alice', 'rows still return in expected order';
+
+# annotate composes with where
+my @bobs = User.annotate('lookup').where({fname => 'Bob'}).all;
+ok @bobs.elems == 1 && @bobs[0].fname eq 'Bob', 'annotate composes with where';
+
+# annotate sanitizes attempts to close the comment early
+my $sql3 = User.annotate('oops */ DROP TABLE users; /*').to-sql;
+ok !$sql3.contains('*/ DROP TABLE users; /*'),
+   'annotate neutralises embedded comment terminators';
+
+# optimizer-hints emits /*+ hint */ right after SELECT
+my $hint-sql = User.optimizer-hints('MAX_EXECUTION_TIME(1000)').to-sql;
+ok $hint-sql.contains('/*+ MAX_EXECUTION_TIME(1000) */'),
+   'optimizer-hints emits a /*+ ... */ block';
+ok $hint-sql ~~ /'SELECT' \s+ '/*+'/,
+   'optimizer-hints sits directly after SELECT';
+
+# Multiple hints concatenate inside the same /*+ ... */ block
+my $hint-sql2 = User.optimizer-hints('A', 'B').to-sql;
+ok $hint-sql2.contains('/*+ A B */'), 'multiple hints share one /*+ ... */ block';
+
+# Hint queries still run and return rows
+my @hinted = User.optimizer-hints('NO_INDEX_MERGE(users)').all;
+ok @hinted.elems == 3, 'optimizer-hints does not change row count';
+
+# annotate without arguments dies
+my $threw = False;
+try { User.all.annotate(); CATCH { default { $threw = True } } }
+ok $threw, 'annotate() with no args dies';
+
+User.destroy-all;
