@@ -1,6 +1,7 @@
 
 use ORM::ActiveRecord::Schema::Field;
 use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
 use ORM::ActiveRecord::Support::Utils;
 
 class Query is export {
@@ -22,6 +23,8 @@ class Query is export {
   has @!references;
   has Bool $!readonly = False;
   has @!joins;
+  has Bool $!is-none = False;
+  has Hash $!create-with-attrs = {};
 
   submethod BUILD(Mu:U :$!class, Hash:D :$params) {
     $!table = Utils.table-name($!class);
@@ -46,6 +49,18 @@ class Query is export {
   method references-values { @!references }
   method readonly-value    { $!readonly }
   method joins-values      { @!joins }
+  method is-none-value     { $!is-none }
+  method create-with-attrs { $!create-with-attrs }
+
+  method create-with(Hash:D $attrs) {
+    for $attrs.kv -> $k, $v { $!create-with-attrs{$k} = $v }
+    self;
+  }
+
+  method none {
+    $!is-none = True;
+    self;
+  }
 
   method or-groups-payload {
     @!or-relations.map({
@@ -171,6 +186,8 @@ class Query is export {
     @!references.append: $other.references-values if $other.references-values.elems;
     $!readonly = True if $other.readonly-value;
     @!joins.append: $other.joins-values if $other.joins-values.elems;
+    $!is-none = True if $other.is-none-value;
+    for $other.create-with-attrs.kv -> $k, $v { $!create-with-attrs{$k} = $v }
     self;
   }
 
@@ -412,6 +429,7 @@ class Query is export {
   }
 
   method perform {
+    return () if $!is-none;
     my @or-groups = self.or-groups-payload;
     my @objects = DB.shared.get-objects(
       :$!table, :$!class, :@!fields,
@@ -434,6 +452,7 @@ class Query is export {
   }
 
   method count {
+    return 0 if $!is-none;
     my @or-groups = self.or-groups-payload;
     DB.shared.count-records(
       :$!table, where => $!params, where-not => $!not-params, :@or-groups,
@@ -444,7 +463,8 @@ class Query is export {
     );
   }
 
-  method first {
+  multi method first {
+    return Any if $!is-none;
     my @order = @!order.elems ?? @!order !! ('id',);
     my @or-groups = self.or-groups-payload;
     my $obj = DB.shared.get-object(:$!table, :$!class, :@!fields, where => $!params, where-not => $!not-params, :@or-groups, :@order, distinct => $!distinct, group => @!group, having => @!having, from-source => $!from-source, from-alias => $!from-alias, joins => @!joins);
@@ -452,7 +472,29 @@ class Query is export {
     $obj;
   }
 
-  method last {
+  multi method first(Int:D $n) {
+    return () if $!is-none;
+    die "first($n): N must be >= 0" if $n < 0;
+    return () if $n == 0;
+    my @order = @!order.elems ?? @!order !! ('id',);
+    my @or-groups = self.or-groups-payload;
+    my @objects = DB.shared.get-objects(
+      :$!table, :$!class, :@!fields,
+      where => $!params, where-not => $!not-params, :@or-groups,
+      :@order, limit => $n, offset => $!offset,
+      distinct => $!distinct,
+      group => @!group, having => @!having,
+      from-source => $!from-source, from-alias => $!from-alias,
+      joins => @!joins,
+    );
+    if $!readonly {
+      .make-readonly for @objects;
+    }
+    @objects;
+  }
+
+  multi method last {
+    return Any if $!is-none;
     my @order = @!order.elems
       ?? @!order
       !! ('id DESC',);
@@ -462,7 +504,62 @@ class Query is export {
     $obj;
   }
 
+  multi method last(Int:D $n) {
+    return () if $!is-none;
+    die "last($n): N must be >= 0" if $n < 0;
+    return () if $n == 0;
+    my @order = @!order.elems
+      ?? @!order.map({ self!reverse-order-fragment($_) })
+      !! ('id DESC',);
+    my @or-groups = self.or-groups-payload;
+    my @objects = DB.shared.get-objects(
+      :$!table, :$!class, :@!fields,
+      where => $!params, where-not => $!not-params, :@or-groups,
+      :@order, limit => $n, offset => $!offset,
+      distinct => $!distinct,
+      group => @!group, having => @!having,
+      from-source => $!from-source, from-alias => $!from-alias,
+      joins => @!joins,
+    );
+    if $!readonly {
+      .make-readonly for @objects;
+    }
+    @objects.reverse;
+  }
+
+  method !reverse-order-fragment($frag) {
+    given $frag {
+      when Str {
+        if $frag.uc.contains(' DESC') { $frag.subst(/:i ' DESC' \s* $/, ' ASC') }
+        elsif $frag.uc.contains(' ASC') { $frag.subst(/:i ' ASC' \s* $/, ' DESC') }
+        else { $frag ~ ' DESC' }
+      }
+      default { $frag }
+    }
+  }
+
+  method sole {
+    die X::RecordNotFound.new(:model($!class.^name)) if $!is-none;
+    my @or-groups = self.or-groups-payload;
+    my @rows = DB.shared.get-objects(
+      :$!table, :$!class, :@!fields,
+      where => $!params, where-not => $!not-params, :@or-groups,
+      order => @!order,
+      limit => 2, offset => $!offset,
+      distinct => $!distinct,
+      group => @!group, having => @!having,
+      from-source => $!from-source, from-alias => $!from-alias,
+      joins => @!joins,
+    );
+    die X::RecordNotFound.new(:model($!class.^name)) unless @rows.elems;
+    die X::SoleRecordExceeded.new(:model($!class.^name)) if @rows.elems > 1;
+    my $obj = @rows[0];
+    $obj.make-readonly if $!readonly;
+    $obj;
+  }
+
   method pluck(*@cols) {
+    return () if $!is-none;
     my @names = @cols.elems ?? @cols.map({ .Str }) !! @!select.elems ?? @!select !! die 'pluck requires at least one column';
     my @fields = @names.map({ Field.new(:name($_), :type('character varying')) });
     my @or-groups = self.or-groups-payload;
@@ -485,6 +582,55 @@ class Query is export {
 
   method ids {
     self.pluck('id').map({ .Int });
+  }
+
+  method !build-attrs-for-create(Hash:D $params --> Hash) {
+    my %attrs;
+    for $!params.kv -> $k, $v {
+      next if $v ~~ Array | List | Seq | Range;
+      next unless $v.defined;
+      %attrs{$k} = $v;
+    }
+    for $!create-with-attrs.kv -> $k, $v { %attrs{$k} = $v }
+    for $params.kv -> $k, $v { %attrs{$k} = $v }
+    %attrs;
+  }
+
+  method !find-with-params(Hash:D $params) {
+    my %saved-params = %( $!params );
+    self.where($params);
+    my $obj = self.first;
+    $!params = %saved-params;
+    $obj;
+  }
+
+  method find-or-create-by(Hash:D $params) {
+    my $obj = self!find-with-params($params);
+    return $obj if $obj.defined;
+    $!class.create(self!build-attrs-for-create($params));
+  }
+
+  method find-or-create-by-or-die(Hash:D $params) {
+    my $obj = self!find-with-params($params);
+    return $obj if $obj.defined;
+    $!class.create-or-die(self!build-attrs-for-create($params));
+  }
+
+  method find-or-initialize-by(Hash:D $params) {
+    my $obj = self!find-with-params($params);
+    return $obj if $obj.defined;
+    $!class.build(self!build-attrs-for-create($params));
+  }
+
+  method pick(*@cols) {
+    return Any if $!is-none;
+    my @names = @cols.elems ?? @cols.map({ .Str }) !! die 'pick requires at least one column';
+    my $prev-limit = $!limit;
+    $!limit = 1;
+    my @rows = self.pluck(|@names);
+    $!limit = $prev-limit;
+    return Any unless @rows.elems;
+    @rows[0];
   }
 
   method exists {

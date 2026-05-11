@@ -1,0 +1,39 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 6;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+# class-level returns a chainable relation
+my $rel = User.create-with({lname => 'CW'});
+ok $rel.create-with-attrs<lname> eq 'CW', 'create-with stores defaults on the relation';
+
+# defaults flow into find-or-create-by
+my $u1 = User.create-with({lname => 'CW'}).find-or-create-by({fname => 'Greg'});
+ok $u1.defined && $u1.fname eq 'Greg' && $u1.lname eq 'CW',
+   'create-with defaults applied when find-or-create-by creates a row';
+
+# repeated call finds the existing row, defaults not re-applied
+my $u2 = User.create-with({lname => 'Other'}).find-or-create-by({fname => 'Greg'});
+ok $u2.id == $u1.id, 'second find-or-create-by hits the existing row';
+ok $u2.lname eq 'CW', 'found row keeps its original lname; defaults do not overwrite';
+
+# create-with composes with where: where also contributes defaults
+my $u3 = User.where({lname => 'Whoa'}).create-with({lname => 'Defaulted'})
+             .find-or-initialize-by({fname => 'Solo'});
+ok $u3.lname eq 'Defaulted', 'create-with wins over where conditions for defaults';
+
+# explicit attrs in find-or-create-by win over create-with
+my $u4 = User.create-with({fname => 'OverrideMe', lname => 'L'})
+             .find-or-create-by({fname => 'Real-Name'});
+ok $u4.fname eq 'Real-Name', 'find params override create-with';
+
+User.destroy-all;

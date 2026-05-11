@@ -1,0 +1,50 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 11;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'A'});
+User.create({fname => 'Bob',   lname => 'B'});
+User.create({fname => 'Carol', lname => 'C'});
+
+# basic null relation
+my @rows = User.none.all;
+ok @rows.elems == 0, 'Model.none.all returns no rows';
+
+ok User.none.count == 0, 'Model.none.count is 0';
+ok User.none.exists == False, 'Model.none.exists is False';
+ok !User.none.first.defined, 'Model.none.first is Nil';
+ok !User.none.last.defined, 'Model.none.last is Nil';
+
+# chainable: where + order on a none relation still yields no rows
+my @chained = User.none.where({fname => 'Alice'}).order('id').all;
+ok @chained.elems == 0, 'none is chainable: where + order still empty';
+
+# pluck/ids return empty
+my @plucked = User.none.pluck('fname');
+ok @plucked.elems == 0, 'none.pluck returns empty';
+
+my @ids = User.none.ids;
+ok @ids.elems == 0, 'none.ids returns empty';
+
+# merge propagates none
+my @merged = User.where({fname => 'Alice'}).merge(User.none).all;
+ok @merged.elems == 0, 'merge(other.none) makes the result empty';
+
+# sticky once set
+my @still = User.none.where({fname => 'Bob'}).all;
+ok @still.elems == 0, 'none stays none after further chaining';
+
+# control: ordinary query still works
+ok User.all.count == 3, 'control: non-none still queries normally';
+
+User.destroy-all;

@@ -1,0 +1,48 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 7;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Aardvark'});
+User.create({fname => 'Bob',   lname => 'Bear'});
+User.create({fname => 'Carol', lname => 'Cat'});
+
+# single-column pick returns a scalar
+my $first-fname = User.order('fname').pick('fname');
+ok $first-fname eq 'Alice', 'pick(col) returns scalar from first matched row';
+
+# pick honors where filtering
+my $bob = User.where({fname => 'Bob'}).pick('lname');
+ok $bob eq 'Bear', 'pick respects where';
+
+# multi-column pick returns a list
+my $row = User.order('fname').pick('fname', 'lname');
+ok $row.defined && $row.elems == 2 && $row[0] eq 'Alice' && $row[1] eq 'Aardvark', 'pick(a,b) returns list';
+
+# pick of no matches returns Any
+my $none = User.where({fname => 'Zelda'}).pick('fname');
+ok !$none.defined, 'pick on no rows returns Any';
+
+# pick at class level
+my $any-fname = User.pick('fname');
+ok $any-fname.defined, 'Model.pick(col) works at the class level';
+
+# pick on .none short-circuits to Any
+my $none-pick = User.none.pick('fname');
+ok !$none-pick.defined, 'pick on .none returns Any without hitting DB';
+
+# pick does not mutate underlying limit on the relation
+my $q = User.order('fname');
+$q.pick('fname');
+ok $q.all.elems == 3, 'pick does not permanently set limit on the relation';
+
+User.destroy-all;

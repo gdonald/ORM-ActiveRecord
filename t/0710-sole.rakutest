@@ -1,0 +1,69 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::X;
+use Test;
+
+class User is Model {}
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+User.create({fname => 'Bob',   lname => 'B'});
+User.create({fname => 'Carol', lname => 'A'});
+
+# sole on a relation that matches exactly one
+my $sole = User.where({fname => 'Alice'}).sole;
+ok $sole.defined && $sole.id == $alice.id, 'sole returns the one matching row';
+
+# find-sole-by shortcut
+my $by = User.find-sole-by({fname => 'Bob'});
+ok $by.defined && $by.fname eq 'Bob', 'find-sole-by returns the single row';
+
+# raises when there is more than one match
+my $multi-err;
+{
+  CATCH { when X::SoleRecordExceeded { $multi-err = $_ } }
+  User.where({lname => 'A'}).sole;
+}
+ok $multi-err.defined, 'sole raises SoleRecordExceeded for >1 match';
+ok $multi-err.message ~~ /'one'/, 'SoleRecordExceeded message mentions one';
+
+# raises when there are zero matches
+my $none-err;
+{
+  CATCH { when X::RecordNotFound { $none-err = $_ } }
+  User.where({fname => 'Zelda'}).sole;
+}
+ok $none-err.defined, 'sole raises RecordNotFound when no match';
+
+# find-sole-by also raises on too many
+my $by-multi-err;
+{
+  CATCH { when X::SoleRecordExceeded { $by-multi-err = $_ } }
+  User.find-sole-by({lname => 'A'});
+}
+ok $by-multi-err.defined, 'find-sole-by raises SoleRecordExceeded for >1';
+
+# find-sole-by raises RecordNotFound on no match
+my $by-none-err;
+{
+  CATCH { when X::RecordNotFound { $by-none-err = $_ } }
+  User.find-sole-by({fname => 'Nobody'});
+}
+ok $by-none-err.defined, 'find-sole-by raises RecordNotFound on miss';
+
+# sole on a none relation raises RecordNotFound, not SoleRecordExceeded
+my $on-none-err;
+{
+  CATCH { when X::RecordNotFound { $on-none-err = $_ } }
+  User.none.sole;
+}
+ok $on-none-err.defined, 'sole on .none raises RecordNotFound';
+
+User.destroy-all;

@@ -97,6 +97,26 @@ chain conditions onto it just like `where`.
 User.all.where({active => True}).order('lname').all;
 ```
 
+## none
+
+`Model.none` returns a chainable null relation. Every operation that would
+hit the database returns the empty result for its return type (`[]`, `0`,
+`False`, `Nil`, …) without issuing SQL. Useful as a "no match" return value
+from helper methods that must still hand back a chainable relation.
+
+```perl6
+sub recent-for($user) {
+  return User.none unless $user.defined && $user.active;
+  User.where({author_id => $user.id}).order('created_at DESC');
+}
+
+recent-for(Nil).count;     # 0, no query issued
+recent-for(Nil).all;       # ()
+```
+
+`none` is sticky once set; further `where`, `order`, etc. compose but the
+result stays empty. `merge(other.none)` propagates the null relation.
+
 ## pluck and ids
 
 `pluck` returns raw column values without instantiating model objects. It is

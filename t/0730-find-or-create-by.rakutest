@@ -1,0 +1,62 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::X;
+use Test;
+
+class User is Model {
+  submethod BUILD {
+    self.validate: 'fname', { :presence, length => { min => 4, max => 32 } }
+  }
+}
+
+plan 13;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'A'});
+
+# returns existing record when found
+my $found = User.find-or-create-by({fname => 'Alice'});
+ok $found.defined && $found.fname eq 'Alice', 'find-or-create-by returns existing row';
+ok User.where({fname => 'Alice'}).count == 1, 'no duplicate row created when found';
+
+# creates a new record when missing
+my $created = User.find-or-create-by({fname => 'Bobby', lname => 'B'});
+ok $created.defined && $created.id > 0, 'find-or-create-by creates new row when missing';
+ok User.where({fname => 'Bobby'}).count == 1, 'new row visible after create';
+
+# returns an unsaved invalid record when validation fails (no raise)
+my $invalid = User.find-or-create-by({fname => 'no'});
+ok $invalid.defined, 'find-or-create-by returns the unsaved invalid record';
+ok $invalid.id == 0, 'invalid record was not persisted';
+ok $invalid.is-invalid, 'returned record has validation errors';
+
+# -or-die raises on invalid
+my $err;
+{
+  CATCH { when X::RecordInvalid { $err = $_ } }
+  User.find-or-create-by-or-die({fname => 'no'});
+}
+ok $err.defined, 'find-or-create-by-or-die raises X::RecordInvalid';
+
+# scoped on relation: where conditions merge into create attrs
+my $scoped = User.where({lname => 'Z'}).find-or-create-by({fname => 'Carol'});
+ok $scoped.defined && $scoped.id > 0, 'relation.find-or-create-by creates a row';
+ok $scoped.lname eq 'Z', 'where conditions merged into create attrs';
+ok $scoped.fname eq 'Carol', 'find params win on create attrs';
+
+# the scoped find sees only matching rows
+ok User.where({lname => 'Z'}).find-or-create-by({fname => 'Carol'}).id == $scoped.id,
+   'second call finds the previously-created scoped row';
+
+# create-with provides defaults that lose to find-params but win over where conditions
+my $cw = User.where({lname => 'X'}).create-with({fname => 'DefaultName', lname => 'Override'})
+            .find-or-create-by({fname => 'Real-Name'});
+ok $cw.defined && $cw.fname eq 'Real-Name' && $cw.lname eq 'Override',
+   'create-with sets defaults that find params override but lname comes from create-with';
+
+User.destroy-all;

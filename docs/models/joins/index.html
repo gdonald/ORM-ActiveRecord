@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../aggregation/">
+        <link rel="prev" href="../queries/">
       
       
-        <link rel="next" href="../callbacks/">
+        <link rel="next" href="../aggregation/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Persistence - ORM::ActiveRecord</title>
+        <title>Joins - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#persistence" class="md-skip">
+        <a href="#joins" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Persistence
+              Joins
             
           </span>
         </div>
@@ -435,10 +435,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../joins/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joins
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -454,6 +481,103 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#by-association-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        By association name
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nested-associations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nested associations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#raw-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raw SQL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#left-outer-joins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        left-outer-joins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filtering-on-a-joined-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filtering on a joined table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        references
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distinct-under-joins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        distinct under joins
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -491,37 +615,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Persistence
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../persistence/" class="md-nav__link">
         
   
   
@@ -537,70 +634,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#save-and-update" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Save and Update
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#build" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Build
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#destroy-and-delete" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Destroy and Delete
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#automatic-timestamps" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Automatic Timestamps
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -832,10 +865,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#save-and-update" class="md-nav__link">
+  <a href="#by-association-name" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Save and Update
+        By association name
       
     </span>
   </a>
@@ -843,10 +876,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#build" class="md-nav__link">
+  <a href="#nested-associations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Build
+        Nested associations
       
     </span>
   </a>
@@ -854,10 +887,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#destroy-and-delete" class="md-nav__link">
+  <a href="#raw-sql" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Destroy and Delete
+        Raw SQL
       
     </span>
   </a>
@@ -865,10 +898,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#automatic-timestamps" class="md-nav__link">
+  <a href="#left-outer-joins" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Automatic Timestamps
+        left-outer-joins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filtering-on-a-joined-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filtering on a joined table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        references
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distinct-under-joins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        distinct under joins
       
     </span>
   </a>
@@ -892,131 +958,79 @@
 
 
 
-<h1 id="persistence">Persistence</h1>
-<p>ORM::ActiveRecord exposes both quiet (return <code>False</code> on failure) and loud
-(raise an exception on failure) variants of the persistence methods. Use
-whichever fits the situation: forms and user-driven flows usually want the
-quiet variants so they can re-render with errors, while scripts, callbacks,
-and worker code usually want the loud variants so failures aren't silently
-swallowed.</p>
-<h2 id="save-and-update">Save and Update</h2>
-<p><code>save</code> and <code>update</code> return <code>True</code> on success or <code>False</code> if validation failed.
-Inspect <code>errors</code> to see what went wrong.</p>
+<h1 id="joins">Joins</h1>
+<p><code>joins</code> and <code>left-outer-joins</code> add SQL <code>JOIN</code> clauses to a relation. They
+accept several forms:</p>
+<h2 id="by-association-name">By association name</h2>
+<p>Pass an association name (defined via <code>has-many</code> / <code>belongs-to</code>):</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Subscription</span>.<span class="n">joins</span>(<span class="s">&#39;user&#39;</span>).<span class="nb">count</span>;            <span class="c1"># belongs_to side</span>
+<span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>).<span class="nb">count</span>;            <span class="c1"># has_many side</span>
+<span class="n">User</span>.<span class="n">joins</span>(:<span class="n">magazines</span>).<span class="nb">count</span>;                <span class="c1"># has_many :through</span>
+</code></pre></div></td></tr></table></div>
+
+<p>The join condition (<code>subscriptions.user_id = users.id</code>, etc.) is derived from
+the association definition.</p>
+<h2 id="nested-associations">Nested associations</h2>
+<p>A nested-hash form follows multi-level associations:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>(:<span class="n">magazine</span>)).<span class="nb">count</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>This emits a join through <code>subscriptions</code> then <code>magazines</code>.</p>
+<h2 id="raw-sql">Raw SQL</h2>
+<p>For one-offs that don't map to an association, pass a literal join clause:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$raw</span> = <span class="s">&#39;INNER JOIN subscriptions ON subscriptions.user_id = users.id&#39;</span>;
+<span class="n">User</span>.<span class="n">joins</span>(<span class="nv">$raw</span>).<span class="nb">count</span>;
+</code></pre></div></td></tr></table></div>
+
+<h2 id="left-outer-joins">left-outer-joins</h2>
+<p><code>left-outer-joins</code> keeps rows from the base table even when no related row
+exists. Useful for "find users with or without subscriptions".</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">left-outer-joins</span>(:<span class="n">subscriptions</span>).<span class="nb">count</span>;            <span class="c1"># all users</span>
+<span class="n">User</span>.<span class="n">left-outer-joins</span>(:<span class="n">subscriptions</span>).<span class="n">distinct</span>.<span class="nb">count</span>;   <span class="c1"># all users, deduped</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="filtering-on-a-joined-table">Filtering on a joined table</h2>
+<p>Once you've joined, <code>where</code> accepts a nested hash to filter on the joined
+table's columns.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="nb">new</span>;
-<span class="nv">$user</span>.<span class="n">fname</span> = <span class="s">&#39;&#39;</span>;
-
-<span class="k">unless</span> <span class="nv">$user</span>.<span class="n">save</span> {
-  <span class="k">for</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">errors</span> -&gt; <span class="nv">$e</span> {
-    <span class="nb">say</span> <span class="nv">$e</span>.<span class="n">field</span>.<span class="nb">name</span> ~ <span class="s">&#39; &#39;</span> ~ <span class="nv">$e</span>.<span class="nb">message</span>;
-  }
-}
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Subscription</span>.<span class="n">joins</span>(:<span class="n">user</span>).<span class="n">where</span>({<span class="n">users</span> =&gt; {<span class="n">fname</span> =&gt; <span class="s">&#39;Alice&#39;</span>}}).<span class="nb">all</span>;
+<span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>(:<span class="n">magazine</span>))
+    .<span class="n">where</span>({<span class="n">magazines</span> =&gt; {<span class="n">title</span> =&gt; <span class="s">&#39;Mad&#39;</span>}})
+    .<span class="n">distinct</span>
+    .<span class="nb">all</span>;
 </code></pre></div></td></tr></table></div>
 
-<p><code>save-or-die</code> and <code>update-or-die</code> raise <code>X::RecordInvalid</code> instead. The
-exception carries the failing record and a list of human-readable messages.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
-
-<span class="k">try</span> {
-  <span class="n">User</span>.<span class="n">create-or-die</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;&#39;</span>});
-
-  <span class="k">CATCH</span> {
-    <span class="k">when</span> <span class="o">X</span>::<span class="n">RecordInvalid</span> {
-      <span class="nb">say</span> .<span class="nb">message</span>;        <span class="c1"># Validation failed: fname must be present</span>
-      <span class="nb">say</span> .<span class="n">messages</span>;       <span class="c1"># (fname must be present)</span>
-      <span class="nb">say</span> .<span class="n">record</span>.<span class="n">fname</span>;   <span class="c1"># &#39;&#39;</span>
-    }
-  }
-}
-</code></pre></div></td></tr></table></div>
-
-<p><code>create-or-die</code> is a class-level convenience that builds the record, runs
-validations, and raises if it could not be saved.</p>
-<h2 id="build">Build</h2>
-<p><code>build</code> constructs an in-memory record without touching the database. It's
-the right choice when you want to populate a record, run validations against
-it, and only save once everything checks out.</p>
+<p>A bare column name in <code>where</code> after a join still resolves to the base table:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">build</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>, <span class="n">lname</span> =&gt; <span class="s">&#39;Donald&#39;</span>});
-
-<span class="nv">$user</span>.<span class="n">is-valid</span>;     <span class="c1"># True / False — runs validators without persisting</span>
-<span class="nv">$user</span>.<span class="nb">id</span>;           <span class="c1"># 0 — unsaved</span>
-<span class="nv">$user</span>.<span class="n">save</span>;         <span class="c1"># persists; id becomes the new surrogate key</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>).<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Alice&#39;</span>}).<span class="n">distinct</span>.<span class="nb">count</span>;
+<span class="c1"># WHERE users.fname = &#39;Alice&#39;</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>build</code> with no arguments returns a record with default attributes:</p>
+<h2 id="references">references</h2>
+<p><code>references(*@table-names)</code> is a hint that named tables will be filtered or
+ordered against. It pre-declares the join targets without altering row counts
+itself, which matters when combining with eager loading (where the difference
+between <code>preload</code> and <code>eager_load</code> depends on whether you reference the
+joined table elsewhere).</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$blank</span> = <span class="n">User</span>.<span class="n">build</span>;
-<span class="nv">$blank</span>.<span class="n">fname</span> = <span class="s">&#39;Alice&#39;</span>;
-<span class="nv">$blank</span>.<span class="n">save</span>;
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">references</span>(<span class="s">&#39;posts&#39;</span>).<span class="nb">count</span>;
+<span class="n">User</span>.<span class="n">references</span>(<span class="s">&#39;posts&#39;</span>, <span class="s">&#39;comments&#39;</span>);
 </code></pre></div></td></tr></table></div>
 
-<p>The difference from <code>create</code>: <code>create</code> builds <strong>and</strong> saves in one step (and
-returns whether the save succeeded via the resulting record's <code>id</code>), while
-<code>build</code> is purely in-memory. Reach for <code>build</code> when you need to inspect or
-mutate the record before deciding to save.</p>
-<h2 id="destroy-and-delete">Destroy and Delete</h2>
-<p><code>destroy</code> removes the record from the database <strong>and</strong> fires the
-<code>before-destroy</code> and <code>after-destroy</code> callbacks. Use it when associated cleanup,
-logging, or notifications need to run.</p>
+<h2 id="distinct-under-joins">distinct under joins</h2>
+<p>A <code>joins</code> on a <code>has_many</code> returns one row per join row, so deduping with
+<code>distinct</code> is common when counting base records.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Page</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="o">after-</span><span class="n">destroy:</span> -&gt; { <span class="nb">say</span> <span class="s">&quot;Page #{self.id} torn down&quot;</span> };
-  }
-}
-
-<span class="k">my</span> <span class="nv">$page</span> = <span class="n">Page</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;Welcome&#39;</span>});
-<span class="nv">$page</span>.<span class="n">destroy</span>;        <span class="c1"># fires the after-destroy callback</span>
-<span class="nb">say</span> <span class="nv">$page</span>.<span class="nb">id</span>;         <span class="c1"># 0  -- the in-memory record&#39;s id is cleared</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>).<span class="nb">count</span>;             <span class="c1"># = total subscription count</span>
+<span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>).<span class="n">distinct</span>.<span class="nb">count</span>;    <span class="c1"># = users with &gt;= 1 subscription</span>
 </code></pre></div></td></tr></table></div>
-
-<p><code>delete</code> issues the <code>DELETE</code> directly without callbacks. Use it when you
-want a side-effect-free removal (for example, in tests or in a destroy
-callback for a parent record).</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$page</span>.<span class="n">delete</span>;         <span class="c1"># no callbacks, single SQL DELETE</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>destroy-all</code> is a class-level convenience that wipes every row in the table
-without instantiating records or firing per-row callbacks.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Page</span>.<span class="n">destroy-all</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="automatic-timestamps">Automatic Timestamps</h2>
-<p>If a table has <code>created_at</code> and/or <code>updated_at</code> columns, ORM::ActiveRecord
-manages them for you. <code>created_at</code> is set on insert; <code>updated_at</code> is set on
-every save (insert and update).</p>
-<p>See <a href="../../migrations/#timestamps">Migrations &raquo; Timestamps</a> for the
-column setup.</p>
 
 
 

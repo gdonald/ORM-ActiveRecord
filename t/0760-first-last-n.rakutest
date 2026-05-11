@@ -1,0 +1,66 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 14;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+my $bob   = User.create({fname => 'Bob',   lname => 'B'});
+my $carol = User.create({fname => 'Carol', lname => 'C'});
+my $dave  = User.create({fname => 'Dave',  lname => 'D'});
+
+# class-level first / last with N
+my @firsts = User.first(2);
+ok @firsts.elems == 2, 'Model.first(N) returns N rows';
+ok @firsts[0].id == $alice.id && @firsts[1].id == $bob.id,
+   'Model.first(N) returns rows ordered by id ASC';
+
+my @lasts = User.last(2);
+ok @lasts.elems == 2, 'Model.last(N) returns N rows';
+ok @lasts[0].id == $carol.id && @lasts[1].id == $dave.id,
+   'Model.last(N) returns the last N rows in ASC order';
+
+# zero-arg variants still return a single object
+ok User.first.id == $alice.id, 'Model.first still returns one row';
+ok User.last.id  == $dave.id,  'Model.last still returns one row';
+
+# N greater than row count returns all available
+my @all-firsts = User.first(99);
+ok @all-firsts.elems == 4, 'first(N) with N > rows returns all';
+
+# zero N returns empty
+ok User.first(0).elems == 0, 'first(0) returns empty';
+ok User.last(0).elems == 0, 'last(0) returns empty';
+
+# relation-level first / last with N
+my @rel-firsts = User.where({fname => ['Alice', 'Bob', 'Carol']}).first(2);
+ok @rel-firsts.elems == 2 && @rel-firsts[0].id == $alice.id && @rel-firsts[1].id == $bob.id,
+   'relation.first(N) respects WHERE';
+
+my @rel-lasts = User.where({fname => ['Alice', 'Bob', 'Carol']}).last(2);
+ok @rel-lasts.elems == 2 && @rel-lasts[0].id == $bob.id && @rel-lasts[1].id == $carol.id,
+   'relation.last(N) respects WHERE and returns ASC';
+
+# explicit order is honored
+my @ordered-firsts = User.order('fname DESC').first(2);
+ok @ordered-firsts.elems == 2 && @ordered-firsts[0].fname eq 'Dave' && @ordered-firsts[1].fname eq 'Carol',
+   'first(N) honors a custom order';
+
+my @ordered-lasts = User.order('fname').last(2);
+ok @ordered-lasts.elems == 2
+   && @ordered-lasts[0].fname eq 'Carol'
+   && @ordered-lasts[1].fname eq 'Dave',
+   'last(N) reverses a custom order, returns trailing rows in original order';
+
+# none short-circuit
+ok User.none.first(3).elems == 0, 'first(N) on .none is empty';
+
+User.destroy-all;

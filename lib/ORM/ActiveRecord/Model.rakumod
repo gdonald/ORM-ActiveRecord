@@ -198,11 +198,44 @@ class Model is export {
     $obj;
   }
 
-  method last {
-    my $table = Utils.table-name(self);
-    my @fields = DB.shared.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
-    my %where;
-    DB.shared.get-object(:$table, class => self.WHAT, :@fields, :%where, order => ('id DESC',));
+  method sole {
+    self.all.sole;
+  }
+
+  method find-sole-by(Hash:D $params) {
+    self.where($params).sole;
+  }
+
+  method find-or-create-by(Hash:D $params) {
+    self.all.find-or-create-by($params);
+  }
+
+  method find-or-create-by-or-die(Hash:D $params) {
+    self.all.find-or-create-by-or-die($params);
+  }
+
+  method find-or-initialize-by(Hash:D $params) {
+    self.all.find-or-initialize-by($params);
+  }
+
+  method create-with(Hash:D $attrs) {
+    self.all.create-with($attrs);
+  }
+
+  multi method first {
+    self.all.first;
+  }
+
+  multi method first(Int:D $n) {
+    self.all.first($n);
+  }
+
+  multi method last {
+    self.all.last;
+  }
+
+  multi method last(Int:D $n) {
+    self.all.last($n);
   }
 
   method take(Int:D $limit = 1) {
@@ -461,6 +494,10 @@ class Model is export {
     Query.new(:$class, :params(%params));
   }
 
+  method none {
+    self.all.none;
+  }
+
   method order(*@cols, *%kw) {
     self.all.order(|@cols, |%kw);
   }
@@ -531,6 +568,10 @@ class Model is export {
 
   method ids {
     self.all.ids;
+  }
+
+  method pick(*@cols) {
+    self.all.pick(|@cols);
   }
 
   method merge(Query:D $other) {

@@ -1,0 +1,38 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'A'});
+
+# returns existing record when found, no new row
+my $found = User.find-or-initialize-by({fname => 'Alice'});
+ok $found.defined && $found.id > 0, 'find-or-initialize-by returns the existing row';
+ok User.where({fname => 'Alice'}).count == 1, 'no duplicate row';
+
+# builds (unsaved) new record when not found
+my $built = User.find-or-initialize-by({fname => 'Bobby', lname => 'B'});
+ok $built.defined, 'find-or-initialize-by returns an in-memory object';
+ok $built.id == 0, 'returned object is not persisted';
+ok $built.fname eq 'Bobby' && $built.lname eq 'B', 'attrs assigned on the unsaved record';
+
+# nothing was written to DB
+ok User.where({fname => 'Bobby'}).count == 0, 'find-or-initialize-by does not insert';
+
+# relation-scoped: where + create-with both merge into the built record
+my $scoped = User.where({lname => 'Z'}).create-with({fname => 'Default'})
+                 .find-or-initialize-by({fname => 'Custom'});
+ok $scoped.defined && $scoped.id == 0, 'scoped relation returns an unsaved record';
+ok $scoped.fname eq 'Custom' && $scoped.lname eq 'Z',
+   'merged attrs: find params win, where conditions provide defaults';
+
+User.destroy-all;

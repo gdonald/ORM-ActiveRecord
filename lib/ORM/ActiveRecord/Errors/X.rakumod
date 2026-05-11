@@ -23,3 +23,10 @@ class X::ReadOnlyRecord is Exception is export {
     $!model.defined ?? "$!model is marked as readonly" !! 'Record is marked as readonly';
   }
 }
+
+class X::SoleRecordExceeded is Exception is export {
+  has Str $.model;
+  method message {
+    "Wanted only one " ~ ($!model // 'record');
+  }
+}

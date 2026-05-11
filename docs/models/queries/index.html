@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../aggregation/">
+        <link rel="prev" href="../relations/">
       
       
-        <link rel="next" href="../callbacks/">
+        <link rel="next" href="../joins/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Persistence - ORM::ActiveRecord</title>
+        <title>Queries - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#persistence" class="md-skip">
+        <a href="#queries" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Persistence
+              Queries
             
           </span>
         </div>
@@ -407,10 +407,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Queries
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -426,6 +453,114 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#where-shorthands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        where shorthands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wherenot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        where.not
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wheremissing-and-whereassociated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        where.missing and where.associated
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#excluding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        excluding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#or-and-and" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        or and and
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        merge
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rewhere" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewhere
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unscope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unscope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -491,37 +626,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Persistence
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../persistence/" class="md-nav__link">
         
   
   
@@ -537,70 +645,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#save-and-update" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Save and Update
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#build" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Build
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#destroy-and-delete" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Destroy and Delete
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#automatic-timestamps" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Automatic Timestamps
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -832,10 +876,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#save-and-update" class="md-nav__link">
+  <a href="#where-shorthands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Save and Update
+        where shorthands
       
     </span>
   </a>
@@ -843,10 +887,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#build" class="md-nav__link">
+  <a href="#wherenot" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Build
+        where.not
       
     </span>
   </a>
@@ -854,10 +898,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#destroy-and-delete" class="md-nav__link">
+  <a href="#wheremissing-and-whereassociated" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Destroy and Delete
+        where.missing and where.associated
       
     </span>
   </a>
@@ -865,10 +909,54 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#automatic-timestamps" class="md-nav__link">
+  <a href="#excluding" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Automatic Timestamps
+        excluding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#or-and-and" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        or and and
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        merge
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rewhere" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rewhere
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unscope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unscope
       
     </span>
   </a>
@@ -892,131 +980,142 @@
 
 
 
-<h1 id="persistence">Persistence</h1>
-<p>ORM::ActiveRecord exposes both quiet (return <code>False</code> on failure) and loud
-(raise an exception on failure) variants of the persistence methods. Use
-whichever fits the situation: forms and user-driven flows usually want the
-quiet variants so they can re-render with errors, while scripts, callbacks,
-and worker code usually want the loud variants so failures aren't silently
-swallowed.</p>
-<h2 id="save-and-update">Save and Update</h2>
-<p><code>save</code> and <code>update</code> return <code>True</code> on success or <code>False</code> if validation failed.
-Inspect <code>errors</code> to see what went wrong.</p>
+<h1 id="queries">Queries</h1>
+<p>This page covers the filtering and relation-modification vocabulary that
+builds on the basics in <a href="../relations/">Relations</a>. Everything here returns
+a new relation — the original is never mutated.</p>
+<h2 id="where-shorthands">where shorthands</h2>
+<p><code>where(%conditions)</code> accepts several value shapes:</p>
+<table>
+<thead>
+<tr>
+<th>Shape</th>
+<th>SQL emitted</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>where({col =&gt; $value})</code></td>
+<td><code>col = ?</code></td>
+</tr>
+<tr>
+<td><code>where({col =&gt; Nil})</code></td>
+<td><code>col IS NULL</code></td>
+</tr>
+<tr>
+<td><code>where({col =&gt; [a, b, c]})</code></td>
+<td><code>col IN (?, ?, ?)</code></td>
+</tr>
+<tr>
+<td><code>where({col =&gt; 1..10})</code></td>
+<td><code>col BETWEEN ? AND ?</code></td>
+</tr>
+<tr>
+<td><code>where({assoc =&gt; $instance})</code></td>
+<td><code>assoc_id = ?</code> (uses <code>$instance.id</code>)</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">age</span> =&gt; <span class="mi">18</span><span class="o">..</span><span class="mi">65</span>});
+<span class="n">User</span>.<span class="n">where</span>({<span class="n">email</span> =&gt; <span class="nb">Nil</span>});
+<span class="n">User</span>.<span class="n">where</span>({<span class="nb">id</span> =&gt; [<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>]});
+<span class="n">User</span>.<span class="n">where</span>({<span class="n">user</span> =&gt; <span class="nv">$alice</span>});            <span class="c1"># belongs_to :user</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="wherenot">where.not</h2>
+<p><code>where.not(%conditions)</code> adds a negated condition. <code>Nil</code>, ranges, and arrays
+work the same as the positive form.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Bob&#39;</span>}).<span class="nb">count</span>;
+<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">email</span> =&gt; <span class="nb">Nil</span>}).<span class="nb">all</span>;          <span class="c1"># IS NOT NULL</span>
+<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">age</span> =&gt; <span class="mi">18</span><span class="o">..</span><span class="mi">65</span>}).<span class="nb">all</span>;         <span class="c1"># NOT BETWEEN</span>
+<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="nb">id</span> =&gt; [<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>]}).<span class="nb">all</span>;       <span class="c1"># NOT IN (...)</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="wheremissing-and-whereassociated">where.missing and where.associated</h2>
+<p>For relations through associations, <code>where.missing(:assoc)</code> finds records
+with no associated rows; <code>where.associated(:assoc)</code> finds those that have at
+least one. Both work over <code>belongs_to</code>, <code>has_many</code>, and <code>has_many :through</code>.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>.<span class="n">missing</span>(:<span class="n">subscriptions</span>).<span class="nb">all</span>;       <span class="c1"># users with no subscription</span>
+<span class="n">User</span>.<span class="n">where</span>.<span class="n">associated</span>(:<span class="n">subscriptions</span>).<span class="nb">all</span>;    <span class="c1"># users with at least one</span>
+<span class="n">User</span>.<span class="n">where</span>.<span class="n">missing</span>(:<span class="n">magazines</span>).<span class="nb">all</span>;           <span class="c1"># honors :through</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>Model.associated(:assoc)</code> is a class-level shortcut for the common case.</p>
+<h2 id="excluding">excluding</h2>
+<p><code>excluding(*@records-or-ids)</code> removes specific rows from the result set,
+mirroring <code>WHERE id NOT IN (...)</code>.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">excluding</span>(<span class="nv">$bob</span>).<span class="nb">all</span>;                          <span class="c1"># by instance</span>
+<span class="n">User</span>.<span class="n">excluding</span>(<span class="nv">$alice</span>, <span class="nv">$dave</span>).<span class="nb">all</span>;                 <span class="c1"># multiple</span>
+<span class="n">User</span>.<span class="n">excluding</span>(<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>).<span class="nb">all</span>;                       <span class="c1"># by id</span>
+</code></pre></div></td></tr></table></div>
+
+<p>It composes naturally:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">lname</span> =&gt; <span class="s">&#39;Anderson&#39;</span>}).<span class="n">excluding</span>(<span class="nv">$alice</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<h2 id="or-and-and">or and and</h2>
+<p><code>or(other_relation)</code> and <code>and(other_relation)</code> combine WHERE clauses across
+two relations. The result is a single SQL query with the conditions wrapped
+in the right boolean structure.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Alice&#39;</span>}).<span class="o">or</span>(<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Carol&#39;</span>})).<span class="nb">all</span>;
+<span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="o">and</span>(<span class="n">User</span>.<span class="n">where</span>({<span class="n">verified</span> =&gt; <span class="nb">True</span>})).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<h2 id="merge">merge</h2>
+<p><code>merge(other_relation)</code> folds another relation's clauses into this one.
+Last-wins semantics: <code>other</code> takes precedence for <code>limit</code>, <code>offset</code>,
+<code>distinct</code>, and <code>readonly</code>. <code>where</code>, <code>order</code>, <code>joins</code>, and similar additive
+clauses are concatenated.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="nb">new</span>;
-<span class="nv">$user</span>.<span class="n">fname</span> = <span class="s">&#39;&#39;</span>;
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$base</span>   = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>});
+<span class="k">my</span> <span class="nv">$sorted</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>);
+<span class="k">my</span> <span class="nv">@rows</span>   = <span class="nv">$base</span>.<span class="nb">merge</span>(<span class="nv">$sorted</span>).<span class="nb">all</span>;
 
-<span class="k">unless</span> <span class="nv">$user</span>.<span class="n">save</span> {
-  <span class="k">for</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">errors</span> -&gt; <span class="nv">$e</span> {
-    <span class="nb">say</span> <span class="nv">$e</span>.<span class="n">field</span>.<span class="nb">name</span> ~ <span class="s">&#39; &#39;</span> ~ <span class="nv">$e</span>.<span class="nb">message</span>;
-  }
-}
+<span class="c1"># Override pagination from another relation</span>
+<span class="n">User</span>.<span class="n">limit</span>(<span class="mi">10</span>).<span class="nb">merge</span>(<span class="n">User</span>.<span class="n">limit</span>(<span class="mi">2</span>)).<span class="nb">all</span>;     <span class="c1"># uses LIMIT 2</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>save-or-die</code> and <code>update-or-die</code> raise <code>X::RecordInvalid</code> instead. The
-exception carries the failing record and a list of human-readable messages.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
-
-<span class="k">try</span> {
-  <span class="n">User</span>.<span class="n">create-or-die</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;&#39;</span>});
-
-  <span class="k">CATCH</span> {
-    <span class="k">when</span> <span class="o">X</span>::<span class="n">RecordInvalid</span> {
-      <span class="nb">say</span> .<span class="nb">message</span>;        <span class="c1"># Validation failed: fname must be present</span>
-      <span class="nb">say</span> .<span class="n">messages</span>;       <span class="c1"># (fname must be present)</span>
-      <span class="nb">say</span> .<span class="n">record</span>.<span class="n">fname</span>;   <span class="c1"># &#39;&#39;</span>
-    }
-  }
-}
+<h2 id="rewhere">rewhere</h2>
+<p><code>rewhere(%conditions)</code> replaces any prior <code>where</code> conditions on the same
+columns. Useful when narrowing-then-broadening.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$q</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>, <span class="k">role</span> =&gt; <span class="s">&#39;admin&#39;</span>});
+<span class="nv">$q</span>.<span class="n">rewhere</span>({<span class="k">role</span> =&gt; <span class="s">&#39;superadmin&#39;</span>}).<span class="nb">all</span>;     <span class="c1"># active=True still, role swapped</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>create-or-die</code> is a class-level convenience that builds the record, runs
-validations, and raises if it could not be saved.</p>
-<h2 id="build">Build</h2>
-<p><code>build</code> constructs an in-memory record without touching the database. It's
-the right choice when you want to populate a record, run validations against
-it, and only save once everything checks out.</p>
+<h2 id="unscope">unscope</h2>
+<p><code>unscope(:scope)</code> surgically removes a single relation dimension:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">build</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>, <span class="n">lname</span> =&gt; <span class="s">&#39;Donald&#39;</span>});
-
-<span class="nv">$user</span>.<span class="n">is-valid</span>;     <span class="c1"># True / False — runs validators without persisting</span>
-<span class="nv">$user</span>.<span class="nb">id</span>;           <span class="c1"># 0 — unsaved</span>
-<span class="nv">$user</span>.<span class="n">save</span>;         <span class="c1"># persists; id becomes the new surrogate key</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">unscope</span>(:<span class="n">where</span>).<span class="nb">all</span>;   <span class="c1"># drop all WHERE</span>
+<span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">order</span>).<span class="nb">all</span>;             <span class="c1"># drop ORDER BY</span>
+<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">group</span>).<span class="nb">all</span>;             <span class="c1"># drop GROUP BY</span>
+<span class="n">User</span>.<span class="n">distinct</span>.<span class="n">unscope</span>(:<span class="n">distinct</span>).<span class="nb">all</span>;                <span class="c1"># drop DISTINCT</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>build</code> with no arguments returns a record with default attributes:</p>
+<p>You can also drop a single <code>where</code> condition by column:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$blank</span> = <span class="n">User</span>.<span class="n">build</span>;
-<span class="nv">$blank</span>.<span class="n">fname</span> = <span class="s">&#39;Alice&#39;</span>;
-<span class="nv">$blank</span>.<span class="n">save</span>;
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>, <span class="k">role</span> =&gt; <span class="s">&#39;admin&#39;</span>})
+    .<span class="n">unscope</span>(<span class="n">where</span> =&gt; :<span class="n">role</span>)
+    .<span class="nb">all</span>;
 </code></pre></div></td></tr></table></div>
-
-<p>The difference from <code>create</code>: <code>create</code> builds <strong>and</strong> saves in one step (and
-returns whether the save succeeded via the resulting record's <code>id</code>), while
-<code>build</code> is purely in-memory. Reach for <code>build</code> when you need to inspect or
-mutate the record before deciding to save.</p>
-<h2 id="destroy-and-delete">Destroy and Delete</h2>
-<p><code>destroy</code> removes the record from the database <strong>and</strong> fires the
-<code>before-destroy</code> and <code>after-destroy</code> callbacks. Use it when associated cleanup,
-logging, or notifications need to run.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Page</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="o">after-</span><span class="n">destroy:</span> -&gt; { <span class="nb">say</span> <span class="s">&quot;Page #{self.id} torn down&quot;</span> };
-  }
-}
-
-<span class="k">my</span> <span class="nv">$page</span> = <span class="n">Page</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;Welcome&#39;</span>});
-<span class="nv">$page</span>.<span class="n">destroy</span>;        <span class="c1"># fires the after-destroy callback</span>
-<span class="nb">say</span> <span class="nv">$page</span>.<span class="nb">id</span>;         <span class="c1"># 0  -- the in-memory record&#39;s id is cleared</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>delete</code> issues the <code>DELETE</code> directly without callbacks. Use it when you
-want a side-effect-free removal (for example, in tests or in a destroy
-callback for a parent record).</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$page</span>.<span class="n">delete</span>;         <span class="c1"># no callbacks, single SQL DELETE</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>destroy-all</code> is a class-level convenience that wipes every row in the table
-without instantiating records or firing per-row callbacks.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Page</span>.<span class="n">destroy-all</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="automatic-timestamps">Automatic Timestamps</h2>
-<p>If a table has <code>created_at</code> and/or <code>updated_at</code> columns, ORM::ActiveRecord
-manages them for you. <code>created_at</code> is set on insert; <code>updated_at</code> is set on
-every save (insert and update).</p>
-<p>See <a href="../../migrations/#timestamps">Migrations &raquo; Timestamps</a> for the
-column setup.</p>
 
 
 

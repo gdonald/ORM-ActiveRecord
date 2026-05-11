@@ -9,23 +9,25 @@
       
       
       
-        <link rel="prev" href="../errors/">
+        <link rel="prev" href="../joins/">
       
+      
+        <link rel="next" href="../persistence/">
       
       
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Tests - ORM::ActiveRecord</title>
+        <title>Aggregation - ORM::ActiveRecord</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
       
 
@@ -44,7 +46,7 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -62,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tests" class="md-skip">
+        <a href="#aggregation-and-selection" class="md-skip">
           Skip to content
         </a>
       
@@ -78,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href="../.." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -98,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tests
+              Aggregation
             
           </span>
         </div>
@@ -176,7 +178,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -194,7 +196,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -221,7 +223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../adapters/" class="md-nav__link">
+      <a href="../../adapters/" class="md-nav__link">
         
   
   
@@ -248,7 +250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../migrations/" class="md-nav__link">
+      <a href="../../migrations/" class="md-nav__link">
         
   
   
@@ -272,18 +274,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
           <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
@@ -304,7 +308,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -322,7 +326,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/models/" class="md-nav__link">
+      <a href="../models/" class="md-nav__link">
         
   
   
@@ -350,7 +354,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/finders/" class="md-nav__link">
+      <a href="../finders/" class="md-nav__link">
         
   
   
@@ -378,7 +382,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/relations/" class="md-nav__link">
+      <a href="../relations/" class="md-nav__link">
         
   
   
@@ -406,7 +410,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/queries/" class="md-nav__link">
+      <a href="../queries/" class="md-nav__link">
         
   
   
@@ -434,7 +438,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/joins/" class="md-nav__link">
+      <a href="../joins/" class="md-nav__link">
         
   
   
@@ -459,10 +463,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../models/aggregation/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aggregation
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -478,6 +509,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#distinct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        distinct
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#group-and-having" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        group and having
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#readonly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        readonly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extending" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extending
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -490,7 +596,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/persistence/" class="md-nav__link">
+      <a href="../persistence/" class="md-nav__link">
         
   
   
@@ -518,7 +624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/callbacks/" class="md-nav__link">
+      <a href="../callbacks/" class="md-nav__link">
         
   
   
@@ -600,7 +706,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../validations/data/" class="md-nav__link">
+      <a href="../../validations/data/" class="md-nav__link">
         
   
   
@@ -628,7 +734,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../validations/conditionals/" class="md-nav__link">
+      <a href="../../validations/conditionals/" class="md-nav__link">
         
   
   
@@ -663,7 +769,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../errors/" class="md-nav__link">
+      <a href="../../errors/" class="md-nav__link">
         
   
   
@@ -687,37 +793,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Tests
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../tests/" class="md-nav__link">
         
   
   
@@ -733,81 +812,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#database-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Database configuration
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#running-the-suite" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Running the suite
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#running-with-prove6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Running with prove6
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#running-a-single-test-file" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Running a single test file
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#adapter-aware-test-skipping" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Adapter-aware test skipping
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -839,10 +843,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#database-configuration" class="md-nav__link">
+  <a href="#distinct" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Database configuration
+        distinct
       
     </span>
   </a>
@@ -850,10 +854,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-the-suite" class="md-nav__link">
+  <a href="#group-and-having" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Running the suite
+        group and having
       
     </span>
   </a>
@@ -861,10 +865,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-with-prove6" class="md-nav__link">
+  <a href="#from" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Running with prove6
+        from
       
     </span>
   </a>
@@ -872,10 +876,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-a-single-test-file" class="md-nav__link">
+  <a href="#readonly" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Running a single test file
+        readonly
       
     </span>
   </a>
@@ -883,10 +887,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#adapter-aware-test-skipping" class="md-nav__link">
+  <a href="#extending" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Adapter-aware test skipping
+        extending
       
     </span>
   </a>
@@ -910,156 +914,102 @@
 
 
 
-<h1 id="tests">Tests</h1>
-<p>ORM::ActiveRecord includes a full test suite. It runs against PostgreSQL, MySQL,
-and SQLite. <code>./test.raku</code> cycles through all three; any adapter that isn't
-reachable is skipped with a message describing how to enable it.</p>
-<h2 id="database-configuration">Database configuration</h2>
-<p>There are two ways to point the suite at a database:</p>
-<p><strong>1. <code>DATABASE_URL</code> env var</strong> (preferred — what <code>./test.raku</code> and CI use):</p>
+<h1 id="aggregation-and-selection">Aggregation and Selection</h1>
+<p>Beyond filtering, relations expose set-shaping operations: deduplication,
+grouping, subquery sources, and per-relation flags.</p>
+<h2 id="distinct">distinct</h2>
+<p><code>distinct</code> adds <code>SELECT DISTINCT</code>. Applies across all selected columns.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">DATABASE_URL</span><span class="o">=</span><span class="n">postgres</span><span class="o">:</span><span class="c1">//user:pass@localhost:5432/ar_test?schema=public</span>
-<span class="n">DATABASE_URL</span><span class="o">=</span><span class="n">mysql</span><span class="o">:</span><span class="c1">//root:root@127.0.0.1:3306/ar_test</span>
-<span class="n">DATABASE_URL</span><span class="o">=</span><span class="n">sqlite</span><span class="o">:</span><span class="n">db</span><span class="o">/</span><span class="n">test</span><span class="p">.</span><span class="n">sqlite3</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">distinct</span>.<span class="nb">count</span>;                        <span class="c1"># = total user count</span>
+<span class="n">User</span>.<span class="n">select</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">distinct</span>.<span class="n">pluck</span>(<span class="s">&#39;lname&#39;</span>);
+<span class="n">User</span>.<span class="n">select</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">distinct</span>.<span class="nb">count</span>;        <span class="c1"># = number of unique lnames</span>
 </code></pre></div></td></tr></table></div>
 
-<p>For local multi-adapter runs, <code>./test.raku</code> reads per-adapter overrides from
-<code>AR_PG_URL</code>, <code>AR_MYSQL_URL</code>, and <code>AR_SQLITE_URL</code>. The PostgreSQL default is
-built from <code>config/application.json</code> if present.</p>
-<p><strong>2. <code>config/application.json</code></strong> (single-adapter; what <code>bin/ar</code> reads when
-<code>DATABASE_URL</code> is unset). Pick the example matching your adapter:</p>
+<p><code>distinct(False)</code> clears the flag again. <code>unscope(:distinct)</code> does the same.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">select</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">distinct</span>.<span class="n">distinct</span>(<span class="nb">False</span>).<span class="n">pluck</span>(<span class="s">&#39;lname&#39;</span>);
+<span class="n">User</span>.<span class="n">distinct</span>.<span class="n">unscope</span>(:<span class="n">distinct</span>);
+</code></pre></div></td></tr></table></div>
+
+<h2 id="group-and-having">group and having</h2>
+<p><code>group(*@cols)</code> adds <code>GROUP BY</code>. <code>having($predicate, *@binds)</code> adds a
+<code>HAVING</code> clause; binds are parameterised.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>cp config/application.json-pg-example     config/application.json
-cp config/application.json-mysql-example  config/application.json
-cp config/application.json-sqlite-example config/application.json
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="nb">count</span>;                                    <span class="c1"># 1 row per lname</span>
+<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">having</span>(<span class="s">&#39;count(*) &gt; 1&#39;</span>).<span class="n">pluck</span>(<span class="s">&#39;lname&#39;</span>);
+<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">having</span>(<span class="s">&#39;count(*) &gt; ?&#39;</span>, <span class="mi">1</span>).<span class="nb">count</span>;
 </code></pre></div></td></tr></table></div>
 
-<p>Then edit credentials as needed.</p>
-<h2 id="running-the-suite">Running the suite</h2>
-<p><code>./test.raku</code> is the canonical entry point. With no <code>DATABASE_URL</code> set, it
-cycles through PostgreSQL, MySQL, and SQLite — probing each first and skipping
-unreachable adapters with a message describing how to enable them. With
-<code>DATABASE_URL</code> set, it runs once against that adapter (this is what CI does
-per matrix entry).</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>./test.raku
+<p><code>regroup(*@cols)</code> replaces any prior <code>group</code> clause. <code>unscope(:group)</code> and
+<code>unscope(:having)</code> drop the respective clause.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">regroup</span>(<span class="s">&#39;fname&#39;</span>);           <span class="c1"># only fname grouping remains</span>
+<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">group</span>).<span class="nb">all</span>;        <span class="c1"># plain SELECT</span>
 </code></pre></div></td></tr></table></div>
 
-<p>When all three adapters are reachable you get a runtimes summary at the end:</p>
+<h2 id="from">from</h2>
+<p><code>from($source [, $alias])</code> replaces the implicit <code>FROM table_name</code>. Use it
+for subqueries or aliased base tables.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="o">==</span>&gt;<span class="w"> </span>Runtimes
-<span class="w">  </span>postgres<span class="w">    </span><span class="m">26</span>.60s
-<span class="w">  </span>mysql<span class="w">       </span><span class="m">26</span>.37s
-<span class="w">  </span>sqlite<span class="w">      </span><span class="m">22</span>.59s
-<span class="w">  </span>total<span class="w">       </span><span class="m">75</span>.65s
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="nb">from</span>(<span class="s">&#39;users&#39;</span>).<span class="nb">count</span>;
+<span class="n">User</span>.<span class="nb">from</span>(<span class="s">&#39;(SELECT * FROM users WHERE lname != ?) users&#39;</span>, <span class="s">&#39;Brown&#39;</span>).<span class="nb">all</span>;
+
+<span class="k">my</span> <span class="nv">$q</span> = <span class="n">User</span>.<span class="nb">from</span>(<span class="s">&#39;users AS u&#39;</span>, <span class="s">&#39;u&#39;</span>);
+<span class="nv">$q</span>.<span class="n">from-alias</span>;                                    <span class="c1"># &#39;u&#39;</span>
+<span class="nv">$q</span>.<span class="n">from-source</span>;                                   <span class="c1"># &#39;users AS u&#39;</span>
 </code></pre></div></td></tr></table></div>
 
-<h2 id="running-with-prove6">Running with prove6</h2>
-<p>To run the suite once against your default adapter — what <code>config/application.json</code>
-or <code>DATABASE_URL</code> points at — invoke <code>prove6</code> directly:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>prove6<span class="w"> </span>-Ilib<span class="w"> </span>t
+<p><code>unscope(:from)</code> resets to the default table.</p>
+<h2 id="readonly">readonly</h2>
+<p>A <code>readonly</code> relation produces records that refuse to <code>save</code> / <code>update</code> /
+<code>destroy</code>. Useful when a query crosses join tables and the records should not
+be persisted back.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@users</span>    = <span class="n">User</span>.<span class="nb">readonly</span>.<span class="nb">all</span>;          <span class="c1"># @users[0].save throws</span>
+<span class="k">my</span> <span class="nv">@writable</span> = <span class="n">User</span>.<span class="nb">readonly</span>.<span class="n">unscope</span>(:<span class="n">readonly</span>).<span class="nb">all</span>;
 </code></pre></div></td></tr></table></div>
 
-<h2 id="running-a-single-test-file">Running a single test file</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>raku<span class="w"> </span>-Ilib<span class="w"> </span>t/0020-basic.rakutest
+<p><code>merge</code> propagates the flag:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="nb">all</span>.<span class="nb">merge</span>(<span class="n">User</span>.<span class="nb">readonly</span>).<span class="n">readonly-value</span>;     <span class="c1"># True</span>
 </code></pre></div></td></tr></table></div>
 
-<p>Test files live under <code>t/</code> and use the <code>.rakutest</code> extension. They follow the
-naming pattern <code>NNNN-name.rakutest</code> where <code>NNNN</code> is a sort key, not a stable
-identifier — feel free to renumber when reorganising.</p>
-<h2 id="adapter-aware-test-skipping">Adapter-aware test skipping</h2>
-<p>Some tests only make sense against one adapter — a test that exercises a
-PostgreSQL <code>RETURNING</code> quirk has nothing to assert against MySQL, and a test
-for a MySQL <code>TINYINT(1)</code> round-trip has nothing to assert against PostgreSQL.
-<code>ORM::ActiveRecord::Support::TestSkip</code> provides four subs to express that
-without re-implementing the same <code>parse-database-url + plan + skip + exit</code>
-boilerplate in every file.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">Test</span>;
-<span class="k">use</span> <span class="n">ORM::ActiveRecord::Support::TestSkip</span>;
-
-<span class="c1"># 1. &quot;skip the rest of this file when the active adapter is sqlite&quot;</span>
-<span class="n">skip-on</span>(:<span class="n">adapter</span><span class="s">&lt;sqlite&gt;</span>);
-
-<span class="c1"># 2. &quot;only run if the active adapter is mysql&quot;</span>
-<span class="n">only-on</span>(:<span class="n">adapter</span><span class="s">&lt;mysql&gt;</span>);
-
-<span class="c1"># 3. multi-adapter form — accepts a list</span>
-<span class="n">skip-on</span>(:<span class="n">adapter</span><span class="s">&lt;&lt;sqlite mysql&gt;</span>&gt;);
-<span class="n">only-on</span>(:<span class="n">adapter</span><span class="s">&lt;&lt;pg mysql&gt;</span>&gt;);
-
-<span class="c1"># 4. predicates if you want to branch instead of bail</span>
-<span class="k">if</span> <span class="n">adapter-matches</span>(:<span class="n">adapter</span><span class="s">&lt;pg&gt;</span>) {
-  <span class="c1"># PG-only setup</span>
+<h2 id="extending">extending</h2>
+<p><code>extending(*@modules)</code> mixes additional methods into the relation. Useful
+for paginators or custom finders local to a query chain.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">role</span> <span class="n">Pagination</span> {
+  <span class="k">method</span> <span class="n">page</span>(<span class="nb">Int</span> <span class="nv">$n</span>, <span class="nb">Int</span> :<span class="nv">$per</span> = <span class="mi">25</span>) {
+    <span class="nb">self</span>.<span class="n">limit</span>(<span class="nv">$per</span>).<span class="nb">offset</span>((<span class="nv">$n</span> - <span class="mi">1</span>) * <span class="nv">$per</span>);
+  }
 }
 
-<span class="k">my</span> <span class="nv">$name</span> = <span class="n">configured-adapter-name</span>();   <span class="c1"># &#39;pg&#39; | &#39;mysql&#39; | &#39;sqlite&#39; | Str</span>
+<span class="k">my</span> <span class="nv">@page1</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">extending</span>(<span class="n">Pagination</span>).<span class="n">page</span>(<span class="mi">1</span>).<span class="nb">all</span>;
+<span class="k">my</span> <span class="nv">@page2</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">extending</span>(<span class="n">Pagination</span>).<span class="n">page</span>(<span class="mi">2</span>).<span class="nb">all</span>;
 </code></pre></div></td></tr></table></div>
 
-<p><strong>Active adapter resolution</strong> — <code>configured-adapter-name</code> reads
-<code>DATABASE_URL</code> and normalises the scheme alias (<code>postgres</code>, <code>postgresql</code>,
-<code>mysql2</code>, <code>mariadb</code>, <code>sqlite3</code>, …) to one of <code>pg</code> / <code>mysql</code> / <code>sqlite</code>. It
-returns <code>Str</code> (undefined) when no <code>DATABASE_URL</code> is set.</p>
-<p>The project's own <code>config/application.json</code> is <strong>not</strong> consulted by default,
-because that would silently route every test through one adapter even when
-the developer wanted to exercise another. To opt in (e.g. for a CLI tool or
-runtime-style test that does follow the project config), pass
-<code>:config-path('config/application.json')</code> or <code>:check-config</code>.</p>
-<p><strong>Skip semantics</strong> — both <code>skip-on</code> and <code>only-on</code>:</p>
-<ul>
-<li>emit a single <code>plan 1; skip "…"; exit 0</code> when they decide to skip</li>
-<li>return <code>False</code> (and do nothing else) when they decide to continue, so they
-  can be called unconditionally at the top of a file</li>
-<li>treat "no <code>DATABASE_URL</code> set" as "let the test decide" — neither will skip
-  in that case, so adapter-specific tests can still try a localhost default
-  and fall back to a connect-probe skip of their own</li>
-</ul>
-<p><strong>Recognised aliases</strong> — both the user-supplied <code>:adapter</code> argument and the
-configured-adapter value are normalised through the same map, so any of these
-work and mean the same thing:</p>
-<table>
-<thead>
-<tr>
-<th>Canonical</th>
-<th>Aliases accepted</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>pg</code></td>
-<td><code>postgres</code>, <code>postgresql</code></td>
-</tr>
-<tr>
-<td><code>mysql</code></td>
-<td><code>mysql2</code>, <code>mariadb</code></td>
-</tr>
-<tr>
-<td><code>sqlite</code></td>
-<td><code>sqlite3</code></td>
-</tr>
-</tbody>
-</table>
+<p>You can pass multiple modules; their methods compose in declaration order.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">role</span> <span class="n">NameOnly</span> {
+  <span class="k">method</span> <span class="n">names</span> { <span class="nb">self</span>.<span class="n">pluck</span>(<span class="s">&#39;fname&#39;</span>) }
+}
+
+<span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">extending</span>(<span class="n">Pagination</span>, <span class="n">NameOnly</span>).<span class="n">page</span>(<span class="mi">1</span>).<span class="n">names</span>;
+</code></pre></div></td></tr></table></div>
 
 
 
@@ -1109,10 +1059,10 @@ work and mean the same thing:</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
