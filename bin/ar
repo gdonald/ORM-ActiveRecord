@@ -1,6 +1,7 @@
 #!raku
 
 use v6.d;
+BEGIN %*ENV<ORM_LOG_FILE> //= 'log/error.log' if 'log'.IO.d;
 use ORM::ActiveRecord::Schema::Migrate;
 
 sub MAIN(*@args) {

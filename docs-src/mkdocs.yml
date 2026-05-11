@@ -18,6 +18,7 @@ nav:
     - Data: validations/data.md
     - Conditionals: validations/conditionals.md
   - Errors: errors.md
+  - Logging: logging.md
   - Tests: tests.md
 theme:
   name: 'material'

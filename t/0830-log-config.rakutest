@@ -1,0 +1,34 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+plan 6;
+
+my $src = 'lib/ORM/ActiveRecord/Support/Log.rakumod'.IO.slurp;
+
+unlike $src, /"send-to('log/error.log'"/,
+  'Support::Log does not unconditionally open log/error.log';
+
+like $src, /ORM_LOG_FILE/,
+  'Support::Log honors the ORM_LOG_FILE environment variable';
+
+%*ENV<ORM_LOG_FILE>:delete;
+lives-ok {
+  require ORM::ActiveRecord::Support::Log;
+}, 'Support::Log loads cleanly when ORM_LOG_FILE is unset';
+
+ok 'log'.IO.d.not || !('log'.IO.add('was-just-created').e),
+  'loading Support::Log does not create a log/ directory in CWD';
+
+my $tmp = $*TMPDIR.add("orm-ar-log-{$*PID}.log");
+$tmp.unlink if $tmp.e;
+%*ENV<ORM_LOG_FILE> = $tmp.Str;
+lives-ok {
+  require ORM::ActiveRecord::Support::Log;
+}, 'Support::Log loads cleanly when ORM_LOG_FILE is set';
+$tmp.unlink if $tmp.e;
+
+my $bin = 'bin/ar'.IO.slurp;
+like $bin, /'BEGIN' \s+ '%*ENV<ORM_LOG_FILE>' \s* '//=' .* "'log'.IO.d"/,
+  'bin/ar defaults ORM_LOG_FILE to log/error.log only when log/ exists';

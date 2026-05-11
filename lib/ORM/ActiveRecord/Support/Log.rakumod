@@ -1,9 +1,12 @@
 
 use Log::Async;
-logger.send-to($*OUT, :level(INFO));
-logger.send-to('log/error.log', :level(ERROR));
-
 use ORM::ActiveRecord::Support::Colors;
+
+logger.send-to($*OUT, :level(INFO));
+
+with %*ENV<ORM_LOG_FILE> -> $path {
+  logger.send-to($path, :level(ERROR)) if $path.chars;
+}
 
 class Log is export {
   method sql(Str:D :$sql) {
