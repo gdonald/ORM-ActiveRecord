@@ -6,7 +6,7 @@ use Test;
 
 class User is Model {}
 
-plan 12;
+plan 13;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -17,8 +17,10 @@ User.create({fname => 'Adam',  lname => 'Anderson'});
 User.create({fname => 'Bob',   lname => 'Brown'});
 User.create({fname => 'Carol', lname => 'Carter'});
 
-# group + count: number of group rows
-ok User.group('lname').count == 3, 'group(lname).count == 3 group rows';
+# group + count: hash of group => count, Rails-aligned
+my %g = User.group('lname').count;
+ok %g.elems == 3, 'group(lname).count returns 3 entries';
+ok %g<Anderson> == 2 && %g<Brown> == 1 && %g<Carter> == 1, 'group(lname).count tallies per group';
 
 # group + pluck: every group value
 my @lnames = User.group('lname').pluck('lname').sort;
@@ -26,18 +28,19 @@ ok @lnames.elems == 3, 'group(lname).pluck(lname) returns 3 rows';
 ok @lnames.join(',') eq 'Anderson,Brown,Carter', 'group pluck returns each group';
 
 # raw having clause (no binds)
-ok User.group('lname').having('count(*) > 1').count == 1, 'having raw filters to 1 group';
+my %big-h = User.group('lname').having('count(*) > 1').count;
+ok %big-h.elems == 1 && %big-h<Anderson> == 2, 'having raw filters to 1 group';
 
 my @big = User.group('lname').having('count(*) > 1').pluck('lname');
 ok @big.elems == 1 && @big[0] eq 'Anderson', 'having raw kept the >1 group';
 
 # parameterised having
-ok User.group('lname').having('count(*) > ?', 0).count == 3, 'having with bind > 0 keeps all';
-ok User.group('lname').having('count(*) > ?', 1).count == 1, 'having with bind > 1 keeps Anderson';
+ok User.group('lname').having('count(*) > ?', 0).count.elems == 3, 'having with bind > 0 keeps all';
+ok User.group('lname').having('count(*) > ?', 1).count.elems == 1, 'having with bind > 1 keeps Anderson';
 
 # unscope drops group / having
 ok User.group('lname').unscope(:group).all.elems == 4, 'unscope(:group) drops grouping';
-ok User.group('lname').having('count(*) > 1').unscope(:having).count == 3, 'unscope(:having) drops the filter';
+ok User.group('lname').having('count(*) > 1').unscope(:having).count.elems == 3, 'unscope(:having) drops the filter';
 
 # merge propagates group / having
 my $q1 = User.where({lname => 'Anderson'});
@@ -45,9 +48,9 @@ my $q2 = User.group('lname');
 my @gq = $q1.merge($q2).group-values;
 ok @gq.join(',') eq 'lname', 'merge propagates group';
 
-ok User.where({lname => 'Anderson'}).merge(User.group('lname')).count == 1, 'merged group + where keeps one group';
+ok User.where({lname => 'Anderson'}).merge(User.group('lname')).count.elems == 1, 'merged group + where keeps one group';
 
 # group composes with where
-ok User.where({lname => 'Anderson'}).group('lname').count == 1, 'where + group counts groups within scope';
+ok User.where({lname => 'Anderson'}).group('lname').count.elems == 1, 'where + group counts groups within scope';
 
 User.destroy-all;

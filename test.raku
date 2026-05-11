@@ -271,6 +271,39 @@ sub run-once(Str:D :$name, Str:D :$url --> Int) {
   $proc.exitcode;
 }
 
+sub parse-adapter-args(--> List) {
+  my %alias = pg => 'postgres', postgres => 'postgres', postgresql => 'postgres',
+              mysql => 'mysql',
+              sqlite => 'sqlite', sqlite3 => 'sqlite';
+  my @args = @*ARGS;
+  if @args.grep({ $_ eq '-h' || $_ eq '--help' }) {
+    say q:to/USAGE/;
+    Usage: ./test.raku [--adapter=NAME[,NAME...]]
+      NAME: pg|postgres|mysql|sqlite (default: all configured)
+    USAGE
+    exit 0;
+  }
+  my @picked;
+  my $i = 0;
+  while $i < @args.elems {
+    my $a = @args[$i];
+    if $a ~~ /^ '--adapter=' (.+) $/ {
+      @picked.append: ~$0;
+    } elsif $a eq '--adapter' {
+      die "--adapter requires a value" unless $i + 1 < @args.elems;
+      @picked.append: @args[++$i];
+    } else {
+      die "unknown arg: $a (use --adapter=pg|mysql|sqlite)";
+    }
+    $i++;
+  }
+  @picked.map(*.split(',', :skip-empty)).flat.map({
+    %alias{.lc} // die "unknown adapter: $_ (use pg|mysql|sqlite)"
+  }).list;
+}
+
+my @wanted = parse-adapter-args();
+
 my @runs;
 my Bool $skip-probe = False;
 
@@ -285,19 +318,27 @@ if my $external = %*ENV<DATABASE_URL> {
   @runs.push: { :name<sqlite>,   :url(%*ENV<AR_SQLITE_URL> // 'sqlite:db/test.sqlite3') };
 }
 
+if @wanted {
+  my %want = @wanted.map: * => True;
+  @runs = @runs.grep({ %want{ .<name> } }).list;
+  die "no adapters matched --adapter filter ({@wanted.join(',')})" unless @runs;
+}
+
 my @skipped;
 my $any-fail = False;
 my %durations;
 my $total-start = now;
 
 END {
-  say '';
-  say '==> Runtimes';
-  for @runs -> %r {
-    next unless %durations{%r<name>}:exists;
-    printf "  %-9s %7.2fs\n", %r<name>, %durations{%r<name>};
+  if %durations {
+    say '';
+    say '==> Runtimes';
+    for @runs -> %r {
+      next unless %durations{%r<name>}:exists;
+      printf "  %-9s %7.2fs\n", %r<name>, %durations{%r<name>};
+    }
+    printf "  %-9s %7.2fs\n", 'total', (now - $total-start).Num;
   }
-  printf "  %-9s %7.2fs\n", 'total', (now - $total-start).Num;
   if @skipped {
     say '';
     say '==> Skipped';

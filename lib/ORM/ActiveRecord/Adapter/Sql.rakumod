@@ -131,7 +131,11 @@ class SqlAdapter does Adapter is export {
     my $stmt = SqlStmt.new(:adapter(self));
     my $select-keyword = $distinct ?? 'SELECT DISTINCT' !! 'SELECT';
     my $qualifier = $from-alias.defined ?? $from-alias !! $table;
-    my $select = @fields.map({ $qualifier ~ '.' ~ $_.name }).join(', ');
+    my $select = @fields.map({
+      my $n = $_.name;
+      $n.contains('(') || $n.contains('.') || $n.contains(' ')
+        ?? $n !! "$qualifier.$n"
+    }).join(', ');
     my $from-clause = $from-source.defined ?? "FROM $from-source" !! "FROM $table";
     my $where-qualifier = @joins.elems ?? $qualifier !! Str;
     my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups, qualifier => $where-qualifier);
@@ -179,10 +183,21 @@ class SqlAdapter does Adapter is export {
     my @fragments;
     for @having -> $entry {
       given $entry {
+        when Associative {
+          my %h = $entry.Hash;
+          my @hp = self!where-fragments($stmt, %h, '=', :qualifier(Str));
+          @fragments.push: @hp.join(' AND ') if @hp.elems;
+        }
         when Str        { @fragments.push: $entry }
         when Positional {
           my @parts = $entry.list;
-          @fragments.push: $stmt.interpolate(@parts[0].Str, |@parts[1..*]);
+          if @parts.elems && @parts[0] ~~ Pair {
+            my %h = @parts.Hash;
+            my @hp = self!where-fragments($stmt, %h, '=', :qualifier(Str));
+            @fragments.push: @hp.join(' AND ') if @hp.elems;
+          } else {
+            @fragments.push: $stmt.interpolate(@parts[0].Str, |@parts[1..*]);
+          }
         }
         default { die "build-having: unsupported entry type " ~ $entry.^name }
       }
@@ -251,10 +266,19 @@ class SqlAdapter does Adapter is export {
       when Range {
         my $lo = $v.min;
         my $hi = $v.max;
-        my $lo-op = $v.excludes-min ?? '>'  !! '>=';
-        my $hi-op = $v.excludes-max ?? '<'  !! '<=';
-        my $inner = "$col $lo-op " ~ $stmt.placeholder($lo)
-                  ~ " AND $col $hi-op " ~ $stmt.placeholder($hi);
+        my $lo-bounded = $lo.defined && $lo !~~ -Inf;
+        my $hi-bounded = $hi.defined && $hi !~~ Inf;
+        my @parts;
+        if $lo-bounded {
+          my $lo-op = $v.excludes-min ?? '>' !! '>=';
+          @parts.push: "$col $lo-op " ~ $stmt.placeholder($lo);
+        }
+        if $hi-bounded {
+          my $hi-op = $v.excludes-max ?? '<' !! '<=';
+          @parts.push: "$col $hi-op " ~ $stmt.placeholder($hi);
+        }
+        die "Range $v has no bounded endpoints" unless @parts.elems;
+        my $inner = @parts.join(' AND ');
         $negate ?? "NOT ($inner)" !! $inner;
       }
       when Positional {
@@ -400,6 +424,84 @@ class SqlAdapter does Adapter is export {
     }
 
     self.exec-stmt($stmt)[0][0].Int;
+  }
+
+  method aggregate(Str:D :$table, Str:D :$op, :$col is copy, :%where, :%where-not, :@or-groups, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins) {
+    my $stmt = SqlStmt.new(:adapter(self));
+    my $qualifier = $from-alias.defined ?? $from-alias !! $table;
+    my $from-clause = $from-source.defined ?? "FROM $from-source" !! "FROM $table";
+    my $joins-sql = @joins.elems ?? @joins.join("\n") !! '';
+    my $where-qualifier = @joins.elems ?? $qualifier !! Str;
+    my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups, qualifier => $where-qualifier);
+    my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
+
+    my $needs-qualifier = @joins.elems.so;
+    my $agg-col = self!agg-col-expr($op, $col, $distinct, $qualifier, $needs-qualifier);
+    my $group-list = @group.map({ self!qualify-if-bare($_, $qualifier, $needs-qualifier) }).join(', ');
+    my $group-clause = @group.elems ?? "GROUP BY $group-list" !! '';
+    my $having-clause = self.build-having($stmt, @having);
+
+    my $select-cols = @group.elems ?? "$group-list, $agg-col" !! $agg-col;
+
+    $stmt.sql = qq:to/SQL/;
+      SELECT $select-cols
+      $from-clause
+      $joins-sql
+      $where-clause
+      $group-clause
+      $having-clause
+      SQL
+
+    my @rows = self.exec-stmt($stmt);
+
+    if @group.elems {
+      my %result;
+      my $gn = @group.elems;
+      for @rows -> $row {
+        my $key = $gn == 1 ?? $row[0] !! $row[0 ..^ $gn].List;
+        %result{ $key } = self!coerce-agg-value($op, $row[$gn]);
+      }
+      return %result;
+    }
+    return self!agg-empty-default($op) unless @rows.elems;
+    self!coerce-agg-value($op, @rows[0][0]);
+  }
+
+  method !agg-col-expr(Str:D $op, $col, Bool:D $distinct, Str:D $qualifier, Bool:D $needs-qualifier --> Str) {
+    if $op eq 'COUNT' {
+      return 'COUNT(*)' unless $col.defined && $col.Str.chars && $col.Str ne '*';
+      my $c = self!qualify-if-bare($col.Str, $qualifier, $needs-qualifier);
+      return $distinct ?? "COUNT(DISTINCT $c)" !! "COUNT($c)";
+    }
+    die "$op requires a column" unless $col.defined && $col.Str.chars;
+    my $c = self!qualify-if-bare($col.Str, $qualifier, $needs-qualifier);
+    $op ~ '(' ~ $c ~ ')';
+  }
+
+  method !qualify-if-bare(Str:D $name, Str:D $qualifier, Bool:D $needs-qualifier --> Str) {
+    return $name unless $needs-qualifier;
+    return $name if $name.contains('(') || $name.contains('.') || $name.contains(' ');
+    "$qualifier.$name";
+  }
+
+  method !coerce-agg-value(Str:D $op, $value) {
+    return self!agg-empty-default($op) without $value;
+    given $op {
+      when 'COUNT' { $value.Str.Int }
+      when 'SUM' | 'AVG' {
+        my $s = $value.Str;
+        $s.contains('.') ?? $s.Rat !! $s.Int;
+      }
+      default { $value }
+    }
+  }
+
+  method !agg-empty-default(Str:D $op) {
+    given $op {
+      when 'COUNT' { 0 }
+      when 'SUM'   { 0 }
+      default      { Nil }
+    }
   }
 
   # DDL — engines override. Default impls cover the SQL that's actually

@@ -1,0 +1,94 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Game is Model {}
+
+plan 33;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Game.destroy-all;
+
+Game.create({name => 'Chess', year => 1500});
+Game.create({name => 'Go',    year => 2200});
+Game.create({name => 'Poker', year => 1810});
+Game.create({name => 'Magic', year => 1993});
+
+# Scalar aggregations on the whole table
+ok Game.sum('year')     == 1500 + 2200 + 1810 + 1993, 'Model.sum sums the column';
+ok Game.minimum('year') == 1500, 'Model.minimum returns the smallest';
+ok Game.maximum('year') == 2200, 'Model.maximum returns the largest';
+
+my $avg = Game.average('year');
+ok $avg.defined && $avg.Numeric == (1500 + 2200 + 1810 + 1993) / 4, 'Model.average returns the mean';
+
+# Scalar aggregations on a relation (filtered)
+ok Game.where({name => 'Chess'}).sum('year') == 1500, 'relation.sum honors WHERE';
+ok Game.where({name => 'Go'}).minimum('year') == 2200, 'relation.minimum honors WHERE';
+ok Game.where({name => 'Poker'}).maximum('year') == 1810, 'relation.maximum honors WHERE';
+ok Game.where({name => 'Magic'}).average('year') == 1993, 'relation.average honors WHERE';
+
+# Empty relation defaults
+ok Game.where({name => 'Nothing'}).sum('year') == 0, 'sum on empty relation returns 0';
+ok !Game.where({name => 'Nothing'}).minimum('year').defined, 'minimum on empty relation is Nil';
+ok !Game.where({name => 'Nothing'}).maximum('year').defined, 'maximum on empty relation is Nil';
+ok !Game.where({name => 'Nothing'}).average('year').defined, 'average on empty relation is Nil';
+
+# count with a column counts non-null occurrences
+Game.create({name => 'Senet', year => Nil});
+ok Game.count == 5, 'Model.count counts all rows';
+ok Game.count('year') == 4, 'Model.count(col) skips NULLs';
+
+# count distinct via the relation flag
+my $dup = Game.create({name => 'Chess', year => 1700});
+ok Game.distinct.count('name') == 5, 'distinct.count(col) collapses dupes';
+$dup.destroy;
+Game.where({name => 'Senet'}).first.destroy;
+
+# calculate dispatcher
+ok Game.calculate('sum',     'year') == 1500 + 2200 + 1810 + 1993, 'calculate sum';
+ok Game.calculate('AVG',     'year') == (1500 + 2200 + 1810 + 1993) / 4, 'calculate avg (case-insensitive)';
+ok Game.calculate('min',     'year') == 1500, 'calculate min';
+ok Game.calculate('Maximum', 'year') == 2200, 'calculate maximum alias';
+ok Game.calculate('count')             == 4, 'calculate count without col';
+
+# Grouped aggregations return hashes keyed by the group value
+Game.create({name => 'Chess', year => 1700});
+my %by-name-sum = Game.group('name').sum('year');
+ok %by-name-sum<Chess> == 1500 + 1700, 'group.sum returns per-group totals';
+ok %by-name-sum<Go>    == 2200,        'group.sum entries are per group';
+ok %by-name-sum.elems  == 4,           'group.sum has one entry per group';
+
+my %by-name-max = Game.group('name').maximum('year');
+ok %by-name-max<Chess> == 1700, 'group.maximum picks per group';
+
+my %by-name-min = Game.group('name').minimum('year');
+ok %by-name-min<Chess> == 1500, 'group.minimum picks per group';
+
+my %by-name-avg = Game.group('name').average('year');
+ok %by-name-avg<Chess> == (1500 + 1700) / 2, 'group.average is per-group mean';
+
+# having with hash form predicates
+my %big = Game.group('name').having({ 'count(*)' => 2..* }).count;
+ok %big.elems == 1 && %big<Chess> == 2, 'having hash form filters groups';
+
+# having with hash form using an aggregate-keyed range
+my %big2 = Game.group('name').having({ 'MIN(year)' => 2000..* }).count;
+ok %big2.elems == 1 && %big2<Go> == 1, 'having hash form on aggregate expression';
+
+# pluck of SQL expressions
+my @upper = Game.where({name => 'Go'}).pluck('UPPER(name)');
+ok @upper.elems == 1 && @upper[0] eq 'GO', 'pluck of SQL expression';
+
+my @qualified = Game.where({name => 'Go'}).pluck('games.year');
+ok @qualified.elems == 1 && @qualified[0] == 2200, 'pluck of qualified column';
+
+# none short-circuits aggregations
+ok Game.none.sum('year') == 0, 'none.sum is 0';
+ok !Game.none.maximum('year').defined, 'none.maximum is Nil';
+ok Game.none.group('name').count.elems == 0, 'none.group.count is empty hash';
+
+Game.destroy-all;

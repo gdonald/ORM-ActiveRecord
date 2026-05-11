@@ -458,6 +458,19 @@ class Model is export {
     DB.shared.count-records(:$table, :%where);
   }
 
+  multi method count(Str:D $col) {
+    self.all.count($col);
+  }
+
+  method sum($col)     { self.all.sum($col)     }
+  method average($col) { self.all.average($col) }
+  method minimum($col) { self.all.minimum($col) }
+  method maximum($col) { self.all.maximum($col) }
+
+  method calculate(Str:D $op, $col?) {
+    self.all.calculate($op, $col);
+  }
+
   method destroy {
     return False unless $!id;
     self.do-before-destroys;

@@ -410,9 +410,15 @@ class Query is export {
     die "joins: unknown association '$name' on " ~ $base-class.^name;
   }
 
-  method having(*@parts) {
+  method having(*@parts, *%kw) {
+    if %kw.elems {
+      @!having.push: %kw.item;
+      return self;
+    }
     die 'having requires at least a SQL fragment' unless @parts.elems;
-    if @parts.elems == 1 && @parts[0] ~~ Str {
+    if @parts.elems == 1 && @parts[0] ~~ Hash {
+      @!having.push: @parts[0].item;
+    } elsif @parts.elems == 1 && @parts[0] ~~ Str {
       @!having.push: @parts[0];
     } else {
       @!having.push: @parts.list;
@@ -451,12 +457,56 @@ class Query is export {
     self.perform;
   }
 
-  method count {
-    return 0 if $!is-none;
+  multi method count() {
+    self!do-count(Any);
+  }
+
+  multi method count($col) {
+    self!do-count($col);
+  }
+
+  method !do-count($col) {
+    return @!group.elems ?? %() !! 0 if $!is-none;
+    if @!group.elems || ($col.defined && $col !~~ '*') {
+      return self!aggregate('COUNT', $col);
+    }
     my @or-groups = self.or-groups-payload;
     DB.shared.count-records(
       :$!table, where => $!params, where-not => $!not-params, :@or-groups,
       distinct => $!distinct, select => @!select,
+      group => @!group, having => @!having,
+      from-source => $!from-source, from-alias => $!from-alias,
+      joins => @!joins,
+    );
+  }
+
+  method sum($col)     { self!agg-with-none('SUM',     $col, 0)   }
+  method average($col) { self!agg-with-none('AVG',     $col, Nil) }
+  method minimum($col) { self!agg-with-none('MIN',     $col, Nil) }
+  method maximum($col) { self!agg-with-none('MAX',     $col, Nil) }
+
+  method calculate(Str:D $op, $col?) {
+    given $op.lc {
+      when 'sum'                 { self.sum($col)     }
+      when 'avg' | 'average'     { self.average($col) }
+      when 'min' | 'minimum'     { self.minimum($col) }
+      when 'max' | 'maximum'     { self.maximum($col) }
+      when 'count'               { self.count($col)   }
+      default { die "calculate: unknown operation '$op'" }
+    }
+  }
+
+  method !agg-with-none(Str:D $op, $col, $empty) {
+    return @!group.elems ?? %() !! $empty if $!is-none;
+    self!aggregate($op, $col);
+  }
+
+  method !aggregate(Str:D $op, $col) {
+    my @or-groups = self.or-groups-payload;
+    DB.shared.aggregate(
+      :$!table, :$op, :$col,
+      where => $!params, where-not => $!not-params, :@or-groups,
+      distinct => $!distinct,
       group => @!group, having => @!having,
       from-source => $!from-source, from-alias => $!from-alias,
       joins => @!joins,
