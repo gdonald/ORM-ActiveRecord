@@ -4,3 +4,4 @@ db/test.sqlite3
 docs/
 docs-src/site/
 log/error.log
+.fezignore

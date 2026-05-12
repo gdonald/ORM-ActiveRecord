@@ -118,10 +118,4 @@ the hint syntax treat it as an ordinary comment, so the query still runs.
 
 ## to-sql
 
-`to-sql` returns the SQL string that the relation would execute, with
-adapter-specific placeholders (`$N` for PostgreSQL, `?` for SQLite and
-MySQL) left in. Bind values are not inlined.
-
-```perl6
-say User.where({active => True}).annotate('debug').to-sql;
-```
+See [Inspection helpers](inspection.md#to-sql).

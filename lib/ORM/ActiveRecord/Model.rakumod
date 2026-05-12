@@ -635,6 +635,20 @@ class Model is export {
     self.all.to-sql;
   }
 
+  method explain(--> Str) {
+    self.all.explain;
+  }
+
+  method is-any(--> Bool)   { self.all.is-any   }
+  method is-empty(--> Bool) { self.all.is-empty }
+  method is-none(--> Bool)  { self.all.is-none  }
+  method is-one(--> Bool)   { self.all.is-one   }
+  method is-many(--> Bool)  { self.all.is-many  }
+
+  method cache-key(--> Str)              { self.all.cache-key              }
+  method cache-version(--> Str)          { self.all.cache-version          }
+  method cache-key-with-version(--> Str) { self.all.cache-key-with-version }
+
   multi method find-by-sql(@parts) {
     self!do-find-by-sql(@parts);
   }

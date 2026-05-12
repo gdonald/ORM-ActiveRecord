@@ -12,6 +12,8 @@ role Adapter is export {
   method exec(Str:D $sql, *@binds)  { ... }
   method exec-stmt(SqlStmt:D $stmt) { ... }
 
+  method explain(SqlStmt:D $stmt --> Str) { ... }
+
   # Bind placeholder syntax: '$N' (PG) vs '?' (SQLite, MySQL)
   method bind-placeholder(Int:D $n --> Str) { ... }
 

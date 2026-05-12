@@ -1,0 +1,68 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+$sqlite.ddl-create-table('widgets', [
+  name => { :string, limit => 64 },
+  qty  => { :integer, default => 0 },
+]);
+
+use ORM::ActiveRecord::Model;
+
+class Widget is Model {}
+
+plan 8;
+
+Widget.create({ name => 'Alpha', qty => 1 });
+Widget.create({ name => 'Beta',  qty => 2 });
+Widget.create({ name => 'Gamma', qty => 3 });
+
+my $plan-all = Widget.explain;
+ok $plan-all.defined, 'Model.explain returns a string';
+ok $plan-all.chars > 0, 'plan is non-empty';
+ok $plan-all.uc.contains('SCAN') || $plan-all.uc.contains('WIDGETS'),
+  'sqlite EXPLAIN QUERY PLAN mentions scan or table';
+
+my $plan-where = Widget.where({ name => 'Alpha' }).explain;
+ok $plan-where.defined && $plan-where.chars > 0,
+  'relation.explain returns a non-empty plan';
+
+my $plan-order = Widget.order('qty').explain;
+ok $plan-order.defined && $plan-order.chars > 0,
+  'explain works after .order';
+
+my $plan-with-binds = Widget.where({ qty => 1..2 }).explain;
+ok $plan-with-binds.defined && $plan-with-binds.chars > 0,
+  'explain runs against a SELECT with bind parameters';
+
+my $rel = Widget.where({ name => 'Alpha' });
+my $sql-before = $rel.to-sql;
+$rel.explain;
+is $rel.to-sql, $sql-before, 'explain does not mutate the relation';
+
+is Widget.where({ qty => 99 }).explain.WHAT.gist, Str.gist,
+  'explain always returns a Str even when zero rows match';
+
+DB.set-shared(Nil);

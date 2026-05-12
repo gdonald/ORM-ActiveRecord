@@ -64,6 +64,14 @@ class SqlAdapter does Adapter is export {
     $query.allrows(:array-of-hash);
   }
 
+  method explain(SqlStmt:D $stmt --> Str) {
+    my $explain-stmt = SqlStmt.new(:adapter(self));
+    $explain-stmt.sql = 'EXPLAIN ' ~ $stmt.sql;
+    $explain-stmt.binds = $stmt.binds;
+    my @rows = self.exec-stmt($explain-stmt);
+    @rows.map({ $_.list.map(*.Str).join(' | ') }).join("\n");
+  }
+
   method sanitize-sql-array(@parts --> SqlStmt) {
     SqlStmt.new(:adapter(self)).sanitize-array(@parts);
   }

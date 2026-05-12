@@ -9,20 +9,22 @@ use ORM::ActiveRecord::Support::DatabaseUrl;
 
 $*OUT.out-buffer = False;
 
+%*ENV<AUTHOR_TESTING> = 1;
+
 my $jobs = 1;
 
 unless %*ENV<DBIISH_MYSQL_LIB> {
   my @candidates = $*KERNEL.name eq 'darwin'
-    ?? <
-        /opt/homebrew/opt/mysql-client/lib/libmysqlclient.dylib
-        /usr/local/opt/mysql-client/lib/libmysqlclient.dylib
-        /opt/homebrew/lib/libmysqlclient.dylib
-        /usr/local/lib/libmysqlclient.dylib
-       >
-    !! <
-        /usr/lib/x86_64-linux-gnu/libmysqlclient.so
-        /usr/lib64/libmysqlclient.so
-       >;
+  ?? <
+  /opt/homebrew/opt/mysql-client/lib/libmysqlclient.dylib
+  /usr/local/opt/mysql-client/lib/libmysqlclient.dylib
+  /opt/homebrew/lib/libmysqlclient.dylib
+  /usr/local/lib/libmysqlclient.dylib
+  >
+  !! <
+  /usr/lib/x86_64-linux-gnu/libmysqlclient.so
+  /usr/lib64/libmysqlclient.so
+  >;
   with @candidates.first(*.IO.e) -> $p {
     %*ENV<DBIISH_MYSQL_LIB> = $p;
   }
@@ -30,8 +32,7 @@ unless %*ENV<DBIISH_MYSQL_LIB> {
 
 sub format-ts(--> Str) {
   my $d = DateTime.now;
-  sprintf '%04d-%02d-%02d %02d:%02d:%02d',
-    $d.year, $d.month, $d.day, $d.hour, $d.minute, $d.second.Int;
+  sprintf '%04d-%02d-%02d %02d:%02d:%02d', $d.year, $d.month, $d.day, $d.hour, $d.minute, $d.second.Int;
 }
 
 sub pg-url-from-config(--> Str) {
@@ -266,8 +267,8 @@ sub run-once(Str:D :$name, Str:D :$url --> Int) {
 
 sub parse-adapter-args(--> List) {
   my %alias = pg => 'postgres', postgres => 'postgres', postgresql => 'postgres',
-              mysql => 'mysql',
-              sqlite => 'sqlite', sqlite3 => 'sqlite';
+  mysql => 'mysql',
+  sqlite => 'sqlite', sqlite3 => 'sqlite';
   my @args = @*ARGS;
   if @args.grep({ $_ eq '-h' || $_ eq '--help' }) {
     say q:to/USAGE/;
@@ -291,7 +292,7 @@ sub parse-adapter-args(--> List) {
     $i++;
   }
   @picked.map(*.split(',', :skip-empty)).flat.map({
-    %alias{.lc} // die "unknown adapter: $_ (use pg|mysql|sqlite)"
+      %alias{.lc} // die "unknown adapter: $_ (use pg|mysql|sqlite)"
   }).list;
 }
 

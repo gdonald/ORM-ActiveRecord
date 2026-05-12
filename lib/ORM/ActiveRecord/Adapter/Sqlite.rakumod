@@ -43,6 +43,14 @@ class SqliteAdapter is SqlAdapter is export {
 
   method bind-placeholder(Int:D $n --> Str) { '?' }
 
+  method explain(SqlStmt:D $stmt --> Str) {
+    my $explain-stmt = SqlStmt.new(:adapter(self));
+    $explain-stmt.sql = 'EXPLAIN QUERY PLAN ' ~ $stmt.sql;
+    $explain-stmt.binds = $stmt.binds;
+    my @rows = self.exec-stmt($explain-stmt);
+    @rows.map({ $_.list.map(*.Str).join(' | ') }).join("\n");
+  }
+
   method limit-offset-clause(Int:D :$limit = 0, Int:D :$offset = 0 --> Str) {
     return '' unless $limit || $offset;
     my $l = $limit ?? $limit !! -1;

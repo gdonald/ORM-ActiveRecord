@@ -39,65 +39,10 @@ Please see the [documentation](https://gdonald.github.io/ORM-ActiveRecord/) for 
 
 [![.github/workflows/raku.yml](https://github.com/gdonald/ORM-ActiveRecord/workflows/.github/workflows/raku.yml/badge.svg)](https://github.com/gdonald/ORM-ActiveRecord/actions)
 
-## License
+### License
 
-ORM::ActiveRecord is released under the [Artistic License 2.0](https://opensource.org/licenses/Artistic-2.0)
+Copyright (c) 2019-2026 Greg Donald
 
-## Features
+This software is licensed under the Artistic License 2.0.
 
-- [x] Model:
-    - [x] Associations
-        - [x] belongs-to
-        - [x] has-many
-        - [x] has-many -> through
-    - [x] Querying
-        - [x] where, all, first, last, count
-        - [x] find (raises `X::RecordNotFound` on miss)
-        - [x] find-by, find-by-or-die
-        - [x] take
-        - [x] exists
-        - [x] order, limit, offset, select
-        - [x] pluck, ids
-        - [x] Chainable relations (`User.where(...).order(...).limit(...).all`)
-    - [x] Persistence
-        - [x] create, save, update, build
-        - [x] save-or-die, update-or-die, create-or-die (raise `X::RecordInvalid`)
-        - [x] destroy (with callbacks), delete (skip callbacks), destroy-all
-        - [x] Automatic created_at / updated_at management
-    - [x] Validations
-        - [x] Conditionals: if, unless, on, create, update
-        - [x] Acceptance
-        - [x] Confirmation
-        - [x] Exclusion
-        - [x] Format
-        - [x] Inclusion
-        - [x] Length
-        - [x] Minimum
-        - [x] Maximum
-        - [x] In a range
-        - [x] Is exactly
-        - [x] Numericality
-        - [x] Less than
-        - [x] Less than or equal
-        - [x] Greater than
-        - [x] Greater than or equal
-        - [x] In a range
-        - [x] Presence
-        - [x] Uniqueness
-        - [x] Unique Scope
-    - [x] Callbacks
-        - [x] after: create, save, update, destroy
-        - [x] before: create, save, update, destroy
-    - [x] Scopes
-    - [x] Dirty
-    - [x] Custom Errors
-- [x] Migrations
-    - [x] Tables, columns, indexes, foreign-key references
-    - [x] add-timestamps / remove-timestamps
-    - [x] Datetime / timestamp column type
-- [x] PostgreSQL support
-- [x] Bound parameters everywhere (SQL injection safe)
-    - [x] `sanitize-sql` / `sanitize-sql-array` for raw fragments (`?` and
-          `:name` rewritten to `$N` bound params)
-- [x] Connection lifecycle: `disconnect`, `reconnect`, `is-connected`, with
-      auto-reconnect on the next query
+[![GitHub](https://img.shields.io/github/license/gdonald/ORM-ActiveRecord?color=aa0000)](https://github.com/gdonald/ORM-ActiveRecord/blob/master/LICENSE)

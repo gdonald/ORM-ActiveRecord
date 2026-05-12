@@ -275,8 +275,16 @@ class Query is export {
   }
 
   method to-sql(--> Str) {
+    self!build-select-stmt.sql;
+  }
+
+  method explain(--> Str) {
+    DB.shared.explain(self!build-select-stmt);
+  }
+
+  method !build-select-stmt(--> SqlStmt) {
     my @or-groups = self.or-groups-payload;
-    my $stmt = DB.shared.build-select(
+    DB.shared.build-select(
       :$!table, :@!fields,
       where => $!params, where-not => $!not-params, :@or-groups,
       order => @!order, limit => $!limit, offset => $!offset,
@@ -287,7 +295,42 @@ class Query is export {
       annotations => @!annotations,
       optimizer-hints => @!optimizer-hints,
     );
-    $stmt.sql;
+  }
+
+  method is-any(--> Bool)   { not self.is-empty }
+  method is-empty(--> Bool) {
+    return True if $!is-none;
+    self.count == 0;
+  }
+  method is-none(--> Bool)  { $!is-none.so }
+  method is-one(--> Bool)   {
+    return False if $!is-none;
+    self.count == 1;
+  }
+  method is-many(--> Bool)  {
+    return False if $!is-none;
+    self.count > 1;
+  }
+
+  method cache-key(--> Str) {
+    my $stmt = self!build-select-stmt;
+    my $fingerprint = $stmt.sql ~ "\0" ~ $stmt.binds.map(*.gist).join("\0");
+    "$!table/query-" ~ Utils.fnv1a-hex($fingerprint);
+  }
+
+  method cache-version(--> Str) {
+    return '0' if $!is-none;
+    return Str unless @!fields.first({ .name eq 'updated_at' }).so;
+    my $count = self.count;
+    return '0' if $count == 0;
+    my $max = self.maximum('updated_at');
+    my $ts = $max.defined ?? $max.Str !! 'na';
+    "$count-$ts";
+  }
+
+  method cache-key-with-version(--> Str) {
+    my $v = self.cache-version;
+    $v.defined ?? self.cache-key ~ '-' ~ $v !! self.cache-key;
   }
 
   method unscope(*@kinds, *%kw) {

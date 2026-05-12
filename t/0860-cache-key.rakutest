@@ -1,0 +1,124 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Support::Utils;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+# Table WITH updated_at, so cache-version can compute a real fingerprint
+$sqlite.ddl-create-table('widgets', [
+  name => { :string, limit => 64 },
+  qty  => { :integer, default => 0 },
+]);
+$sqlite.ddl-add-timestamps('widgets');
+
+# Table WITHOUT updated_at, so cache-version must skip the timestamp lookup
+$sqlite.ddl-create-table('gadgets', [
+  label => { :string, limit => 64 },
+]);
+
+use ORM::ActiveRecord::Model;
+
+class Widget is Model {}
+class Gadget is Model {}
+
+plan 23;
+
+# fnv1a-hex sanity — deterministic and adapter-independent
+is Utils.fnv1a-hex(''),       'cbf29ce484222325', 'fnv1a-hex of empty string is the FNV-1a 64-bit offset basis';
+is Utils.fnv1a-hex('a'),      'af63dc4c8601ec8c', 'fnv1a-hex of "a" matches the standard reference output';
+is Utils.fnv1a-hex('foobar'), '85944171f73967e8', 'fnv1a-hex of "foobar" matches the standard reference output';
+isnt Utils.fnv1a-hex('A'), Utils.fnv1a-hex('a'), 'fnv1a-hex is case-sensitive';
+is Utils.fnv1a-hex('hello').chars, 16, 'fnv1a-hex output is 16 hex chars';
+
+# cache-key — model and relation
+like Widget.cache-key, /^ 'widgets/query-' <[0..9 a..f]> ** 16 $/,
+  'Model.cache-key is "<table>/query-<16 hex chars>"';
+
+isnt Widget.cache-key, Widget.where({ qty => 1 }).cache-key,
+  'cache-key changes when WHERE narrows the SQL';
+
+is Widget.cache-key, Widget.all.cache-key,
+  'Model.cache-key matches Model.all.cache-key';
+
+is Widget.where({ qty => 1 }).cache-key,
+   Widget.where({ qty => 1 }).cache-key,
+  'cache-key is deterministic for the same relation';
+
+isnt Widget.cache-key, Gadget.cache-key,
+  'cache-key namespaces by table';
+
+# cache-version with no rows
+is Widget.cache-version, '0', 'cache-version is "0" when the relation is empty';
+is Widget.cache-key-with-version,
+   Widget.cache-key ~ '-0',
+  'cache-key-with-version appends "-0" on an empty relation';
+
+# cache-version after inserts
+Widget.create({ name => 'Alpha', qty => 1 });
+Widget.create({ name => 'Beta',  qty => 2 });
+
+like Widget.cache-version, /^ 2 '-' .+ /,
+  'cache-version starts with the row count and embeds the max(updated_at)';
+
+my $v1 = Widget.cache-version;
+my $k1 = Widget.cache-key-with-version;
+ok $k1.starts-with(Widget.cache-key ~ '-'), 'cache-key-with-version is "cache-key-version"';
+ok $k1.ends-with($v1),                      'cache-key-with-version ends with the version';
+
+# After an insert the version flips
+Widget.create({ name => 'Gamma', qty => 3 });
+isnt Widget.cache-version, $v1,
+  'cache-version changes when a row is added';
+
+# cache-version on a model without updated_at falls back to bare cache-key
+Gadget.create({ label => 'one' });
+nok Gadget.cache-version.defined,
+  'cache-version is undefined when the table has no updated_at column';
+is Gadget.cache-key-with-version, Gadget.cache-key,
+  'cache-key-with-version falls back to the bare cache-key when there is no version';
+
+# .none short-circuits cache-version to "0"
+is Widget.none.cache-version, '0', 'none.cache-version is "0" (never queries the DB)';
+is Widget.none.cache-key-with-version, Widget.none.cache-key ~ '-0',
+  'none.cache-key-with-version appends "-0"';
+
+# Different WHEREs produce different keys
+isnt Widget.where({ qty => 1 }).cache-key,
+     Widget.where({ qty => 2 }).cache-key,
+  'cache-key tracks the bound values via the SQL fingerprint';
+
+# Inspection does not mutate the relation
+my $rel = Widget.where({ qty => 1 });
+my $sql-before = $rel.to-sql;
+$rel.cache-key;
+$rel.cache-version;
+$rel.cache-key-with-version;
+is $rel.to-sql, $sql-before, 'cache helpers do not mutate the relation';
+
+# Order matters for the SQL fingerprint (different ORDER → different key)
+isnt Widget.order('qty').cache-key,
+     Widget.order('name').cache-key,
+  'cache-key tracks ORDER BY';
+
+DB.set-shared(Nil);

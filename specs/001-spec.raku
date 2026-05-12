@@ -53,4 +53,37 @@ describe 'User', {
     my $user = User.build({fname => '', lname => 'Donald'});
     expect($user.is-invalid).to.be(True);
   }
+
+  it 'reports relation predicates', {
+    expect(User.is-empty).to.be(True);
+    User.create({fname => 'Greg', lname => 'Donald'});
+    expect(User.is-any).to.be(True);
+    expect(User.is-one).to.be(True);
+    expect(User.is-many).to.be(False);
+  }
+
+  it 'is-none tracks the explicit .none scope, not the row count', {
+    expect(User.where({fname => 'Nobody'}).is-none).to.be(False);
+    expect(User.none.is-none).to.be(True);
+  }
+
+  it 'cache-key namespaces by table and SQL fingerprint', {
+    User.create({fname => 'Greg', lname => 'Donald'});
+    my $key = User.cache-key;
+    expect($key.starts-with('users/query-')).to.be(True);
+    expect(User.cache-key).to.be(User.all.cache-key);
+    expect(User.cache-key).not.to.be(User.where({fname => 'Greg'}).cache-key);
+  }
+
+  it 'cache-version starts at 0 and flips on insert', {
+    expect(User.cache-version).to.be('0');
+    User.create({fname => 'Greg', lname => 'Donald'});
+    expect(User.cache-version).not.to.be('0');
+  }
+
+  it 'explain returns a non-empty plan', {
+    User.create({fname => 'Greg', lname => 'Donald'});
+    my $plan = User.where({fname => 'Greg'}).explain;
+    expect($plan.defined && $plan.chars > 0).to.be(True);
+  }
 }

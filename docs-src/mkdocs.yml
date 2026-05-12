@@ -12,6 +12,7 @@ nav:
     - Aggregation: models/aggregation.md
     - Batching: models/batching.md
     - Raw SQL & CTEs: models/raw.md
+    - Inspection: models/inspection.md
     - Persistence: models/persistence.md
     - Callbacks: models/callbacks.md
   - Validations:
