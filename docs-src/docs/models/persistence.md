@@ -72,6 +72,58 @@ returns whether the save succeeded via the resulting record's `id`), while
 `build` is purely in-memory. Reach for `build` when you need to inspect or
 mutate the record before deciding to save.
 
+## Cloning and Copying
+
+`dup` returns a new, unsaved copy of the record with `id`, `created_at`,
+and `updated_at` cleared. The new instance is fresh: not persisted, not
+readonly, not destroyed. Use it when you need to fork a record into a
+second row without manually copying every attribute.
+
+```perl6
+my $orig = User.create({fname => 'Greg', lname => 'Donald'});
+my $copy = $orig.dup;
+
+$copy.is-new-record;   # True
+$copy.id;              # 0
+$copy.fname;           # 'Greg'
+
+$copy.fname = 'Greg2';
+$copy.save;            # inserts a new row
+$orig.fname;           # still 'Greg'
+```
+
+`clone` returns a shallow copy that **preserves** the `id` and the
+`readonly` flag. Mutating attributes on the clone does not affect the
+original.
+
+```perl6
+my $u = User.create({fname => 'Greg'});
+my $c = $u.clone;
+$c.id == $u.id;        # True
+$c.fname = 'Bob';
+$u.fname;              # 'Greg' — unchanged
+```
+
+`becomes(Klass)` returns an instance of `Klass` carrying the receiver's
+`id` and attributes. It is the building block for Single-Table Inheritance
+(STI) casts — re-instantiating a row through a different subclass so that
+subclass-specific behavior applies.
+
+```perl6
+my $v = Vehicle.find($id);
+my $car = $v.becomes(Car);   # same id, same attrs, Car methods now in scope
+```
+
+`becomes-or-die(Klass)` does the same and additionally writes the new
+class name into the `type` column when the table has one, mirroring
+Rails' `becomes!` for STI.
+
+```perl6
+my $car = $v.becomes-or-die(Car);
+$car.read-attribute('type');   # 'Car'
+$car.save;                     # persists the type change
+```
+
 ## Destroy and Delete
 
 `destroy` removes the record from the database **and** fires the

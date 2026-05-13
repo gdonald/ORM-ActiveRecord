@@ -1,0 +1,136 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+$sqlite.ddl-create-table('widgets', [
+  name   => { :string, limit => 64 },
+  qty    => { :integer, default => 0 },
+  active => { :boolean, default => False },
+]);
+$sqlite.ddl-add-timestamps('widgets');
+
+$sqlite.ddl-create-table('vehicles', [
+  type => { :string, limit => 64 },
+  name => { :string, limit => 64 },
+]);
+
+use ORM::ActiveRecord::Model;
+
+class Widget is Model {}
+
+class Vehicle is Model {}
+
+class Car is Vehicle {
+  method table-name { 'vehicles' }
+}
+
+class Truck is Vehicle {
+  method table-name { 'vehicles' }
+}
+
+plan 24;
+
+# dup on a persisted record produces an unsaved copy
+{
+  my $w = Widget.create({ name => 'orig', qty => 5, active => True });
+  my $d = $w.dup;
+
+  ok $d.is-new-record,        'dup yields a new record';
+  nok $d.is-persisted,        'dup is not persisted';
+  is $d.id, 0,                'dup has id == 0';
+  is $d.name, 'orig',         'dup copies name';
+  is $d.qty, 5,               'dup copies qty';
+  is $d.active, True,         'dup copies active';
+  isnt $d.WHICH, $w.WHICH,    'dup is a distinct instance';
+
+  $d.name = 'cloned';
+  is $w.name, 'orig',         'mutating dup does not affect original';
+}
+
+# dup of unsaved record stays unsaved
+{
+  my $w = Widget.build({ name => 'unsaved', qty => 9 });
+  my $d = $w.dup;
+  ok $d.is-new-record,        'dup of unsaved record is new';
+  is $d.name, 'unsaved',      'dup of unsaved carries attrs';
+}
+
+# dup can be saved independently
+{
+  my $w = Widget.create({ name => 'parent', qty => 1 });
+  my $d = $w.dup;
+  $d.save;
+  ok $d.id > 0,               'dup save assigns new id';
+  isnt $d.id, $w.id,          'dup save produces a different id';
+}
+
+# clone preserves id and attrs but is a distinct instance
+{
+  my $w = Widget.create({ name => 'cloneme', qty => 11 });
+  my $c = $w.clone;
+  is $c.id, $w.id,            'clone preserves id';
+  is $c.name, 'cloneme',      'clone preserves name';
+  isnt $c.WHICH, $w.WHICH,    'clone is a distinct instance';
+
+  $c.name = 'changed';
+  is $w.name, 'cloneme',      'mutating clone does not affect original';
+}
+
+# clone propagates readonly state
+{
+  my $w = Widget.create({ name => 'ro', qty => 1 });
+  $w.make-readonly;
+  my $c = $w.clone;
+  ok $c.is-readonly,          'clone preserves readonly flag';
+}
+
+# becomes returns instance of target subclass with same id and attrs
+{
+  my $v = Vehicle.create({ name => 'V1', type => 'Vehicle' });
+  my $car = $v.becomes(Car);
+
+  ok $car ~~ Car,             'becomes returns a Car';
+  ok $car ~~ Vehicle,         'becomes returns also a Vehicle';
+  is $car.id, $v.id,          'becomes preserves id';
+  is $car.name, 'V1',         'becomes copies attrs';
+}
+
+# becomes-or-die sets type column when present
+{
+  my $v = Vehicle.create({ name => 'V2', type => 'Vehicle' });
+  my $truck = $v.becomes-or-die(Truck);
+
+  ok $truck ~~ Truck,         'becomes-or-die returns a Truck';
+  is $truck.read-attribute('type'), 'Truck',
+                              'becomes-or-die writes new class name to type column';
+}
+
+# becomes rejects non-Model targets
+{
+  my $v = Vehicle.create({ name => 'V3', type => 'Vehicle' });
+  dies-ok { $v.becomes(Int) },  'becomes dies for non-Model target';
+}
+
+DB.set-shared(Nil);

@@ -1081,6 +1081,43 @@ class Model is export {
     $v.defined ?? self.cache-key ~ '-' ~ $v !! self.cache-key;
   }
 
+  method dup() {
+    my $class = self.WHAT;
+    my %attrs-copy;
+    for %!attrs.kv -> $key, $val {
+      next if $key eq any('id', 'created_at', 'updated_at');
+      %attrs-copy{$key} = $val;
+    }
+    $class.new(:id(0), :record({ attrs => %attrs-copy }));
+  }
+
+  method clone() {
+    my $class = self.WHAT;
+    my %attrs-copy;
+    for %!attrs.kv -> $key, $val { %attrs-copy{$key} = $val }
+    my $new = $class.new(:id($!id), :record({ attrs => %attrs-copy }));
+    $new.make-readonly if $!readonly;
+    $new;
+  }
+
+  method becomes($klass) {
+    die 'becomes: target must be a Model subclass'
+      if $klass.DEFINITE || $klass !~~ Model;
+    my %attrs-copy;
+    for %!attrs.kv -> $key, $val { %attrs-copy{$key} = $val }
+    my $new = $klass.new(:id($!id), :record({ attrs => %attrs-copy }));
+    $new.make-readonly if $!readonly;
+    $new;
+  }
+
+  method becomes-or-die($klass) {
+    my $new = self.becomes($klass);
+    if $new.has-attribute('type') {
+      $new.write-attribute('type', $klass.^name);
+    }
+    $new;
+  }
+
   method to-param() {
     return Str if $!id == 0;
     $!id.Str;
