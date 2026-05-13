@@ -14,6 +14,7 @@ nav:
     - Raw SQL & CTEs: models/raw.md
     - Inspection: models/inspection.md
     - Persistence: models/persistence.md
+    - Serialization: models/serialization.md
     - Callbacks: models/callbacks.md
   - Validations:
     - Data: validations/data.md

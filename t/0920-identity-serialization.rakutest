@@ -1,0 +1,166 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+use JSON::Tiny;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+$sqlite.ddl-create-table('widgets', [
+  name     => { :string, limit => 64 },
+  password => { :string, limit => 64 },
+  qty      => { :integer, default => 0 },
+  active   => { :boolean, default => False },
+]);
+$sqlite.ddl-add-timestamps('widgets');
+
+$sqlite.ddl-create-table('gadgets', [
+  label => { :string, limit => 64 },
+]);
+
+use ORM::ActiveRecord::Model;
+
+class Widget is Model {
+  submethod BUILD {
+    self.filter-attribute('password');
+  }
+
+  method shout { (self.name // '').uc }
+}
+
+class Gadget is Model {}
+
+plan 38;
+
+# to-param
+{
+  my $w = Widget.new(:id(0));
+  nok $w.to-param.defined,                'to-param is undefined for new record';
+
+  my $saved = Widget.create({ name => 'a', qty => 1 });
+  is $saved.to-param, $saved.id.Str,      'to-param returns id as string';
+  isa-ok $saved.to-param, Str,            'to-param is a Str';
+}
+
+# to-key
+{
+  my $w = Widget.new(:id(0));
+  nok $w.to-key.defined,                  'to-key is Nil for new record';
+
+  my $saved = Widget.create({ name => 'b', qty => 2 });
+  is-deeply $saved.to-key, [$saved.id],   'to-key returns [id] for persisted';
+}
+
+# instance cache-key / cache-version / cache-key-with-version
+{
+  my $w = Widget.new(:id(0));
+  is $w.cache-key, 'widgets/new',         'cache-key returns widgets/new for unsaved';
+
+  my $a = Widget.create({ name => 'cka', qty => 1 });
+  is $a.cache-key, 'widgets/' ~ $a.id,    'cache-key returns table/id';
+  ok $a.cache-version.defined,            'cache-version is defined when updated_at present';
+  is $a.cache-key-with-version,
+     $a.cache-key ~ '-' ~ $a.cache-version,
+                                          'cache-key-with-version joins both';
+
+  my $g = Gadget.create({ label => 'g1' });
+  is $g.cache-key, 'gadgets/' ~ $g.id,    'instance cache-key works for table without timestamps';
+  nok $g.cache-version.defined,           'cache-version is undefined without updated_at';
+  is $g.cache-key-with-version, $g.cache-key,
+                                          'cache-key-with-version falls back without version';
+
+  like Widget.cache-key, /^ 'widgets/query-' /,
+                                          'class-level cache-key still routes to relation';
+}
+
+# serializable-hash / as-json / to-json
+{
+  my $w = Widget.create({ name => 'json1', qty => 7, active => True });
+  my %h = $w.serializable-hash;
+  is %h<name>,   'json1',                 'serializable-hash includes name';
+  is %h<qty>,    7,                       'serializable-hash includes qty';
+  ok %h<id>:exists,                       'serializable-hash includes id';
+  ok %h<password>:exists,                 'serializable-hash includes filtered keys (filtering is inspect-only)';
+
+  my %only = $w.serializable-hash(:only<name qty>);
+  is %only.keys.sort.join(','), 'name,qty', 'serializable-hash :only filters';
+
+  my %except = $w.serializable-hash(:except<password created_at updated_at>);
+  nok %except<password>:exists,           'serializable-hash :except drops keys';
+  ok %except<name>:exists,                'serializable-hash :except keeps others';
+
+  my %methods = $w.serializable-hash(:only<name>, :methods<shout>);
+  is %methods<shout>, 'JSON1',            'serializable-hash :methods adds method results';
+
+  my %json-h = $w.as-json;
+  ok %json-h<updated_at> ~~ Str,          'as-json coerces DateTime to Str';
+
+  my $json-str = $w.to-json(:only<name qty active>);
+  my $parsed = from-json($json-str);
+  is $parsed<name>, 'json1',              'to-json round-trips name';
+  is $parsed<qty>, 7,                     'to-json round-trips qty';
+  is $parsed<active>, True,               'to-json round-trips active';
+}
+
+# attribute-for-inspect / inspect
+{
+  my $w = Widget.create({ name => 'inspect-me', qty => 3, active => True });
+  is $w.attribute-for-inspect('name'), '"inspect-me"',
+                                          'attribute-for-inspect quotes strings';
+  is $w.attribute-for-inspect('qty'),  '3',
+                                          'attribute-for-inspect renders integers bare';
+  is $w.attribute-for-inspect('active'), 'True',
+                                          'attribute-for-inspect renders booleans';
+
+  my $long = 'x' x 80;
+  my $w2 = Widget.new(:id(0));
+  $w2.write-attribute('name', $long);
+  is $w2.attribute-for-inspect('name').chars, 55,
+                                          'attribute-for-inspect truncates long strings to 50 + quotes + ellipsis';
+  ok $w2.attribute-for-inspect('name').ends-with('..."'),
+                                          'attribute-for-inspect ends with ..." after truncation';
+
+  my $s = $w.inspect;
+  ok $s.starts-with('#<Widget '),         'inspect starts with #<Class';
+  ok $s.ends-with('>'),                   'inspect ends with >';
+  ok $s.contains('name: "inspect-me"'),   'inspect renders name';
+  ok $s.contains('qty: 3'),               'inspect renders qty';
+}
+
+# filter-attributes — redacted in inspect, not in serializable-hash
+{
+  my $w = Widget.create({ name => 'secret-owner', password => 'hunter2', qty => 1 });
+  is $w.attribute-for-inspect('password'), '[FILTERED]',
+                                          'filtered attributes show [FILTERED] in attribute-for-inspect';
+  ok $w.inspect.contains('password: [FILTERED]'),
+                                          'inspect redacts filtered attributes';
+  is $w.serializable-hash<password>, 'hunter2',
+                                          'serializable-hash does NOT redact (Rails parity)';
+}
+
+# gist hooks into inspect for defined instances
+{
+  my $w = Widget.create({ name => 'gistly', qty => 1 });
+  ok $w.gist.starts-with('#<Widget '),    'gist routes to inspect for instances';
+}
+
+DB.set-shared(Nil);

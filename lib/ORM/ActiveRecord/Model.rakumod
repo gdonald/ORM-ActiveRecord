@@ -10,6 +10,7 @@ use ORM::ActiveRecord::Relation::Scopes;
 use ORM::ActiveRecord::Support::Utils;
 use ORM::ActiveRecord::Validations::Validator;
 use ORM::ActiveRecord::Validations::Validators;
+use JSON::Tiny;
 
 class Model is export {
   has DB $!db;
@@ -41,6 +42,8 @@ class Model is export {
 
   has @.before-destroys;
   has @.after-destroys;
+
+  has @.filter-attributes;
 
   my Scopes $.scopes;
 
@@ -1059,9 +1062,116 @@ class Model is export {
   method is-one(--> Bool)   { self.all.is-one   }
   method is-many(--> Bool)  { self.all.is-many  }
 
-  method cache-key(--> Str)              { self.all.cache-key              }
-  method cache-version(--> Str)          { self.all.cache-version          }
-  method cache-key-with-version(--> Str) { self.all.cache-key-with-version }
+  method cache-key(--> Str) {
+    return self.all.cache-key unless self.DEFINITE;
+    my $table = self.table-name;
+    return "$table/new" if $!id == 0;
+    "$table/$!id";
+  }
+
+  method cache-version() {
+    return self.all.cache-version unless self.DEFINITE;
+    return Str unless %!attrs<updated_at>:exists && %!attrs<updated_at>.defined;
+    %!attrs<updated_at>.Str;
+  }
+
+  method cache-key-with-version(--> Str) {
+    return self.all.cache-key-with-version unless self.DEFINITE;
+    my $v = self.cache-version;
+    $v.defined ?? self.cache-key ~ '-' ~ $v !! self.cache-key;
+  }
+
+  method to-param() {
+    return Str if $!id == 0;
+    $!id.Str;
+  }
+
+  method to-key() {
+    return Nil if $!id == 0;
+    [$!id];
+  }
+
+  method filter-attribute(*@names) {
+    @!filter-attributes.append(@names.map(*.Str));
+    self;
+  }
+
+  method !is-filtered(Str:D $name --> Bool) {
+    so @!filter-attributes.first({ ~$_ eq $name });
+  }
+
+  method serializable-hash(:$only = (), :$except = (), :$methods = () --> Hash) {
+    my @only-s   = self!list-of-str($only);
+    my @except-s = self!list-of-str($except);
+    my @methods-s = self!list-of-str($methods);
+    my %out;
+    for self.attribute-names -> $name {
+      next if @only-s.elems   && $name !(elem) @only-s;
+      next if @except-s.elems && $name (elem) @except-s;
+      %out{$name} = %!attrs{$name};
+    }
+    for @methods-s -> $name {
+      %out{$name} = self."$name"();
+    }
+    %out;
+  }
+
+  method !list-of-str($v) {
+    return () without $v;
+    return $v.list.map(*.Str) if $v ~~ Iterable;
+    ($v.Str,);
+  }
+
+  method as-json(*%opts --> Hash) {
+    self!coerce-for-json(self.serializable-hash(|%opts));
+  }
+
+  method to-json(*%opts --> Str) {
+    to-json(self.as-json(|%opts));
+  }
+
+  method !coerce-for-json($value) {
+    given $value {
+      when DateTime    { $value.Str }
+      when Date        { $value.Str }
+      when Hash        {
+        my %h;
+        for $value.kv -> $k, $v { %h{$k} = self!coerce-for-json($v) }
+        %h;
+      }
+      when Positional  { $value.map({ self!coerce-for-json($_) }).list }
+      default          { $value }
+    }
+  }
+
+  method attribute-for-inspect(Str:D $name --> Str) {
+    return '[FILTERED]' if self!is-filtered($name);
+    my $value = %!attrs{$name};
+    return 'Nil' without $value;
+    given $value {
+      when Str {
+        my $s = $value.chars > 50 ?? $value.substr(0, 50) ~ '...' !! $value;
+        '"' ~ $s ~ '"';
+      }
+      when DateTime | Date { '"' ~ $value.Str ~ '"' }
+      when Bool            { $value ?? 'True' !! 'False' }
+      default              { $value.Str }
+    }
+  }
+
+  method inspect(--> Str) {
+    my $class-name = self.WHAT.^name;
+    my @parts;
+    for self.attribute-names -> $name {
+      @parts.push: $name ~ ': ' ~ self.attribute-for-inspect($name);
+    }
+    '#<' ~ $class-name ~ ' ' ~ @parts.join(', ') ~ '>';
+  }
+
+  method gist(--> Str) {
+    return callsame() unless self.DEFINITE;
+    self.inspect;
+  }
 
   multi method find-by-sql(@parts) {
     self!do-find-by-sql(@parts);
