@@ -37,3 +37,14 @@ class X::SoleRecordExceeded is Exception is export {
     "Wanted only one " ~ ($!model // 'record');
   }
 }
+
+class X::Rollback is Exception is export {
+  has Str $.reason;
+  method message {
+    $!reason.defined ?? "Transaction rolled back: $!reason" !! 'Transaction rolled back';
+  }
+}
+
+class X::TransactionRequired is Exception is export {
+  method message { 'A transaction is required for this operation' }
+}

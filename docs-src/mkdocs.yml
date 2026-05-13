@@ -16,6 +16,7 @@ nav:
     - Persistence: models/persistence.md
     - Serialization: models/serialization.md
     - Callbacks: models/callbacks.md
+    - Transactions: models/transactions.md
   - Validations:
     - Data: validations/data.md
     - Conditionals: validations/conditionals.md

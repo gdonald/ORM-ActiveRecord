@@ -1,0 +1,172 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+$sqlite.ddl-create-table('widgets', [
+  name => { :string, limit => 64 },
+  qty  => { :integer, default => 0 },
+]);
+$sqlite.ddl-add-timestamps('widgets');
+
+use ORM::ActiveRecord::Model;
+
+class Widget is Model {}
+
+plan 24;
+
+# Outer transaction commits on normal exit
+{
+  Widget.destroy-all;
+  DB.shared.transaction({
+    Widget.create({ name => 'committed', qty => 1 });
+  });
+  is Widget.count, 1, 'block return commits inserts';
+  nok DB.shared.is-in-transaction, 'depth resets to 0 after commit';
+}
+
+# Outer transaction rolls back when block dies
+{
+  Widget.destroy-all;
+  dies-ok {
+    DB.shared.transaction({
+      Widget.create({ name => 'doomed', qty => 1 });
+      die 'boom';
+    });
+  }, 'unhandled exception escapes the transaction';
+  is Widget.count, 0, 'unhandled exception rolls back the insert';
+  nok DB.shared.is-in-transaction, 'depth resets to 0 after rollback';
+}
+
+# X::Rollback rolls back without re-raising
+{
+  Widget.destroy-all;
+  lives-ok {
+    DB.shared.transaction({
+      Widget.create({ name => 'aborted', qty => 1 });
+      die X::Rollback.new(:reason<test>);
+    });
+  }, 'X::Rollback is swallowed by the transaction helper';
+  is Widget.count, 0, 'X::Rollback rolls back inserts';
+  nok DB.shared.is-in-transaction, 'depth resets to 0';
+}
+
+# Nested transactions join the outer by default — inner rollback rolls back outer
+{
+  Widget.destroy-all;
+  dies-ok {
+    DB.shared.transaction({
+      Widget.create({ name => 'outer', qty => 1 });
+      DB.shared.transaction({
+        Widget.create({ name => 'inner', qty => 2 });
+        die 'inner boom';
+      });
+    });
+  }, 'nested die without requires-new propagates';
+  is Widget.count, 0, 'inner failure rolls back the whole outer transaction';
+}
+
+# requires-new isolates the inner failure via SAVEPOINT
+{
+  Widget.destroy-all;
+  DB.shared.transaction({
+    Widget.create({ name => 'outer', qty => 1 });
+    lives-ok {
+      DB.shared.transaction(:requires-new, {
+        Widget.create({ name => 'sp-doomed', qty => 9 });
+        die X::Rollback.new;
+      });
+    }, 'savepoint rollback does not propagate';
+    Widget.create({ name => 'after-sp', qty => 3 });
+  });
+  is Widget.count, 2, 'outer transaction keeps its own inserts';
+  my @names = Widget.all.pluck('name').sort;
+  is @names.join(','), 'after-sp,outer', 'savepoint rollback dropped only the inner insert';
+}
+
+# requires-new failure with non-X::Rollback rethrows but the savepoint is released
+{
+  Widget.destroy-all;
+  dies-ok {
+    DB.shared.transaction({
+      Widget.create({ name => 'outer-2', qty => 1 });
+      DB.shared.transaction(:requires-new, {
+        die 'savepoint boom';
+      });
+      Widget.create({ name => 'never-reached', qty => 99 });
+    });
+  }, 'savepoint exception propagates to outer block';
+  is Widget.count, 0, 'outer transaction rolls back when savepoint exception escapes';
+}
+
+# is-in-transaction reports correctly during a block
+{
+  Widget.destroy-all;
+  nok DB.shared.is-in-transaction, 'no transaction at the start';
+  my $saw-flag = False;
+  DB.shared.transaction({
+    $saw-flag = DB.shared.is-in-transaction;
+  });
+  ok $saw-flag, 'is-in-transaction is True inside the block';
+  nok DB.shared.is-in-transaction, 'flag clears after commit';
+}
+
+# Transaction block returns the block's value
+{
+  my $result = DB.shared.transaction({ 42 });
+  is $result, 42, 'transaction returns the block value';
+}
+
+# isolation only valid on the outermost call
+{
+  lives-ok {
+    DB.shared.transaction(:isolation<read_committed>, { 1 });
+  }, 'outer transaction accepts isolation level';
+
+  dies-ok {
+    DB.shared.transaction({
+      DB.shared.transaction(:isolation<serializable>, { 1 });
+    });
+  }, 'inner transaction with isolation raises';
+}
+
+# Unknown isolation level fails fast
+{
+  dies-ok {
+    DB.shared.transaction(:isolation<bananas>, { 1 });
+  }, 'unknown isolation level is rejected';
+  nok DB.shared.is-in-transaction, 'failed isolation level does not leave a dangling transaction';
+}
+
+# Model.transaction class-method delegates to DB
+{
+  Widget.destroy-all;
+  Widget.transaction({
+    Widget.create({ name => 'via-model', qty => 5 });
+  });
+  is Widget.count, 1, 'Model.transaction wraps DB.transaction';
+}
+
+DB.set-shared(Nil);

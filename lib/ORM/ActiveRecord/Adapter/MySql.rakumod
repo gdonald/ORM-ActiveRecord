@@ -60,6 +60,16 @@ class MySqlAdapter is SqlAdapter is export {
 
   method bind-placeholder(Int:D $n --> Str) { '?' }
 
+  # MySQL doesn't accept ISOLATION LEVEL inside START TRANSACTION the way
+  # PG accepts it in BEGIN. Emit a separate SET TRANSACTION first.
+  method begin-sql(Str :$isolation) {
+    if $isolation.defined && $isolation.chars {
+      my $level = self.normalise-isolation($isolation);
+      self.exec("SET TRANSACTION ISOLATION LEVEL $level");
+    }
+    self.exec('START TRANSACTION');
+  }
+
   method limit-offset-clause(Int:D :$limit = 0, Int:D :$offset = 0 --> Str) {
     return '' unless $limit || $offset;
     my $l = $limit ?? $limit !! 18446744073709551615;

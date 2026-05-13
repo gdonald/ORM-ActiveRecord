@@ -1048,6 +1048,10 @@ class Model is export {
     self.all.optimizer-hints(|@hints);
   }
 
+  method transaction(&block, Bool :$requires-new = False, Str :$isolation) {
+    DB.shared.transaction(&block, :$requires-new, :$isolation);
+  }
+
   method to-sql(--> Str) {
     self.all.to-sql;
   }

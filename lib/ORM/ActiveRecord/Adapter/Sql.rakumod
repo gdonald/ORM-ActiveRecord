@@ -2,6 +2,7 @@
 use DBIish;
 
 use ORM::ActiveRecord::Adapter;
+use ORM::ActiveRecord::Errors::X;
 use ORM::ActiveRecord::Schema::Field;
 use ORM::ActiveRecord::Support::Log;
 use ORM::ActiveRecord::Support::Utils;
@@ -12,6 +13,8 @@ use ORM::ActiveRecord::Support::Utils;
 # DDL emission, and read/write type coercion.
 class SqlAdapter does Adapter is export {
   has $.db is rw;
+  has Int $.txn-depth = 0;
+  has Int $!sp-counter = 0;
 
   # Engine-specific — must be overridden
   method connect()              { ... }
@@ -29,6 +32,8 @@ class SqlAdapter does Adapter is export {
     return False unless $!db.defined;
     $!db.dispose;
     $!db = Nil;
+    $!txn-depth = 0;
+    $!sp-counter = 0;
     True;
   }
 
@@ -89,9 +94,122 @@ class SqlAdapter does Adapter is export {
     }
   }
 
-  method begin    { self!txn-exec('BEGIN') }
+  method begin(Str :$isolation)    { self.begin-sql(:$isolation) }
   method commit   { self!txn-exec('COMMIT') }
   method rollback { self!txn-exec('ROLLBACK') }
+
+  method is-in-transaction(--> Bool) { $!txn-depth > 0 }
+
+  # Default BEGIN with optional isolation suffix. Adapters override when
+  # the dialect needs a different shape (e.g. MySQL requires SET TRANSACTION
+  # before START TRANSACTION).
+  method begin-sql(Str :$isolation) {
+    if $isolation.defined && $isolation.chars {
+      my $clause = self.isolation-clause($isolation);
+      self!txn-exec("BEGIN $clause");
+    } else {
+      self!txn-exec('BEGIN');
+    }
+  }
+
+  method isolation-clause(Str:D $isolation --> Str) {
+    'ISOLATION LEVEL ' ~ self.normalise-isolation($isolation);
+  }
+
+  method normalise-isolation(Str:D $iso --> Str) {
+    my $u = $iso.uc.subst('_', ' ', :g).subst(/\s+/, ' ', :g).trim;
+    given $u {
+      when 'READ UNCOMMITTED' | 'READ COMMITTED' | 'REPEATABLE READ' | 'SERIALIZABLE' { $u }
+      default { die "transaction: unknown isolation level '$iso'" }
+    }
+  }
+
+  method savepoint(Str:D $name)             { self!txn-exec("SAVEPOINT $name") }
+  method release-savepoint(Str:D $name)     { self!txn-exec("RELEASE SAVEPOINT $name") }
+  method rollback-to-savepoint(Str:D $name) { self!txn-exec("ROLLBACK TO SAVEPOINT $name") }
+
+  method transaction(&block, Bool:D :$requires-new = False, Str :$isolation) {
+    if $isolation.defined && $isolation.chars {
+      die "transaction: isolation level only applies to the outermost transaction"
+        if $!txn-depth > 0;
+      self.normalise-isolation($isolation);
+    }
+
+    if $!txn-depth == 0 {
+      self.begin-sql(:$isolation);
+      $!txn-depth = 1;
+      $!sp-counter = 0;
+      return self!run-outer(&block);
+    }
+
+    return self!run-joined(&block) unless $requires-new;
+
+    my $name = self!next-savepoint;
+    self.savepoint($name);
+    $!txn-depth++;
+    self!run-savepoint($name, &block);
+  }
+
+  method !run-outer(&block) {
+    my $result;
+    my $rolled-back = False;
+    {
+      CATCH {
+        when X::Rollback {
+          self.rollback;
+          $!txn-depth = 0;
+          $rolled-back = True;
+        }
+        default {
+          self.rollback;
+          $!txn-depth = 0;
+          .rethrow;
+        }
+      }
+      $result = block();
+    }
+    return Nil if $rolled-back;
+    self.commit;
+    $!txn-depth = 0;
+    $result;
+  }
+
+  method !run-joined(&block) {
+    # Inner non-savepoint call: just run the block; an X::Rollback here
+    # propagates up to the outer transaction so the whole thing rolls back.
+    block();
+  }
+
+  method !run-savepoint(Str:D $name, &block) {
+    my $result;
+    my $rolled-back = False;
+    {
+      CATCH {
+        when X::Rollback {
+          self.rollback-to-savepoint($name);
+          self.release-savepoint($name);
+          $!txn-depth--;
+          $rolled-back = True;
+        }
+        default {
+          self.rollback-to-savepoint($name);
+          self.release-savepoint($name);
+          $!txn-depth--;
+          .rethrow;
+        }
+      }
+      $result = block();
+    }
+    return Nil if $rolled-back;
+    self.release-savepoint($name);
+    $!txn-depth--;
+    $result;
+  }
+
+  method !next-savepoint(--> Str) {
+    $!sp-counter++;
+    'ar_sp_' ~ $!sp-counter;
+  }
 
   method !txn-exec(Str:D $sql) {
     self!ensure-connected;
