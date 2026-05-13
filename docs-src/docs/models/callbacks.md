@@ -4,6 +4,11 @@ ORM::ActiveRecord supports callbacks that can be performed during various life c
 
 These callbacks currently include `after-create`, `after-save`, `after-update`, `after-destroy`, `before-create`, `before-save`, `before-update`, and `before-destroy`.
 
+For callbacks that wait until the surrounding transaction's outcome is
+decided — `after-commit`, `after-rollback`, and the per-action variants
+(`after-create-commit`, `after-update-commit`, `after-destroy-commit`,
+`after-save-commit`) — see [Transactional Callbacks](transactions.md#transactional-callbacks).
+
 ## After Create
 
 ```perl6

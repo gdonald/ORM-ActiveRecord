@@ -20,6 +20,7 @@ role Adapter is export {
   # Transaction stack — block helper with savepoints for nested calls
   method transaction(&block, Bool :$requires-new, Str :$isolation) { ... }
   method is-in-transaction(--> Bool) { ... }
+  method register-txn-callback(Mu:D $record, Str:D $kind) { ... }
 
   # Schema introspection — varies (information_schema vs pragma_table_info)
   method get-fields(Str:D :$table)  { ... }

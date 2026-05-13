@@ -1,0 +1,134 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+$adapter.exec('DROP TABLE IF EXISTS widgets');
+$adapter.ddl-create-table('widgets', [
+  name => { :string, limit => 64 },
+  qty  => { :integer, default => 0 },
+]);
+$adapter.ddl-add-timestamps('widgets');
+
+use ORM::ActiveRecord::Model;
+
+my @events;
+
+class Widget is Model {
+  submethod BUILD {
+    self.after-commit:         -> { @events.push: 'commit:'         ~ (self.name // '') };
+    self.after-rollback:       -> { @events.push: 'rollback:'       ~ (self.name // '') };
+    self.after-create-commit:  -> { @events.push: 'create-commit:'  ~ (self.name // '') };
+    self.after-update-commit:  -> { @events.push: 'update-commit:'  ~ (self.name // '') };
+    self.after-destroy-commit: -> { @events.push: 'destroy-commit:' ~ (self.name // '') };
+    self.after-save-commit:    -> { @events.push: 'save-commit:'    ~ (self.name // '') };
+  }
+}
+
+plan 23;
+
+sub reset-events { @events = () }
+
+{
+  Widget.destroy-all;
+  reset-events;
+  DB.shared.transaction({
+    Widget.create({ name => 'a', qty => 1 });
+  });
+  is @events.grep('commit:a').elems,        1, 'after-commit fires after outer commit';
+  is @events.grep('create-commit:a').elems, 1, 'after-create-commit fires for create';
+  is @events.grep('save-commit:a').elems,   1, 'after-save-commit fires for create';
+  is @events.grep('update-commit:a').elems, 0, 'after-update-commit does not fire for create';
+  is @events.grep('rollback:a').elems,      0, 'after-rollback does not fire on commit';
+}
+
+{
+  Widget.destroy-all;
+  reset-events;
+  lives-ok {
+    DB.shared.transaction({
+      Widget.create({ name => 'b', qty => 1 });
+      die X::Rollback.new;
+    });
+  }, 'rollback path completes';
+  is @events.grep('commit:b').elems,        0, 'after-commit does not fire on rollback';
+  is @events.grep('create-commit:b').elems, 0, 'after-create-commit does not fire on rollback';
+  is @events.grep('rollback:b').elems,      1, 'after-rollback fires on rollback';
+}
+
+{
+  Widget.destroy-all;
+  my $w = Widget.create({ name => 'c', qty => 1 });
+  reset-events;
+  DB.shared.transaction({
+    $w.qty = 99;
+    $w.save;
+  });
+  is @events.grep('update-commit:c').elems, 1, 'after-update-commit fires for update';
+  is @events.grep('save-commit:c').elems,   1, 'after-save-commit fires for update';
+  is @events.grep('create-commit:c').elems, 0, 'after-create-commit does not fire for update';
+  is @events.grep('commit:c').elems,        1, 'after-commit fires once for update';
+}
+
+{
+  Widget.destroy-all;
+  my $w = Widget.create({ name => 'd', qty => 1 });
+  reset-events;
+  DB.shared.transaction({
+    $w.destroy;
+  });
+  is @events.grep('destroy-commit:d').elems, 1, 'after-destroy-commit fires for destroy';
+  is @events.grep('save-commit:d').elems,    0, 'after-save-commit does not fire for destroy';
+  is @events.grep('commit:d').elems,         1, 'after-commit fires for destroy';
+}
+
+{
+  Widget.destroy-all;
+  reset-events;
+  Widget.create({ name => 'e', qty => 1 });
+  is @events.grep('commit:e').elems,        1, 'after-commit fires immediately outside a transaction';
+  is @events.grep('create-commit:e').elems, 1, 'after-create-commit fires immediately outside a transaction';
+}
+
+{
+  Widget.destroy-all;
+  reset-events;
+  DB.shared.transaction({
+    Widget.create({ name => 'outer', qty => 1 });
+    DB.shared.transaction(:requires-new, {
+      Widget.create({ name => 'sp-doomed', qty => 9 });
+      die X::Rollback.new;
+    });
+  });
+  is @events.grep('rollback:sp-doomed').elems, 1, 'savepoint rollback fires after-rollback for inner';
+  is @events.grep('commit:sp-doomed').elems,   0, 'no after-commit for savepoint-rolled-back record';
+  is @events.grep('commit:outer').elems,       1, 'outer record still fires after-commit';
+}
+
+{
+  Widget.destroy-all;
+  my $w = Widget.create({ name => 'dup', qty => 1 });
+  reset-events;
+  DB.shared.transaction({
+    $w.qty = 2;
+    $w.save;
+    $w.qty = 3;
+    $w.save;
+  });
+  is @events.grep('commit:dup').elems,        1, 'after-commit dedup: fires once for two saves';
+  is @events.grep('save-commit:dup').elems,   1, 'after-save-commit dedup: fires once for two saves';
+}
+
+$adapter.exec('DROP TABLE widgets');

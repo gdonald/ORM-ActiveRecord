@@ -43,6 +43,13 @@ class Model is export {
   has @.before-destroys;
   has @.after-destroys;
 
+  has @.after-commits;
+  has @.after-rollbacks;
+  has @.after-create-commits;
+  has @.after-update-commits;
+  has @.after-destroy-commits;
+  has @.after-save-commits;
+
   has @.filter-attributes;
 
   my Scopes $.scopes;
@@ -386,6 +393,32 @@ class Model is export {
     for @!after-destroys { .() }
   }
 
+  method after-commit(Block $block)         { @!after-commits.push: $block }
+  method after-rollback(Block $block)       { @!after-rollbacks.push: $block }
+  method after-create-commit(Block $block)  { @!after-create-commits.push: $block }
+  method after-update-commit(Block $block)  { @!after-update-commits.push: $block }
+  method after-destroy-commit(Block $block) { @!after-destroy-commits.push: $block }
+  method after-save-commit(Block $block)    { @!after-save-commits.push: $block }
+
+  method run-after-commit(:%kinds) {
+    if %kinds<create> {
+      for @!after-create-commits { .() }
+    } elsif %kinds<update> {
+      for @!after-update-commits { .() }
+    }
+    if %kinds<destroy> {
+      for @!after-destroy-commits { .() }
+    }
+    if %kinds<create> || %kinds<update> {
+      for @!after-save-commits { .() }
+    }
+    for @!after-commits { .() }
+  }
+
+  method run-after-rollback(:%kinds) {
+    for @!after-rollbacks { .() }
+  }
+
   method table-name {
     self.WHAT.raku.lc ~ 's';
   }
@@ -543,6 +576,7 @@ class Model is export {
       %!previous-changes = %snapshot;
       %!will-change = ();
       $!previously-new = $was-new;
+      $!db.register-txn-callback(self, $was-new ?? 'create' !! 'update');
       return True;
     }
     False;
@@ -802,6 +836,7 @@ class Model is export {
     self.do-before-destroys;
     self.delete;
     self.do-after-destroys;
+    $!db.register-txn-callback(self, 'destroy');
     True;
   }
 

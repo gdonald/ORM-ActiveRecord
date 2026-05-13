@@ -15,6 +15,7 @@ class SqlAdapter does Adapter is export {
   has $.db is rw;
   has Int $.txn-depth = 0;
   has Int $!sp-counter = 0;
+  has @!txn-frames;
 
   # Engine-specific — must be overridden
   method connect()              { ... }
@@ -34,6 +35,7 @@ class SqlAdapter does Adapter is export {
     $!db = Nil;
     $!txn-depth = 0;
     $!sp-counter = 0;
+    @!txn-frames = ();
     True;
   }
 
@@ -136,6 +138,7 @@ class SqlAdapter does Adapter is export {
       self.begin-sql(:$isolation);
       $!txn-depth = 1;
       $!sp-counter = 0;
+      self!push-txn-frame;
       return self!run-outer(&block);
     }
 
@@ -144,6 +147,7 @@ class SqlAdapter does Adapter is export {
     my $name = self!next-savepoint;
     self.savepoint($name);
     $!txn-depth++;
+    self!push-txn-frame;
     self!run-savepoint($name, &block);
   }
 
@@ -156,10 +160,14 @@ class SqlAdapter does Adapter is export {
           self.rollback;
           $!txn-depth = 0;
           $rolled-back = True;
+          my $frame = self!pop-txn-frame;
+          self!fire-rollback-frame($frame);
         }
         default {
           self.rollback;
           $!txn-depth = 0;
+          my $frame = self!pop-txn-frame;
+          self!fire-rollback-frame($frame);
           .rethrow;
         }
       }
@@ -168,6 +176,8 @@ class SqlAdapter does Adapter is export {
     return Nil if $rolled-back;
     self.commit;
     $!txn-depth = 0;
+    my $frame = self!pop-txn-frame;
+    self!fire-commit-frame($frame);
     $result;
   }
 
@@ -185,11 +195,15 @@ class SqlAdapter does Adapter is export {
           self.release-savepoint($name);
           $!txn-depth--;
           $rolled-back = True;
+          my $frame = self!pop-txn-frame;
+          self!fire-rollback-frame($frame);
         }
         default {
           self.rollback-to-savepoint($name);
           self.release-savepoint($name);
           $!txn-depth--;
+          my $frame = self!pop-txn-frame;
+          self!fire-rollback-frame($frame);
           .rethrow;
         }
       }
@@ -198,7 +212,68 @@ class SqlAdapter does Adapter is export {
     return Nil if $rolled-back;
     self.release-savepoint($name);
     $!txn-depth--;
+    self!merge-txn-frame-into-parent;
     $result;
+  }
+
+  method !push-txn-frame { @!txn-frames.push: { records => {}, order => [] } }
+  method !pop-txn-frame  { @!txn-frames.pop }
+
+  method !merge-txn-frame-into-parent {
+    my $top = @!txn-frames.pop;
+    return unless @!txn-frames.elems;
+    my $parent = @!txn-frames[*-1];
+    for $top<order>.list -> $key {
+      my %entry = $top<records>{$key};
+      if $parent<records>{$key}:exists {
+        for %entry<kinds>.keys -> $k {
+          $parent<records>{$key}<kinds>{$k} = True;
+        }
+      } else {
+        $parent<records>{$key} = %entry;
+        $parent<order>.push: $key;
+      }
+    }
+  }
+
+  method register-txn-callback(Mu:D $record, Str:D $kind) {
+    unless @!txn-frames.elems {
+      self!fire-commit-record($record, %($kind => True));
+      return;
+    }
+    my $key = $record.WHICH.Str;
+    my $frame = @!txn-frames[*-1];
+    unless $frame<records>{$key}:exists {
+      $frame<records>{$key} = %(record => $record, kinds => {});
+      $frame<order>.push: $key;
+    }
+    $frame<records>{$key}<kinds>{$kind} = True;
+  }
+
+  method !fire-commit-frame($frame) {
+    return unless $frame.defined;
+    for $frame<order>.list -> $key {
+      my %entry = $frame<records>{$key};
+      self!fire-commit-record(%entry<record>, %entry<kinds>);
+    }
+  }
+
+  method !fire-rollback-frame($frame) {
+    return unless $frame.defined;
+    for $frame<order>.list -> $key {
+      my %entry = $frame<records>{$key};
+      self!fire-rollback-record(%entry<record>, %entry<kinds>);
+    }
+  }
+
+  method !fire-commit-record(Mu:D $rec, %kinds) {
+    return unless $rec.^can('run-after-commit');
+    $rec.run-after-commit(:%kinds);
+  }
+
+  method !fire-rollback-record(Mu:D $rec, %kinds) {
+    return unless $rec.^can('run-after-rollback');
+    $rec.run-after-rollback(:%kinds);
   }
 
   method !next-savepoint(--> Str) {
