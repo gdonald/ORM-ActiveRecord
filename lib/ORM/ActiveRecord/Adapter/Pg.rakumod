@@ -167,6 +167,58 @@ class PgAdapter is SqlAdapter is export {
     self.exec-stmt($stmt)[0][0].Int;
   }
 
+  method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups --> Int) {
+    my $stmt = self.build-update-where(:$table, :%attrs, :%types, :%where, :%where-not, :@or-groups);
+    my $inner = $stmt.sql.chomp;
+    $stmt.sql = qq:to/SQL/;
+      WITH updated AS ( $inner RETURNING * )
+      SELECT count(*) FROM updated
+      SQL
+    self.exec-stmt($stmt)[0][0].Int;
+  }
+
+  method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups --> Int) {
+    my $stmt = self.build-update-counters-where(:$table, :%counters, :%where, :%where-not, :@or-groups);
+    my $inner = $stmt.sql.chomp;
+    $stmt.sql = qq:to/SQL/;
+      WITH updated AS ( $inner RETURNING * )
+      SELECT count(*) FROM updated
+      SQL
+    self.exec-stmt($stmt)[0][0].Int;
+  }
+
+  method insert-records(Str:D :$table, :@rows, :%types = {}, Bool:D :$skip-conflict = False --> List) {
+    my $stmt = self.build-insert-many(:$table, :@rows, :%types);
+    $stmt.sql ~= ' ON CONFLICT DO NOTHING' if $skip-conflict;
+    $stmt.sql ~= ' RETURNING id';
+    self.exec-stmt($stmt).map({ .[0].Int }).list;
+  }
+
+  method upsert-records(Str:D :$table, :@rows, :%types = {}, :@unique-by = ('id',), :@update-cols = () --> Int) {
+    my @conflict-cols = @unique-by.elems ?? @unique-by.list !! ('id',);
+    my Bool $include-id = so 'id' eq any(@conflict-cols);
+    my @cols = self.union-insert-keys(@rows, :$include-id);
+    die 'upsert-all: no columns to upsert' unless @cols.elems;
+    my @update = @update-cols.elems
+      ?? @update-cols.list
+      !! @cols.grep({ $_ ne any(@conflict-cols) });
+    my $stmt = self.build-insert-many(:$table, :@rows, :%types, :keys(@cols), :$include-id);
+    my $conflict-list = @conflict-cols.join(', ');
+    if @update.elems {
+      my $set-list = @update.map({ "$_ = EXCLUDED.$_" }).join(', ');
+      $stmt.sql ~= " ON CONFLICT ($conflict-list) DO UPDATE SET $set-list";
+    } else {
+      $stmt.sql ~= " ON CONFLICT ($conflict-list) DO NOTHING";
+    }
+    my $inner = $stmt.sql.chomp;
+    $stmt.sql = qq:to/SQL/;
+      WITH upserted AS ( $inner RETURNING * )
+      SELECT count(*) FROM upserted
+      SQL
+    self.exec-stmt($stmt)[0][0].Int;
+  }
+
+
   # ---- DDL emission ----
 
   method ddl-create-table(Str:D $table, @params, :@foreign-keys is copy) {

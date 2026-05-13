@@ -579,11 +579,33 @@ class Model is export {
     }
   }
 
-  method update(%attrs) {
+  multi method update(%attrs) {
     for %attrs.keys -> $key {
       %!attrs{$key} = %attrs{$key};
     }
     self.save;
+  }
+
+  multi method update(@ids, %attrs) {
+    my @objs;
+    for @ids -> $id {
+      my $obj = self.find($id);
+      $obj.update(%attrs);
+      @objs.push: $obj;
+    }
+    @objs;
+  }
+
+  multi method update(@ids, @attrs-list) {
+    die 'Model.update: ids and attrs counts must match'
+      unless @ids.elems == @attrs-list.elems;
+    my @objs;
+    for ^@ids.elems -> $i {
+      my $obj = self.find(@ids[$i]);
+      $obj.update(@attrs-list[$i]);
+      @objs.push: $obj;
+    }
+    @objs;
   }
 
   method update-column(Str:D $name, $value --> Bool) {
@@ -798,6 +820,90 @@ class Model is export {
     my $table = Utils.table-name(self);
     my %where;
     DB.shared.delete-records(:$table, :%where);
+  }
+
+  method update-all(*@args, *%kw --> Int) {
+    self.all.update-all(|@args, |%kw);
+  }
+
+  method delete-all(--> Int) {
+    self.all.delete-all;
+  }
+
+  method destroy-by(Hash:D $conditions --> Int) {
+    self.where($conditions).destroy-all;
+  }
+
+  method delete-by(Hash:D $conditions --> Int) {
+    self.where($conditions).delete-all;
+  }
+
+  multi method update-counters(Int:D $id, *%counters --> Int) {
+    self.where({ :$id }).update-counters(|%counters);
+  }
+
+  multi method update-counters(@ids, *%counters --> Int) {
+    self.where({ id => @ids.list }).update-counters(|%counters);
+  }
+
+  method !insert-types {
+    my $table = Utils.table-name(self);
+    my %types;
+    for DB.shared.get-fields(:$table) -> $f { %types{$f[0]} = $f[1] }
+    %types;
+  }
+
+  method insert(%attrs --> Int) {
+    self!do-insert([%attrs.item], :skip-conflict)[0] // 0;
+  }
+
+  method insert-or-die(%attrs --> Int) {
+    self!do-insert([%attrs.item])[0];
+  }
+
+  method insert-all(@rows) {
+    self!do-insert(@rows.map(*.item).Array, :skip-conflict);
+  }
+
+  method insert-all-or-die(@rows) {
+    self!do-insert(@rows.map(*.item).Array);
+  }
+
+  method !do-insert(@rows, Bool:D :$skip-conflict = False) {
+    return () unless @rows.elems;
+    my $table = Utils.table-name(self);
+    my %types = self!insert-types;
+    my @prepared = self.touch-rows-for-insert(@rows);
+    DB.shared.insert-records(:$table, :rows(@prepared), :%types, :$skip-conflict);
+  }
+
+  method touch-rows-for-insert(@rows) {
+    my $now = DateTime.now;
+    my $table = Utils.table-name(self);
+    my @fields = DB.shared.get-fields(:$table);
+    my %names;
+    for @fields -> $f { %names{$f[0]} = True }
+    my @out;
+    for @rows -> %row {
+      my %copy = %row;
+      %copy<created_at> //= $now if %names<created_at>;
+      %copy<updated_at> //= $now if %names<updated_at>;
+      @out.push: %copy;
+    }
+    @out;
+  }
+
+  method upsert(%attrs, :@unique-by = ('id',), :@update-cols = () --> Int) {
+    self.upsert-all([%attrs.item], :@unique-by, :@update-cols);
+  }
+
+  method upsert-all(@rows, :@unique-by = ('id',), :@update-cols = () --> Int) {
+    my @items = @rows.map(*.item).Array;
+    return 0 unless @items.elems;
+    my $table = Utils.table-name(self);
+    my %types = self!insert-types;
+    my @prepared = self.touch-rows-for-insert(@items);
+    DB.shared.upsert-records(:$table, :rows(@prepared), :%types, :@unique-by, :@update-cols);
   }
 
   method where(Hash:D $params = {}) {

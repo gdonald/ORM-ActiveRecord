@@ -390,6 +390,124 @@ $user.toggle('active');
 $user.toggle-or-die('active');
 ```
 
+## Bulk Operations
+
+When you need to write many rows in one round-trip — or to skip the
+validation/callback pipeline entirely — reach for the bulk helpers. They
+operate on the database directly and return affected row counts (or
+generated ids), not model instances.
+
+### update-all / delete-all
+
+`update-all` issues a single `UPDATE` against the rows the relation
+matches. It returns the number of affected rows. Validations and
+callbacks are skipped; no timestamps are bumped automatically.
+
+```perl6
+User.where({role => 'guest'}).update-all(role => 'member');
+User.update-all(active => True);
+```
+
+`delete-all` issues a single set-based `DELETE` and returns the count of
+removed rows. No `before-destroy` / `after-destroy` callbacks fire.
+
+```perl6
+User.where({inactive_since => Date.new('2020-01-01') ..}).delete-all;
+```
+
+`destroy-by(%conditions)` and `delete-by(%conditions)` are class-level
+shortcuts. `destroy-by` walks the matching records and runs callbacks;
+`delete-by` is the fast set-based form.
+
+```perl6
+User.destroy-by({banned => True});   # runs before/after-destroy callbacks
+User.delete-by({banned => True});    # single SQL DELETE
+```
+
+### Model.update(@ids, %attrs)
+
+Updates several records by primary key. Each id is loaded, mutated, and
+saved through the regular `update` path — validations and callbacks run
+for every record.
+
+```perl6
+User.update([1, 2, 3], {role => 'member'});
+
+# Per-id attrs:
+User.update([1, 2], [
+  {fname => 'Alice'},
+  {fname => 'Bob'},
+]);
+```
+
+### update-counters
+
+Atomic counter increments / decrements expressed in a single SQL
+statement. Callbacks do not fire and timestamps are not bumped.
+
+```perl6
+Post.update-counters($post.id, views => 1);
+Post.update-counters([1, 2, 3], votes => 5, comments_count => -1);
+
+Post.where({published => True}).update-counters(views => 1);
+```
+
+### insert / insert-all
+
+`insert` writes a single row, skipping validations and callbacks. If a
+unique constraint would be violated, the row is silently skipped (returns
+`0`). `insert-or-die` lets the database error propagate.
+
+```perl6
+my $id = User.insert({fname => 'Greg', lname => 'Donald'});
+
+User.insert-or-die({fname => 'Greg'});      # raises on duplicate
+```
+
+`insert-all(@rows)` writes many rows in a single statement. It returns
+the list of inserted ids. The `-or-die` variant raises on any conflict.
+
+```perl6
+my @ids = User.insert-all([
+  {fname => 'Greg',  lname => 'Donald'},
+  {fname => 'Alice', lname => 'Smith'},
+]);
+```
+
+Both forms auto-populate `created_at` / `updated_at` if those columns
+exist and are not supplied.
+
+### upsert / upsert-all
+
+`upsert` does an `INSERT … ON CONFLICT … DO UPDATE`. By default it
+conflicts on the primary key; pass `:unique-by` to target a different
+unique constraint. Pass `:update-cols` to limit which columns are
+overwritten on conflict (otherwise every supplied column is overwritten).
+
+```perl6
+# Update by id if present; otherwise insert.
+User.upsert({id => 42, fname => 'Greg', lname => 'Donald'});
+
+# Insert a new row, or update on name collision.
+User.upsert(
+  {fname => 'Greg', email => 'greg@example.com'},
+  unique-by => <email>,
+);
+```
+
+`upsert-all` is the bulk form. It returns the number of affected rows
+(inserts plus updates).
+
+```perl6
+User.upsert-all(
+  [
+    {email => 'a@example.com', fname => 'Alice'},
+    {email => 'b@example.com', fname => 'Bob'},
+  ],
+  unique-by => <email>,
+);
+```
+
 ## Save Options
 
 `save` accepts two opt-out flags:

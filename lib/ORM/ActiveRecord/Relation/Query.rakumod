@@ -810,6 +810,47 @@ class Query is export {
     $count;
   }
 
+  method update-all(*@args, *%kw --> Int) {
+    return 0 if $!is-none;
+    my %attrs = @args.elems && @args[0] ~~ Hash ?? @args[0].Hash !! %kw;
+    die 'update-all: no attributes supplied' unless %attrs.elems;
+    my %types = @!fields.map({ .name => .type }).Hash;
+    my @or-groups = self.or-groups-payload;
+    DB.shared.update-records(
+      :$!table, :%attrs, :%types,
+      where => $!params, where-not => $!not-params, :@or-groups,
+    );
+  }
+
+  method delete-all(--> Int) {
+    return 0 if $!is-none;
+    DB.shared.delete-records(
+      :$!table,
+      where => $!params, where-not => $!not-params,
+    );
+  }
+
+  method destroy-all(--> Int) {
+    return 0 if $!is-none;
+    my $count = 0;
+    for self.all -> $obj {
+      $obj.destroy;
+      $count++;
+    }
+    $count;
+  }
+
+  method update-counters(*@args, *%kw --> Int) {
+    return 0 if $!is-none;
+    my %counters = @args.elems && @args[0] ~~ Hash ?? @args[0].Hash !! %kw;
+    die 'update-counters: no counters supplied' unless %counters.elems;
+    my @or-groups = self.or-groups-payload;
+    DB.shared.update-counter-records(
+      :$!table, :%counters,
+      where => $!params, where-not => $!not-params, :@or-groups,
+    );
+  }
+
   method !build-attrs-for-create(Hash:D $params --> Hash) {
     my %attrs;
     for $!params.kv -> $k, $v {

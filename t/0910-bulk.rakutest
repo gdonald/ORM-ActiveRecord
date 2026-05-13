@@ -1,0 +1,219 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+$sqlite.ddl-create-table('widgets', [
+  name   => { :string, limit => 64 },
+  qty    => { :integer, default => 0 },
+  active => { :boolean, default => False },
+]);
+$sqlite.ddl-add-timestamps('widgets');
+$sqlite.exec('CREATE UNIQUE INDEX widgets_name_idx ON widgets (name)');
+
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::X;
+
+class Widget is Model {
+  submethod BUILD { }
+}
+
+plan 43;
+
+# update-all on a where-scoped relation
+{
+  Widget.destroy-all;
+  Widget.create({ name => 'a', qty => 1 });
+  Widget.create({ name => 'b', qty => 2 });
+  Widget.create({ name => 'c', qty => 3 });
+
+  my $n = Widget.where({ qty => 1..2 }).update-all(active => True);
+  ok $n == 2, 'update-all returns row count';
+  ok Widget.where({ name => 'a' }).first.active == True, 'update-all applied to "a"';
+  ok Widget.where({ name => 'c' }).first.active == False, 'update-all left "c" alone';
+}
+
+# Model.update-all
+{
+  Widget.destroy-all;
+  Widget.create({ name => 'a', qty => 1 });
+  Widget.create({ name => 'b', qty => 2 });
+  my $n = Widget.update-all(active => True);
+  ok $n == 2,                       'Model.update-all touches every row';
+  ok Widget.where({ active => True }).count == 2, 'Model.update-all persisted';
+}
+
+# delete-all on a where-scoped relation
+{
+  Widget.destroy-all;
+  Widget.create({ name => 'a' });
+  Widget.create({ name => 'b' });
+  Widget.create({ name => 'c' });
+  my $n = Widget.where({ name => 'b' }).delete-all;
+  ok $n == 1,                       'delete-all returns row count';
+  ok Widget.count == 2,             'delete-all dropped the matching row';
+  ok Widget.where({ name => 'b' }).count == 0, 'delete-all removed "b"';
+}
+
+# destroy-by — runs callbacks, behaves like .where(...).destroy-all
+{
+  Widget.destroy-all;
+  Widget.create({ name => 'a' });
+  Widget.create({ name => 'b' });
+  my $n = Widget.destroy-by({ name => 'a' });
+  ok $n == 1,                       'destroy-by returns count';
+  ok Widget.count == 1,             'destroy-by removed the match';
+}
+
+# delete-by — fast set-based
+{
+  Widget.destroy-all;
+  Widget.create({ name => 'a' });
+  Widget.create({ name => 'b' });
+  my $n = Widget.delete-by({ name => 'a' });
+  ok $n == 1,                       'delete-by returns count';
+  ok Widget.count == 1,             'delete-by removed the match';
+}
+
+# Model.update(@ids, %attrs) — class-level multi-update
+{
+  Widget.destroy-all;
+  my $a = Widget.create({ name => 'a', qty => 1 });
+  my $b = Widget.create({ name => 'b', qty => 2 });
+  my @updated = Widget.update([$a.id, $b.id], { qty => 99 });
+  ok @updated.elems == 2,           'Model.update returns list of objects';
+  ok Widget.find($a.id).qty == 99,  'Model.update wrote first record';
+  ok Widget.find($b.id).qty == 99,  'Model.update wrote second record';
+}
+
+# update-counters — increments / decrements via SQL
+{
+  Widget.destroy-all;
+  my $w = Widget.create({ name => 'a', qty => 10 });
+  my $n = Widget.update-counters($w.id, qty => 5);
+  ok $n == 1,                       'update-counters returns affected count';
+  ok Widget.find($w.id).qty == 15,  'update-counters added 5';
+
+  Widget.update-counters($w.id, qty => -3);
+  ok Widget.find($w.id).qty == 12,  'update-counters subtracted 3';
+}
+
+# update-counters with multiple ids
+{
+  Widget.destroy-all;
+  my $a = Widget.create({ name => 'a', qty => 1 });
+  my $b = Widget.create({ name => 'b', qty => 2 });
+  my $n = Widget.update-counters([$a.id, $b.id], qty => 10);
+  ok $n == 2,                       'update-counters batched both rows';
+  ok Widget.find($a.id).qty == 11,  'update-counters added to first';
+  ok Widget.find($b.id).qty == 12,  'update-counters added to second';
+}
+
+# insert / insert-all — skip validations + callbacks
+{
+  Widget.destroy-all;
+  my $id = Widget.insert({ name => 'x', qty => 1 });
+  ok $id > 0,                       'insert returns id';
+  my $w = Widget.find($id);
+  diag "found name=" ~ ($w.name // '<undef>') unless $w.defined && $w.name eq 'x';
+  ok $w.defined && $w.name eq 'x',  'insert persisted';
+
+  my @ids = Widget.insert-all([
+    { name => 'y', qty => 2 },
+    { name => 'z', qty => 3 },
+  ]);
+  ok @ids.elems == 2,               'insert-all returns ids list';
+  ok Widget.find(@ids[0]).name eq 'y', 'insert-all wrote first';
+  ok Widget.find(@ids[1]).name eq 'z', 'insert-all wrote second';
+}
+
+# insert with conflict on unique index — skipped silently
+{
+  Widget.destroy-all;
+  my $id1 = Widget.insert({ name => 'dup', qty => 1 });
+  ok $id1 > 0,                      'first insert created row';
+  my $id2 = Widget.insert({ name => 'dup', qty => 9 });
+  diag "id1=$id1 id2=$id2" unless $id2 == 0;
+  ok $id2 == 0,                     'duplicate insert returned 0 (skipped)';
+  ok Widget.where({ name => 'dup' }).count == 1, 'no duplicate row inserted';
+}
+
+# insert-or-die — raises on duplicate
+{
+  Widget.destroy-all;
+  Widget.insert({ name => 'dup' });
+  dies-ok { Widget.insert-or-die({ name => 'dup' }) },
+                                    'insert-or-die raises on unique violation';
+}
+
+# insert-all-or-die — raises if any row would conflict
+{
+  Widget.destroy-all;
+  Widget.insert({ name => 'taken' });
+  dies-ok { Widget.insert-all-or-die([{ name => 'taken' }]) },
+                                    'insert-all-or-die raises on conflict';
+}
+
+# upsert — insert when new, update when conflicting
+{
+  Widget.destroy-all;
+  my $orig = Widget.create({ name => 'u', qty => 1 });
+  my $n = Widget.upsert({ id => $orig.id, name => 'u2', qty => 42 });
+  ok $n == 1,                       'upsert returns affected count';
+  ok Widget.find($orig.id).qty == 42, 'upsert updated existing qty';
+  ok Widget.find($orig.id).name eq 'u2', 'upsert updated existing name';
+
+  my $n2 = Widget.upsert({ name => 'fresh', qty => 7 },
+                         unique-by => ['name']);
+  ok $n2 == 1,                      'upsert inserted new row';
+  ok Widget.where({ name => 'fresh' }).first.qty == 7, 'upsert wrote new row';
+}
+
+# upsert-all — bulk
+{
+  Widget.destroy-all;
+  Widget.create({ name => 'p', qty => 1 });
+  my $n = Widget.upsert-all(
+    [
+      { name => 'p', qty => 100 },
+      { name => 'q', qty => 200 },
+    ],
+    unique-by => ['name'],
+  );
+  ok $n >= 1,                       'upsert-all returns count';
+  ok Widget.where({ name => 'p' }).first.qty == 100, 'upsert-all updated existing';
+  ok Widget.where({ name => 'q' }).first.qty == 200, 'upsert-all inserted new';
+}
+
+# is-none short-circuits set-based bulk ops
+{
+  Widget.destroy-all;
+  Widget.create({ name => 'a' });
+  ok Widget.none.update-all(qty => 99) == 0, 'none.update-all returns 0';
+  ok Widget.none.delete-all == 0,             'none.delete-all returns 0';
+  ok Widget.none.update-counters(qty => 1) == 0, 'none.update-counters returns 0';
+  ok Widget.count == 1,                       'none short-circuits left data intact';
+}
+
+DB.set-shared(Nil);

@@ -236,6 +236,58 @@ class MySqlAdapter is SqlAdapter is export {
       $query.rows.Int;
     }
 
+    method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups --> Int) {
+      my $stmt = self.build-update-where(:$table, :%attrs, :%types, :%where, :%where-not, :@or-groups);
+      self!run-write($stmt);
+    }
+
+    method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups --> Int) {
+      my $stmt = self.build-update-counters-where(:$table, :%counters, :%where, :%where-not, :@or-groups);
+      self!run-write($stmt);
+    }
+
+    method insert-records(Str:D :$table, :@rows, :%types = {}, Bool:D :$skip-conflict = False --> List) {
+      my $stmt = self.build-insert-many(:$table, :@rows, :%types);
+      if $skip-conflict {
+        $stmt.sql ~~ s/^'INSERT INTO'/INSERT IGNORE INTO/;
+      }
+      self.connect unless self.db.defined;
+      Log.sql(:sql($stmt.sql));
+      my $query = self.db.prepare($stmt.sql);
+      $query.execute(|$stmt.binds);
+      my $affected = $query.rows.Int;
+      return () unless $affected;
+      my $first = self.exec('SELECT LAST_INSERT_ID()')[0][0].Int;
+      ($first .. $first + $affected - 1).list;
+    }
+
+    method upsert-records(Str:D :$table, :@rows, :%types = {}, :@unique-by = ('id',), :@update-cols = () --> Int) {
+      my @conflict-cols = @unique-by.elems ?? @unique-by.list !! ('id',);
+      my Bool $include-id = so 'id' eq any(@conflict-cols);
+      my @cols = self.union-insert-keys(@rows, :$include-id);
+      die 'upsert-all: no columns to upsert' unless @cols.elems;
+      my @update = @update-cols.elems
+        ?? @update-cols.list
+        !! @cols.grep({ $_ ne any(@conflict-cols) });
+      my $stmt = self.build-insert-many(:$table, :@rows, :%types, :keys(@cols), :$include-id);
+      if @update.elems {
+        my $set-list = @update.map({ "$_ = VALUES($_)" }).join(', ');
+        $stmt.sql ~= " ON DUPLICATE KEY UPDATE $set-list";
+      } else {
+        my $first = @conflict-cols[0];
+        $stmt.sql ~= " ON DUPLICATE KEY UPDATE $first = $first";
+      }
+      self!run-write($stmt);
+    }
+
+    method !run-write(SqlStmt:D $stmt --> Int) {
+      self.connect unless self.db.defined;
+      Log.sql(:sql($stmt.sql));
+      my $query = self.db.prepare($stmt.sql);
+      $query.execute(|$stmt.binds);
+      $query.rows.Int;
+    }
+
     # ---- DDL emission ----
 
     method ddl-create-table(Str:D $table, @params) {

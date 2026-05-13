@@ -138,6 +138,79 @@ class SqlAdapter does Adapter is export {
     $stmt;
   }
 
+  method build-update-where(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups --> SqlStmt) {
+    my $stmt = SqlStmt.new(:adapter(self));
+    my $values = self.build-value-sets($stmt, :%attrs, :%types);
+    die 'update-all: no columns to update' unless $values.chars;
+    my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups);
+    my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
+    $stmt.sql = "UPDATE $table SET $values $where-clause";
+    $stmt;
+  }
+
+  method build-update-counters-where(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups --> SqlStmt) {
+    die 'update-counters: no counters supplied' unless %counters.elems;
+    my $stmt = SqlStmt.new(:adapter(self));
+    my @parts;
+    for %counters.kv -> $col, $n {
+      my $ph = $stmt.placeholder($n);
+      @parts.push: "$col = COALESCE($col, 0) + $ph";
+    }
+    my $sets = @parts.join(', ');
+    my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups);
+    my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
+    $stmt.sql = "UPDATE $table SET $sets $where-clause";
+    $stmt;
+  }
+
+  method union-insert-keys(@rows, Bool:D :$include-id = False) {
+    my %seen;
+    my @order;
+    for @rows -> %row {
+      for %row.keys -> $k {
+        next if $k eq 'id' && !$include-id;
+        next if $k ~~ /_confirmation$/;
+        unless %seen{$k} {
+          %seen{$k} = True;
+          @order.push: $k;
+        }
+      }
+    }
+    @order;
+  }
+
+  method build-insert-many(Str:D :$table, :@rows, :%types = {}, :@keys = (), Bool:D :$include-id = False --> SqlStmt) {
+    die 'insert-all: no rows supplied' unless @rows.elems;
+    my @cols = @keys.elems ?? @keys.list !! self.union-insert-keys(@rows, :$include-id);
+    die 'insert-all: no columns to insert' unless @cols.elems;
+
+    my $stmt = SqlStmt.new(:adapter(self));
+    my $fields = @cols.join(', ');
+    my @clauses;
+    for @rows -> %row {
+      my @parts;
+      for @cols -> $k {
+        if %row{$k}:exists && %row{$k}.defined {
+          my $type = %types{$k} // Str;
+          @parts.push: self!bind-typed($stmt, %row{$k}, :$type);
+        } else {
+          @parts.push: 'NULL';
+        }
+      }
+      @clauses.push: '(' ~ @parts.join(', ') ~ ')';
+    }
+    $stmt.sql = "INSERT INTO $table ($fields) VALUES " ~ @clauses.join(', ');
+    $stmt;
+  }
+
+  # Set-based UPDATE — dialect overrides handle row-count retrieval.
+  method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups --> Int) { ... }
+  method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups --> Int) { ... }
+
+  # Bulk INSERT / UPSERT — dialect-specific shape.
+  method insert-records(Str:D :$table, :@rows, :%types = {}, Bool:D :$skip-conflict = False --> List) { ... }
+  method upsert-records(Str:D :$table, :@rows, :%types = {}, :@unique-by = (), :@update-cols = () --> Int) { ... }
+
   method without-excluded-fields(%attrs) {
     for %attrs.keys { %attrs{$_}:delete if $_ ~~ /_confirmation$/ }
     %attrs;
