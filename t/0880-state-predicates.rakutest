@@ -1,0 +1,140 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+$sqlite.ddl-create-table('widgets', [
+  name => { :string, limit => 64 },
+  qty  => { :integer, default => 0 },
+]);
+
+use ORM::ActiveRecord::Model;
+
+class Widget is Model {}
+
+plan 30;
+
+# is-new-record / is-persisted / is-destroyed across lifecycle
+{
+  my $w = Widget.build({ name => 'A' });
+  ok $w.is-new-record,     'built record is a new record';
+  nok $w.is-persisted,     'built record is not persisted';
+  nok $w.is-destroyed,     'built record is not destroyed';
+
+  $w.save;
+  nok $w.is-new-record,    'saved record is no longer a new record';
+  ok $w.is-persisted,      'saved record is persisted';
+  nok $w.is-destroyed,     'saved record is not destroyed';
+
+  $w.destroy;
+  nok $w.is-new-record,    'destroyed record is not a new record';
+  nok $w.is-persisted,     'destroyed record is not persisted';
+  ok $w.is-destroyed,      'destroyed record is destroyed';
+}
+
+# was-new-record flips True after create, False after subsequent update
+{
+  my $w = Widget.build({ name => 'B' });
+  nok $w.was-new-record,    'built record was-new-record is False';
+
+  $w.save;
+  ok $w.was-new-record,     'after first save, was-new-record is True';
+
+  $w.name = 'B2';
+  $w.save;
+  nok $w.was-new-record,    'after subsequent save, was-new-record is False';
+}
+
+# was-persisted flips True only after destroying a persisted record
+{
+  my $w = Widget.build({ name => 'C' });
+  nok $w.was-persisted,     'built record was-persisted is False';
+
+  $w.save;
+  nok $w.was-persisted,     'persisted record was-persisted is still False';
+
+  $w.destroy;
+  ok $w.was-persisted,      'after destroy, was-persisted is True';
+}
+
+# destroy on an unsaved record does NOT mark previously-persisted
+{
+  my $w = Widget.build({ name => 'D' });
+  $w.destroy;
+  nok $w.was-persisted,     'destroying an unsaved record does not set was-persisted';
+  nok $w.is-destroyed,      'destroying an unsaved record does not freeze it';
+}
+
+# Frozen state after destroy — writes raise X::FrozenRecord
+{
+  my $w = Widget.create({ name => 'E' });
+  $w.destroy;
+  ok $w.is-frozen,          'is-frozen is True after destroy';
+
+  dies-ok { $w.write-attribute('name', 'X') },     'write-attribute dies after destroy';
+  dies-ok { $w.assign-attributes({ name => 'X' }) },'assign-attributes dies after destroy';
+  dies-ok { $w.attributes = { name => 'X' } },     'attributes= dies after destroy';
+  dies-ok { $w<name> = 'X' },                      '[]= dies after destroy';
+  dies-ok { $w.save },                             'save dies after destroy';
+
+  # Reads still work
+  ok $w.read-attribute('name') eq 'E', 'read-attribute still works after destroy';
+  ok $w<name> eq 'E',                  '[] still works after destroy';
+}
+
+# is-readonly / make-readonly still in place
+{
+  my $w = Widget.build({ name => 'F' });
+  nok $w.is-readonly,       'fresh record is not readonly';
+  $w.make-readonly;
+  ok $w.is-readonly,        'make-readonly flips is-readonly to True';
+  dies-ok { $w.save },      'save raises on a readonly record';
+}
+
+# Specific exception type for frozen writes
+{
+  my $w = Widget.create({ name => 'G' });
+  $w.destroy;
+  my $caught;
+  try {
+    $w.write-attribute('name', 'X');
+    CATCH { default { $caught = $_ } }
+  }
+  ok $caught ~~ X::FrozenRecord, 'frozen-write raises X::FrozenRecord';
+}
+
+# Specific exception type for readonly writes
+{
+  my $w = Widget.build({ name => 'H' });
+  $w.make-readonly;
+  my $caught;
+  try {
+    $w.save;
+    CATCH { default { $caught = $_ } }
+  }
+  ok $caught ~~ X::ReadOnlyRecord, 'readonly-save raises X::ReadOnlyRecord';
+}
+
+DB.set-shared(Nil);

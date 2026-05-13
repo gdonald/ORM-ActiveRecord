@@ -1,0 +1,180 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+$sqlite.ddl-create-table('widgets', [
+  name   => { :string, limit => 64 },
+  qty    => { :integer, default => 0 },
+  active => { :boolean, default => False },
+]);
+$sqlite.ddl-add-timestamps('widgets');
+
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::X;
+
+class Widget is Model {
+  has Int $.before-save-count is rw = 0;
+  has Int $.before-update-count is rw = 0;
+
+  submethod BUILD {
+    self.validate: 'name', { :presence };
+    self.before-save:   -> { self.before-save-count++   };
+    self.before-update: -> { self.before-update-count++ };
+  }
+}
+
+plan 34;
+
+# update-column — bypasses validations + callbacks + timestamps
+{
+  my $w = Widget.create({ name => 'A', qty => 1 });
+  my $before = $w.before-update-count;
+  my $ua-posix = $w.updated_at.posix.Int;
+
+  sleep 1.1;
+  ok $w.update-column('qty', 42),     'update-column returns True';
+  ok $w.qty == 42,                    'update-column updated in-memory';
+  ok $w.before-update-count == $before,'update-column skipped callbacks';
+
+  # A fresh load shows the persisted value
+  my $w2 = Widget.find($w.id);
+  ok $w2.qty == 42,                   'update-column persisted to DB';
+  is $w2.updated_at.posix.Int, $ua-posix,
+                                      'update-column did not bump updated_at';
+  nok $w.is-changed,                  'update-column leaves the record clean';
+}
+
+# update-columns — multiple
+{
+  my $w = Widget.create({ name => 'B', qty => 1 });
+  ok $w.update-columns({ name => 'B2', qty => 9 }), 'update-columns returns True';
+  my $w2 = Widget.find($w.id);
+  ok $w2.name eq 'B2' && $w2.qty == 9, 'update-columns persisted both';
+}
+
+# update-attribute — runs callbacks, bumps timestamps, but skips validations
+{
+  my $w = Widget.create({ name => 'C' });
+  my $before-save = $w.before-save-count;
+  ok $w.update-attribute('qty', 7),   'update-attribute returns True';
+  ok $w.qty == 7,                     'update-attribute set the value';
+  ok $w.before-save-count > $before-save, 'update-attribute ran the before-save callback';
+
+  # Validation skipped: clearing name (presence-required) still saves
+  ok $w.update-attribute('name', ''), 'update-attribute skips validation';
+  ok Widget.find($w.id).name eq '',   'update-attribute persisted invalid value';
+}
+
+# touch — bumps updated_at
+{
+  my $w = Widget.create({ name => 'D' });
+  my $ua-posix = $w.updated_at.posix.Int;
+  sleep 1.1;
+  ok $w.touch,                       'touch returns True';
+  my $w2 = Widget.find($w.id);
+  ok $w2.updated_at.posix.Int > $ua-posix, 'touch bumped updated_at';
+}
+
+# touch-all on relation
+{
+  Widget.destroy-all;
+  Widget.create({ name => 'X1' });
+  Widget.create({ name => 'X2' });
+  my $before1 = Widget.where({ name => 'X1' }).first.updated_at.posix.Int;
+  sleep 1.1;
+  my $n = Widget.where({ name => 'X1' }).touch-all;
+  ok $n == 1,                        'touch-all returns affected count';
+  ok Widget.where({ name => 'X1' }).first.updated_at.posix.Int > $before1,
+                                     'touch-all bumped matching row';
+}
+
+# increment / decrement
+{
+  my $w = Widget.create({ name => 'E', qty => 5 });
+  $w.increment('qty');
+  ok $w.qty == 6,                    'increment(name) defaults to +1';
+  $w.increment('qty', 10);
+  ok $w.qty == 16,                   'increment(name, n) adds n';
+  ok $w.is-changed,                  'increment is in-memory only — record is dirty';
+
+  $w.decrement('qty', 6);
+  ok $w.qty == 10,                   'decrement(name, n) subtracts n';
+}
+
+# increment-or-die / decrement-or-die persist via update-attribute
+{
+  my $w = Widget.create({ name => 'F', qty => 0 });
+  $w.increment-or-die('qty');
+  ok Widget.find($w.id).qty == 1,    'increment-or-die persisted +1';
+  $w.decrement-or-die('qty', 1);
+  ok Widget.find($w.id).qty == 0,    'decrement-or-die persisted -1';
+}
+
+# toggle / toggle-or-die
+{
+  my $w = Widget.create({ name => 'G', active => False });
+  $w.toggle('active');
+  ok $w.active == True,              'toggle flips boolean in memory';
+  ok $w.is-changed,                  'toggle is in-memory only';
+
+  $w.toggle-or-die('active');
+  ok Widget.find($w.id).active == False, 'toggle-or-die persisted the flip';
+}
+
+# Frozen + readonly guards on targeted writes
+{
+  my $w = Widget.create({ name => 'H' });
+  $w.destroy;
+  dies-ok { $w.update-column('qty', 1) }, 'update-column dies after destroy';
+  dies-ok { $w.touch },                    'touch dies after destroy';
+}
+
+{
+  my $w = Widget.create({ name => 'I' });
+  $w.make-readonly;
+  dies-ok { $w.update-column('qty', 1) }, 'update-column dies on readonly';
+}
+
+# save(:!validate) skips validations
+{
+  my $w = Widget.create({ name => 'J' });
+  $w.name = '';
+  nok $w.save,                       'save with validations fails on invalid';
+  ok $w.save(:!validate),            'save(:!validate) bypasses validation';
+  ok Widget.find($w.id).name eq '',  'save(:!validate) persisted invalid value';
+}
+
+# save(:!touch) skips timestamp bump
+{
+  my $w = Widget.create({ name => 'K' });
+  my $ua-posix = $w.updated_at.posix.Int;
+  sleep 1.1;
+  $w.qty = 100;
+  ok $w.save(:!touch),               'save(:!touch) still saves';
+  is Widget.find($w.id).updated_at.posix.Int, $ua-posix,
+                                     'save(:!touch) did not bump updated_at';
+}
+
+DB.set-shared(Nil);

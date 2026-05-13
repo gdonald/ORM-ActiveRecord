@@ -1,0 +1,169 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+$sqlite.ddl-create-table('widgets', [
+  name => { :string, limit => 64 },
+  qty  => { :integer, default => 0 },
+]);
+
+use ORM::ActiveRecord::Model;
+
+class Widget is Model {}
+
+plan 49;
+
+# is-changed / changed / changes / changed-attributes
+{
+  my $w = Widget.create({ name => 'A', qty => 1 });
+  nok $w.is-changed,             'fresh saved record is not changed';
+  ok $w.changed.elems == 0,      'changed is empty for fresh record';
+  ok $w.changes.keys.elems == 0, 'changes is empty for fresh record';
+
+  $w.name = 'B';
+  ok $w.is-changed,              'after mutation, is-changed is True';
+  ok $w.changed.Set === <name>.Set, 'changed lists name';
+  is-deeply $w.changes<name>, ['A', 'B'], 'changes name => [old, new]';
+  ok $w.changed-attributes<name> eq 'A', 'changed-attributes name => original';
+
+  $w.qty = 7;
+  ok $w.changed.Set === <name qty>.Set, 'changed lists name and qty';
+  is-deeply $w.changes<qty>, [1, 7], 'changes qty => [old, new]';
+}
+
+# Per-attribute predicates and accessors
+{
+  my $w = Widget.create({ name => 'C', qty => 2 });
+  nok $w.is-attribute-changed('name'),   'is-attribute-changed False initially';
+  $w.name = 'D';
+  ok $w.is-attribute-changed('name'),    'is-attribute-changed True after mutation';
+  ok $w.attribute-was('name') eq 'C',    'attribute-was returns original';
+  is-deeply $w.attribute-change('name'), ['C', 'D'], 'attribute-change returns pair';
+  nok $w.is-attribute-changed('qty'),    'unchanged attribute reports False';
+  ok $w.attribute-was('qty') == 2,       'attribute-was for unchanged returns current value';
+  nok $w.attribute-change('qty').defined,'attribute-change is Nil for unchanged';
+}
+
+# Dynamic per-attribute methods via FALLBACK
+{
+  my $w = Widget.create({ name => 'E', qty => 3 });
+  $w.name = 'F';
+  ok $w.is-name-changed,                 'is-<attr>-changed dispatches';
+  ok $w.name-was eq 'E',                 '<attr>-was dispatches';
+  is-deeply $w.name-change, ['E', 'F'],  '<attr>-change dispatches';
+  nok $w.is-qty-changed,                 'is-<attr>-changed False for unchanged';
+}
+
+# attribute-will-change forces dirty even without a value change
+{
+  my $w = Widget.create({ name => 'G' });
+  nok $w.is-changed,                     'no diff initially';
+  $w.attribute-will-change('name');
+  ok $w.is-changed,                      'will-change forces is-changed';
+  ok $w.is-attribute-changed('name'),    'will-change forces per-attr changed';
+
+  my $w2 = Widget.create({ name => 'H' });
+  $w2.name-will-change;
+  ok $w2.is-changed,                     '<attr>-will-change dispatches via FALLBACK';
+}
+
+# previous-changes captures the diff that the last save persisted
+{
+  my $w = Widget.build({ name => 'I', qty => 4 });
+  $w.save;
+  ok $w.previous-changes<name>:exists,      'previous-changes set after insert';
+  is-deeply $w.previous-changes<name>, ['', 'I'], 'insert: [default, new]';
+
+  $w.name = 'J';
+  $w.save;
+  is-deeply $w.previous-changes<name>, ['I', 'J'], 'update saved-change captured';
+  nok $w.is-changed,                        'after save the record is clean';
+  nok $w.is-attribute-changed('name'),      'after save no attribute is changed';
+}
+
+# saved-change-to / <attr>-before-last-save
+{
+  my $w = Widget.create({ name => 'K' });
+  $w.name = 'L';
+  $w.save;
+  ok $w.is-saved-change-to('name'),         'is-saved-change-to True';
+  is-deeply $w.saved-change-to('name'), ['K', 'L'], 'saved-change-to returns pair';
+  ok $w.name-before-last-save eq 'K',       '<attr>-before-last-save returns pre-save value';
+  ok $w.is-saved-change-to-name,            'is-saved-change-to-<attr> via FALLBACK';
+  is-deeply $w.saved-change-to-name, ['K', 'L'], 'saved-change-to-<attr> via FALLBACK';
+
+  nok $w.is-saved-change-to('qty'),         'unchanged column: not saved-changed';
+  nok $w.saved-change-to('qty').defined,    'unchanged column: saved-change-to is Nil';
+}
+
+# restore-attributes / restore-<attr>
+{
+  my $w = Widget.create({ name => 'M', qty => 5 });
+  $w.name = 'N';
+  $w.qty = 99;
+  ok $w.is-changed,                         'edited, is-changed True';
+  $w.restore-attributes;
+  ok $w.name eq 'M',                        'restore-attributes restored name';
+  ok $w.qty == 5,                           'restore-attributes restored qty';
+  nok $w.is-changed,                        'restore-attributes clears dirty';
+
+  $w.name = 'O';
+  $w.restore-name;
+  ok $w.name eq 'M',                        'restore-<attr> dispatches';
+  nok $w.is-attribute-changed('name'),      'restore-<attr> clears per-attr changed';
+}
+
+# reset-<attr> is an alias for restore-<attr>
+{
+  my $w = Widget.create({ name => 'P' });
+  $w.name = 'Q';
+  $w.reset-name;
+  ok $w.name eq 'P', 'reset-<attr> dispatches as restore alias';
+}
+
+# reload refetches from DB and clears dirty state
+{
+  my $w = Widget.create({ name => 'R', qty => 6 });
+  my $w-copy = Widget.find($w.id);
+  $w-copy.name = 'R-edited';
+  $w-copy.save;
+
+  ok $w.name eq 'R',                        'in-memory $w is stale before reload';
+  $w.reload;
+  ok $w.name eq 'R-edited',                 'reload pulls latest values from DB';
+  nok $w.is-changed,                        'reload clears dirty state';
+}
+
+# Dirty after save flushes; previous-changes preserved
+{
+  my $w = Widget.create({ name => 'S' });
+  $w.name = 'T';
+  ok $w.is-changed, 'before save: is-changed True';
+  $w.save;
+  nok $w.is-changed, 'after save: is-changed False';
+  is-deeply $w.previous-changes<name>, ['S', 'T'], 'previous-changes survives save';
+}
+
+DB.set-shared(Nil);

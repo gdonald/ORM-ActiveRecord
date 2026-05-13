@@ -24,6 +24,13 @@ class X::ReadOnlyRecord is Exception is export {
   }
 }
 
+class X::FrozenRecord is Exception is export {
+  has Str $.model;
+  method message {
+    $!model.defined ?? "$!model has been destroyed and is frozen" !! 'Record has been destroyed and is frozen';
+  }
+}
+
 class X::SoleRecordExceeded is Exception is export {
   has Str $.model;
   method message {

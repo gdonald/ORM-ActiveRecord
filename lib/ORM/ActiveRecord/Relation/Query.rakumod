@@ -800,6 +800,16 @@ class Query is export {
     self.pluck('id').map({ .Int });
   }
 
+  method touch-all(*@names --> Int) {
+    return 0 if $!is-none;
+    my $count = 0;
+    for self.all -> $obj {
+      $obj.touch(|@names);
+      $count++;
+    }
+    $count;
+  }
+
   method !build-attrs-for-create(Hash:D $params --> Hash) {
     my %attrs;
     for $!params.kv -> $k, $v {

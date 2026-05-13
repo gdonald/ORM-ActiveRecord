@@ -25,6 +25,11 @@ class Model is export {
   has %.attrs;
   has %.attrs-db;
   has Bool $!readonly = False;
+  has Bool $!destroyed = False;
+  has Bool $!previously-new = False;
+  has Bool $!previously-persisted = False;
+  has %!previous-changes;
+  has %!will-change;
 
   has @.before-saves;
   has @.before-updates;
@@ -61,6 +66,34 @@ class Model is export {
   method FALLBACK(Str:D $name, *@rest) is raw {
     if $?CLASS.scopes.exists($name) {
       return $?CLASS.scopes.exec($name);
+    }
+
+    if $name ~~ /^ 'is-saved-change-to-' (.+) $/ {
+      return self.is-saved-change-to(~$0) if self.has-attribute(~$0);
+    }
+    if $name ~~ /^ 'saved-change-to-' (.+) $/ {
+      return self.saved-change-to(~$0) if self.has-attribute(~$0);
+    }
+    if $name ~~ /^ 'is-' (.+) '-changed' $/ {
+      return self.is-attribute-changed(~$0) if self.has-attribute(~$0);
+    }
+    if $name ~~ /^ (.+) '-before-last-save' $/ {
+      return self.attribute-before-last-save(~$0) if self.has-attribute(~$0);
+    }
+    if $name ~~ /^ (.+) '-will-change' $/ {
+      return self.attribute-will-change(~$0) if self.has-attribute(~$0);
+    }
+    if $name ~~ /^ (.+) '-change' $/ {
+      return self.attribute-change(~$0) if self.has-attribute(~$0);
+    }
+    if $name ~~ /^ (.+) '-was' $/ {
+      return self.attribute-was(~$0) if self.has-attribute(~$0);
+    }
+    if $name ~~ /^ 'restore-' (.+) $/ {
+      return self.restore-attribute(~$0) if self.has-attribute(~$0);
+    }
+    if $name ~~ /^ 'reset-' (.+) $/ {
+      return self.reset-attribute(~$0) if self.has-attribute(~$0);
     }
 
     if $name ~~ /_id$/ && %!attrs«$name» == 0 {
@@ -110,8 +143,102 @@ class Model is export {
   }
 
   method is-dirty(--> Bool) {
-    for %!attrs.keys -> $key { return True if %!attrs«$key» !~~ %!attrs-db«$key» }
+    for %!attrs.keys -> $key { return True if %!attrs«$key» !eqv %!attrs-db«$key» }
     False;
+  }
+
+  method is-changed(--> Bool) {
+    return True if %!will-change.elems;
+    for %!attrs.keys -> $key { return True if %!attrs«$key» !eqv %!attrs-db«$key» }
+    False;
+  }
+
+  method changed() {
+    my @names;
+    for %!attrs.keys.sort -> $key {
+      @names.push($key) if %!will-change{$key} || %!attrs«$key» !eqv %!attrs-db«$key»;
+    }
+    @names.list;
+  }
+
+  method changes(--> Hash) {
+    my %h;
+    for self.changed -> $name {
+      %h{$name} = [%!attrs-db{$name}, %!attrs{$name}];
+    }
+    %h;
+  }
+
+  method changed-attributes(--> Hash) {
+    my %h;
+    for self.changed -> $name {
+      %h{$name} = %!attrs-db{$name};
+    }
+    %h;
+  }
+
+  method previous-changes(--> Hash) {
+    %!previous-changes.clone;
+  }
+
+  method is-attribute-changed(Str:D $name --> Bool) {
+    so %!will-change{$name} || (%!attrs«$name» !eqv %!attrs-db«$name»);
+  }
+
+  method attribute-was(Str:D $name) {
+    self.is-attribute-changed($name) ?? %!attrs-db{$name} !! %!attrs{$name};
+  }
+
+  method attribute-change(Str:D $name) {
+    return Nil unless self.is-attribute-changed($name);
+    [%!attrs-db{$name}, %!attrs{$name}];
+  }
+
+  method attribute-will-change(Str:D $name) {
+    %!will-change{$name} = True;
+    self;
+  }
+
+  method is-saved-change-to(Str:D $name --> Bool) {
+    %!previous-changes{$name}:exists;
+  }
+
+  method saved-change-to(Str:D $name) {
+    %!previous-changes{$name} // Nil;
+  }
+
+  method attribute-before-last-save(Str:D $name) {
+    %!previous-changes{$name}:exists
+      ?? %!previous-changes{$name}[0]
+      !! %!attrs{$name};
+  }
+
+  method restore-attributes {
+    die X::FrozenRecord.new(model => self.WHAT.^name) if $!destroyed;
+    for %!attrs.keys -> $key {
+      %!attrs{$key} = %!attrs-db{$key} if %!attrs-db{$key}:exists;
+    }
+    %!will-change = ();
+    self;
+  }
+
+  method restore-attribute(Str:D $name) {
+    die X::FrozenRecord.new(model => self.WHAT.^name) if $!destroyed;
+    %!attrs{$name} = %!attrs-db{$name} if %!attrs-db{$name}:exists;
+    %!will-change{$name}:delete;
+    self;
+  }
+
+  method reset-attribute(Str:D $name) {
+    self.restore-attribute($name);
+  }
+
+  method reload {
+    die X::FrozenRecord.new(model => self.WHAT.^name) if $!destroyed;
+    return self if $!id == 0;
+    self.get-attrs(:$!id);
+    %!will-change = ();
+    self;
   }
 
   method is-readonly(--> Bool) {
@@ -121,6 +248,91 @@ class Model is export {
   method make-readonly {
     $!readonly = True;
     self;
+  }
+
+  method is-new-record(--> Bool) {
+    $!id == 0 && !$!destroyed;
+  }
+
+  method is-persisted(--> Bool) {
+    $!id != 0 && !$!destroyed;
+  }
+
+  method is-destroyed(--> Bool) {
+    $!destroyed;
+  }
+
+  method was-new-record(--> Bool) {
+    $!previously-new;
+  }
+
+  method was-persisted(--> Bool) {
+    $!previously-persisted;
+  }
+
+  method is-frozen(--> Bool) {
+    $!destroyed;
+  }
+
+  method assign-attributes(%attrs) {
+    die X::FrozenRecord.new(model => self.WHAT.^name) if $!destroyed;
+    for %attrs.kv -> $key, $val { %!attrs{$key} = $val }
+    self;
+  }
+
+  method attributes() is rw {
+    my $model = self;
+    Proxy.new(
+      FETCH => method () { %($model.attrs) },
+      STORE => method ($new) {
+        $model.assign-attributes($new);
+        %($model.attrs);
+      }
+    );
+  }
+
+  method read-attribute(Str:D $name) {
+    %!attrs{$name};
+  }
+
+  method write-attribute(Str:D $name, $value) {
+    die X::FrozenRecord.new(model => self.WHAT.^name) if $!destroyed;
+    %!attrs{$name} = $value;
+    $value;
+  }
+
+  method AT-KEY(Str:D $key) is rw {
+    if $!destroyed {
+      my $model = self;
+      return Proxy.new(
+        FETCH => method () { $model.attrs{$key} },
+        STORE => method ($) {
+          die X::FrozenRecord.new(model => $model.WHAT.^name);
+        }
+      );
+    }
+    %!attrs{$key};
+  }
+
+  method EXISTS-KEY(Str:D $key --> Bool) { %!attrs{$key}:exists }
+
+  method has-attribute(Str:D $name --> Bool) {
+    so @!fields.first({ .name eq $name });
+  }
+
+  method is-attribute-present(Str:D $name --> Bool) {
+    return False unless %!attrs{$name}:exists;
+    my $v = %!attrs{$name};
+    return False without $v;
+    return False if $v ~~ Bool && !$v;
+    return False if $v ~~ Str && $v ~~ /^ \s* $/;
+    return False if $v ~~ Positional && !$v.elems;
+    return False if $v ~~ Associative && !$v.elems;
+    True;
+  }
+
+  method attribute-names {
+    @!fields.map(*.name).list;
   }
 
   method belongs-to(*%rest) {
@@ -265,6 +477,7 @@ class Model is export {
         default { say 'Unknown field type: ' ~ .type; die; }
       }
     }
+    self.update-db-attrs;
   }
 
   method touch-timestamps {
@@ -284,6 +497,7 @@ class Model is export {
   method get-attrs(:$id) {
     my @fields = @!fields;
     %!attrs = $!db.get-record(:@fields, table => self.table-name, where => :$id);
+    self.update-db-attrs;
   }
 
   method field-names {
@@ -294,12 +508,19 @@ class Model is export {
     for %!attrs.keys { %!attrs-db«$_» = %!attrs«$_» }
   }
 
-  method save {
+  method save(Bool :$validate = True, Bool :$touch = True) {
     die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!readonly;
-    if self.is-valid {
+    die X::FrozenRecord.new(model => self.WHAT.^name)   if $!destroyed;
+    if !$validate || self.is-valid {
       self.update-foreign-keys;
       self.do-before-saves;
-      self.touch-timestamps;
+      self.touch-timestamps if $touch;
+
+      my Bool $was-new = $!id == 0;
+      my %snapshot;
+      for self.changed -> $name {
+        %snapshot{$name} = [%!attrs-db{$name}, %!attrs{$name}];
+      }
 
       given $!id {
         when 0 {
@@ -316,6 +537,9 @@ class Model is export {
 
       self.do-after-saves;
       self.update-db-attrs;
+      %!previous-changes = %snapshot;
+      %!will-change = ();
+      $!previously-new = $was-new;
       return True;
     }
     False;
@@ -360,6 +584,83 @@ class Model is export {
       %!attrs{$key} = %attrs{$key};
     }
     self.save;
+  }
+
+  method update-column(Str:D $name, $value --> Bool) {
+    self.update-columns(%($name => $value));
+  }
+
+  method update-columns(%attrs --> Bool) {
+    die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!readonly;
+    die X::FrozenRecord.new(model => self.WHAT.^name)   if $!destroyed;
+    return False unless $!id;
+
+    my %types;
+    for @!fields -> $f { %types{$f.name} = $f.type if %attrs{$f.name}:exists }
+
+    my $table = self.table-name;
+    my $stmt = $!db.build-update(:$table, :id($!id), :%attrs, :%types);
+    $!db.exec-stmt($stmt);
+
+    for %attrs.kv -> $key, $val {
+      %!attrs{$key} = $val;
+      %!attrs-db{$key} = $val;
+    }
+    True;
+  }
+
+  method update-attribute(Str:D $name, $value --> Bool) {
+    %!attrs{$name} = $value;
+    self.save(:!validate);
+  }
+
+  method touch(*@names --> Bool) {
+    die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!readonly;
+    die X::FrozenRecord.new(model => self.WHAT.^name)   if $!destroyed;
+    return False unless $!id;
+
+    my $now = DateTime.now;
+    my %attrs;
+    for @!fields -> $f {
+      %attrs{$f.name} = $now if $f.name eq 'updated_at';
+    }
+    for @names -> $extra {
+      %attrs{$extra} = $now if self.has-attribute($extra);
+    }
+    return False unless %attrs.elems;
+    self.update-columns(%attrs);
+  }
+
+  method increment(Str:D $name, Numeric:D $n = 1) {
+    %!attrs{$name} = (%!attrs{$name} // 0) + $n;
+    self;
+  }
+
+  method increment-or-die(Str:D $name, Numeric:D $n = 1) {
+    self.increment($name, $n);
+    self.update-attribute($name, %!attrs{$name}) or self.raise-invalid;
+    self;
+  }
+
+  method decrement(Str:D $name, Numeric:D $n = 1) {
+    self.increment($name, -$n);
+  }
+
+  method decrement-or-die(Str:D $name, Numeric:D $n = 1) {
+    self.decrement($name, $n);
+    self.update-attribute($name, %!attrs{$name}) or self.raise-invalid;
+    self;
+  }
+
+  method toggle(Str:D $name) {
+    %!attrs{$name} = !%!attrs{$name};
+    self;
+  }
+
+  method toggle-or-die(Str:D $name) {
+    self.toggle($name);
+    self.update-attribute($name, %!attrs{$name}) or self.raise-invalid;
+    self;
   }
 
   method save-or-die {
@@ -487,6 +788,9 @@ class Model is export {
     $!db.delete-records(:$table, :%where);
     $!id = 0;
     %!attrs<id> = 0;
+    $!destroyed = True;
+    $!previously-persisted = True;
+    $!previously-new = False;
     True;
   }
 
@@ -581,6 +885,10 @@ class Model is export {
 
   method ids {
     self.all.ids;
+  }
+
+  method touch-all(*@names) {
+    self.all.touch-all(|@names);
   }
 
   method pick(*@cols) {

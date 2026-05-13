@@ -1,0 +1,130 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'DBDish::SQLite not installed in this environment';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+
+my $sqlite = SqliteAdapter.new(database => ':memory:');
+DB.set-shared(DB.new(adapter => $sqlite));
+
+$sqlite.ddl-create-table('widgets', [
+  name   => { :string, limit => 64 },
+  qty    => { :integer, default => 0 },
+  active => { :boolean, default => False },
+]);
+
+use ORM::ActiveRecord::Model;
+
+class Widget is Model {}
+
+plan 33;
+
+# assign-attributes — mass-assign in memory, no save
+{
+  my $w = Widget.build;
+  $w.assign-attributes({ name => 'Alpha', qty => 7 });
+  ok $w.name eq 'Alpha',  'assign-attributes sets a string column';
+  ok $w.qty == 7,         'assign-attributes sets an integer column';
+  ok $w.id == 0,          'assign-attributes does not save';
+}
+
+# assign-attributes returns self so it is chainable
+{
+  my $w = Widget.build;
+  my $ret = $w.assign-attributes({ name => 'Beta' });
+  ok $ret === $w, 'assign-attributes returns the same model instance';
+}
+
+# attributes= setter alias — Proxy-based rw access
+{
+  my $w = Widget.build;
+  $w.attributes = { name => 'Gamma', qty => 3 };
+  ok $w.name eq 'Gamma', 'attributes= assigns the name';
+  ok $w.qty == 3,        'attributes= assigns the qty';
+}
+
+# read-attribute / write-attribute
+{
+  my $w = Widget.build({ name => 'Delta' });
+  ok $w.read-attribute('name') eq 'Delta', 'read-attribute returns the value';
+  $w.write-attribute('name', 'Echo');
+  ok $w.name eq 'Echo', 'write-attribute mutates the value';
+  ok $w.read-attribute('name') eq 'Echo', 'read-attribute reflects writes';
+}
+
+# [] / []= indexer access to attributes
+{
+  my $w = Widget.build({ name => 'Foxtrot', qty => 2 });
+  ok $w<name> eq 'Foxtrot', '[] reads an attribute';
+  ok $w<qty> == 2,          '[] reads an integer attribute';
+  $w<name> = 'Golf';
+  ok $w<name> eq 'Golf',    '[]= writes an attribute';
+  ok $w.name eq 'Golf',     'method accessor sees []= writes';
+  ok $w<name>:exists,       ':exists is true for a known attribute';
+  nok $w<bogus>:exists,     ':exists is false for an unknown attribute';
+}
+
+# is-attribute-present — Rails present? semantics
+{
+  my $w = Widget.build({ name => 'Hotel', qty => 5, active => True });
+  ok $w.is-attribute-present('name'),    'string with content is present';
+  ok $w.is-attribute-present('qty'),     'non-zero int is present';
+  ok $w.is-attribute-present('active'),  'True bool is present';
+
+  my $blank = Widget.build({ name => '', qty => 0, active => False });
+  nok $blank.is-attribute-present('name'),   'empty string is not present';
+  ok $blank.is-attribute-present('qty'),     'zero IS present (matches Rails)';
+  nok $blank.is-attribute-present('active'), 'False bool is not present';
+
+  nok $blank.is-attribute-present('bogus'),  'unknown attribute is not present';
+}
+
+# has-attribute — does the schema know this column?
+{
+  my $w = Widget.build;
+  ok $w.has-attribute('name'),  'has-attribute is true for a schema column';
+  ok $w.has-attribute('qty'),   'has-attribute is true for another schema column';
+  ok $w.has-attribute('id'),    'has-attribute is true for the id column';
+  nok $w.has-attribute('bogus'),'has-attribute is false for a non-column';
+}
+
+# attribute-names — list of schema column names
+{
+  my $w = Widget.build;
+  my @names = $w.attribute-names;
+  ok @names.elems >= 4,         'attribute-names lists all columns';
+  ok @names.Set{'name'},        'attribute-names includes name';
+  ok @names.Set{'qty'},         'attribute-names includes qty';
+  ok @names.Set{'id'},          'attribute-names includes id';
+}
+
+# attributes — hash dump
+{
+  my $w = Widget.build({ name => 'India', qty => 9 });
+  my %dump = $w.attributes;
+  ok %dump<name> eq 'India',    'attributes dump has the name';
+  ok %dump<qty> == 9,           'attributes dump has the qty';
+
+  # Mutating the dump does not change the model
+  %dump<name> = 'Juliet';
+  ok $w.name eq 'India',        'attributes returns a clone, not a live view';
+}
+
+DB.set-shared(Nil);
