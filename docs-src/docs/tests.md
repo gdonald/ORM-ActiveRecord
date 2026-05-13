@@ -65,7 +65,7 @@ $ prove6 -Ilib t
 ## Running a single test file
 
 ```shell
-$ raku -Ilib t/0020-basic.rakutest
+$ raku -Ilib t/0040-basic.rakutest
 ```
 
 Test files live under `t/` and use the `.rakutest` extension. They follow the

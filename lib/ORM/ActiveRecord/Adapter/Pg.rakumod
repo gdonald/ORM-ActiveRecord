@@ -25,6 +25,7 @@ class PgAdapter is SqlAdapter is export {
   method connect() {
     return if self.db.defined;
     self.db = DBIish.connect('Pg', :$!schema, :$!host, :$!database, :$!user, :$!password);
+    self.db.do('SET client_min_messages = WARNING');
   }
 
   method bind-placeholder(Int:D $n --> Str) {

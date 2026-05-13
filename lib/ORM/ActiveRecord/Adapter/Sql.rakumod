@@ -95,20 +95,17 @@ class SqlAdapter does Adapter is export {
   }
 
   method begin(Str :$isolation)    { self.begin-sql(:$isolation) }
-  method commit   { self!txn-exec('COMMIT') }
-  method rollback { self!txn-exec('ROLLBACK') }
+  method commit   { self.txn-exec('COMMIT') }
+  method rollback { self.txn-exec('ROLLBACK') }
 
   method is-in-transaction(--> Bool) { $!txn-depth > 0 }
 
-  # Default BEGIN with optional isolation suffix. Adapters override when
-  # the dialect needs a different shape (e.g. MySQL requires SET TRANSACTION
-  # before START TRANSACTION).
   method begin-sql(Str :$isolation) {
     if $isolation.defined && $isolation.chars {
       my $clause = self.isolation-clause($isolation);
-      self!txn-exec("BEGIN $clause");
+      self.txn-exec("BEGIN $clause");
     } else {
-      self!txn-exec('BEGIN');
+      self.txn-exec('BEGIN');
     }
   }
 
@@ -124,9 +121,9 @@ class SqlAdapter does Adapter is export {
     }
   }
 
-  method savepoint(Str:D $name)             { self!txn-exec("SAVEPOINT $name") }
-  method release-savepoint(Str:D $name)     { self!txn-exec("RELEASE SAVEPOINT $name") }
-  method rollback-to-savepoint(Str:D $name) { self!txn-exec("ROLLBACK TO SAVEPOINT $name") }
+  method savepoint(Str:D $name)             { self.txn-exec("SAVEPOINT $name") }
+  method release-savepoint(Str:D $name)     { self.txn-exec("RELEASE SAVEPOINT $name") }
+  method rollback-to-savepoint(Str:D $name) { self.txn-exec("ROLLBACK TO SAVEPOINT $name") }
 
   method transaction(&block, Bool:D :$requires-new = False, Str :$isolation) {
     if $isolation.defined && $isolation.chars {
@@ -175,8 +172,6 @@ class SqlAdapter does Adapter is export {
   }
 
   method !run-joined(&block) {
-    # Inner non-savepoint call: just run the block; an X::Rollback here
-    # propagates up to the outer transaction so the whole thing rolls back.
     block();
   }
 
@@ -211,7 +206,10 @@ class SqlAdapter does Adapter is export {
     'ar_sp_' ~ $!sp-counter;
   }
 
-  method !txn-exec(Str:D $sql) {
+  # DBDish::mysql rejects transaction-control statements via prepare(),
+  # so callers must use this path instead of exec() for BEGIN / COMMIT /
+  # ROLLBACK / SAVEPOINT / SET TRANSACTION.
+  method txn-exec(Str:D $sql) {
     self!ensure-connected;
     Log.sql(:$sql);
     $!db.execute($sql);

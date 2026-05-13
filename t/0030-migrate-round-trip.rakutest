@@ -1,0 +1,35 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migrate;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+my @before = $adapter.get-table-names.list.grep({ $_ ne 'migrations' }).sort;
+ok @before.elems > 0, 'starting schema has at least one migrated table';
+
+Migrate.new(:args(['reset', '--yes'])).run;
+
+my @after-reset = $adapter.get-table-names.list;
+is @after-reset.elems, 0, 'reset --yes drops every table on the adapter';
+
+Migrate.new(:args([])).run;
+
+my @after-up = $adapter.get-table-names.list.grep({ $_ ne 'migrations' }).sort;
+is @after-up.join(','), @before.join(','),
+  'migrate up restores the same set of tables';
+
+ok 'migrations' (elem) $adapter.get-table-names.list,
+  'migrations bookkeeping table re-created';
+
+done-testing;

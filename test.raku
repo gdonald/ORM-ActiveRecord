@@ -125,7 +125,7 @@ sub pg-skip-message(Str:D $url, Str:D $err --> Str) {
     }
     default {
       qq:to/MSG/.chomp;
-      PostgreSQL probe failed for $url.
+      PostgreSQL probe failed.
         error: $err
         fix:   set AR_PG_URL='postgres://USER:PASS\@HOST:PORT/DB'
                or edit config/application.json
@@ -190,7 +190,7 @@ sub mysql-skip-message(Str:D $url, Str:D $err --> Str) {
     }
     default {
       qq:to/MSG/.chomp;
-      MySQL probe failed for $url.
+      MySQL probe failed.
         error: $err
         fix:   set AR_MYSQL_URL='mysql://USER:PASS\@HOST:PORT/DB'
       MSG
@@ -255,10 +255,11 @@ sub probe(Str:D $name, Str:D $url --> Capture) {
 
 sub run-once(Str:D :$name, Str:D :$url --> Int) {
   say '';
-  say "==> [{format-ts()}] adapter=$name DATABASE_URL=$url";
+  say "==> [{format-ts()}] adapter=$name";
   %*ENV<DATABASE_URL> = $url;
 
-  my $migrate = run 'raku', '-Ilib', 'bin/ar';
+  my $migrate = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+                    'raku', '-Ilib', 'bin/ar';
   return $migrate.exitcode unless $migrate.exitcode == 0;
 
   my $proc = run 'prove6', "-j$jobs", '-Ilib', 't';

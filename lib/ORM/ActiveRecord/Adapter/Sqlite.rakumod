@@ -43,12 +43,10 @@ class SqliteAdapter is SqlAdapter is export {
 
   method bind-placeholder(Int:D $n --> Str) { '?' }
 
-  # SQLite doesn't expose SQL-standard isolation levels. It supports
-  # DEFERRED / IMMEDIATE / EXCLUSIVE on BEGIN, all of which provide
-  # serializable semantics for the journal. Accept the standard names so
-  # cross-adapter code works, but ignore them.
+  # SQLite has no SQL-standard isolation levels; the helper validates the
+  # keyword for cross-adapter parity, then we ignore it.
   method begin-sql(Str :$isolation) {
-    self.exec('BEGIN');
+    self.txn-exec('BEGIN');
   }
 
   method explain(SqlStmt:D $stmt --> Str) {
