@@ -19,6 +19,7 @@ role QueryFinders is export {
       ctes => self.ctes-values,
       annotations => self.annotations-values,
       optimizer-hints => self.optimizer-hints-values,
+      lock => self.lock-value,
     );
     if self.readonly-value {
       .make-readonly for @objects;
@@ -34,7 +35,7 @@ role QueryFinders is export {
     return Any if self.is-none-value;
     my @order = self.order-values.elems ?? self.order-values !! ('id',);
     my @or-groups = self.or-groups-payload;
-    my $obj = DB.shared.get-object(table => self.table-of, class => self.class-of, fields => self.fields-of, where => self.where-values, where-not => self.where-not-values, :@or-groups, :@order, distinct => self.distinct-value, group => self.group-values, having => self.having-values, from-source => self.from-source, from-alias => self.from-alias, joins => self.joins-values, ctes => self.ctes-values, annotations => self.annotations-values, optimizer-hints => self.optimizer-hints-values);
+    my $obj = DB.shared.get-object(table => self.table-of, class => self.class-of, fields => self.fields-of, where => self.where-values, where-not => self.where-not-values, :@or-groups, :@order, distinct => self.distinct-value, group => self.group-values, having => self.having-values, from-source => self.from-source, from-alias => self.from-alias, joins => self.joins-values, ctes => self.ctes-values, annotations => self.annotations-values, optimizer-hints => self.optimizer-hints-values, lock => self.lock-value);
     $obj.make-readonly if $obj.defined && self.readonly-value;
     $obj;
   }
@@ -56,6 +57,7 @@ role QueryFinders is export {
       ctes => self.ctes-values,
       annotations => self.annotations-values,
       optimizer-hints => self.optimizer-hints-values,
+      lock => self.lock-value,
     );
     if self.readonly-value {
       .make-readonly for @objects;
@@ -69,7 +71,7 @@ role QueryFinders is export {
       ?? self.order-values
       !! ('id DESC',);
     my @or-groups = self.or-groups-payload;
-    my $obj = DB.shared.get-object(table => self.table-of, class => self.class-of, fields => self.fields-of, where => self.where-values, where-not => self.where-not-values, :@or-groups, :@order, distinct => self.distinct-value, group => self.group-values, having => self.having-values, from-source => self.from-source, from-alias => self.from-alias, joins => self.joins-values, ctes => self.ctes-values, annotations => self.annotations-values, optimizer-hints => self.optimizer-hints-values);
+    my $obj = DB.shared.get-object(table => self.table-of, class => self.class-of, fields => self.fields-of, where => self.where-values, where-not => self.where-not-values, :@or-groups, :@order, distinct => self.distinct-value, group => self.group-values, having => self.having-values, from-source => self.from-source, from-alias => self.from-alias, joins => self.joins-values, ctes => self.ctes-values, annotations => self.annotations-values, optimizer-hints => self.optimizer-hints-values, lock => self.lock-value);
     $obj.make-readonly if $obj.defined && self.readonly-value;
     $obj;
   }
@@ -93,6 +95,7 @@ role QueryFinders is export {
       ctes => self.ctes-values,
       annotations => self.annotations-values,
       optimizer-hints => self.optimizer-hints-values,
+      lock => self.lock-value,
     );
     if self.readonly-value {
       .make-readonly for @objects;
@@ -126,6 +129,7 @@ role QueryFinders is export {
       ctes => self.ctes-values,
       annotations => self.annotations-values,
       optimizer-hints => self.optimizer-hints-values,
+      lock => self.lock-value,
     );
     die X::RecordNotFound.new(:model(self.class-of.^name)) unless @rows.elems;
     die X::SoleRecordExceeded.new(:model(self.class-of.^name)) if @rows.elems > 1;
@@ -150,6 +154,7 @@ role QueryFinders is export {
         ctes => self.ctes-values,
         annotations => self.annotations-values,
         optimizer-hints => self.optimizer-hints-values,
+        lock => self.lock-value,
       )
     );
     if @names.elems == 1 {

@@ -1,0 +1,207 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+use ORM::ActiveRecord::Support::TestSkip;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+$adapter.exec('DROP TABLE IF EXISTS notes');
+$adapter.ddl-create-table('notes', [
+  title => { :string, limit => 64 },
+  views => { :integer, default => 0 },
+]);
+$adapter.ddl-add-timestamps('notes');
+
+use ORM::ActiveRecord::Model;
+
+class Note is Model {}
+
+plan 20;
+
+my $current = configured-adapter-name() // 'pg';
+my $is-sqlite = $current eq 'sqlite';
+
+# Relation method `lock` adds FOR UPDATE.
+{
+  my $sql = Note.where({ id => 1 }).lock.to-sql;
+  if $is-sqlite {
+    nok $sql.uc.contains('FOR UPDATE'),
+      'SQLite drops FOR UPDATE (no row-lock syntax)';
+  } else {
+    ok $sql.uc.contains('FOR UPDATE'),
+      'relation.lock emits FOR UPDATE';
+  }
+}
+
+{
+  my $sql = Note.lock.where({ id => 1 }).to-sql;
+  if $is-sqlite {
+    nok $sql.uc.contains('FOR UPDATE'),
+      'SQLite drops FOR UPDATE when chained from class-level lock';
+  } else {
+    ok $sql.uc.contains('FOR UPDATE'),
+      'Model.lock chains into a locking relation';
+  }
+}
+
+# Adapter-specific lock modes
+{
+  my $sql = Note.where({ id => 1 }).lock('FOR SHARE').to-sql;
+  if $is-sqlite {
+    nok $sql.uc.contains('FOR SHARE'),
+      'SQLite drops FOR SHARE';
+  } else {
+    ok $sql.uc.contains('FOR SHARE'),
+      'lock(Str) emits the custom mode verbatim';
+  }
+}
+
+{
+  my $sql = Note.where({ id => 1 }).lock('FOR NO KEY UPDATE').to-sql;
+  if $is-sqlite {
+    nok $sql.uc.contains('FOR NO KEY UPDATE'),
+      'SQLite drops FOR NO KEY UPDATE';
+  } else {
+    ok $sql.uc.contains('FOR NO KEY UPDATE'),
+      'lock("FOR NO KEY UPDATE") passes Postgres-specific mode through';
+  }
+}
+
+# Default state: no lock clause until requested.
+{
+  my $sql = Note.where({ id => 1 }).to-sql;
+  nok $sql.uc.contains('FOR UPDATE'),
+    'plain relation does not emit FOR UPDATE';
+  nok $sql.uc.contains('FOR SHARE'),
+    'plain relation does not emit FOR SHARE';
+}
+
+# Relation lock-value can be cleared via unscope(:lock).
+{
+  my $rel = Note.where({ id => 1 }).lock;
+  my $sql-before = $rel.to-sql;
+  $rel.unscope(:lock);
+  my $sql-after = $rel.to-sql;
+  nok $sql-after.uc.contains('FOR UPDATE'),
+    'unscope(:lock) removes FOR UPDATE';
+  if !$is-sqlite {
+    ok $sql-before.uc.contains('FOR UPDATE'),
+      'sanity: pre-unscope SQL did contain FOR UPDATE';
+  } else {
+    pass 'unscope(:lock) sanity (SQLite never emits the clause)';
+  }
+}
+
+# Cloning preserves the lock setting.
+{
+  my $rel = Note.where({ id => 1 }).lock('FOR UPDATE');
+  my $clone = $rel.clone-query;
+  my $sql = $clone.to-sql;
+  if $is-sqlite {
+    pass 'clone-query preserves lock state (SQLite no-ops the clause)';
+  } else {
+    ok $sql.uc.contains('FOR UPDATE'),
+      'clone-query preserves the lock setting';
+  }
+}
+
+# Lock relation is still a runnable query.
+{
+  Note.destroy-all;
+  Note.create({ title => 'one', views => 1 });
+  Note.create({ title => 'two', views => 2 });
+
+  Note.transaction({
+    my @rows = Note.lock.all;
+    is @rows.elems, 2, 'Model.lock returns rows inside a transaction';
+  });
+}
+
+# Per-instance lock-or-die refreshes the receiver.
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'one', views => 1 });
+
+  Note.where({ id => $a.id }).update-all({ views => 99 });
+
+  Note.transaction({
+    my $reloaded = $a.lock-or-die;
+    is $reloaded.WHICH, $a.WHICH, 'lock-or-die returns the same instance';
+    is $a.views, 99, 'lock-or-die refreshes attrs from the DB';
+  });
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'gone' });
+  $a.delete;
+  throws-like { $a.lock-or-die }, Exception,
+    'lock-or-die raises when the row no longer exists';
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'a' });
+  $a.make-readonly;
+  throws-like { $a.lock-or-die }, X::ReadOnlyRecord,
+    'lock-or-die refuses readonly records';
+}
+
+# with-lock { ... } block helper
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'init', views => 0 });
+  Note.where({ id => $a.id }).update-all({ views => 7 });
+
+  my $saw-txn = False;
+  my $saw-views;
+  $a.with-lock(-> $rec {
+    $saw-txn = DB.shared.is-in-transaction;
+    $saw-views = $rec.views;
+  });
+  ok $saw-txn,        'with-lock runs the block inside a transaction';
+  is $saw-views, 7,   'with-lock yields the freshly-locked record';
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'before' });
+
+  my $ok-result = lives-ok {
+    $a.with-lock({
+      $a.update({ title => 'after' });
+    });
+  }, 'with-lock commits when block returns normally';
+  if $ok-result {
+    is Note.find($a.id).title, 'after',
+      'commit landed the with-lock block changes';
+  } else {
+    skip 'with-lock did not lives-ok; skipping value check', 1;
+  }
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'before' });
+  dies-ok {
+    $a.with-lock({
+      $a.update({ title => 'mid' });
+      die 'boom';
+    });
+  }, 'with-lock propagates exceptions and rolls back';
+  is Note.find($a.id).title, 'before',
+    'with-lock rollback reverts the update';
+}
+
+$adapter.exec('DROP TABLE IF EXISTS notes');

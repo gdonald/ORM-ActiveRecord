@@ -545,6 +545,27 @@ class Model
     True;
   }
 
+  method lock-or-die($mode = True) {
+    die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!is-readonly;
+    die X::FrozenRecord.new(model => self.WHAT.^name)   if $!is-destroyed;
+    die "lock-or-die: record has no id (call save first)" unless $!id;
+    my $klass = self.WHAT;
+    my @rows = $klass.where({ id => $!id }).lock($mode).all;
+    die X::RecordNotFound.new(:model($klass.^name)) unless @rows.elems;
+    my $fresh = @rows[0];
+    for $fresh.attrs.kv -> $k, $v { %!attrs{$k} = $v }
+    self.update-db-attrs;
+    %!will-change = ();
+    self;
+  }
+
+  method with-lock(&block, $mode = True) {
+    $!db.transaction({
+      self.lock-or-die($mode);
+      block(self);
+    });
+  }
+
   method becomes($klass) {
     die 'becomes: target must be a Model subclass'
       if $klass.DEFINITE || $klass !~~ Model;

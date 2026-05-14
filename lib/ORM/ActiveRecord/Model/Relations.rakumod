@@ -27,6 +27,7 @@ role ModelRelations is export {
   method from($source, Str $alias?)                  { self.all.from($source, $alias) }
   method references(*@names)                         { self.all.references(|@names) }
   method readonly(Bool:D $on = True)                 { self.all.readonly($on) }
+  method lock($mode = True)                          { self.all.lock($mode) }
   method extending(*@roles)                          { self.all.extending(|@roles) }
   method having(*@parts)                             { self.all.having(|@parts) }
   method joins(*@args, *%kw)                         { self.all.joins(|@args, |%kw) }

@@ -3,9 +3,7 @@ use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::DB;
 
 role QuerySql is export {
-  # Build this query's SELECT body into the given shared SqlStmt, returning
-  # the SQL fragment. Used by adapters to emit CTE sub-queries that share
-  # bind numbering with the outer SELECT.
+  # Shares bind numbering with $stmt so CTE sub-queries don't re-start at $1.
   method to-sql-into(SqlStmt:D $stmt --> Str) {
     my @or-groups = self.or-groups-payload;
     DB.shared.build-select-body(
@@ -17,6 +15,7 @@ role QuerySql is export {
       from-source => self.from-source, from-alias => self.from-alias,
       joins => self.joins-values,
       optimizer-hints => self.optimizer-hints-values,
+      lock => self.lock-value,
     );
   }
 
@@ -40,7 +39,7 @@ role QuerySql is export {
       ctes => self.ctes-values,
       annotations => self.annotations-values,
       optimizer-hints => self.optimizer-hints-values,
+      lock => self.lock-value,
     );
   }
-
 }

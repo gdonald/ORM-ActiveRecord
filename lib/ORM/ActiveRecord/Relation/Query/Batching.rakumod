@@ -6,22 +6,23 @@ role QueryBatching is export {
     die "find-in-batches: batch-size must be > 0" if $batch-size <= 0;
     return Seq.new(().iterator) if self.is-none-value;
 
-    my $table       = self.table-of;
-    my $class       = self.class-of;
-    my @fields      = self.fields-of;
-    my %where-base  = %( self.where-values );
-    my %where-not   = self.where-not-values;
-    my @or-groups   = self.or-groups-payload;
-    my $distinct    = self.distinct-value;
-    my @group       = self.group-values;
-    my @having      = self.having-values;
-    my $from-source = self.from-source;
-    my $from-alias  = self.from-alias;
-    my @joins       = self.joins-values;
-    my @ctes        = self.ctes-values;
-    my @annotations = self.annotations-values;
+    my $table           = self.table-of;
+    my $class           = self.class-of;
+    my @fields          = self.fields-of;
+    my %where-base      = %( self.where-values );
+    my %where-not       = self.where-not-values;
+    my @or-groups       = self.or-groups-payload;
+    my $distinct        = self.distinct-value;
+    my @group           = self.group-values;
+    my @having          = self.having-values;
+    my $from-source     = self.from-source;
+    my $from-alias      = self.from-alias;
+    my @joins           = self.joins-values;
+    my @ctes            = self.ctes-values;
+    my @annotations     = self.annotations-values;
     my @optimizer-hints = self.optimizer-hints-values;
-    my $readonly    = self.readonly-value;
+    my $readonly        = self.readonly-value;
+    my $lock            = self.lock-value;
 
     gather {
       my $cursor = 0;
@@ -37,7 +38,7 @@ role QueryBatching is export {
           group => @group, having => @having,
           from-source => $from-source, from-alias => $from-alias,
           joins => @joins,
-          :@ctes, :@annotations, :@optimizer-hints,
+          :@ctes, :@annotations, :@optimizer-hints, :$lock,
         );
         last unless @objects.elems;
         if $readonly { .make-readonly for @objects }

@@ -120,13 +120,13 @@ role SqlBuilders is export {
     %attrs;
   }
 
-  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints --> SqlStmt) {
+  method build-select(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock = False --> SqlStmt) {
     my $stmt = SqlStmt.new(:adapter(self));
     my $cte-prefix = self.build-ctes($stmt, :@ctes);
     my $body = self.build-select-body(
       $stmt, :$table, :$join-table, :@fields, :%where, :%where-not, :@or-groups,
       :@order, :$limit, :$offset, :$distinct, :@group, :@having,
-      :$from-source, :$from-alias, :@joins, :@optimizer-hints,
+      :$from-source, :$from-alias, :@joins, :@optimizer-hints, :$lock,
     );
     my $annotated = self.attach-annotations($body, :@annotations);
     $stmt.sql = $cte-prefix
@@ -135,7 +135,7 @@ role SqlBuilders is export {
     $stmt;
   }
 
-  method build-select-body(SqlStmt:D $stmt, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@optimizer-hints --> Str) {
+  method build-select-body(SqlStmt:D $stmt, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@optimizer-hints, :$lock = False --> Str) {
     my $select-keyword = $distinct ?? 'SELECT DISTINCT' !! 'SELECT';
     my $hints = self.format-optimizer-hints(@optimizer-hints);
     $select-keyword ~= " $hints" if $hints;
@@ -165,6 +165,7 @@ role SqlBuilders is export {
     }
 
     my $joins-sql = @joins.elems ?? @joins.join("\n") !! '';
+    my $lock-clause = self.format-lock-clause($lock);
 
     qq:to/SQL/;
       $select-keyword $select
@@ -176,7 +177,18 @@ role SqlBuilders is export {
       $having-clause
       $order
       $limit_offset
+      $lock-clause
       SQL
+  }
+
+  # FOR UPDATE / FOR SHARE / FOR NO KEY UPDATE etc. Adapters may override.
+  # `True` → 'FOR UPDATE'; a Str is emitted verbatim; falsy → no clause.
+  method format-lock-clause($lock --> Str) {
+    return '' without $lock;
+    return '' if $lock === False;
+    return 'FOR UPDATE' if $lock === True;
+    return $lock.Str if $lock ~~ Str && $lock.chars;
+    '';
   }
 
   method build-ctes(SqlStmt:D $stmt, :@ctes --> Str) {
@@ -342,8 +354,8 @@ role SqlBuilders is export {
     }
   }
 
-  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints) {
-    my @records = self.get-records(:@fields, :$table, :$join-table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints);
+  method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock = False) {
+    my @records = self.get-records(:@fields, :$table, :$join-table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock);
     my @objects;
 
     for @records.kv -> $k, $record {
@@ -354,8 +366,8 @@ role SqlBuilders is export {
     @objects;
   }
 
-  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints) {
-    my $record = self.get-record(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints);
+  method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock = False) {
+    my $record = self.get-record(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock);
     return Nil unless $record && $record{'id'};
     $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
   }
@@ -380,9 +392,9 @@ role SqlBuilders is export {
     self.exec($sql);
   }
 
-  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints) {
+  method get-records(Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock = False) {
     my @records;
-    my $stmt = self.build-select(:@fields, :$join-table, :$table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints);
+    my $stmt = self.build-select(:@fields, :$join-table, :$table, :%where, :%where-not, :@or-groups, :@order, :$limit, :$offset, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock);
 
     for self.exec-stmt($stmt).kv -> $k, $row {
       my %record;
@@ -395,8 +407,8 @@ role SqlBuilders is export {
     @records;
   }
 
-  method get-record(Str:D :$table, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints) {
-    my $stmt = self.build-select(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, limit => 1, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints);
+  method get-record(Str:D :$table, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock = False) {
+    my $stmt = self.build-select(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, limit => 1, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock);
     my $rows = self.exec-stmt($stmt);
     my %record;
     return %record unless $rows.elems;

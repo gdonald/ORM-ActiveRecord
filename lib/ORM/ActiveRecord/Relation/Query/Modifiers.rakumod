@@ -52,23 +52,25 @@ role QueryModifiers is export {
         }
       }
     }
+
     for @all-kinds.unique -> $kind {
       given $kind {
-        when 'where'    { self.where-values = {}; self.where-not-values = {} }
-        when 'order'    { self.order-values = () }
-        when 'limit'    { self.limit-value = 0 }
-        when 'offset'   { self.offset-value = 0 }
-        when 'select'   { self.select-values = () }
-        when 'distinct' { self.distinct-value = False }
-        when 'group'    { self.group-values = () }
-        when 'having'   { self.having-values = () }
-        when 'from'       { self.from-source = Str; self.from-alias = Str }
-        when 'references' { self.references-values = () }
-        when 'readonly'   { self.readonly-value = False }
-        when 'joins'      { self.joins-values = () }
-        when 'with'       { self.ctes-values = () }
-        when 'annotate'   { self.annotations-values = () }
+        when 'where'           { self.where-values = {}; self.where-not-values = {} }
+        when 'order'           { self.order-values = () }
+        when 'limit'           { self.limit-value = 0 }
+        when 'offset'          { self.offset-value = 0 }
+        when 'select'          { self.select-values = () }
+        when 'distinct'        { self.distinct-value = False }
+        when 'group'           { self.group-values = () }
+        when 'having'          { self.having-values = () }
+        when 'from'            { self.from-source = Str; self.from-alias = Str }
+        when 'references'      { self.references-values = () }
+        when 'readonly'        { self.readonly-value = False }
+        when 'joins'           { self.joins-values = () }
+        when 'with'            { self.ctes-values = () }
+        when 'annotate'        { self.annotations-values = () }
         when 'optimizer-hints' { self.optimizer-hints-values = () }
+        when 'lock'            { self.lock-value = False }
         default { die "unscope: unknown scope kind '$kind'" }
       }
     }
@@ -112,7 +114,7 @@ role QueryModifiers is export {
       default   { $d = $dir.Str.uc }
     }
     die "order: invalid direction '$dir' for {$col.Str}"
-      unless $d eq 'ASC' || $d eq 'DESC';
+    unless $d eq 'ASC' || $d eq 'DESC';
     "{$col.Str} $d";
   }
 
@@ -159,6 +161,11 @@ role QueryModifiers is export {
 
   method readonly(Bool:D $on = True) {
     self.readonly-value = $on;
+    self;
+  }
+
+  method lock($mode = True) {
+    self.lock-value = $mode;
     self;
   }
 

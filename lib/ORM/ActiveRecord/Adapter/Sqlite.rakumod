@@ -43,8 +43,7 @@ class SqliteAdapter is SqlAdapter is export {
 
   method bind-placeholder(Int:D $n --> Str) { '?' }
 
-  # SQLite has no SQL-standard isolation levels; the helper validates the
-  # keyword for cross-adapter parity, then we ignore it.
+  # SQLite has no SQL-standard isolation levels — validated upstream, dropped here.
   method begin-sql(Str :$isolation) {
     self.txn-exec('BEGIN');
   }
@@ -62,6 +61,9 @@ class SqliteAdapter is SqlAdapter is export {
     my $l = $limit ?? $limit !! -1;
     "LIMIT $l OFFSET $offset";
   }
+
+  # SQLite locks the whole DB at the transaction level — no row-lock clause.
+  method format-lock-clause($lock --> Str) { '' }
 
   method coerce-read($value, Str :$type) {
     return $value without $value;
@@ -156,10 +158,8 @@ class SqliteAdapter is SqlAdapter is export {
   }
 
   method get-fields(Str:D :$table) {
-    # PRAGMA table_info(t) returns: cid, name, type, notnull, dflt_value, pk.
-    # Normalize the type label to lowercase so consumers (Model.init-attrs
-    # and our own coerce-read) see the same shape PG's information_schema
-    # already gives them.
+    # PRAGMA table_info columns: cid, name, type, notnull, dflt_value, pk.
+    # Lowercase the type to match PG's information_schema vocabulary.
     my $rows = self.exec("PRAGMA table_info('$table')");
     my @out;
     for @$rows -> $row {
@@ -257,9 +257,8 @@ class SqliteAdapter is SqlAdapter is export {
   method ddl-add-column(Str:D $table, Pair:D $param) {
     my @fk-clauses;
     my $fields = self!build-fields([$param], :@fk-clauses);
+    # SQLite ALTER TABLE can't add FK constraints — use create-table for enforced FKs.
     self.exec("ALTER TABLE $table ADD COLUMN $fields");
-    # SQLite ALTER TABLE cannot install FK constraints after the fact; the
-    # column is added without enforcement. For enforced FKs use create-table.
   }
 
   method ddl-add-timestamps(Str:D $table) {

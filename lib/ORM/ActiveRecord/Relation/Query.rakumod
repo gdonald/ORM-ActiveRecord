@@ -13,16 +13,16 @@ use ORM::ActiveRecord::Relation::Query::Bulk;
 use ORM::ActiveRecord::Relation::Query::Batching;
 
 class Query
-  does QueryConditions
-  does QueryModifiers
-  does QueryJoins
-  does QuerySql
-  does QueryPredicates
-  does QueryAggregations
-  does QueryFinders
-  does QueryBulk
-  does QueryBatching
-  is export
+does QueryConditions
+does QueryModifiers
+does QueryJoins
+does QuerySql
+does QueryPredicates
+does QueryAggregations
+does QueryFinders
+does QueryBulk
+does QueryBatching
+is export
 {
   has Mu $!class;
   has Str $!table;
@@ -47,6 +47,7 @@ class Query
   has @!ctes;
   has @!annotations;
   has @!optimizer-hints;
+  has $!lock = False;
 
   submethod BUILD(Mu:U :$!class, Hash:D :$params) {
     $!table = Utils.table-name($!class);
@@ -56,26 +57,27 @@ class Query
     for self!normalize-assoc-params($params).kv -> $k, $v { $!params{$k} = $v }
   }
 
-  method where-values     is rw { $!params }
-  method where-not-values is rw { $!not-params }
-  method or-relations     is rw { @!or-relations }
-  method order-values     is rw { @!order }
-  method limit-value      is rw { $!limit }
-  method offset-value     is rw { $!offset }
-  method select-values    is rw { @!select }
-  method distinct-value   is rw { $!distinct }
-  method group-values     is rw { @!group }
-  method having-values    is rw { @!having }
-  method from-source      is rw { $!from-source }
-  method from-alias       is rw { $!from-alias }
-  method references-values is rw { @!references }
-  method readonly-value    is rw { $!readonly }
-  method joins-values      is rw { @!joins }
-  method is-none-value     is rw { $!is-none }
-  method create-with-attrs is rw { $!create-with-attrs }
-  method ctes-values       is rw { @!ctes }
-  method annotations-values is rw { @!annotations }
+  method where-values           is rw { $!params }
+  method where-not-values       is rw { $!not-params }
+  method or-relations           is rw { @!or-relations }
+  method order-values           is rw { @!order }
+  method limit-value            is rw { $!limit }
+  method offset-value           is rw { $!offset }
+  method select-values          is rw { @!select }
+  method distinct-value         is rw { $!distinct }
+  method group-values           is rw { @!group }
+  method having-values          is rw { @!having }
+  method from-source            is rw { $!from-source }
+  method from-alias             is rw { $!from-alias }
+  method references-values      is rw { @!references }
+  method readonly-value         is rw { $!readonly }
+  method joins-values           is rw { @!joins }
+  method is-none-value          is rw { $!is-none }
+  method create-with-attrs      is rw { $!create-with-attrs }
+  method ctes-values            is rw { @!ctes }
+  method annotations-values     is rw { @!annotations }
   method optimizer-hints-values is rw { @!optimizer-hints }
+  method lock-value             is rw { $!lock }
   method class-of               { $!class }
   method table-of               { $!table }
   method fields-of              { @!fields }
@@ -87,25 +89,26 @@ class Query
   }
 
   method !load-from(Query:D $src) {
-    $!params           = $src.where-values.clone;
-    $!not-params       = $src.where-not-values.clone;
-    @!or-relations     = $src.or-relations.clone;
-    @!order            = $src.order-values.clone;
-    $!limit            = $src.limit-value;
-    $!offset           = $src.offset-value;
-    @!select           = $src.select-values.clone;
-    $!distinct         = $src.distinct-value;
-    @!group            = $src.group-values.clone;
-    @!having           = $src.having-values.clone;
-    $!from-source      = $src.from-source;
-    $!from-alias       = $src.from-alias;
-    @!references       = $src.references-values.clone;
-    $!readonly         = $src.readonly-value;
-    @!joins            = $src.joins-values.clone;
-    $!is-none          = $src.is-none-value;
+    $!params            = $src.where-values.clone;
+    $!not-params        = $src.where-not-values.clone;
+    @!or-relations      = $src.or-relations.clone;
+    @!order             = $src.order-values.clone;
+    $!limit             = $src.limit-value;
+    $!offset            = $src.offset-value;
+    @!select            = $src.select-values.clone;
+    $!distinct          = $src.distinct-value;
+    @!group             = $src.group-values.clone;
+    @!having            = $src.having-values.clone;
+    $!from-source       = $src.from-source;
+    $!from-alias        = $src.from-alias;
+    @!references        = $src.references-values.clone;
+    $!readonly          = $src.readonly-value;
+    @!joins             = $src.joins-values.clone;
+    $!is-none           = $src.is-none-value;
     $!create-with-attrs = $src.create-with-attrs.clone;
-    @!ctes             = $src.ctes-values.clone;
-    @!annotations      = $src.annotations-values.clone;
-    @!optimizer-hints  = $src.optimizer-hints-values.clone;
+    @!ctes              = $src.ctes-values.clone;
+    @!annotations       = $src.annotations-values.clone;
+    @!optimizer-hints   = $src.optimizer-hints-values.clone;
+    $!lock              = $src.lock-value;
   }
 }
