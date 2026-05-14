@@ -7,6 +7,7 @@ role SqlExec is export {
 
   method exec(Str:D $sql, *@binds) {
     self.ensure-connected;
+    self.check-write-allowed($sql);
     Log.sql(:$sql);
     my $query = self.db.prepare($sql);
     $query.execute(|@binds);
@@ -15,6 +16,7 @@ role SqlExec is export {
 
   method exec-stmt(SqlStmt:D $stmt) {
     self.ensure-connected;
+    self.check-write-allowed($stmt.sql);
     Log.sql(:sql($stmt.sql));
     my $query = self.db.prepare($stmt.sql);
     $query.execute(|$stmt.binds);
@@ -23,6 +25,7 @@ role SqlExec is export {
 
   method exec-stmt-hash(SqlStmt:D $stmt) {
     self.ensure-connected;
+    self.check-write-allowed($stmt.sql);
     Log.sql(:sql($stmt.sql));
     my $query = self.db.prepare($stmt.sql);
     $query.execute(|$stmt.binds);

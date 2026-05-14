@@ -1,0 +1,116 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+$adapter.exec('DROP TABLE IF EXISTS notes');
+$adapter.ddl-create-table('notes', [
+  title => { :string, limit => 64 },
+  views => { :integer, default => 0 },
+]);
+$adapter.ddl-add-timestamps('notes');
+
+use ORM::ActiveRecord::Model;
+
+class Note is Model {}
+
+plan 20;
+
+# is-preventing-writes reflects the current state.
+{
+  nok DB.shared.is-preventing-writes, 'flag is False by default';
+  my $inside;
+  DB.shared.while-preventing-writes({
+    $inside = DB.shared.is-preventing-writes;
+  });
+  ok $inside, 'flag is True inside the block';
+  nok DB.shared.is-preventing-writes, 'flag clears after the block';
+}
+
+# is-write-sql classifies common statements.
+{
+  ok  $adapter.is-write-sql('INSERT INTO notes(title) VALUES (?)'),       'INSERT is a write';
+  ok  $adapter.is-write-sql('  update notes set title = ? where id = 1'), 'UPDATE is a write';
+  ok  $adapter.is-write-sql("DELETE FROM notes WHERE id = 1"),            'DELETE is a write';
+  nok $adapter.is-write-sql('SELECT * FROM notes'),                       'SELECT is not a write';
+  nok $adapter.is-write-sql('  /* update */ SELECT * FROM notes'),        'leading comment does not fool the matcher';
+}
+
+# Writes blocked, reads allowed.
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'one', views => 1 });
+
+  throws-like {
+    DB.shared.while-preventing-writes({
+      Note.create({ title => 'two', views => 2 });
+    });
+  }, X::ReadOnlyDatabase, 'INSERT through Note.create raises ReadOnlyDatabase';
+
+  is Note.count, 1, 'no row was actually inserted';
+
+  my $read-count;
+  DB.shared.while-preventing-writes({
+    $read-count = Note.count;
+  });
+  is $read-count, 1, 'SELECT count(*) is allowed in the block';
+}
+
+# update / delete are also blocked.
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'orig', views => 1 });
+
+  throws-like {
+    DB.shared.while-preventing-writes({
+      $a.update({ views => 99 });
+    });
+  }, X::ReadOnlyDatabase, 'UPDATE raises';
+
+  is Note.find($a.id).views, 1, 'attempted UPDATE did not land';
+
+  throws-like {
+    DB.shared.while-preventing-writes({
+      Note.where({ id => $a.id }).delete-all;
+    });
+  }, X::ReadOnlyDatabase, 'DELETE raises';
+
+  is Note.count, 1, 'attempted DELETE did not land';
+}
+
+# Block clears even on exception.
+{
+  try {
+    DB.shared.while-preventing-writes({
+      die 'boom';
+    });
+  }
+  nok DB.shared.is-preventing-writes, 'flag clears after a thrown block';
+  lives-ok { Note.create({ title => 'after' }) },
+    'create succeeds after the thrown while-preventing-writes block';
+}
+
+# Nested blocks unwind correctly.
+{
+  DB.shared.while-preventing-writes({
+    DB.shared.while-preventing-writes({
+      ok DB.shared.is-preventing-writes, 'inner depth still True';
+    });
+    ok DB.shared.is-preventing-writes, 'outer depth survives inner LEAVE';
+  });
+  nok DB.shared.is-preventing-writes, 'both blocks cleared';
+}
+
+$adapter.exec('DROP TABLE IF EXISTS notes');

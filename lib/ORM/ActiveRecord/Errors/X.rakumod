@@ -57,3 +57,19 @@ class X::StaleObjectError is Exception is export {
     "Attempted to $!attempted-on a stale object: $m";
   }
 }
+
+class X::ReadOnlyDatabase is Exception is export {
+  has Str $.sql;
+  method message {
+    my $head = ($!sql // '').lines.first // '';
+    "Write query attempted while writes are prevented" ~ ($head ?? ": $head" !! '');
+  }
+}
+
+class X::ProhibitedShardSwap is Exception is export {
+  method message { 'Shard swapping is prohibited in this scope' }
+}
+
+class X::ProhibitedReplicaSwap is Exception is export {
+  method message { 'Replica role swapping is prohibited in this scope' }
+}

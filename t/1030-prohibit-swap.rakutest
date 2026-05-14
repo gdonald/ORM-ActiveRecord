@@ -1,0 +1,76 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+plan 14;
+
+# prohibit-shard-swapping: flag tracking + nesting + exception clean-up.
+{
+  nok DB.shared.is-shard-swapping-prohibited, 'shard flag is False by default';
+  my $inside;
+  DB.shared.prohibit-shard-swapping({
+    $inside = DB.shared.is-shard-swapping-prohibited;
+  });
+  ok $inside, 'shard flag is True inside the block';
+  nok DB.shared.is-shard-swapping-prohibited, 'shard flag clears after block';
+}
+
+{
+  DB.shared.prohibit-shard-swapping({
+    DB.shared.prohibit-shard-swapping({
+      ok DB.shared.is-shard-swapping-prohibited, 'shard flag survives inner block';
+    });
+    ok DB.shared.is-shard-swapping-prohibited, 'outer block still flagged';
+  });
+  nok DB.shared.is-shard-swapping-prohibited, 'both shard blocks cleared';
+}
+
+{
+  try {
+    DB.shared.prohibit-shard-swapping({ die 'boom' });
+  }
+  nok DB.shared.is-shard-swapping-prohibited, 'shard flag clears after exception';
+}
+
+# prohibit-replica-swapping: same shape.
+{
+  nok DB.shared.is-replica-swapping-prohibited, 'replica flag is False by default';
+  my $inside;
+  DB.shared.prohibit-replica-swapping({
+    $inside = DB.shared.is-replica-swapping-prohibited;
+  });
+  ok $inside, 'replica flag is True inside the block';
+  nok DB.shared.is-replica-swapping-prohibited, 'replica flag clears after block';
+}
+
+{
+  DB.shared.prohibit-replica-swapping({
+    DB.shared.prohibit-replica-swapping({
+      ok DB.shared.is-replica-swapping-prohibited, 'replica flag survives inner block';
+    });
+  });
+  nok DB.shared.is-replica-swapping-prohibited, 'replica nesting cleared';
+}
+
+# The two flags are independent.
+{
+  DB.shared.prohibit-shard-swapping({
+    nok DB.shared.is-replica-swapping-prohibited, 'replica flag not raised by shard block';
+  });
+  DB.shared.prohibit-replica-swapping({
+    nok DB.shared.is-shard-swapping-prohibited, 'shard flag not raised by replica block';
+  });
+}

@@ -239,6 +239,7 @@ class MySqlAdapter is SqlAdapter is export {
       my $where-sql = self.build-where($stmt, %where, %where-not);
       my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
       $stmt.sql = "DELETE FROM $table $where-clause";
+      self.check-write-allowed($stmt.sql);
       self.connect unless self.db.defined;
       Log.sql(:sql($stmt.sql));
       my $query = self.db.prepare($stmt.sql);
@@ -261,6 +262,7 @@ class MySqlAdapter is SqlAdapter is export {
       if $skip-conflict {
         $stmt.sql ~~ s/^'INSERT INTO'/INSERT IGNORE INTO/;
       }
+      self.check-write-allowed($stmt.sql);
       self.connect unless self.db.defined;
       Log.sql(:sql($stmt.sql));
       my $query = self.db.prepare($stmt.sql);
@@ -291,6 +293,7 @@ class MySqlAdapter is SqlAdapter is export {
     }
 
     method !run-write(SqlStmt:D $stmt --> Int) {
+      self.check-write-allowed($stmt.sql);
       self.connect unless self.db.defined;
       Log.sql(:sql($stmt.sql));
       my $query = self.db.prepare($stmt.sql);

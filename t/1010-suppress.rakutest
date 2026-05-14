@@ -1,0 +1,139 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+$adapter.exec('DROP TABLE IF EXISTS notes');
+$adapter.ddl-create-table('notes', [
+  title => { :string, limit => 64 },
+  views => { :integer, default => 0 },
+]);
+$adapter.ddl-add-timestamps('notes');
+
+use ORM::ActiveRecord::Model;
+
+class Note is Model {}
+class Memo is Model {}
+
+plan 20;
+
+# Suppress.create() returns the in-memory record but does not persist it.
+{
+  Note.destroy-all;
+  my $obj;
+  Note.suppress({
+    $obj = Note.create({ title => 'ghost' });
+  });
+  is Note.count, 0, 'create inside suppress does not persist';
+  ok $obj.defined, 'create still returns an instance';
+  is $obj.title, 'ghost', 'in-memory attrs reflect the requested values';
+  is $obj.id, 0, 'id remains 0 because save was suppressed';
+}
+
+# save returns True inside suppress, but no row is written.
+{
+  Note.destroy-all;
+  my $saved-ok;
+  Note.suppress({
+    my $obj = Note.new(:id(0), :record({ attrs => { title => 'never' } }));
+    $saved-ok = $obj.save;
+  });
+  ok $saved-ok, 'save returns True under suppression';
+  is Note.count, 0, 'save under suppression writes nothing';
+}
+
+# Suppression resets after the block exits.
+{
+  Note.destroy-all;
+  Note.suppress({ Note.create({ title => 'x' }) });
+  Note.create({ title => 'after' });
+  is Note.count, 1, 'persistence resumes after suppress block';
+  is Note.first.title, 'after', 'only the post-suppress row is present';
+}
+
+# is-suppressed reflects the current state.
+{
+  Note.destroy-all;
+  nok Note.is-suppressed, 'is-suppressed is False outside the block';
+  my $inside;
+  Note.suppress({
+    $inside = Note.is-suppressed;
+  });
+  ok $inside, 'is-suppressed is True inside the block';
+  nok Note.is-suppressed, 'is-suppressed clears after the block';
+}
+
+# Nested suppression — outer block survives inner LEAVE.
+{
+  Note.destroy-all;
+  my $depth-outer;
+  my $depth-inner;
+  Note.suppress({
+    $depth-outer = Note.is-suppressed;
+    Note.suppress({
+      $depth-inner = Note.is-suppressed;
+    });
+    ok Note.is-suppressed, 'still suppressed after inner block returns';
+  });
+  ok $depth-outer, 'outer block flags suppression';
+  ok $depth-inner, 'inner block flags suppression';
+}
+
+# Exception inside the block still clears suppression.
+{
+  Note.destroy-all;
+  try {
+    Note.suppress({
+      die 'boom';
+    });
+  }
+  nok Note.is-suppressed, 'suppression clears even when the block throws';
+  Note.create({ title => 'live' });
+  is Note.count, 1, 'persistence works after a thrown block';
+}
+
+# update through save is suppressed too.
+{
+  Note.destroy-all;
+  my $obj = Note.create({ title => 'orig', views => 1 });
+  Note.suppress({
+    $obj.update({ title => 'changed', views => 99 });
+  });
+  my $fresh = Note.find($obj.id);
+  is $fresh.title, 'orig', 'update inside suppress leaves DB untouched';
+  is $fresh.views, 1,      'numeric column also unchanged';
+}
+
+# Sibling classes are not affected by another class's suppression.
+{
+  $adapter.exec('DROP TABLE IF EXISTS memos');
+  $adapter.ddl-create-table('memos', [
+    title => { :string, limit => 64 },
+  ]);
+  $adapter.ddl-add-timestamps('memos');
+
+  Note.destroy-all;
+  Memo.destroy-all;
+  Note.suppress({
+    Note.create({ title => 'a' });
+    Memo.create({ title => 'b' });
+  });
+  is Note.count, 0, 'Note.suppress blocks Note saves';
+  is Memo.count, 1, 'Note.suppress does not block Memo saves';
+
+  $adapter.exec('DROP TABLE IF EXISTS memos');
+}
+
+$adapter.exec('DROP TABLE IF EXISTS notes');

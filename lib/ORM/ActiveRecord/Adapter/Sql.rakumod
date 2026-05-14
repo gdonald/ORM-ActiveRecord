@@ -7,6 +7,7 @@ use ORM::ActiveRecord::Adapter::Sql::Transactions;
 use ORM::ActiveRecord::Adapter::Sql::Builders;
 use ORM::ActiveRecord::Adapter::Sql::Aggregates;
 use ORM::ActiveRecord::Adapter::Sql::Ddl;
+use ORM::ActiveRecord::Adapter::Sql::Guards;
 
 # Dialect-neutral base; per-engine adapters override dialect-specific bits.
 class SqlAdapter
@@ -16,6 +17,7 @@ class SqlAdapter
   does SqlBuilders
   does SqlAggregates
   does SqlDdl
+  does SqlGuards
   is export
 {
   has $.db is rw;

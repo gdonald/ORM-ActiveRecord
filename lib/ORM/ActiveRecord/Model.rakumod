@@ -20,6 +20,7 @@ use ORM::ActiveRecord::Model::RawSql;
 use ORM::ActiveRecord::Model::Relations;
 use ORM::ActiveRecord::Model::Serialization;
 use ORM::ActiveRecord::Model::StatePredicates;
+use ORM::ActiveRecord::Model::Suppressor;
 
 class Model
   does ModelAttributes
@@ -32,6 +33,7 @@ class Model
   does ModelRelations
   does ModelSerialization
   does ModelStatePredicates
+  does ModelSuppressor
   is export
 {
   has DB $!db;
@@ -241,6 +243,7 @@ class Model
   method save(Bool :$validate = True, Bool :$touch = True) {
     die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!is-readonly;
     die X::FrozenRecord.new(model => self.WHAT.^name)   if $!is-destroyed;
+    return True if self.is-suppressed;
     if !$validate || self.is-valid {
       self.update-foreign-keys;
       self.do-before-saves;
