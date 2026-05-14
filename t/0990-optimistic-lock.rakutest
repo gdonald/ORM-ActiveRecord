@@ -1,0 +1,148 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+$adapter.exec('DROP TABLE IF EXISTS notes');
+$adapter.ddl-create-table('notes', [
+  title        => { :string, limit => 64 },
+  views        => { :integer, default => 0 },
+  lock_version => { :integer, default => 0 },
+]);
+$adapter.ddl-add-timestamps('notes');
+
+use ORM::ActiveRecord::Model;
+
+class Note is Model {}
+
+plan 22;
+
+{
+  Note.destroy-all;
+  ok Note.new(:id(0)).is-locking-enabled, 'is-locking-enabled detects lock_version column';
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'one' });
+  is $a.lock_version, 0, 'new record starts at lock_version 0';
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'one' });
+  $a.title = 'two';
+  ok $a.save, 'first update returns True';
+  is $a.lock_version, 1, 'lock_version bumped to 1 after first update';
+
+  my $fresh = Note.find($a.id);
+  is $fresh.lock_version, 1, 'lock_version is persisted to DB';
+
+  $a.title = 'three';
+  $a.save;
+  is $a.lock_version, 2, 'lock_version bumped to 2 after second update';
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'one' });
+  my $stale = Note.find($a.id);
+
+  $a.title = 'winner';
+  ok $a.save, 'first writer saves successfully';
+  is $a.lock_version, 1, 'first writer bumps lock_version';
+
+  $stale.title = 'loser';
+  throws-like { $stale.save }, X::StaleObjectError,
+    'stale writer raises X::StaleObjectError';
+
+  $stale.reload;
+  is $stale.title, 'winner', 'reload pulls in the winning record';
+  $stale.title = 'after reload';
+  ok $stale.save, 'save works again after reload';
+}
+
+{
+  Note.destroy-all;
+  Note.create({ title => 'a' });
+  Note.create({ title => 'b' });
+  my $count = Note.update-all({ views => 5 });
+  is $count, 2, 'update-all returns affected row count';
+  is Note.where({ lock_version => 1 }).count, 2,
+    'update-all auto-bumps lock_version when column exists';
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'a' });
+  my $stale = Note.find($a.id);
+  Note.where({ id => $a.id }).update-all({ views => 99 });
+
+  $stale.title = 'never';
+  throws-like { $stale.save }, X::StaleObjectError,
+    'in-memory record after update-all becomes stale';
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'a' });
+  Note.where({ id => $a.id }).update-all({ lock_version => 42 });
+  my $fresh = Note.find($a.id);
+  is $fresh.lock_version, 42,
+    'explicit lock_version in update-all is honored (no double bump)';
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'a' });
+  Note.where({ id => $a.id }).update-counters(views => 10);
+  my $fresh = Note.find($a.id);
+  is $fresh.views,        10, 'update-counters increments the counter';
+  is $fresh.lock_version, 1,  'update-counters auto-bumps lock_version';
+}
+
+{
+  Note.destroy-all;
+  my $a = Note.create({ title => 'a' });
+  my $stale = Note.find($a.id);
+
+  $a.title = 'changed';
+  $a.save;
+  $stale.title = 'attempted';
+  try { $stale.save };
+
+  is $stale.lock_version, 1, 'in-memory lock_version reverts after stale failure';
+  $a.title = 'second change';
+  ok $a.save, 'winning writer can still save after stale failure on other instance';
+  is $a.lock_version, 2, 'winning writer continues to bump lock_version';
+}
+
+{
+  $adapter.exec('DROP TABLE IF EXISTS widgets');
+  $adapter.ddl-create-table('widgets', [
+    name => { :string, limit => 64 },
+  ]);
+  use ORM::ActiveRecord::Model;
+  my class Widget is Model {}
+  Widget.destroy-all;
+  nok Widget.new(:id(0)).is-locking-enabled,
+    'is-locking-enabled is False when column absent';
+  my $w = Widget.create({ name => 'no-lock' });
+  $w.name = 'updated';
+  ok $w.save, 'save works on tables without lock_version';
+  $adapter.exec('DROP TABLE IF EXISTS widgets');
+}
+
+$adapter.exec('DROP TABLE IF EXISTS notes');

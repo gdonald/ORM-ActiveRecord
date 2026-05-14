@@ -246,13 +246,13 @@ class MySqlAdapter is SqlAdapter is export {
       $query.rows.Int;
     }
 
-    method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups --> Int) {
-      my $stmt = self.build-update-where(:$table, :%attrs, :%types, :%where, :%where-not, :@or-groups);
+    method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups, :@locking-bump = () --> Int) {
+      my $stmt = self.build-update-where(:$table, :%attrs, :%types, :%where, :%where-not, :@or-groups, :@locking-bump);
       self!run-write($stmt);
     }
 
-    method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups --> Int) {
-      my $stmt = self.build-update-counters-where(:$table, :%counters, :%where, :%where-not, :@or-groups);
+    method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups, :@locking-bump = () --> Int) {
+      my $stmt = self.build-update-counters-where(:$table, :%counters, :%where, :%where-not, :@or-groups, :@locking-bump);
       self!run-write($stmt);
     }
 

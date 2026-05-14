@@ -48,3 +48,12 @@ class X::Rollback is Exception is export {
 class X::TransactionRequired is Exception is export {
   method message { 'A transaction is required for this operation' }
 }
+
+class X::StaleObjectError is Exception is export {
+  has Str $.model;
+  has Str $.attempted-on = 'save';
+  method message {
+    my $m = $!model // 'record';
+    "Attempted to $!attempted-on a stale object: $m";
+  }
+}

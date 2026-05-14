@@ -42,23 +42,31 @@ role SqlBuilders is export {
     $stmt;
   }
 
-  method build-update-where(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups --> SqlStmt) {
+  method build-update-where(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups, :@locking-bump = () --> SqlStmt) {
     my $stmt = SqlStmt.new(:adapter(self));
     my $values = self.build-value-sets($stmt, :%attrs, :%types);
-    die 'update-all: no columns to update' unless $values.chars;
+    my @sets;
+    @sets.push: $values if $values.chars;
+    for @locking-bump -> $col {
+      @sets.push: "$col = COALESCE($col, 0) + 1";
+    }
+    die 'update-all: no columns to update' unless @sets.elems;
     my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups);
     my $where-clause = $where-sql ?? "WHERE $where-sql" !! '';
-    $stmt.sql = "UPDATE $table SET $values $where-clause";
+    $stmt.sql = "UPDATE $table SET {@sets.join(', ')} $where-clause";
     $stmt;
   }
 
-  method build-update-counters-where(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups --> SqlStmt) {
+  method build-update-counters-where(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups, :@locking-bump = () --> SqlStmt) {
     die 'update-counters: no counters supplied' unless %counters.elems;
     my $stmt = SqlStmt.new(:adapter(self));
     my @parts;
     for %counters.kv -> $col, $n {
       my $ph = $stmt.placeholder($n);
       @parts.push: "$col = COALESCE($col, 0) + $ph";
+    }
+    for @locking-bump -> $col {
+      @parts.push: "$col = COALESCE($col, 0) + 1";
     }
     my $sets = @parts.join(', ');
     my $where-sql = self.build-where($stmt, %where, %where-not, :@or-groups);

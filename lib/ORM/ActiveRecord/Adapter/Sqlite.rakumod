@@ -197,14 +197,14 @@ class SqliteAdapter is SqlAdapter is export {
     self.exec('SELECT changes()')[0][0].Int;
   }
 
-  method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups --> Int) {
-    my $stmt = self.build-update-where(:$table, :%attrs, :%types, :%where, :%where-not, :@or-groups);
+  method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups, :@locking-bump = () --> Int) {
+    my $stmt = self.build-update-where(:$table, :%attrs, :%types, :%where, :%where-not, :@or-groups, :@locking-bump);
     self.exec-stmt($stmt);
     self.exec('SELECT changes()')[0][0].Int;
   }
 
-  method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups --> Int) {
-    my $stmt = self.build-update-counters-where(:$table, :%counters, :%where, :%where-not, :@or-groups);
+  method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups, :@locking-bump = () --> Int) {
+    my $stmt = self.build-update-counters-where(:$table, :%counters, :%where, :%where-not, :@or-groups, :@locking-bump);
     self.exec-stmt($stmt);
     self.exec('SELECT changes()')[0][0].Int;
   }

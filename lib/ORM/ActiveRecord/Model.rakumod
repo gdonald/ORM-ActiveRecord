@@ -232,6 +232,12 @@ class Model
     for %!attrs.keys { %!attrs-db«$_» = %!attrs«$_» }
   }
 
+  method locking-column(--> Str) { 'lock_version' }
+
+  method is-locking-enabled(--> Bool) {
+    so self.fields.first({ .name eq self.locking-column });
+  }
+
   method save(Bool :$validate = True, Bool :$touch = True) {
     die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!is-readonly;
     die X::FrozenRecord.new(model => self.WHAT.^name)   if $!is-destroyed;
@@ -241,6 +247,14 @@ class Model
       self.touch-timestamps if $touch;
 
       my Bool $was-new = $!id == 0;
+      my Bool $locking = self.is-locking-enabled;
+      my $lock-col = self.locking-column;
+      my $prev-lock;
+      if $locking && !$was-new {
+        $prev-lock = (%!attrs-db{$lock-col} // 0).Int;
+        %!attrs{$lock-col} = $prev-lock + 1;
+      }
+
       my %snapshot;
       for self.changed -> $name {
         %snapshot{$name} = [%!attrs-db{$name}, %!attrs{$name}];
@@ -254,7 +268,20 @@ class Model
         }
         default {
           self.do-before-updates;
-          $!db.update-object(self);
+          if $locking {
+            my %types = @!fields.map({ .name => .type }).Hash;
+            my $affected = $!db.update-records(
+              :table(self.table-name),
+              :attrs(%!attrs),
+              :%types,
+              :where({ id => $!id, $lock-col => $prev-lock }),
+            );
+            if $affected == 0 {
+              die X::StaleObjectError.new(model => self.WHAT.^name);
+            }
+          } else {
+            $!db.update-object(self);
+          }
           self.do-after-updates;
         }
       }

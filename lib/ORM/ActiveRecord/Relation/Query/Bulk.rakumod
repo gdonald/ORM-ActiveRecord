@@ -12,15 +12,17 @@ role QueryBulk is export {
     $count;
   }
 
-  method update-all(*@args, *%kw --> Int) {
+  method update-all(**@args, *%kw --> Int) {
     return 0 if self.is-none-value;
     my %attrs = @args.elems && @args[0] ~~ Hash ?? @args[0].Hash !! %kw;
     die 'update-all: no attributes supplied' unless %attrs.elems;
     my %types = self.fields-of.map({ .name => .type }).Hash;
     my @or-groups = self.or-groups-payload;
+    my @locking-bump = self!locking-bump-cols(%attrs);
     DB.shared.update-records(
       table => self.table-of, :%attrs, :%types,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
+      :@locking-bump,
     );
   }
 
@@ -42,14 +44,23 @@ role QueryBulk is export {
     $count;
   }
 
-  method update-counters(*@args, *%kw --> Int) {
+  method update-counters(**@args, *%kw --> Int) {
     return 0 if self.is-none-value;
     my %counters = @args.elems && @args[0] ~~ Hash ?? @args[0].Hash !! %kw;
     die 'update-counters: no counters supplied' unless %counters.elems;
     my @or-groups = self.or-groups-payload;
+    my @locking-bump = self!locking-bump-cols(%counters);
     DB.shared.update-counter-records(
       table => self.table-of, :%counters,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
+      :@locking-bump,
     );
+  }
+
+  method !locking-bump-cols(%already-set --> List) {
+    my $col = 'lock_version';
+    return () unless self.fields-of.first({ .name eq $col });
+    return () if %already-set{$col}:exists;
+    ($col,);
   }
 }

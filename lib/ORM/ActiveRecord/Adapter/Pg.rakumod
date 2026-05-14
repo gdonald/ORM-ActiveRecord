@@ -168,8 +168,8 @@ class PgAdapter is SqlAdapter is export {
     self.exec-stmt($stmt)[0][0].Int;
   }
 
-  method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups --> Int) {
-    my $stmt = self.build-update-where(:$table, :%attrs, :%types, :%where, :%where-not, :@or-groups);
+  method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups, :@locking-bump = () --> Int) {
+    my $stmt = self.build-update-where(:$table, :%attrs, :%types, :%where, :%where-not, :@or-groups, :@locking-bump);
     my $inner = $stmt.sql.chomp;
     $stmt.sql = qq:to/SQL/;
       WITH updated AS ( $inner RETURNING * )
@@ -178,8 +178,8 @@ class PgAdapter is SqlAdapter is export {
     self.exec-stmt($stmt)[0][0].Int;
   }
 
-  method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups --> Int) {
-    my $stmt = self.build-update-counters-where(:$table, :%counters, :%where, :%where-not, :@or-groups);
+  method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups, :@locking-bump = () --> Int) {
+    my $stmt = self.build-update-counters-where(:$table, :%counters, :%where, :%where-not, :@or-groups, :@locking-bump);
     my $inner = $stmt.sql.chomp;
     $stmt.sql = qq:to/SQL/;
       WITH updated AS ( $inner RETURNING * )

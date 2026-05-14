@@ -8,10 +8,7 @@ use ORM::ActiveRecord::Adapter::Sql::Builders;
 use ORM::ActiveRecord::Adapter::Sql::Aggregates;
 use ORM::ActiveRecord::Adapter::Sql::Ddl;
 
-# Shared, dialect-neutral SQL building. Engine-specific adapters (PgAdapter,
-# SqliteAdapter, MySqlAdapter) extend this class and override the bits that
-# vary: connection params, bind syntax, INSERT shape, schema introspection,
-# DDL emission, and read/write type coercion.
+# Dialect-neutral base; per-engine adapters override dialect-specific bits.
 class SqlAdapter
   does Adapter
   does SqlExec
@@ -33,8 +30,8 @@ class SqlAdapter
   method delete-records(Str:D :$table, :%where, :%where-not --> Int) { ... }
 
   # Set-based UPDATE / INSERT / UPSERT — dialect-specific shape; engines override.
-  method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups --> Int) { ... }
-  method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups --> Int)   { ... }
+  method update-records(Str:D :$table, :%attrs, :%types = {}, :%where, :%where-not, :@or-groups, :@locking-bump = () --> Int) { ... }
+  method update-counter-records(Str:D :$table, :%counters, :%where, :%where-not, :@or-groups, :@locking-bump = () --> Int)   { ... }
   method insert-records(Str:D :$table, :@rows, :%types = {}, Bool:D :$skip-conflict = False --> List)   { ... }
   method upsert-records(Str:D :$table, :@rows, :%types = {}, :@unique-by = (), :@update-cols = () --> Int) { ... }
 

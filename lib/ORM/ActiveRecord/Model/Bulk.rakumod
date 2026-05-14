@@ -9,7 +9,7 @@ role ModelBulk is export {
     DB.shared.delete-records(:$table, :%where);
   }
 
-  method update-all(*@args, *%kw --> Int) {
+  method update-all(**@args, *%kw --> Int) {
     self.all.update-all(|@args, |%kw);
   }
 
