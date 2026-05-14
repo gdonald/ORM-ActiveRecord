@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../aggregation/">
+        <link rel="prev" href="../errors/">
       
       
-        <link rel="next" href="../raw/">
+        <link rel="next" href="../tests/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Batching - ORM::ActiveRecord</title>
+        <title>Logging - ORM::ActiveRecord</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
       
 
@@ -46,7 +46,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#batching" class="md-skip">
+        <a href="#logging" class="md-skip">
           Skip to content
         </a>
       
@@ -80,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Batching
+              Logging
             
           </span>
         </div>
@@ -178,7 +178,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -196,7 +196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -223,7 +223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../adapters/" class="md-nav__link">
+      <a href="../adapters/" class="md-nav__link">
         
   
   
@@ -250,7 +250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../migrations/" class="md-nav__link">
+      <a href="../migrations/" class="md-nav__link">
         
   
   
@@ -274,20 +274,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
@@ -308,7 +306,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -326,7 +324,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../models/models/" class="md-nav__link">
         
   
   
@@ -354,7 +352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../finders/" class="md-nav__link">
+      <a href="../models/finders/" class="md-nav__link">
         
   
   
@@ -382,7 +380,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../relations/" class="md-nav__link">
+      <a href="../models/relations/" class="md-nav__link">
         
   
   
@@ -410,7 +408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+      <a href="../models/queries/" class="md-nav__link">
         
   
   
@@ -438,7 +436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../joins/" class="md-nav__link">
+      <a href="../models/joins/" class="md-nav__link">
         
   
   
@@ -466,7 +464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aggregation/" class="md-nav__link">
+      <a href="../models/aggregation/" class="md-nav__link">
         
   
   
@@ -491,37 +489,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Batching
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../models/batching/" class="md-nav__link">
         
   
   
@@ -537,70 +508,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#find-each" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        find-each
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#find-in-batches" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        find-in-batches
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#in-batches" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        in-batches
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-batching-iterates" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How batching iterates
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -613,7 +520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../raw/" class="md-nav__link">
+      <a href="../models/raw/" class="md-nav__link">
         
   
   
@@ -641,7 +548,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inspection/" class="md-nav__link">
+      <a href="../models/inspection/" class="md-nav__link">
         
   
   
@@ -669,7 +576,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../models/persistence/" class="md-nav__link">
         
   
   
@@ -697,7 +604,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../serialization/" class="md-nav__link">
+      <a href="../models/serialization/" class="md-nav__link">
         
   
   
@@ -725,7 +632,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callbacks/" class="md-nav__link">
+      <a href="../models/callbacks/" class="md-nav__link">
         
   
   
@@ -753,7 +660,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../transactions/" class="md-nav__link">
+      <a href="../models/transactions/" class="md-nav__link">
         
   
   
@@ -835,7 +742,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/data/" class="md-nav__link">
+      <a href="../validations/data/" class="md-nav__link">
         
   
   
@@ -863,7 +770,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/conditionals/" class="md-nav__link">
+      <a href="../validations/conditionals/" class="md-nav__link">
         
   
   
@@ -898,7 +805,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../errors/" class="md-nav__link">
+      <a href="../errors/" class="md-nav__link">
         
   
   
@@ -922,10 +829,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../logging/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -941,6 +875,48 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File logging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disabling-sql-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disabling SQL logging
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -952,7 +928,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tests/" class="md-nav__link">
+      <a href="../tests/" class="md-nav__link">
         
   
   
@@ -999,10 +975,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#find-each" class="md-nav__link">
+  <a href="#file-logging" class="md-nav__link">
     <span class="md-ellipsis">
       
-        find-each
+        File logging
       
     </span>
   </a>
@@ -1010,32 +986,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#find-in-batches" class="md-nav__link">
+  <a href="#disabling-sql-logging" class="md-nav__link">
     <span class="md-ellipsis">
       
-        find-in-batches
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#in-batches" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        in-batches
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-batching-iterates" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How batching iterates
+        Disabling SQL logging
       
     </span>
   </a>
@@ -1059,87 +1013,46 @@
 
 
 
-<h1 id="batching">Batching</h1>
-<p>Loading every row of a large table at once is expensive. The batching methods
-walk the table in fixed-size chunks, keyed off the primary key, so memory stays
-bounded regardless of table size.</p>
-<p>All three methods accept a relation: any <code>where</code>, <code>joins</code>, or other filter you
-chain in front of them applies to every batch. They ignore any <code>order</code>, <code>limit</code>,
-or <code>offset</code> already on the relation — batching always orders by <code>id ASC</code> and
-uses the batch size as its <code>LIMIT</code>.</p>
-<h2 id="find-each">find-each</h2>
-<p><code>find-each(:batch-size = 1000)</code> returns a lazy sequence of records. Each row is
-yielded once, in <code>id</code> ASC order. The query runs one batch at a time under the
-hood; the caller sees a flat stream of model instances.</p>
+<h1 id="logging">Logging</h1>
+<p>ORM::ActiveRecord uses <a href="https://raku.land/zef:tony-o/Log::Async">Log::Async</a>
+under the hood. Loading the library configures the <code>INFO</code>-level handler to
+write to <code>$*OUT</code> (stdout). That's the only log destination set up by default
+— loading the library does not touch the filesystem.</p>
+<h2 id="file-logging">File logging</h2>
+<p>Set <code>ORM_LOG_FILE</code> in the process environment to an absolute or relative path,
+and <code>ERROR</code>-level messages will be appended to that file:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">ORM_LOG_FILE</span><span class="o">=</span>log/error.log
+</code></pre></div></td></tr></table></div>
+
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">for</span> <span class="n">User</span>.<span class="n">find-each</span>(:<span class="n">batch-size</span>(<span class="mi">500</span>)) -&gt; <span class="nv">$u</span> {
-  <span class="nv">$u</span>.<span class="n">update</span>({<span class="n">last_seen</span> =&gt; <span class="nb">DateTime</span>.<span class="nb">now</span>});
-}
-
-<span class="c1"># WHERE conditions narrow the iteration set</span>
-<span class="k">for</span> <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">find-each</span> -&gt; <span class="nv">$u</span> {
-  <span class="n">process</span>(<span class="nv">$u</span>);
-}
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;   <span class="c1"># adapters log via Support::Log</span>
+<span class="c1"># ERROR-level entries now also write to ./log/error.log</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>find-each</code> on <code>.none</code> yields nothing. Passing <code>batch-size =&gt; 0</code> (or negative)
-raises an exception.</p>
-<h2 id="find-in-batches">find-in-batches</h2>
-<p><code>find-in-batches(:batch-size = 1000)</code> yields arrays of records, one array per
-batch. Use it when a step works naturally on a slice — bulk emailing, batched
-API calls, anything that benefits from amortising fixed overhead across a
-group.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">for</span> <span class="n">User</span>.<span class="n">find-in-batches</span>(:<span class="n">batch-size</span>(<span class="mi">1000</span>)) -&gt; <span class="nv">@batch</span> {
-  <span class="n">send-digest</span>(<span class="nv">@batch</span>);
-}
+<p>Notes:</p>
+<ul>
+<li>The path is resolved against the <strong>current working directory</strong> at the time
+  the library is loaded. If the directory doesn't exist, opening the file
+  will fail — create it first (<code>mkdir log</code>) or use an absolute path.</li>
+<li>The variable is read once, when <code>ORM::ActiveRecord::Support::Log</code> is first
+  loaded. Setting it after that point has no effect on the current process.</li>
+<li>Unset or empty <code>ORM_LOG_FILE</code> ⇒ no file handler is attached. This keeps
+  the library safe to load under tooling that runs from arbitrary working
+  directories (LSP precompilation, CI matrices, cron jobs).</li>
+<li>The <code>bin/ar</code> migration CLI defaults <code>ORM_LOG_FILE</code> to <code>log/error.log</code> —
+  but <strong>only when a <code>log/</code> directory exists in the current working
+  directory</strong>. So running <code>ar</code> from the project root keeps the old
+  file-logging behavior, while precompilation under tooling that runs from
+  elsewhere (LSP, CI checkout from a parent dir, etc.) skips it cleanly.
+  Export a different value before invoking <code>ar</code> to override.</li>
+</ul>
+<h2 id="disabling-sql-logging">Disabling SQL logging</h2>
+<p>Adapters emit each query at <code>INFO</code> level. To silence them, set:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">export</span><span class="w"> </span>DISABLE-SQL-LOG<span class="o">=</span><span class="m">1</span>
 </code></pre></div></td></tr></table></div>
 
-<p>The final batch is whatever is left over; it may have fewer rows than
-<code>batch-size</code>. An empty relation produces zero batches.</p>
-<h2 id="in-batches">in-batches</h2>
-<p><code>in-batches(:of = 1000, :load = False)</code> yields a relation per batch instead of
-materialised records. Each yielded relation is scoped to its slice of <code>id</code>s,
-so you can chain further operations on it.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Default: yield Query relations</span>
-<span class="k">for</span> <span class="n">User</span>.<span class="n">in-batches</span>(:<span class="n">of</span>(<span class="mi">500</span>)) -&gt; <span class="nv">$rel</span> {
-  <span class="nb">say</span> <span class="nv">$rel</span>.<span class="nb">count</span>;
-  <span class="nv">$rel</span>.<span class="n">pluck</span>(<span class="s">&#39;email&#39;</span>).<span class="n">map</span>({ ... });
-}
-
-<span class="c1"># With :load, yield arrays of already-loaded records</span>
-<span class="k">for</span> <span class="n">User</span>.<span class="n">in-batches</span>(:<span class="n">of</span>(<span class="mi">500</span>), :<span class="n">load</span>) -&gt; <span class="nv">@batch</span> {
-  <span class="n">process</span>(<span class="nv">@batch</span>);
-}
-</code></pre></div></td></tr></table></div>
-
-<p><code>:load</code> is the same shape as <code>find-in-batches</code> — convenient when you already
-know you want the records and not the relation.</p>
-<h2 id="how-batching-iterates">How batching iterates</h2>
-<p>All three methods order by <code>id ASC</code> and walk forward using <code>id &gt; cursor</code>,
-where <code>cursor</code> is the id of the last row in the previous batch. This is a
-keyset scan: each batch is a single index lookup, with no growing <code>OFFSET</code>
-penalty as you advance through the table.</p>
-<p>Because batching owns the <code>id</code> column for its cursor, a <code>where(id: ...)</code>
-condition on the relation is replaced by the cursor's id range. Filter on
-other columns (or pre-filter into a CTE) if you need to constrain the id
-domain.</p>
+<p>This is typically what you want under test suites — <code>t/</code> already sets it
+where appropriate.</p>
 
 
 
@@ -1189,10 +1102,10 @@ domain.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

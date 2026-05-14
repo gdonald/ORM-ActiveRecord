@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../persistence/">
+        <link rel="prev" href="../serialization/">
       
       
-        <link rel="next" href="../../validations/data/">
+        <link rel="next" href="../transactions/">
       
       
         
@@ -550,6 +550,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../inspection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../persistence/" class="md-nav__link">
         
   
@@ -558,6 +586,34 @@
     
   
     Persistence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serialization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serialization
   
 
     
@@ -734,6 +790,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transactions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transactions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -866,6 +950,33 @@
     
   
     Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
   
 
     
@@ -1039,6 +1150,10 @@
 <h1 id="model-callbacks">Model Callbacks</h1>
 <p>ORM::ActiveRecord supports callbacks that can be performed during various life cycle events.</p>
 <p>These callbacks currently include <code>after-create</code>, <code>after-save</code>, <code>after-update</code>, <code>after-destroy</code>, <code>before-create</code>, <code>before-save</code>, <code>before-update</code>, and <code>before-destroy</code>.</p>
+<p>For callbacks that wait until the surrounding transaction's outcome is
+decided — <code>after-commit</code>, <code>after-rollback</code>, and the per-action variants
+(<code>after-create-commit</code>, <code>after-update-commit</code>, <code>after-destroy-commit</code>,
+<code>after-save-commit</code>) — see <a href="../transactions/#transactional-callbacks">Transactional Callbacks</a>.</p>
 <h2 id="after-create">After Create</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>

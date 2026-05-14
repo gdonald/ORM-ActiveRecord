@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../../migrations/">
+        <link rel="prev" href="../callbacks/">
       
       
-        <link rel="next" href="../finders/">
+        <link rel="next" href="../../validations/data/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Info - ORM::ActiveRecord</title>
+        <title>Transactions - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#models" class="md-skip">
+        <a href="#transactions" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Info
+              Transactions
             
           </span>
         </div>
@@ -323,37 +323,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Info
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
         
   
   
@@ -369,81 +342,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#basic-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Basic Example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where-query" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where Query
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scope" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Scope
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#has-many-through" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Has Many Through
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#is-dirty" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Is Dirty
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -761,10 +659,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../transactions/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transactions
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -780,6 +705,103 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explicit-rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explicit Rollback
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nested-transactions-and-savepoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nested Transactions and Savepoints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isolation-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Isolation Level
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introspection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transactional-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transactional Callbacks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1010,10 +1032,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-example" class="md-nav__link">
+  <a href="#basic-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Example
+        Basic Usage
       
     </span>
   </a>
@@ -1021,10 +1043,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#where-query" class="md-nav__link">
+  <a href="#explicit-rollback" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Where Query
+        Explicit Rollback
       
     </span>
   </a>
@@ -1032,10 +1054,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scope" class="md-nav__link">
+  <a href="#nested-transactions-and-savepoints" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scope
+        Nested Transactions and Savepoints
       
     </span>
   </a>
@@ -1043,10 +1065,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#has-many-through" class="md-nav__link">
+  <a href="#isolation-level" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Has Many Through
+        Isolation Level
       
     </span>
   </a>
@@ -1054,10 +1076,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#is-dirty" class="md-nav__link">
+  <a href="#introspection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Is Dirty
+        Introspection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transactional-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transactional Callbacks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
       
     </span>
   </a>
@@ -1081,250 +1125,211 @@
 
 
 
-<h1 id="models">Models</h1>
-<p>ORM::ActiveRecord supports model relationships, the layer of your app that is responsible for managing data and business logic.</p>
-<h2 id="basic-example">Basic Example</h2>
-<p>In this example the <code>user</code> has many <code>pages</code> and the reverse is also true, a <code>page</code> belongs to a `user.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">Page</span> {...} <span class="c1"># forward declaration</span>
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> <span class="k">is</span> <span class="k">export</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">pages</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Page</span>;
-  }
-}
-
-<span class="k">class</span> <span class="n">Page</span> <span class="k">is</span> <span class="n">Model</span> <span class="k">is</span> <span class="k">export</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">user</span> =&gt; <span class="k">class</span> =&gt; <span class="n">User</span>;
-  }
-}
-</code></pre></div></td></tr></table></div>
-
-<p>Perl 6 does single-pass compilation.  You must provide forward declarations <code>{...}</code> for any models that have not been defined yet but need to be used in has-many or belongs-to relationships.</p>
-<p>This allows chaining method calls together like this:</p>
+<h1 id="transactions">Transactions</h1>
+<p>ORM::ActiveRecord exposes transactions through a block helper that opens a
+SQL transaction, runs the block, and commits if the block returns normally.
+If the block dies, the helper rolls back and re-raises the exception. If the
+block raises <code>X::Rollback</code>, the helper rolls back and returns <code>Nil</code> without
+re-raising — that's the way to signal "abandon this work" without taking
+down the surrounding code.</p>
+<h2 id="basic-usage">Basic Usage</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
-<span class="k">my</span> <span class="nv">$page</span> = <span class="n">Page</span>.<span class="n">create</span>({:<span class="nv">$user</span>, <span class="nb">name</span> =&gt; <span class="s">&#39;Rakuist&#39;</span>});
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::DB</span>;
 
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">pages</span>.<span class="nb">first</span>.<span class="nb">name</span>;
-<span class="nb">say</span> <span class="nv">$page</span>.<span class="n">user</span>.<span class="n">fname</span>;
+<span class="n">DB</span>.<span class="n">shared</span>.<span class="n">transaction</span>({
+  <span class="nv">$account</span>.<span class="n">update</span>({ <span class="n">balance</span> =&gt; <span class="nv">$account</span>.<span class="n">balance</span> - <span class="mi">100</span> });
+  <span class="nv">$other</span>.<span class="n">update</span>({ <span class="n">balance</span> =&gt; <span class="nv">$other</span>.<span class="n">balance</span> + <span class="mi">100</span> });
+});
 </code></pre></div></td></tr></table></div>
 
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>Rakuist
-Greg
-</code></pre></div></td></tr></table></div>
-
-<p>Access to lower level foreign key relationships is supported.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">say</span> <span class="nv">$page</span>.<span class="n">user_id</span> == <span class="nv">$user</span>.<span class="nb">id</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>True
-</code></pre></div></td></tr></table></div>
-
-<h2 id="where-query">Where Query</h2>
-<p>To search for a particular record you can issue a <code>where</code> query with a hash for parameters.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span> }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$fred</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Fred&#39;</span>});
-<span class="k">my</span> <span class="nv">$barney</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Barney&#39;</span>});
-
-<span class="k">my</span> <span class="nv">$result</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Fred&#39;</span>}).<span class="nb">first</span>;
-<span class="nb">say</span> <span class="nv">$result</span> == <span class="nv">$fred</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>True
-</code></pre></div></td></tr></table></div>
-
-<h2 id="scope">Scope</h2>
-<p>Frequently used queries can be made into a <code>scope</code> for easier access.  Scopes live on the model type, not on an instance of the type, so we use <code>$?CLASS</code> to point to the existing class.  The contents of the scope is a lazy block that is only evaluated when required.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">Image</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="nv">$?CLASS</span>.<span class="n">scope:</span> <span class="s">&#39;jpgs&#39;</span>, -&gt; { <span class="nv">$?CLASS</span>.<span class="n">where</span>({<span class="n">ext</span> =&gt; <span class="s">&#39;jpg&#39;</span>}) }
-
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;name&#39;</span>, { :<span class="n">presence</span> }
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;ext&#39;</span>, { :<span class="n">presence</span>, <span class="n">inclusion</span> =&gt; { <span class="nb">in</span> =&gt; <span class="s">&lt;jpg png&gt;</span> } }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$foo</span> = <span class="n">Image</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;foo&#39;</span>, <span class="n">ext</span> =&gt; <span class="s">&#39;jpg&#39;</span>});
-<span class="k">my</span> <span class="nv">$bar</span> = <span class="n">Image</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;bar&#39;</span>, <span class="n">ext</span> =&gt; <span class="s">&#39;jpg&#39;</span>});
-<span class="k">my</span> <span class="nv">$baz</span> = <span class="n">Image</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;baz&#39;</span>, <span class="n">ext</span> =&gt; <span class="s">&#39;png&#39;</span>});
-<span class="nb">say</span> <span class="n">Image</span>.<span class="nb">count</span>;
-
-<span class="k">my</span> <span class="nv">@images</span> = <span class="n">Image</span>.<span class="n">jpgs</span>.<span class="nb">all</span>;
-<span class="nb">say</span> <span class="nb">any</span>(<span class="nv">@images</span>) == <span class="nv">$foo</span>;
-<span class="nb">say</span> <span class="nb">any</span>(<span class="nv">@images</span>) == <span class="nv">$bar</span>;
-<span class="nb">say</span> <span class="nb">none</span>(<span class="nv">@images</span>) == <span class="nv">$baz</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
+<p>If either <code>update</code> raises, the transaction rolls back and the exception
+propagates. If both succeed, the transaction commits.</p>
+<p><code>Model.transaction</code> is a thin wrapper over <code>DB.shared.transaction</code> for
+ergonomics:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="m">3</span>
-True
-True
-True
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Account</span>.<span class="n">transaction</span>({
+  <span class="n">Account</span>.<span class="n">create</span>({ <span class="nb">name</span> =&gt; <span class="s">&#39;a&#39;</span> });
+  <span class="n">Account</span>.<span class="n">create</span>({ <span class="nb">name</span> =&gt; <span class="s">&#39;b&#39;</span> });
+});
 </code></pre></div></td></tr></table></div>
 
-<h2 id="has-many-through">Has Many Through</h2>
-<p>You can access related models using <code>has-many</code> with <code>through</code>.</p>
-<p>In this example a <code>user</code> has access to <code>magazines</code> through the <code>subscriptions</code> model:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Subscription</span> {...} <span class="c1"># stub</span>
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">subscriptions</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Subscription</span>;
-    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">magazines</span> =&gt; <span class="n">through</span> =&gt; :<span class="n">subscriptions</span>;
-  }
-}
-
-<span class="k">class</span> <span class="n">Magazine</span> <span class="k">is</span> <span class="n">Model</span> {}
-
-<span class="k">class</span> <span class="n">Subscription</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">user</span> =&gt; <span class="k">class</span> =&gt; <span class="n">User</span>;
-    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">magazine</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Magazine</span>;
-  }
-}
-
-<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
-<span class="k">my</span> <span class="nv">$magazine</span> = <span class="n">Magazine</span>.<span class="n">create</span>({<span class="n">title</span> =&gt; <span class="s">&#39;Mad&#39;</span>});
-<span class="n">Subscription</span>.<span class="n">create</span>({:<span class="nv">$user</span>, :<span class="nv">$magazine</span>});
-
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">magazines</span>.<span class="nb">first</span> == <span class="nv">$magazine</span>;
+<p>The block's return value flows back through the helper:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$result</span> = <span class="n">DB</span>.<span class="n">shared</span>.<span class="n">transaction</span>({ <span class="n">Account</span>.<span class="nb">count</span> });
 </code></pre></div></td></tr></table></div>
 
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>True
-</code></pre></div></td></tr></table></div>
-
-<h2 id="is-dirty">Is Dirty</h2>
-<p>If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call <code>is-dirty</code> on the model instance.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span> }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Fred&#39;</span>});
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-dirty</span>;
-
-<span class="nv">$user</span>.<span class="n">fname</span> = <span class="s">&#39;John&#39;</span>;
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-dirty</span>;
-
-<span class="nv">$user</span>.<span class="n">save</span>;
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-dirty</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
+<h2 id="explicit-rollback">Explicit Rollback</h2>
+<p>To roll back without surfacing an error to callers, raise <code>X::Rollback</code>.
+The helper swallows it after the rollback and returns <code>Nil</code>.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>False
-True
-False
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
+
+<span class="n">DB</span>.<span class="n">shared</span>.<span class="n">transaction</span>({
+  <span class="nv">$order</span>.<span class="n">update</span>({ <span class="nb">status</span> =&gt; <span class="s">&#39;cancelled&#39;</span> });
+
+  <span class="k">if</span> <span class="nv">$payment-gateway</span>.<span class="n">refund-failed</span> {
+    <span class="nb">die</span> <span class="o">X</span>::<span class="n">Rollback</span>.<span class="nb">new</span>(:<span class="n">reason</span><span class="s">&lt;refund-failed&gt;</span>);
+  }
+});
 </code></pre></div></td></tr></table></div>
+
+<h2 id="nested-transactions-and-savepoints">Nested Transactions and Savepoints</h2>
+<p>By default, an inner <code>transaction</code> call joins the surrounding transaction:
+the inner block runs in the same SQL transaction, and an exception inside
+it rolls back the whole outer transaction.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">DB</span>.<span class="n">shared</span>.<span class="n">transaction</span>({
+  <span class="nv">$a</span>.<span class="n">save</span>;
+  <span class="n">DB</span>.<span class="n">shared</span>.<span class="n">transaction</span>({
+    <span class="nv">$b</span>.<span class="n">save</span>;
+    <span class="nb">die</span> <span class="s">&#39;boom&#39;</span>;   <span class="c1"># rolls back $a AND $b</span>
+  });
+});
+</code></pre></div></td></tr></table></div>
+
+<p>Pass <code>:requires-new</code> to wrap the inner block in a <code>SAVEPOINT</code> instead.
+An <code>X::Rollback</code> inside <code>:requires-new</code> only undoes the savepoint; work
+done in the outer transaction is preserved.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">DB</span>.<span class="n">shared</span>.<span class="n">transaction</span>({
+  <span class="nv">$a</span>.<span class="n">save</span>;
+  <span class="n">DB</span>.<span class="n">shared</span>.<span class="n">transaction</span>(:<span class="n">requires-new</span>, {
+    <span class="nv">$b</span>.<span class="n">save</span>;
+    <span class="nb">die</span> <span class="o">X</span>::<span class="n">Rollback</span>.<span class="nb">new</span>;   <span class="c1"># rolls back $b only</span>
+  });
+  <span class="nv">$c</span>.<span class="n">save</span>;   <span class="c1"># this still commits with $a</span>
+});
+</code></pre></div></td></tr></table></div>
+
+<p>Other exceptions inside a <code>:requires-new</code> block still roll back the
+savepoint, but they re-raise and propagate to the outer transaction —
+which then rolls back everything in turn.</p>
+<h2 id="isolation-level">Isolation Level</h2>
+<p>The outermost transaction accepts an <code>:isolation</code> option naming a
+SQL-standard isolation level. Underscores or spaces both work, in any
+case:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">DB</span>.<span class="n">shared</span>.<span class="n">transaction</span>(:<span class="n">isolation</span><span class="s">&lt;read_committed&gt;</span>, {
+  ...
+});
+
+<span class="n">DB</span>.<span class="n">shared</span>.<span class="n">transaction</span>(:<span class="n">isolation</span><span class="s">&lt;&#39;SERIALIZABLE&#39;&gt;</span>, {
+  ...
+});
+</code></pre></div></td></tr></table></div>
+
+<p>Accepted values: <code>read uncommitted</code>, <code>read committed</code>, <code>repeatable read</code>,
+<code>serializable</code>. Unknown levels fail fast.</p>
+<p>Isolation is only valid on the <strong>outermost</strong> call. Passing <code>:isolation</code>
+to a nested <code>transaction</code> raises — savepoints inherit the surrounding
+transaction's isolation level.</p>
+<p>Per-adapter notes:</p>
+<ul>
+<li><strong>PostgreSQL</strong> emits <code>BEGIN ISOLATION LEVEL …</code>.</li>
+<li><strong>MySQL</strong> emits <code>SET TRANSACTION ISOLATION LEVEL …</code> followed by
+  <code>START TRANSACTION</code> (MySQL doesn't accept the level inside <code>START
+  TRANSACTION</code>).</li>
+<li><strong>SQLite</strong> accepts and validates the keyword, but ignores it — SQLite
+  doesn't expose SQL-standard isolation levels.</li>
+</ul>
+<h2 id="introspection">Introspection</h2>
+<p><code>DB.shared.is-in-transaction</code> reports whether a transaction is open on
+the shared connection. Useful from callback code that needs to know
+whether it's running inside a wrapping <code>transaction { ... }</code> block:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="o">after-</span><span class="n">save:</span> -&gt; {
+  <span class="k">return</span> <span class="k">unless</span> <span class="n">DB</span>.<span class="n">shared</span>.<span class="n">is-in-transaction</span>;
+  <span class="c1"># ... defer something until commit ...</span>
+};
+</code></pre></div></td></tr></table></div>
+
+<p><code>DB.shared.txn-depth</code> exposes the current depth (<code>0</code> outside any
+transaction, <code>1</code> inside the outer block, <code>&gt;1</code> inside a <code>:requires-new</code>
+savepoint).</p>
+<h2 id="transactional-callbacks">Transactional Callbacks</h2>
+<p>Models can register callbacks that fire only after a transaction's outcome
+is decided. These are different from <code>after-save</code> / <code>after-destroy</code>, which
+fire as soon as the row hits the database — those run inside the
+transaction and would still execute even if the surrounding transaction
+later rolls back.</p>
+<p>The transactional variants are:</p>
+<ul>
+<li><code>after-commit</code> — fires on commit, regardless of which action ran</li>
+<li><code>after-rollback</code> — fires on rollback</li>
+<li><code>after-create-commit</code> — fires on commit, only if the record was created</li>
+<li><code>after-update-commit</code> — fires on commit, only if the record was updated</li>
+<li><code>after-destroy-commit</code> — fires on commit, only if the record was destroyed</li>
+<li><code>after-save-commit</code> — fires on commit for either create or update</li>
+</ul>
+<p>Register them the same way as the non-transactional callbacks, in <code>BUILD</code>:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nb">Order</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">commit:</span>        -&gt; { <span class="n">Audit</span>.<span class="nb">log</span>(<span class="s">&quot;order touched: &quot;</span> ~ <span class="nb">self</span>.<span class="nb">id</span>) };
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">create-commit:</span> -&gt; { <span class="n">Mailer</span>.<span class="n">send-receipt</span>(<span class="nb">self</span>) };
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">rollback:</span>      -&gt; { <span class="n">Audit</span>.<span class="nb">log</span>(<span class="s">&quot;order rolled back: &quot;</span> ~ <span class="nb">self</span>.<span class="nb">id</span>) };
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<p>Outside an explicit <code>transaction { ... }</code> block, the commit callbacks fire
+immediately after the save lands (since the implicit per-statement
+transaction has already committed). Inside an explicit block, they're
+deferred until the outermost <code>transaction</code> commits.</p>
+<p>If the same record is saved multiple times in one transaction, each commit
+callback fires once. A create followed by an update in the same
+transaction fires <code>after-create-commit</code> and <code>after-save-commit</code>, not
+<code>after-update-commit</code> — the record is still a fresh create from the
+transaction's perspective.</p>
+<p>Savepoints get their own callback frame:</p>
+<ul>
+<li>A <code>:requires-new</code> block that completes successfully merges its pending
+  callbacks into the parent frame, so they fire at the outermost commit.</li>
+<li>A <code>:requires-new</code> block that rolls back (via <code>X::Rollback</code> or an
+  exception) fires <code>after-rollback</code> for the records inside it
+  immediately, and drops their commit callbacks.</li>
+</ul>
+<h2 id="limitations">Limitations</h2>
+<p><code>DB.shared</code> wraps a single shared connection, so transactions are
+process-wide on that connection. Concurrent threads sharing the
+connection share the same transaction. Connection-pool-aware
+per-thread/per-fiber transaction tracking is on the roadmap alongside
+the pool itself.</p>
 
 
 

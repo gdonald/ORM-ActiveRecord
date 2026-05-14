@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../../migrations/">
+        <link rel="prev" href="../raw/">
       
       
-        <link rel="next" href="../finders/">
+        <link rel="next" href="../persistence/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Info - ORM::ActiveRecord</title>
+        <title>Inspection - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#models" class="md-skip">
+        <a href="#inspection-helpers" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Info
+              Inspection
             
           </span>
         </div>
@@ -323,37 +323,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Info
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
         
   
   
@@ -369,81 +342,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#basic-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Basic Example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where-query" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where Query
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scope" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Scope
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#has-many-through" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Has Many Through
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#is-dirty" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Is Dirty
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -649,10 +547,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../inspection/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspection
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -668,6 +593,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#to-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to-sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        explain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relation-predicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relation predicates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cache-key-cache-version-cache-key-with-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cache-key, cache-version, cache-key-with-version
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1010,10 +999,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-example" class="md-nav__link">
+  <a href="#to-sql" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Example
+        to-sql
       
     </span>
   </a>
@@ -1021,10 +1010,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#where-query" class="md-nav__link">
+  <a href="#explain" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Where Query
+        explain
       
     </span>
   </a>
@@ -1032,10 +1021,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scope" class="md-nav__link">
+  <a href="#relation-predicates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scope
+        Relation predicates
       
     </span>
   </a>
@@ -1043,21 +1032,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#has-many-through" class="md-nav__link">
+  <a href="#cache-key-cache-version-cache-key-with-version" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Has Many Through
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#is-dirty" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Is Dirty
+        cache-key, cache-version, cache-key-with-version
       
     </span>
   </a>
@@ -1081,250 +1059,113 @@
 
 
 
-<h1 id="models">Models</h1>
-<p>ORM::ActiveRecord supports model relationships, the layer of your app that is responsible for managing data and business logic.</p>
-<h2 id="basic-example">Basic Example</h2>
-<p>In this example the <code>user</code> has many <code>pages</code> and the reverse is also true, a <code>page</code> belongs to a `user.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">Page</span> {...} <span class="c1"># forward declaration</span>
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> <span class="k">is</span> <span class="k">export</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">pages</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Page</span>;
-  }
-}
-
-<span class="k">class</span> <span class="n">Page</span> <span class="k">is</span> <span class="n">Model</span> <span class="k">is</span> <span class="k">export</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">user</span> =&gt; <span class="k">class</span> =&gt; <span class="n">User</span>;
-  }
-}
+<h1 id="inspection-helpers">Inspection helpers</h1>
+<p>A small family of methods for asking <em>about</em> a relation rather than running
+it. They live on both <code>Model</code> (where they apply to <code>Model.all</code>) and on a
+<code>Query</code> relation so they compose with <code>where</code>, <code>order</code>, etc.</p>
+<h2 id="to-sql">to-sql</h2>
+<p><code>to-sql</code> returns the SQL string that the relation would execute, with
+adapter-specific placeholders (<code>$N</code> for PostgreSQL, <code>?</code> for SQLite and
+MySQL) left in. Bind values are not inlined.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">say</span> <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">annotate</span>(<span class="s">&#39;debug&#39;</span>).<span class="n">to-sql</span>;
 </code></pre></div></td></tr></table></div>
 
-<p>Perl 6 does single-pass compilation.  You must provide forward declarations <code>{...}</code> for any models that have not been defined yet but need to be used in has-many or belongs-to relationships.</p>
-<p>This allows chaining method calls together like this:</p>
+<p>See <a href="../raw/">Raw SQL and CTEs</a> for the full set of escape hatches.</p>
+<h2 id="explain">explain</h2>
+<p><code>explain</code> runs <code>EXPLAIN</code> against the underlying SELECT and returns the plan
+rows joined by newlines. SQLite uses <code>EXPLAIN QUERY PLAN</code>; PostgreSQL and
+MySQL use plain <code>EXPLAIN</code>.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">say</span> <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">explain</span>;
+<span class="nb">say</span> <span class="n">User</span>.<span class="n">explain</span>;                  <span class="c1"># whole-table plan</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>explain</code> does not materialize the relation — it only EXPLAINs the SQL it
+would run, so it is cheap on large tables.</p>
+<h2 id="relation-predicates">Relation predicates</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>is-any</code></td>
+<td><code>True</code> when the relation has ≥ 1 row</td>
+</tr>
+<tr>
+<td><code>is-empty</code></td>
+<td><code>True</code> when the relation has 0 rows</td>
+</tr>
+<tr>
+<td><code>is-one</code></td>
+<td><code>True</code> when the relation has exactly 1 row</td>
+</tr>
+<tr>
+<td><code>is-many</code></td>
+<td><code>True</code> when the relation has &gt; 1 row</td>
+</tr>
+<tr>
+<td><code>is-none</code></td>
+<td><code>True</code> when the relation was explicitly scoped with <code>.none</code></td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">is-empty</span>;                                 <span class="c1"># nothing in the table?</span>
+<span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">is-any</span>;           <span class="c1"># any active users?</span>
+<span class="n">User</span>.<span class="n">where</span>({<span class="n">email</span> =&gt; <span class="nv">$addr</span>}).<span class="n">is-one</span>;           <span class="c1"># exactly one match?</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>is-none</code> reports the <em>scope</em>, not the <em>result</em>: it is only true when the
+relation has been passed through <code>.none</code>, never just because the result set
+happens to be empty.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Nobody&#39;</span>}).<span class="n">is-none</span>;       <span class="c1"># False — query just returns nothing</span>
+<span class="n">User</span>.<span class="nb">none</span>.<span class="n">is-none</span>;                             <span class="c1"># True  — explicitly null-scoped</span>
+</code></pre></div></td></tr></table></div>
+
+<p>A <code>.none</code>-scoped relation short-circuits every predicate without touching
+the database. <code>is-any</code>, <code>is-one</code>, and <code>is-many</code> are always <code>False</code>;
+<code>is-empty</code> is always <code>True</code>.</p>
+<h2 id="cache-key-cache-version-cache-key-with-version">cache-key, cache-version, cache-key-with-version</h2>
+<p>These produce stable cache fingerprints for a relation. The shape mirrors
+Rails:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>cache-key                 →  &quot;users/query-3f8a91c20b6e54de&quot;
+cache-version             →  &quot;12-2026-05-12T14:23:11Z&quot;
+cache-key-with-version    →  &quot;users/query-3f8a91c20b6e54de-12-2026-05-12T14:23:11Z&quot;
+</code></pre></div></td></tr></table></div>
+
+<p><code>cache-key</code> is the table name plus an FNV-1a fingerprint of the SQL the
+relation would emit (template <em>and</em> bind values). Two relations producing
+the same SQL produce the same key; changing the WHERE, ORDER, or bind
+values changes it.</p>
+<p><code>cache-version</code> summarizes the <em>result</em> of the query as
+<code>&lt;count&gt;-&lt;max(updated_at)&gt;</code>. If the model has no <code>updated_at</code> column,
+<code>cache-version</code> is undefined (<code>Str</code>) and <code>cache-key-with-version</code> falls
+back to the bare <code>cache-key</code>. On a <code>.none</code>-scoped relation, the version
+short-circuits to <code>"0"</code> without touching the database.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
-<span class="k">my</span> <span class="nv">$page</span> = <span class="n">Page</span>.<span class="n">create</span>({:<span class="nv">$user</span>, <span class="nb">name</span> =&gt; <span class="s">&#39;Rakuist&#39;</span>});
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$key</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">cache-key-with-version</span>;
 
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">pages</span>.<span class="nb">first</span>.<span class="nb">name</span>;
-<span class="nb">say</span> <span class="nv">$page</span>.<span class="n">user</span>.<span class="n">fname</span>;
+<span class="c1"># Use it as a key in your own cache store:</span>
+<span class="k">my</span> <span class="nv">$payload</span> = <span class="nv">$cache</span>.<span class="n">fetch-or-compute</span>(<span class="nv">$key</span>, {
+  <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="nb">all</span>.<span class="n">map</span>(*.<span class="n">serialize</span>);
+});
 </code></pre></div></td></tr></table></div>
 
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>Rakuist
-Greg
-</code></pre></div></td></tr></table></div>
-
-<p>Access to lower level foreign key relationships is supported.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">say</span> <span class="nv">$page</span>.<span class="n">user_id</span> == <span class="nv">$user</span>.<span class="nb">id</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>True
-</code></pre></div></td></tr></table></div>
-
-<h2 id="where-query">Where Query</h2>
-<p>To search for a particular record you can issue a <code>where</code> query with a hash for parameters.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span> }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$fred</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Fred&#39;</span>});
-<span class="k">my</span> <span class="nv">$barney</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Barney&#39;</span>});
-
-<span class="k">my</span> <span class="nv">$result</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Fred&#39;</span>}).<span class="nb">first</span>;
-<span class="nb">say</span> <span class="nv">$result</span> == <span class="nv">$fred</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>True
-</code></pre></div></td></tr></table></div>
-
-<h2 id="scope">Scope</h2>
-<p>Frequently used queries can be made into a <code>scope</code> for easier access.  Scopes live on the model type, not on an instance of the type, so we use <code>$?CLASS</code> to point to the existing class.  The contents of the scope is a lazy block that is only evaluated when required.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">Image</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="nv">$?CLASS</span>.<span class="n">scope:</span> <span class="s">&#39;jpgs&#39;</span>, -&gt; { <span class="nv">$?CLASS</span>.<span class="n">where</span>({<span class="n">ext</span> =&gt; <span class="s">&#39;jpg&#39;</span>}) }
-
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;name&#39;</span>, { :<span class="n">presence</span> }
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;ext&#39;</span>, { :<span class="n">presence</span>, <span class="n">inclusion</span> =&gt; { <span class="nb">in</span> =&gt; <span class="s">&lt;jpg png&gt;</span> } }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$foo</span> = <span class="n">Image</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;foo&#39;</span>, <span class="n">ext</span> =&gt; <span class="s">&#39;jpg&#39;</span>});
-<span class="k">my</span> <span class="nv">$bar</span> = <span class="n">Image</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;bar&#39;</span>, <span class="n">ext</span> =&gt; <span class="s">&#39;jpg&#39;</span>});
-<span class="k">my</span> <span class="nv">$baz</span> = <span class="n">Image</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;baz&#39;</span>, <span class="n">ext</span> =&gt; <span class="s">&#39;png&#39;</span>});
-<span class="nb">say</span> <span class="n">Image</span>.<span class="nb">count</span>;
-
-<span class="k">my</span> <span class="nv">@images</span> = <span class="n">Image</span>.<span class="n">jpgs</span>.<span class="nb">all</span>;
-<span class="nb">say</span> <span class="nb">any</span>(<span class="nv">@images</span>) == <span class="nv">$foo</span>;
-<span class="nb">say</span> <span class="nb">any</span>(<span class="nv">@images</span>) == <span class="nv">$bar</span>;
-<span class="nb">say</span> <span class="nb">none</span>(<span class="nv">@images</span>) == <span class="nv">$baz</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="m">3</span>
-True
-True
-True
-</code></pre></div></td></tr></table></div>
-
-<h2 id="has-many-through">Has Many Through</h2>
-<p>You can access related models using <code>has-many</code> with <code>through</code>.</p>
-<p>In this example a <code>user</code> has access to <code>magazines</code> through the <code>subscriptions</code> model:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Subscription</span> {...} <span class="c1"># stub</span>
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">subscriptions</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Subscription</span>;
-    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">magazines</span> =&gt; <span class="n">through</span> =&gt; :<span class="n">subscriptions</span>;
-  }
-}
-
-<span class="k">class</span> <span class="n">Magazine</span> <span class="k">is</span> <span class="n">Model</span> {}
-
-<span class="k">class</span> <span class="n">Subscription</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">user</span> =&gt; <span class="k">class</span> =&gt; <span class="n">User</span>;
-    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">magazine</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Magazine</span>;
-  }
-}
-
-<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
-<span class="k">my</span> <span class="nv">$magazine</span> = <span class="n">Magazine</span>.<span class="n">create</span>({<span class="n">title</span> =&gt; <span class="s">&#39;Mad&#39;</span>});
-<span class="n">Subscription</span>.<span class="n">create</span>({:<span class="nv">$user</span>, :<span class="nv">$magazine</span>});
-
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">magazines</span>.<span class="nb">first</span> == <span class="nv">$magazine</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>True
-</code></pre></div></td></tr></table></div>
-
-<h2 id="is-dirty">Is Dirty</h2>
-<p>If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call <code>is-dirty</code> on the model instance.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span> }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Fred&#39;</span>});
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-dirty</span>;
-
-<span class="nv">$user</span>.<span class="n">fname</span> = <span class="s">&#39;John&#39;</span>;
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-dirty</span>;
-
-<span class="nv">$user</span>.<span class="n">save</span>;
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-dirty</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>False
-True
-False
-</code></pre></div></td></tr></table></div>
+<p>Because <code>cache-key-with-version</code> rolls forward whenever any row in the
+relation is updated, a cache entry written under this key naturally
+invalidates on the next read.</p>
 
 
 

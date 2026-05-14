@@ -12,7 +12,7 @@
         <link rel="prev" href="../batching/">
       
       
-        <link rel="next" href="../persistence/">
+        <link rel="next" href="../inspection/">
       
       
         
@@ -674,6 +674,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../inspection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../persistence/" class="md-nav__link">
         
   
@@ -702,6 +730,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../serialization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serialization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../callbacks/" class="md-nav__link">
         
   
@@ -710,6 +766,34 @@
     
   
     Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transactions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transactions
   
 
     
@@ -855,6 +939,33 @@
     
   
     Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
   
 
     
@@ -1120,11 +1231,7 @@ planner directives.</p>
 <p>Multiple hints share one <code>/*+ ... */</code> block. Engines that don't understand
 the hint syntax treat it as an ordinary comment, so the query still runs.</p>
 <h2 id="to-sql">to-sql</h2>
-<p><code>to-sql</code> returns the SQL string that the relation would execute, with
-adapter-specific placeholders (<code>$N</code> for PostgreSQL, <code>?</code> for SQLite and
-MySQL) left in. Bind values are not inlined.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">say</span> <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">annotate</span>(<span class="s">&#39;debug&#39;</span>).<span class="n">to-sql</span>;
-</code></pre></div></td></tr></table></div>
+<p>See <a href="../inspection/#to-sql">Inspection helpers</a>.</p>
 
 
 
