@@ -72,185 +72,191 @@ sub classify(Str:D $err --> Str) {
   'other';
 }
 
-sub pg-skip-message(Str:D $url, Str:D $err --> Str) {
-  my %c = parse-database-url($url);
-  my $host = %c<host> // 'localhost';
-  my $port = %c<port> // 5432;
-  my $user = %c<user> // 'postgres';
-  my $name = %c<name> // 'ar_test';
-  my $cls  = classify($err);
+my %ADAPTERS =
+  postgres => {
+    dbiish          => 'Pg',
+    env             => 'AR_PG_URL',
+    default-url     => 'postgres://postgres@localhost:5432/ar_test',
+    defaults        => { host => 'localhost', port => 5432, user => 'postgres', name => 'ar_test' },
+    url-from-config => &pg-url-from-config,
+    connect-args    => -> %c {
+      host     => %c<host>,
+      port     => %c<port>.Int,
+      user     => %c<user>,
+      password => %c<password> // '',
+      database => %c<name>,
+    },
+    messages => {
+      driver => -> %, $err {
+        qq:to/MSG/.chomp;
+        PostgreSQL driver not loadable.
+          error: $err
+          fix (Debian/Ubuntu):
+            sudo apt-get install -y libpq-dev
+            zef install --/test --force-install DBIish
 
-  given $cls {
-    when 'driver' {
-      qq:to/MSG/.chomp;
-      PostgreSQL driver not loadable.
-        error: $err
-        fix (Debian/Ubuntu):
-          sudo apt-get install -y libpq-dev
-          zef install --/test --force-install DBIish
+          fix (macOS / Homebrew):
+            brew install libpq
+            export PATH="\$(brew --prefix libpq)/bin:\$PATH"
+            export PKG_CONFIG_PATH="\$(brew --prefix libpq)/lib/pkgconfig:\$PKG_CONFIG_PATH"
+            zef install --/test --force-install DBIish
+        MSG
+      },
+      refused => -> %c, $err {
+        my ($host, $port, $user, $name) = %c<host port user name>;
+        qq:to/MSG/.chomp;
+        PostgreSQL not reachable at $host:$port.
+          error: $err
+          fix:   docker run -d --name ar-pg -p 5432:5432 \\
+                    -e POSTGRES_USER=$user -e POSTGRES_PASSWORD=postgres \\
+                    -e POSTGRES_DB=$name postgres:17
+                 or set AR_PG_URL='postgres://USER:PASS\@HOST:PORT/DB'
+                 or edit config/application.json (db.adapter=pg)
+        MSG
+      },
+      auth => -> %c, $err {
+        my ($host, $port, $user, $name) = %c<host port user name>;
+        qq:to/MSG/.chomp;
+        PostgreSQL auth failed for user '$user' at $host:$port.
+          error: $err
+          fix:   set AR_PG_URL='postgres://USER:PASS\@$host:$port/$name'
+                 or update user/password in config/application.json
+        MSG
+      },
+      database => -> %c, $err {
+        my ($host, $port, $user, $name) = %c<host port user name>;
+        qq:to/MSG/.chomp;
+        PostgreSQL database '$name' does not exist on $host:$port.
+          error: $err
+          fix:   createdb -h $host -p $port -U $user $name
+                 or set AR_PG_URL to point at an existing db
+        MSG
+      },
+      default => -> %, $err {
+        qq:to/MSG/.chomp;
+        PostgreSQL probe failed.
+          error: $err
+          fix:   set AR_PG_URL='postgres://USER:PASS\@HOST:PORT/DB'
+                 or edit config/application.json
+        MSG
+      },
+    },
+  },
+  mysql => {
+    dbiish       => 'mysql',
+    env          => 'AR_MYSQL_URL',
+    default-url  => 'mysql://root@127.0.0.1:3306/ar_test',
+    defaults     => { host => '127.0.0.1', port => 3306, user => 'root', name => 'ar_test' },
+    connect-args => -> %c {
+      host     => %c<host>,
+      port     => %c<port>.Int,
+      user     => %c<user>,
+      password => %c<password> // '',
+      database => %c<name>,
+    },
+    messages => {
+      driver => -> %, $err {
+        qq:to/MSG/.chomp;
+        MySQL driver not loadable.
+          error: $err
+          cause: DBDish::mysql searches libmysqlclient versions 16..21 only,
+                 but recent installs ship version 24+. It does NOT consult
+                 pkg-config or mysql_config — only the DBIISH_MYSQL_LIB env
+                 var (or the standard dynamic-loader search path).
 
-        fix (macOS / Homebrew):
-          brew install libpq
-          export PATH="\$(brew --prefix libpq)/bin:\$PATH"
-          export PKG_CONFIG_PATH="\$(brew --prefix libpq)/lib/pkgconfig:\$PKG_CONFIG_PATH"
-          zef install --/test --force-install DBIish
-      MSG
-    }
-    when 'refused' {
-      qq:to/MSG/.chomp;
-      PostgreSQL not reachable at $host:$port.
-        error: $err
-        fix:   docker run -d --name ar-pg -p 5432:5432 \\
-                  -e POSTGRES_USER=$user -e POSTGRES_PASSWORD=postgres \\
-                  -e POSTGRES_DB=$name postgres:17
-               or set AR_PG_URL='postgres://USER:PASS\@HOST:PORT/DB'
-               or edit config/application.json (db.adapter=pg)
-      MSG
-    }
-    when 'auth' {
-      qq:to/MSG/.chomp;
-      PostgreSQL auth failed for user '$user' at $host:$port.
-        error: $err
-        fix:   set AR_PG_URL='postgres://USER:PASS\@$host:$port/$name'
-               or update user/password in config/application.json
-      MSG
-    }
-    when 'database' {
-      qq:to/MSG/.chomp;
-      PostgreSQL database '$name' does not exist on $host:$port.
-        error: $err
-        fix:   createdb -h $host -p $port -U $user $name
-               or set AR_PG_URL to point at an existing db
-      MSG
-    }
-    default {
-      qq:to/MSG/.chomp;
-      PostgreSQL probe failed.
-        error: $err
-        fix:   set AR_PG_URL='postgres://USER:PASS\@HOST:PORT/DB'
-               or edit config/application.json
-      MSG
-    }
-  }
-}
+          fix (macOS / Homebrew):
+            brew install mysql-client
+            export DBIISH_MYSQL_LIB=\$(brew --prefix mysql-client)/lib/libmysqlclient.dylib
 
-sub mysql-skip-message(Str:D $url, Str:D $err --> Str) {
-  my %c = parse-database-url($url);
-  my $host = %c<host> // '127.0.0.1';
-  my $port = %c<port> // 3306;
-  my $user = %c<user> // 'root';
-  my $name = %c<name> // 'ar_test';
-  my $cls  = classify($err);
+          fix (Debian/Ubuntu):
+            sudo apt-get install -y libmysqlclient21
+            export DBIISH_MYSQL_LIB=/usr/lib/x86_64-linux-gnu/libmysqlclient.so
 
-  given $cls {
-    when 'driver' {
-      qq:to/MSG/.chomp;
-      MySQL driver not loadable.
-        error: $err
-        cause: DBDish::mysql searches libmysqlclient versions 16..21 only,
-               but recent installs ship version 24+. It does NOT consult
-               pkg-config or mysql_config — only the DBIISH_MYSQL_LIB env
-               var (or the standard dynamic-loader search path).
+          Then re-run ./test.raku — it auto-detects DBIISH_MYSQL_LIB on next
+          invocation if mysql-client is in a standard Homebrew or apt path.
+        MSG
+      },
+      refused => -> %c, $err {
+        my ($host, $port, $name) = %c<host port name>;
+        qq:to/MSG/.chomp;
+        MySQL not reachable at $host:$port.
+          error: $err
+          fix:   docker run -d --name ar-mysql -p 3306:3306 \\
+                    -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=$name mysql:8.4
+                 or set AR_MYSQL_URL='mysql://USER:PASS\@HOST:PORT/DB'
+        MSG
+      },
+      auth => -> %c, $err {
+        my ($host, $port, $user, $name) = %c<host port user name>;
+        qq:to/MSG/.chomp;
+        MySQL auth failed for user '$user' at $host:$port.
+          error: $err
+          fix:   set AR_MYSQL_URL='mysql://USER:PASS\@$host:$port/$name'
+        MSG
+      },
+      database => -> %c, $err {
+        my ($host, $port, $user, $name) = %c<host port user name>;
+        qq:to/MSG/.chomp;
+        MySQL database '$name' does not exist on $host:$port.
+          error: $err
+          fix:   mysql -h $host -P $port -u $user -p -e 'CREATE DATABASE $name'
+                 or set AR_MYSQL_URL to point at an existing db
+        MSG
+      },
+      default => -> %, $err {
+        qq:to/MSG/.chomp;
+        MySQL probe failed.
+          error: $err
+          fix:   set AR_MYSQL_URL='mysql://USER:PASS\@HOST:PORT/DB'
+        MSG
+      },
+    },
+  },
+  sqlite => {
+    dbiish       => 'SQLite',
+    env          => 'AR_SQLITE_URL',
+    default-url  => 'sqlite:db/test.sqlite3',
+    defaults     => {},
+    connect-args => -> % { database => ':memory:' },
+    messages => {
+      driver => -> %, $err {
+        qq:to/MSG/.chomp;
+        SQLite driver not loadable.
+          error: $err
+          fix (Debian/Ubuntu):
+            sudo apt-get install -y libsqlite3-dev
+            zef install --/test --force-install DBIish
 
-        fix (macOS / Homebrew):
-          brew install mysql-client
-          export DBIISH_MYSQL_LIB=\$(brew --prefix mysql-client)/lib/libmysqlclient.dylib
+          fix (macOS): libsqlite3 is preinstalled; just rebuild:
+            zef install --/test --force-install DBIish
+        MSG
+      },
+      default => -> %, $err {
+        qq:to/MSG/.chomp;
+        SQLite probe failed.
+          error: $err
+          fix:   ensure libsqlite3 is on the system; reinstall with
+                 `zef install --/test --force-install DBIish`
+        MSG
+      },
+    },
+  };
 
-        fix (Debian/Ubuntu):
-          sudo apt-get install -y libmysqlclient21
-          export DBIISH_MYSQL_LIB=/usr/lib/x86_64-linux-gnu/libmysqlclient.so
-
-        Then re-run ./test.raku — it auto-detects DBIISH_MYSQL_LIB on next
-        invocation if mysql-client is in a standard Homebrew or apt path.
-      MSG
-    }
-    when 'refused' {
-      qq:to/MSG/.chomp;
-      MySQL not reachable at $host:$port.
-        error: $err
-        fix:   docker run -d --name ar-mysql -p 3306:3306 \\
-                  -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=$name mysql:8.4
-               or set AR_MYSQL_URL='mysql://USER:PASS\@HOST:PORT/DB'
-      MSG
-    }
-    when 'auth' {
-      qq:to/MSG/.chomp;
-      MySQL auth failed for user '$user' at $host:$port.
-        error: $err
-        fix:   set AR_MYSQL_URL='mysql://USER:PASS\@$host:$port/$name'
-      MSG
-    }
-    when 'database' {
-      qq:to/MSG/.chomp;
-      MySQL database '$name' does not exist on $host:$port.
-        error: $err
-        fix:   mysql -h $host -P $port -u $user -p -e 'CREATE DATABASE $name'
-               or set AR_MYSQL_URL to point at an existing db
-      MSG
-    }
-    default {
-      qq:to/MSG/.chomp;
-      MySQL probe failed.
-        error: $err
-        fix:   set AR_MYSQL_URL='mysql://USER:PASS\@HOST:PORT/DB'
-      MSG
-    }
-  }
-}
-
-sub sqlite-skip-message(Str:D $err --> Str) {
+sub skip-message(Str:D $name, %c, Str:D $err --> Str) {
+  my %a = %ADAPTERS{$name};
   my $cls = classify($err);
-  if $cls eq 'driver' {
-    qq:to/MSG/.chomp;
-    SQLite driver not loadable.
-      error: $err
-      fix (Debian/Ubuntu):
-        sudo apt-get install -y libsqlite3-dev
-        zef install --/test --force-install DBIish
-
-      fix (macOS): libsqlite3 is preinstalled; just rebuild:
-        zef install --/test --force-install DBIish
-    MSG
-  } else {
-    qq:to/MSG/.chomp;
-    SQLite probe failed.
-      error: $err
-      fix:   ensure libsqlite3 is on the system; reinstall with
-             `zef install --/test --force-install DBIish`
-    MSG
-  }
+  my $tpl = %a<messages>{$cls} // %a<messages><default>;
+  $tpl.(%c, $err);
 }
 
 sub probe(Str:D $name, Str:D $url --> Capture) {
-  given $name {
-    when 'sqlite' {
-      my ($ok, $err) = try-connect('SQLite', database => ':memory:').list;
-      return \($ok, $err, $ok ?? '' !! sqlite-skip-message($err));
-    }
-    when 'mysql' {
-      my %c = parse-database-url($url);
-      my ($ok, $err) = try-connect('mysql',
-        host     => %c<host>     // 'localhost',
-        port     => (%c<port> // 3306).Int,
-        user     => %c<user>     // 'root',
-        password => %c<password> // '',
-        database => %c<name>,
-      ).list;
-      return \($ok, $err, $ok ?? '' !! mysql-skip-message($url, $err));
-    }
-    when 'postgres' {
-      my %c = parse-database-url($url);
-      my ($ok, $err) = try-connect('Pg',
-        host     => %c<host>     // 'localhost',
-        port     => (%c<port> // 5432).Int,
-        user     => %c<user>,
-        password => %c<password> // '',
-        database => %c<name>,
-      ).list;
-      return \($ok, $err, $ok ?? '' !! pg-skip-message($url, $err));
-    }
-    default { return \(False, "unknown adapter $name", "unknown adapter $name") }
-  }
+  return \(False, "unknown adapter $name", "unknown adapter $name") unless %ADAPTERS{$name}:exists;
+  my %a = %ADAPTERS{$name};
+  my %c = parse-database-url($url);
+  for %a<defaults>.kv -> $k, $v { %c{$k} //= $v }
+  my %args = %a<connect-args>.(%c);
+  my ($ok, $err) = try-connect(%a<dbiish>, |%args).list;
+  \($ok, $err, $ok ?? '' !! skip-message($name, %c, $err));
 }
 
 sub run-once(Str:D :$name, Str:D :$url --> Int) {
@@ -308,9 +314,12 @@ if my $external = %*ENV<DATABASE_URL> {
   @runs.push: { :$name, :url($external) };
   $skip-probe = True;
 } else {
-  @runs.push: { :name<postgres>, :url(%*ENV<AR_PG_URL>     // pg-url-from-config() // 'postgres://postgres@localhost:5432/ar_test') };
-  @runs.push: { :name<mysql>,    :url(%*ENV<AR_MYSQL_URL>  // 'mysql://root@127.0.0.1:3306/ar_test') };
-  @runs.push: { :name<sqlite>,   :url(%*ENV<AR_SQLITE_URL> // 'sqlite:db/test.sqlite3') };
+  for <postgres mysql sqlite> -> $name {
+    my %a = %ADAPTERS{$name};
+    my $config-url = %a<url-from-config>:exists ?? %a<url-from-config>.() !! Str;
+    my $url = %*ENV{%a<env>} // $config-url // %a<default-url>;
+    @runs.push: { :$name, :$url };
+  }
 }
 
 if @wanted {
