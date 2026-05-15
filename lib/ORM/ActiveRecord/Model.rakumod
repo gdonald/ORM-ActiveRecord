@@ -161,7 +161,26 @@ class Model
       my $fkey-name = Utils.base-name(self.fkey-name);
       my Str $table = $name ~ 's';
       my @fields = self.get-fields($table);
-      my $class = %!has-ones{$name}{'class'};
+      my $class = Mu:U;
+      my $join-table = '';
+
+      for %!has-ones{$name}.keys -> $key {
+        given $key {
+          when 'class' { $class = %!has-ones{$name}{'class'} }
+          when 'through' {
+            my $through-key = %!has-ones{$name}{'through'}.key;
+            $join-table = $through-key ~ 's';
+            $class = self.get-through-class-has-one($name, $through-key);
+          }
+          default { say 'Unknown has-one type ' ~ %!has-ones{$name}; die }
+        }
+      }
+
+      if $join-table {
+        my @objects = $!db.get-objects(:$class, :@fields, :$table, :$join-table, where => ($fkey-name => $!id).Hash, limit => 1);
+        return @objects.elems ?? @objects.first !! Nil;
+      }
+
       return $!db.get-object(:$class, :@fields, :$table, where => ($fkey-name => $!id).Hash);
     }
 
@@ -182,6 +201,11 @@ class Model
     my $singular = Utils.singular($name);
 
     $class.new(:id(0)).belongs-tos{$singular}{'class'};
+  }
+
+  method get-through-class-has-one(Str:D $name, Str:D $through-key) {
+    my $class = %!has-ones{$through-key}{'class'};
+    $class.new(:id(0)).belongs-tos{$name}{'class'};
   }
 
   method table-name {

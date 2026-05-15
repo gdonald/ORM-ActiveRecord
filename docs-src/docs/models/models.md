@@ -188,6 +188,47 @@ Output
 True
 ```
 
+## Has One Through
+
+A `has-one` association can use `through` to reach a single related record via a join model.
+
+In this example a `user` has access to an `account` through the `profile` model:
+
+```perl6
+class Profile {...} # stub
+class Account {...} # stub
+
+class User is Model {
+  submethod BUILD {
+    self.has-one: profile => class => Profile;
+    self.has-one: account => through => :profile;
+  }
+}
+
+class Profile is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+    self.belongs-to: account => class => Account;
+  }
+}
+
+class Account is Model {}
+
+my $user = User.create({fname => 'Greg'});
+my $account = Account.create({name => 'gdonald'});
+Profile.create({:$user, :$account, bio => 'Raku enthusiast'});
+
+say $user.account.name;
+```
+
+Output
+
+```shell
+gdonald
+```
+
+When no join record exists, `has-one` `through` returns `Nil`.
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.

@@ -1,0 +1,45 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Profile {...}
+class Account {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-one: profile => class => Profile;
+    self.has-one: account => through => :profile;
+  }
+}
+
+class Profile is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+    self.belongs-to: account => class => Account;
+  }
+}
+
+class Account is Model {}
+
+plan 5;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
+ok $user.is-valid, 'user saved';
+
+is $user.account, Nil, 'has-one through returns Nil when no join record exists';
+
+my $account = Account.create({name => 'gdonald'});
+my $profile = Profile.create({:$user, :$account, bio => 'Raku enthusiast'});
+ok $profile.is-valid, 'profile saved';
+
+my $fetched = $user.account;
+ok $fetched.defined, 'has-one through returns the target record';
+ok $fetched.id == $account.id, 'has-one through returns the correct record';
+
+Profile.destroy-all;
+Account.destroy-all;
+User.destroy-all;
