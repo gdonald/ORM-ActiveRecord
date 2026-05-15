@@ -1,0 +1,64 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Tag {...}
+
+class Post is Model {
+  submethod BUILD {
+    self.has-and-belongs-to-many: tags => class => Tag;
+  }
+}
+
+class Tag is Model {
+  submethod BUILD {
+    self.has-and-belongs-to-many: posts => class => Post;
+  }
+}
+
+plan 14;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $post = Post.create({title => 'First'});
+ok $post.is-valid, 'post saved';
+
+my $ruby   = Tag.create({name => 'ruby'});
+my $raku   = Tag.create({name => 'raku'});
+my $orm    = Tag.create({name => 'orm'});
+
+is $post.tags.elems, 0, 'fresh post has no tags';
+ok $ruby.posts.elems == 0, 'fresh tag has no posts';
+
+$post.add-tag($ruby);
+$post.add-tag($raku);
+
+my @tags = $post.tags;
+is @tags.elems, 2, 'two tags after two adds';
+ok @tags.map(*.id).sort.list eqv ($ruby.id, $raku.id).sort.list, 'add-tag links the right rows';
+
+ok $ruby.posts.first.id == $post.id, 'inverse side returns the owning post';
+
+$post.add-tag($orm);
+is $post.tags.elems, 3, 'add-tag is additive';
+
+$post.remove-tag($raku);
+my @after-remove = $post.tags;
+is @after-remove.elems, 2, 'remove-tag drops a single link row';
+ok @after-remove.map(*.id).sort.list eqv ($ruby.id, $orm.id).sort.list, 'remove-tag drops the right row';
+
+$post.clear-tags;
+is $post.tags.elems, 0, 'clear-tags removes all link rows';
+is $ruby.posts.elems, 0, 'clear-tags is visible from the inverse side too';
+
+# inverse-side writes should work the same
+$raku.add-post($post);
+is $raku.posts.first.id, $post.id, 'add-post from the inverse side links the row';
+is $post.tags.first.id,  $raku.id, 'and is visible from the owning side';
+$raku.clear-posts;
+is $post.tags.elems, 0, 'inverse-side clear empties the join table';
+
+Post.destroy-all;
+Tag.destroy-all;

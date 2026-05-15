@@ -43,6 +43,7 @@ class Model
   has %.record is rw;
   has %.has-manys;
   has %.has-ones;
+  has %.habtms;
   has %.belongs-tos;
 
   has Int $.id is rw;
@@ -135,6 +136,27 @@ class Model
       return self."$base-name"().id;
     }
 
+    if $name ~~ /^ 'add-' (.+) $/ {
+      my $singular = ~$0;
+      for %!habtms.keys -> $assoc {
+        if Utils.singular($assoc) eq $singular {
+          return self.habtm-add($assoc, @rest[0]);
+        }
+      }
+    }
+    if $name ~~ /^ 'remove-' (.+) $/ {
+      my $singular = ~$0;
+      for %!habtms.keys -> $assoc {
+        if Utils.singular($assoc) eq $singular {
+          return self.habtm-remove($assoc, @rest[0]);
+        }
+      }
+    }
+    if $name ~~ /^ 'clear-' (.+) $/ {
+      my $assoc = ~$0;
+      return self.habtm-clear($assoc) if %!habtms{$assoc}:exists;
+    }
+
     return-rw %!attrs«$name» if %!attrs«$name»:exists;
 
     if any(%!has-manys.keys) eq $name {
@@ -184,6 +206,14 @@ class Model
       return $!db.get-object(:$class, :@fields, :$table, where => ($fkey-name => $!id).Hash);
     }
 
+    if any(%!habtms.keys) eq $name {
+      my $class = %!habtms{$name}{'class'};
+      my $join-table = self.habtm-join-table($name);
+      my $owner-key = Utils.base-name(self.fkey-name);
+      my @fields = self.get-fields($name);
+      return $!db.get-objects(:$class, :@fields, :table($name), :$join-table, :where(($owner-key => $!id).Hash));
+    }
+
     if any(%!belongs-tos.keys) eq $name {
       my Str $table = $name ~ 's';
       my Int $id = %!attrs{$name ~ '_id'};
@@ -226,6 +256,46 @@ class Model
 
   method has-one(*%rest) {
     %!has-ones.push: %rest.keys.first => %rest.values.first;
+  }
+
+  method has-and-belongs-to-many(*%rest) {
+    %!habtms.push: %rest.keys.first => %rest.values.first;
+  }
+
+  method habtm-join-table(Str:D $assoc --> Str) {
+    for %!habtms{$assoc}.keys -> $key {
+      return %!habtms{$assoc}{$key} if $key eq 'join-table';
+    }
+    ($assoc, self.table-name).sort.join('_');
+  }
+
+  method habtm-add(Str:D $assoc, Mu:D $record --> Bool) {
+    my $join-table = self.habtm-join-table($assoc);
+    my $owner-key  = Utils.base-name(self.fkey-name);
+    my $target-key = Utils.to-foreign-key($assoc);
+    my $stmt = $!db.sanitize-sql-array([
+      "INSERT INTO $join-table ($owner-key, $target-key) VALUES (?, ?)",
+      $!id, $record.id,
+    ]);
+    $!db.exec-stmt($stmt);
+    True;
+  }
+
+  method habtm-remove(Str:D $assoc, Mu:D $record --> Bool) {
+    my $join-table = self.habtm-join-table($assoc);
+    my $owner-key  = Utils.base-name(self.fkey-name);
+    my $target-key = Utils.to-foreign-key($assoc);
+    my %where = ($owner-key => $!id, $target-key => $record.id);
+    $!db.delete-records(:table($join-table), :%where);
+    True;
+  }
+
+  method habtm-clear(Str:D $assoc --> Bool) {
+    my $join-table = self.habtm-join-table($assoc);
+    my $owner-key  = Utils.base-name(self.fkey-name);
+    my %where = ($owner-key => $!id).Hash;
+    $!db.delete-records(:table($join-table), :%where);
+    True;
   }
 
   method init-attrs {

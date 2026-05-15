@@ -229,6 +229,64 @@ gdonald
 
 When no join record exists, `has-one` `through` returns `Nil`.
 
+## Has And Belongs To Many
+
+A many-to-many relationship without an intermediate model is declared with `has-and-belongs-to-many` on both sides. The link rows live in a dedicated join table whose name is the two pluralized table names joined alphabetically with an underscore (e.g. `posts` + `tags` → `posts_tags`). The join table only needs the two foreign-key columns.
+
+```perl6
+class Tag {...} # forward declaration
+
+class Post is Model {
+  submethod BUILD {
+    self.has-and-belongs-to-many: tags => class => Tag;
+  }
+}
+
+class Tag is Model {
+  submethod BUILD {
+    self.has-and-belongs-to-many: posts => class => Post;
+  }
+}
+
+my $post = Post.create({title => 'First'});
+my $raku = Tag.create({name => 'raku'});
+my $orm  = Tag.create({name => 'orm'});
+
+$post.add-tag($raku);
+$post.add-tag($orm);
+
+say $post.tags.map(*.name).sort.join(', ');
+say $raku.posts.first.title;
+```
+
+Output
+
+```shell
+orm, raku
+First
+```
+
+Each association adds three write helpers, named after the association:
+
+- `add-<singular>($record)` — insert a single link row
+- `remove-<singular>($record)` — delete one link row
+- `clear-<plural>` — delete every link row for this owner
+
+```perl6
+$post.remove-tag($orm);
+say $post.tags.map(*.name).join(', ');
+
+$post.clear-tags;
+say $post.tags.elems;
+```
+
+Output
+
+```shell
+raku
+0
+```
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.
