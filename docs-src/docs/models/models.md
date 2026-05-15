@@ -117,6 +117,39 @@ True
 True
 ```
 
+## Has One
+
+A model can declare a one-to-one association with `has-one`. The associated table holds the foreign key pointing back at the owner, mirroring the `belongs-to` side.
+
+```perl6
+class Profile {...} # forward declaration
+
+class User is Model {
+  submethod BUILD {
+    self.has-one: profile => class => Profile;
+  }
+}
+
+class Profile is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+my $user = User.create({fname => 'Greg'});
+Profile.create({:$user, bio => 'Raku enthusiast'});
+
+say $user.profile.bio;
+```
+
+Output
+
+```shell
+Raku enthusiast
+```
+
+When no associated record exists, `has-one` returns `Nil`.
+
 ## Has Many Through
 
 You can access related models using `has-many` with `through`.

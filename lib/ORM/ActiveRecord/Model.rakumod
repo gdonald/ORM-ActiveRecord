@@ -42,6 +42,7 @@ class Model
 
   has %.record is rw;
   has %.has-manys;
+  has %.has-ones;
   has %.belongs-tos;
 
   has Int $.id is rw;
@@ -156,6 +157,14 @@ class Model
       return $!db.get-objects(:$class, :@fields, :table($name), :$join-table, :where($fkey-name => $!id));
     }
 
+    if any(%!has-ones.keys) eq $name {
+      my $fkey-name = Utils.base-name(self.fkey-name);
+      my Str $table = $name ~ 's';
+      my @fields = self.get-fields($table);
+      my $class = %!has-ones{$name}{'class'};
+      return $!db.get-object(:$class, :@fields, :$table, where => ($fkey-name => $!id).Hash);
+    }
+
     if any(%!belongs-tos.keys) eq $name {
       my Str $table = $name ~ 's';
       my Int $id = %!attrs{$name ~ '_id'};
@@ -189,6 +198,10 @@ class Model
 
   method has-many(*%rest) {
     %!has-manys.push: %rest.keys.first => %rest.values.first;
+  }
+
+  method has-one(*%rest) {
+    %!has-ones.push: %rest.keys.first => %rest.values.first;
   }
 
   method init-attrs {

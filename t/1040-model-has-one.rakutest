@@ -1,0 +1,38 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Profile {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-one: profile => class => Profile;
+  }
+}
+
+class Profile is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+plan 5;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
+ok $user.is-valid, 'user saved';
+
+is $user.profile, Nil, 'has-one returns Nil when no associated record exists';
+
+my $profile = Profile.create({:$user, bio => 'Raku enthusiast'});
+ok $profile.is-valid, 'profile saved';
+
+my $fetched = $user.profile;
+ok $fetched.defined, 'has-one returns the associated record';
+ok $fetched.id == $profile.id, 'has-one returns the correct record';
+
+Profile.destroy-all;
+User.destroy-all;
