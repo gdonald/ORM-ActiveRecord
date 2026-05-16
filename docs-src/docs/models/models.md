@@ -507,6 +507,99 @@ self.belongs-to: owner => class-name => 'App::Models::User';
 
 If the name cannot be resolved at access time, `class-name:` raises an error naming the offending string.
 
+## Foreign Key and Primary Key Overrides
+
+By default an association uses the conventional column names:
+
+- `belongs-to :user` reads `user_id` on this table and matches it against `id` on the `users` table.
+- `has-many :pages` matches this row's `id` against `user_id` on the `pages` table.
+- `has-one :profile` matches this row's `id` against `user_id` on the `profiles` table.
+
+Two options override that convention:
+
+- `foreign-key:` renames the column that holds the foreign key. It always names the column on the side of the relationship that physically stores the link.
+- `primary-key:` renames the column whose value is matched. It defaults to `id` — change it when the related row is identified by something other than the surrogate primary key (e.g. a country code, a slug).
+
+### Renaming the foreign-key column
+
+When the same table joins to another table more than once, the second column cannot follow the default naming. Use `foreign-key:` on both sides:
+
+```perl6
+class User {...}
+
+class Article is Model {
+  submethod BUILD {
+    self.belongs-to: author => %(class => User, foreign-key => 'author_id');
+  }
+}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: articles => %(class => Article, foreign-key => 'author_id');
+  }
+}
+
+my $user    = User.create({fname => 'Greg', lname => 'Donald'});
+my $article = Article.create({:title<Hello>, :body<Body>, author => $user});
+
+say $article.attrs<author_id>;           # Greg's id
+say $user.articles.first.attrs<title>;   # Hello
+```
+
+`has-one` accepts `foreign-key:` the same way:
+
+```perl6
+class Passport {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-one: passport => %(class => Passport, foreign-key => 'owner_id');
+  }
+}
+
+class Passport is Model {
+  submethod BUILD {
+    self.belongs-to: owner => %(class => User, foreign-key => 'owner_id');
+  }
+}
+```
+
+### Joining on a non-id primary key
+
+`primary-key:` is the right option when the value you join on is not the surrogate `id`. A canonical example is a region keyed by a stable code:
+
+```perl6
+class Town {...}
+
+class Region is Model {
+  submethod BUILD {
+    self.has-many: towns => %(
+      class       => Town,
+      primary-key => 'code',
+      foreign-key => 'region_code',
+    );
+  }
+}
+
+class Town is Model {
+  submethod BUILD {
+    self.belongs-to: region => %(
+      class       => Region,
+      primary-key => 'code',
+      foreign-key => 'region_code',
+    );
+  }
+}
+
+my $usa    = Region.create({code => 'US', name => 'United States'});
+my $austin = Town.create({region => $usa, name => 'Austin'});
+
+say $austin.attrs<region_code>;        # US
+say $usa.towns.map(*.attrs<name>);     # (Austin)
+```
+
+On the `belongs-to` side, `primary-key:` names the column on the target table; on the `has-many` / `has-one` side, it names the column on the owning model whose value is matched against the foreign key.
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.

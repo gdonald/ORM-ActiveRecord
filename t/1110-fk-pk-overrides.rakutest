@@ -1,0 +1,113 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: articles => %(class-name => 'Article', foreign-key => 'author_id');
+    self.has-one:  passport => %(class-name => 'Passport', foreign-key => 'owner_id');
+  }
+}
+
+class Article is Model {
+  submethod BUILD {
+    self.belongs-to: author => %(class-name => 'User', foreign-key => 'author_id');
+  }
+}
+
+class Passport is Model {
+  submethod BUILD {
+    self.belongs-to: owner => %(class-name => 'User', foreign-key => 'owner_id');
+  }
+}
+
+class Town {...}
+
+class Region is Model {
+  submethod BUILD {
+    self.has-many: towns => %(class-name => 'Town', primary-key => 'code', foreign-key => 'region_code');
+  }
+}
+
+class Town is Model {
+  submethod BUILD {
+    self.belongs-to: region => %(class-name => 'Region', primary-key => 'code', foreign-key => 'region_code');
+  }
+}
+
+plan 22;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+# belongs-to with foreign-key override
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
+ok $user.is-valid, 'user saved';
+
+my $article = Article.create({title => 'Raku ORM', body => 'A library.', author => $user});
+ok $article.is-valid, 'article saved with author';
+is $article.attrs<author_id>, $user.id,
+  'belongs-to foreign-key fills the override column';
+
+my $fetched-article = Article.find($article.id);
+ok $fetched-article.author.defined,
+  'belongs-to foreign-key resolves the parent';
+is $fetched-article.author.id, $user.id,
+  'belongs-to foreign-key returns the right parent';
+
+# has-many with foreign-key override (inverse of belongs-to)
+my @articles = User.find($user.id).articles;
+is @articles.elems, 1,
+  'has-many foreign-key returns the matching row';
+is @articles.first.id, $article.id,
+  'has-many foreign-key returns the right row';
+
+# has-one with foreign-key override
+my $passport = Passport.create({owner => $user, number => 'AB12345'});
+ok $passport.is-valid, 'passport saved with owner';
+is $passport.attrs<owner_id>, $user.id,
+  'has-one belongs-to foreign-key fills the override column';
+
+my $found = User.find($user.id).passport;
+ok $found.defined, 'has-one foreign-key returns a row';
+is $found.id, $passport.id, 'has-one foreign-key returns the right row';
+
+my $back = Passport.find($passport.id).owner;
+ok $back.defined, 'belongs-to foreign-key from passport resolves user';
+is $back.id, $user.id, 'belongs-to foreign-key returns the right user';
+
+# primary-key override on has-many and belongs-to
+my $usa = Region.create({code => 'US', name => 'United States'});
+ok $usa.is-valid, 'region saved';
+
+my $dallas  = Town.create({region => $usa, name => 'Dallas'});
+my $austin  = Town.create({region => $usa, name => 'Austin'});
+ok $dallas.is-valid && $austin.is-valid, 'towns saved';
+is $dallas.attrs<region_code>, 'US',
+  'belongs-to primary-key writes target pkey value into foreign-key column';
+is $austin.attrs<region_code>, 'US', 'second town wired correctly too';
+
+my @towns = Region.find($usa.id).towns;
+is @towns.elems, 2,
+  'has-many primary-key resolves via the override column';
+is @towns.map(*.attrs<name>).sort.join(','),
+  'Austin,Dallas',
+  'has-many primary-key returns the right rows';
+
+my $dallas-region = Town.find($dallas.id).region;
+ok $dallas-region.defined,
+  'belongs-to primary-key resolves the parent via the override columns';
+is $dallas-region.attrs<code>, 'US',
+  'belongs-to primary-key returns the right parent';
+
+# Empty case: a region with no towns
+my $blank = Region.create({code => 'XX', name => 'Nowhere'});
+is $blank.towns.elems, 0,
+  'has-many primary-key returns no rows when the pkey value has no matches';
+
+Town.destroy-all;
+Region.destroy-all;
+Passport.destroy-all;
+Article.destroy-all;
+User.destroy-all;

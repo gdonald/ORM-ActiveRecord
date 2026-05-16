@@ -161,64 +161,74 @@ class Model
     return-rw %!attrs«$name» if %!attrs«$name»:exists;
 
     if any(%!has-manys.keys) eq $name {
+      my $spec = %!has-manys{$name};
       my $class = Mu:U;
       my $join-table = '';
       my $as-name = '';
       my $fkey-override = '';
+      my $pkey-col = 'id';
 
-      for %!has-manys{$name}.keys -> $key {
+      for $spec.keys -> $key {
         given $key {
-          when 'class' { $class = %!has-manys{$name}{'class'} }
-          when 'class-name' { $class = self.resolve-class-name(~%!has-manys{$name}{'class-name'}) }
+          when 'class' { $class = $spec{'class'} }
+          when 'class-name' { $class = self.resolve-class-name(~$spec{'class-name'}) }
           when 'through' {
-            $join-table = %!has-manys{$name}{'through'}.key;
+            $join-table = $spec{'through'}.key;
             $class = self.get-through-class($name, $join-table);
           }
-          when 'as' { $as-name = ~%!has-manys{$name}{'as'} }
-          when 'foreign-key' { $fkey-override = ~%!has-manys{$name}{'foreign-key'} }
-          default { say 'Unknown has-many type ' ~ %!has-manys{$name}; die }
+          when 'as' { $as-name = ~$spec{'as'} }
+          when 'foreign-key' { $fkey-override = ~$spec{'foreign-key'} }
+          when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
+          default { say 'Unknown has-many type ' ~ $spec; die }
         }
       }
 
       my Str $target-table = Utils.table-name($class);
       my @fields = self.get-fields($target-table);
+      my $pkey-val = $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
 
       if $as-name {
         my $type-name = Utils.base-name(self.WHAT.^name);
-        my %where = ($as-name ~ '_id') => $!id, ($as-name ~ '_type') => $type-name;
+        my %where = ($as-name ~ '_id') => $pkey-val, ($as-name ~ '_type') => $type-name;
         return $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
       }
 
       my $fkey-name = $fkey-override || Utils.base-name(self.fkey-name);
-      return $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $!id));
+      return $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $pkey-val));
     }
 
     if any(%!has-ones.keys) eq $name {
+      my $spec = %!has-ones{$name};
       my $fkey-name = Utils.base-name(self.fkey-name);
       my Str $table = $name ~ 's';
-      my @fields = self.get-fields($table);
       my $class = Mu:U;
       my $join-table = '';
+      my $pkey-col = 'id';
 
-      for %!has-ones{$name}.keys -> $key {
+      for $spec.keys -> $key {
         given $key {
-          when 'class' { $class = %!has-ones{$name}{'class'} }
-          when 'class-name' { $class = self.resolve-class-name(~%!has-ones{$name}{'class-name'}) }
+          when 'class' { $class = $spec{'class'} }
+          when 'class-name' { $class = self.resolve-class-name(~$spec{'class-name'}) }
           when 'through' {
-            my $through-key = %!has-ones{$name}{'through'}.key;
+            my $through-key = $spec{'through'}.key;
             $join-table = $through-key ~ 's';
             $class = self.get-through-class-has-one($name, $through-key);
           }
-          default { say 'Unknown has-one type ' ~ %!has-ones{$name}; die }
+          when 'foreign-key' { $fkey-name = ~$spec{'foreign-key'} }
+          when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
+          default { say 'Unknown has-one type ' ~ $spec; die }
         }
       }
 
+      my @fields = self.get-fields($table);
+      my $pkey-val = $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
+
       if $join-table {
-        my @objects = $!db.get-objects(:$class, :@fields, :$table, :$join-table, where => ($fkey-name => $!id).Hash, limit => 1);
+        my @objects = $!db.get-objects(:$class, :@fields, :$table, :$join-table, where => ($fkey-name => $pkey-val).Hash, limit => 1);
         return @objects.elems ?? @objects.first !! Nil;
       }
 
-      return $!db.get-object(:$class, :@fields, :$table, where => ($fkey-name => $!id).Hash);
+      return $!db.get-object(:$class, :@fields, :$table, where => ($fkey-name => $pkey-val).Hash);
     }
 
     if any(%!habtms.keys) eq $name {
@@ -242,11 +252,16 @@ class Model
         my @fields = self.get-fields($table);
         return $!db.get-object(:$class, :@fields, :$table, where => :$id);
       }
-      my $class = self.assoc-class-from-spec(%!belongs-tos{$name});
+      my $spec = %!belongs-tos{$name};
+      my $class = self.assoc-class-from-spec($spec);
       my Str $table = Utils.table-name($class);
-      my Int $id = %!attrs{$name ~ '_id'};
+      my Str $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
+      my Str $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
+      my $fkey-val = %!attrs{$fkey-col};
+      return Nil unless $fkey-val;
       my @fields = self.get-fields($table);
-      return $!db.get-object(:$class, :@fields, :$table, where => :$id);
+      my %where = ($pkey-col => $fkey-val);
+      return $!db.get-object(:$class, :@fields, :$table, :%where);
     }
 
     return if $name ~~ /_confirmation/;
@@ -289,6 +304,16 @@ class Model
       return self.resolve-class-name(~self.assoc-spec-value(spec, 'class-name'));
     }
     Mu;
+  }
+
+  method assoc-fkey-from-spec(\spec, Str:D $default --> Str) {
+    return ~self.assoc-spec-value(spec, 'foreign-key') if self.assoc-spec-has(spec, 'foreign-key');
+    $default;
+  }
+
+  method assoc-pkey-from-spec(\spec, Str:D $default = 'id' --> Str) {
+    return ~self.assoc-spec-value(spec, 'primary-key') if self.assoc-spec-has(spec, 'primary-key');
+    $default;
   }
 
   method resolve-class-name(Str:D $name) {
@@ -519,9 +544,13 @@ class Model
         $.attrs{$key}:delete;
       }
       else {
-        my $assoc-class = self.assoc-class-from-spec($.belongs-tos{$key});
+        my $spec = $.belongs-tos{$key};
+        my $assoc-class = self.assoc-class-from-spec($spec);
         if $assoc-class !=== Mu && $.attrs{$key} ~~ $assoc-class {
-          $.attrs{$key ~ '_id'} = $.attrs{$key}.id;
+          my $fkey-col = self.assoc-fkey-from-spec($spec, $key ~ '_id');
+          my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
+          my $record = $.attrs{$key};
+          $.attrs{$fkey-col} = $pkey-col eq 'id' ?? $record.id !! $record.attrs{$pkey-col};
           $.attrs{$key}:delete;
         }
       }
