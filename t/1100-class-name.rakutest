@@ -1,0 +1,119 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Page  {...}
+class Tag   {...}
+class Magazine {...}
+class Subscription {...}
+class Profile {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: pages => class-name => 'Page';
+    self.has-many: subscriptions => class-name => 'Subscription';
+    self.has-many: magazines => %(through => :subscriptions, class-name => 'Magazine');
+    self.has-one:  profile  => class-name => 'Profile';
+  }
+}
+
+class Page is Model {
+  submethod BUILD {
+    self.belongs-to: user => class-name => 'User';
+  }
+}
+
+class Profile is Model {
+  submethod BUILD {
+    self.belongs-to: user => class-name => 'User';
+  }
+}
+
+class Magazine is Model {}
+
+class Subscription is Model {
+  submethod BUILD {
+    self.belongs-to: user     => class-name => 'User';
+    self.belongs-to: magazine => class-name => 'Magazine';
+  }
+}
+
+class Post is Model {
+  submethod BUILD {
+    self.has-and-belongs-to-many: tags => class-name => 'Tag';
+  }
+}
+
+class Tag is Model {
+  submethod BUILD {
+    self.has-and-belongs-to-many: posts => %(class-name => 'Post');
+  }
+}
+
+plan 18;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+# belongs-to via class-name, with has-many on the inverse side
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
+ok $user.is-valid, 'user saved';
+
+my $page = Page.create({:$user, name => 'Raku'});
+ok $page.is-valid, 'belongs-to via class-name saves FK';
+is $page.attrs<user_id>, $user.id, 'belongs-to class-name fills user_id';
+
+# Read back the belongs-to side
+my $fetched = Page.find($page.id);
+ok $fetched.user.WHAT === User,    'belongs-to class-name resolves to User';
+is $fetched.user.id, $user.id,     'belongs-to class-name returns the right row';
+
+# Read back the has-many side
+my @pages = $user.pages;
+is @pages.elems, 1, 'has-many class-name returns the row';
+is @pages.first.id, $page.id, 'has-many class-name returns the right row';
+
+# has-one with class-name
+my $profile = Profile.create({:$user, bio => 'Raku enthusiast'});
+ok $profile.is-valid, 'profile saved';
+my $found-profile = User.find($user.id).profile;
+ok $found-profile.defined, 'has-one class-name returns a row';
+is $found-profile.id, $profile.id, 'has-one class-name returns the right row';
+
+# has-many :through with hash-form class-name
+my $magazine = Magazine.create({title => 'Mad'});
+Subscription.create({:$user, :$magazine});
+my @mags = User.find($user.id).magazines;
+is @mags.elems, 1, 'has-many :through class-name returns the joined row';
+is @mags.first.id, $magazine.id, 'has-many :through class-name returns the right row';
+
+# has-and-belongs-to-many via class-name (both Pair and Hash forms)
+my $post = Post.create({title => 'Hello'});
+my $tag  = Tag.create({name => 'raku'});
+$post.add-tag($tag);
+my @tags = $post.tags;
+is @tags.elems, 1, 'habtm class-name (Pair form) links the row';
+is @tags.first.id, $tag.id, 'habtm class-name (Pair form) returns the right row';
+
+my @posts = $tag.posts;
+is @posts.elems, 1, 'habtm class-name (Hash form) links the row from inverse side';
+is @posts.first.id, $post.id, 'habtm class-name (Hash form) returns the right row';
+
+# Class-name resolution failure raises a clear error
+dies-ok { User.resolve-class-name('Nonexistent') },
+  'unknown class-name raises an error';
+like(
+  (try { User.resolve-class-name('Nonexistent'); '' } // $!.message),
+  /'Nonexistent'/,
+  'error message mentions the offending name'
+);
+
+$post.clear-tags;
+Post.destroy-all;
+Tag.destroy-all;
+Subscription.destroy-all;
+Magazine.destroy-all;
+Profile.destroy-all;
+Page.destroy-all;
+User.destroy-all;

@@ -56,7 +56,7 @@ role QueryJoins is export {
   method add-assoc-join(Str:D $kind, Str:D $name, Mu $base-class, Str $base-table) {
     my $stub = $base-class.new(:id(0));
     if $stub.belongs-tos{$name}:exists {
-      my $other-class = $stub.belongs-tos{$name}{'class'};
+      my $other-class = $stub.assoc-class-from-spec($stub.belongs-tos{$name});
       my $other-table = Utils.table-name($other-class);
       my $fkey = $name ~ '_id';
       self.joins-values.push: "$kind $other-table ON $other-table.id = $base-table.$fkey";
@@ -64,13 +64,13 @@ role QueryJoins is export {
     }
     if $stub.has-manys{$name}:exists {
       my $hm = $stub.has-manys{$name};
-      if $hm{'through'}:exists {
-        my $through-name = $hm{'through'}.key.Str;
+      if $stub.assoc-spec-value($hm, 'through').defined {
+        my $through-name = $stub.assoc-spec-value($hm, 'through').key.Str;
         my ($mid-class, $mid-table) = self.add-assoc-join($kind, $through-name, $base-class, $base-table);
         my $singular = Utils.singular($name);
         my $mid-stub = $mid-class.new(:id(0));
         if $mid-stub.belongs-tos{$singular}:exists {
-          my $other-class = $mid-stub.belongs-tos{$singular}{'class'};
+          my $other-class = $mid-stub.assoc-class-from-spec($mid-stub.belongs-tos{$singular});
           my $other-table = Utils.table-name($other-class);
           my $fkey = $singular ~ '_id';
           self.joins-values.push: "$kind $other-table ON $other-table.id = $mid-table.$fkey";
@@ -78,8 +78,8 @@ role QueryJoins is export {
         }
         die "joins: cannot resolve has_many :through '$name' on " ~ $base-class.^name;
       }
-      if $hm{'class'}:exists {
-        my $other-class = $hm{'class'};
+      my $other-class = $stub.assoc-class-from-spec($hm);
+      if $other-class !=== Mu {
         my $other-table = Utils.table-name($other-class);
         my $fkey = Utils.to-foreign-key($base-table);
         self.joins-values.push: "$kind $other-table ON $other-table.$fkey = $base-table.id";

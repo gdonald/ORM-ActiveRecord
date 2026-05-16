@@ -472,6 +472,41 @@ Output
 1
 ```
 
+## Class Name Override
+
+Every association kind accepts a `class-name:` option in addition to `class:`. Pass the class name as a string and the lookup is deferred until access time, when the name is resolved through the `GLOBAL::` package stash. This is useful when the association name does not match the target class, when the target class is defined later in load order, or when the class identifier is only available as a string.
+
+Both the single-pair form and the hash form work the same way:
+
+```perl6
+class User is Model {
+  submethod BUILD {
+    self.has-many:   pages   => class-name => 'Page';        # Pair form
+    self.has-one:    profile => %(class-name => 'Profile');  # Hash form
+  }
+}
+
+class Page is Model {
+  submethod BUILD {
+    self.belongs-to: user => class-name => 'User';
+  }
+}
+```
+
+`class-name:` works on every association kind: `belongs-to`, `has-many` (including `:through`), `has-one` (including `:through`), and `has-and-belongs-to-many`. It can be mixed with other options in the hash form:
+
+```perl6
+self.has-many: magazines => %(through => :subscriptions, class-name => 'Magazine');
+```
+
+Nested module names are supported by separating with `::`:
+
+```perl6
+self.belongs-to: owner => class-name => 'App::Models::User';
+```
+
+If the name cannot be resolved at access time, `class-name:` raises an error naming the offending string.
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.

@@ -169,6 +169,7 @@ class Model
       for %!has-manys{$name}.keys -> $key {
         given $key {
           when 'class' { $class = %!has-manys{$name}{'class'} }
+          when 'class-name' { $class = self.resolve-class-name(~%!has-manys{$name}{'class-name'}) }
           when 'through' {
             $join-table = %!has-manys{$name}{'through'}.key;
             $class = self.get-through-class($name, $join-table);
@@ -202,6 +203,7 @@ class Model
       for %!has-ones{$name}.keys -> $key {
         given $key {
           when 'class' { $class = %!has-ones{$name}{'class'} }
+          when 'class-name' { $class = self.resolve-class-name(~%!has-ones{$name}{'class-name'}) }
           when 'through' {
             my $through-key = %!has-ones{$name}{'through'}.key;
             $join-table = $through-key ~ 's';
@@ -220,7 +222,7 @@ class Model
     }
 
     if any(%!habtms.keys) eq $name {
-      my $class = %!habtms{$name}{'class'};
+      my $class = self.assoc-class-from-spec(%!habtms{$name});
       my $join-table = self.habtm-join-table($name);
       my $owner-key = Utils.base-name(self.fkey-name);
       my @fields = self.get-fields($name);
@@ -240,7 +242,7 @@ class Model
         my @fields = self.get-fields($table);
         return $!db.get-object(:$class, :@fields, :$table, where => :$id);
       }
-      my $class = %!belongs-tos{$name}{'class'};
+      my $class = self.assoc-class-from-spec(%!belongs-tos{$name});
       my Str $table = Utils.table-name($class);
       my Int $id = %!attrs{$name ~ '_id'};
       my @fields = self.get-fields($table);
@@ -253,15 +255,54 @@ class Model
   }
 
   method get-through-class(Str:D $name, Str:D $join-table) {
-    my $class = %!has-manys{$join-table}{'class'};
+    my $class = self.assoc-class-from-spec(%!has-manys{$join-table});
     my $singular = Utils.singular($name);
-
-    $class.new(:id(0)).belongs-tos{$singular}{'class'};
+    my $instance = $class.new(:id(0));
+    $instance.assoc-class-from-spec($instance.belongs-tos{$singular});
   }
 
   method get-through-class-has-one(Str:D $name, Str:D $through-key) {
-    my $class = %!has-ones{$through-key}{'class'};
-    $class.new(:id(0)).belongs-tos{$name}{'class'};
+    my $class = self.assoc-class-from-spec(%!has-ones{$through-key});
+    my $instance = $class.new(:id(0));
+    $instance.assoc-class-from-spec($instance.belongs-tos{$name});
+  }
+
+  method assoc-spec-has(\spec, Str:D $key --> Bool) {
+    given spec {
+      when Pair       { return spec.key eq $key }
+      when Hash | Map { return so spec{$key}:exists }
+    }
+    False;
+  }
+
+  method assoc-spec-value(\spec, Str:D $key) {
+    given spec {
+      when Pair       { return spec.value if spec.key eq $key }
+      when Hash | Map { return spec{$key}  if spec{$key}:exists }
+    }
+    Nil;
+  }
+
+  method assoc-class-from-spec(\spec) {
+    return self.assoc-spec-value(spec, 'class') if self.assoc-spec-has(spec, 'class');
+    if self.assoc-spec-has(spec, 'class-name') {
+      return self.resolve-class-name(~self.assoc-spec-value(spec, 'class-name'));
+    }
+    Mu;
+  }
+
+  method resolve-class-name(Str:D $name) {
+    my @parts = $name.split('::');
+    my $obj = GLOBAL::{@parts.shift};
+    die "Cannot resolve class-name '$name': not found in GLOBAL::"
+      if $obj === Any || $obj ~~ Failure;
+    for @parts -> $part {
+      my $next = $obj.WHO{$part};
+      die "Cannot resolve class-name '$name': not found in GLOBAL::"
+        if $next === Any || $next ~~ Failure;
+      $obj = $next;
+    }
+    $obj;
   }
 
   method table-name {
@@ -477,9 +518,12 @@ class Model
         $.attrs{$key ~ '_type'} = Utils.base-name($record.WHAT.^name);
         $.attrs{$key}:delete;
       }
-      elsif $.attrs{$key}.^name eq $.belongs-tos{$key}.value.^name {
-        $.attrs{$key ~ '_id'} = $.attrs{$key}.id;
-        $.attrs{$key}:delete;
+      else {
+        my $assoc-class = self.assoc-class-from-spec($.belongs-tos{$key});
+        if $assoc-class !=== Mu && $.attrs{$key} ~~ $assoc-class {
+          $.attrs{$key ~ '_id'} = $.attrs{$key}.id;
+          $.attrs{$key}:delete;
+        }
       }
     }
   }
