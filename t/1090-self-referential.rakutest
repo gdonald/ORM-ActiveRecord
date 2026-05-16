@@ -1,0 +1,57 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Employee is Model {
+  submethod BUILD {
+    self.belongs-to: manager => class => Employee;
+    self.has-many: subordinates => %(class => Employee, foreign-key => 'manager_id');
+  }
+}
+
+plan 15;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $ceo = Employee.create({name => 'Alice'});
+ok $ceo.id, 'ceo saved without a manager';
+is $ceo.attrs<manager_id>, 0, 'top-level employee has manager_id = 0';
+
+my $vp1 = Employee.create({name => 'Bob',     manager => $ceo});
+my $vp2 = Employee.create({name => 'Carol',   manager => $ceo});
+ok $vp1.id && $vp2.id, 'vp rows saved with manager';
+
+is $vp1.attrs<manager_id>, $ceo.id, 'belongs-to fills manager_id on save';
+is $vp2.attrs<manager_id>, $ceo.id, 'belongs-to fills manager_id on save';
+
+# Read back the belongs-to side
+my $fetched = Employee.find($vp1.id);
+ok $fetched.manager.defined, 'self-referential belongs-to resolves to an instance';
+ok $fetched.manager.WHAT === Employee, 'self-referential belongs-to resolves to Employee';
+is $fetched.manager.id, $ceo.id, 'self-referential belongs-to returns the right row';
+is $fetched.manager.attrs<name>, 'Alice', 'self-referential belongs-to attributes round-trip';
+
+# Top-level employee has no manager
+is $ceo.manager, Nil, 'belongs-to is Nil when manager_id is 0';
+
+# Read back the has-many side
+my @subs = $ceo.subordinates;
+is @subs.elems, 2, 'has-many :subordinates returns both reports';
+is @subs.map(*.attrs<name>).sort.join(','), 'Bob,Carol',
+  'has-many :subordinates returns the right rows';
+
+# Subordinates of a leaf employee is empty
+is $vp1.subordinates.elems, 0, 'leaf employee has no subordinates';
+
+# Reassign a subordinate to a different manager and watch both sides update
+my $mgr = Employee.create({name => 'Dave', manager => $ceo});
+$vp1.update({manager => $mgr});
+
+is Employee.find($ceo.id).subordinates.elems, 2,
+  'ceo retains the right subordinate count after reassignment';
+is Employee.find($mgr.id).subordinates.elems, 1,
+  'new manager gains the reassigned subordinate';
+
+Employee.destroy-all;

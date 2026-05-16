@@ -161,10 +161,10 @@ class Model
     return-rw %!attrs«$name» if %!attrs«$name»:exists;
 
     if any(%!has-manys.keys) eq $name {
-      my @fields = self.get-fields($name);
       my $class = Mu:U;
       my $join-table = '';
       my $as-name = '';
+      my $fkey-override = '';
 
       for %!has-manys{$name}.keys -> $key {
         given $key {
@@ -174,18 +174,22 @@ class Model
             $class = self.get-through-class($name, $join-table);
           }
           when 'as' { $as-name = ~%!has-manys{$name}{'as'} }
+          when 'foreign-key' { $fkey-override = ~%!has-manys{$name}{'foreign-key'} }
           default { say 'Unknown has-many type ' ~ %!has-manys{$name}; die }
         }
       }
 
+      my Str $target-table = Utils.table-name($class);
+      my @fields = self.get-fields($target-table);
+
       if $as-name {
         my $type-name = Utils.base-name(self.WHAT.^name);
         my %where = ($as-name ~ '_id') => $!id, ($as-name ~ '_type') => $type-name;
-        return $!db.get-objects(:$class, :@fields, :table($name), :%where);
+        return $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
       }
 
-      my $fkey-name = Utils.base-name(self.fkey-name);
-      return $!db.get-objects(:$class, :@fields, :table($name), :$join-table, :where($fkey-name => $!id));
+      my $fkey-name = $fkey-override || Utils.base-name(self.fkey-name);
+      return $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $!id));
     }
 
     if any(%!has-ones.keys) eq $name {
@@ -236,10 +240,11 @@ class Model
         my @fields = self.get-fields($table);
         return $!db.get-object(:$class, :@fields, :$table, where => :$id);
       }
-      my Str $table = $name ~ 's';
+      my $class = %!belongs-tos{$name}{'class'};
+      my Str $table = Utils.table-name($class);
       my Int $id = %!attrs{$name ~ '_id'};
       my @fields = self.get-fields($table);
-      return $!db.get-object(class => %!belongs-tos{$name}{'class'}, :@fields, :$table, where => :$id);
+      return $!db.get-object(:$class, :@fields, :$table, where => :$id);
     }
 
     return if $name ~~ /_confirmation/;

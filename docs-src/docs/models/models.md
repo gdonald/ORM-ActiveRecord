@@ -411,6 +411,67 @@ Output
 
 Reading `$owner.pictures` filters on both `imageable_id = $owner.id` and `imageable_type = '<OwnerClass>'`, so collections never leak across owner types. Reassigning a picture (`$pic.update({imageable => $post})`) moves it from one owner's collection to the other on the next read.
 
+## Self-Referential Associations
+
+A model can declare associations that point at its own class. The classic shape is an employee who reports to another employee, and who in turn has zero or more direct reports.
+
+The migration only needs a nullable foreign-key column. There is no `:reference` shorthand because that always builds a FK constraint against `<name>s`, which would aim at the wrong table for a self-join; declare the column as an integer instead.
+
+```perl6
+class CreateEmployees is Migration {
+  method up {
+    self.create-table: 'employees', [
+      name => { :string, limit => 64 },
+      manager_id => { :integer },
+    ]
+  }
+
+  method down {
+    self.drop-table: 'employees';
+  }
+}
+```
+
+Both sides live on the same model. The `belongs-to` resolves the parent row; the `has-many` needs `foreign-key:` because the column does not follow the owner-class naming convention (`employee_id`).
+
+```perl6
+class Employee is Model {
+  submethod BUILD {
+    self.belongs-to: manager => class => Employee;
+    self.has-many: subordinates => %(class => Employee, foreign-key => 'manager_id');
+  }
+}
+
+my $ceo  = Employee.create({name => 'Alice'});
+my $vp1  = Employee.create({name => 'Bob',   manager => $ceo});
+my $vp2  = Employee.create({name => 'Carol', manager => $ceo});
+
+say $vp1.manager.attrs<name>;
+say $ceo.subordinates.map(*.attrs<name>).sort.join(', ');
+```
+
+Output
+
+```shell
+Alice
+Bob, Carol
+```
+
+The top-level row has no manager: `$ceo.manager` returns `Nil`, and `$ceo.attrs<manager_id>` is `0`. Reassigning a subordinate is the usual `update`:
+
+```perl6
+$vp1.update({manager => $vp2});
+say $ceo.subordinates.elems;
+say $vp2.subordinates.elems;
+```
+
+Output
+
+```shell
+1
+1
+```
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.
