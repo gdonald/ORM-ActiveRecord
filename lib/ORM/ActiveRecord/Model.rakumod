@@ -161,10 +161,10 @@ class Model
     return-rw %!attrs«$name» if %!attrs«$name»:exists;
 
     if any(%!has-manys.keys) eq $name {
-      my $fkey-name = Utils.base-name(self.fkey-name);
       my @fields = self.get-fields($name);
       my $class = Mu:U;
       my $join-table = '';
+      my $as-name = '';
 
       for %!has-manys{$name}.keys -> $key {
         given $key {
@@ -173,10 +173,18 @@ class Model
             $join-table = %!has-manys{$name}{'through'}.key;
             $class = self.get-through-class($name, $join-table);
           }
+          when 'as' { $as-name = ~%!has-manys{$name}{'as'} }
           default { say 'Unknown has-many type ' ~ %!has-manys{$name}; die }
         }
       }
 
+      if $as-name {
+        my $type-name = Utils.base-name(self.WHAT.^name);
+        my %where = ($as-name ~ '_id') => $!id, ($as-name ~ '_type') => $type-name;
+        return $!db.get-objects(:$class, :@fields, :table($name), :%where);
+      }
+
+      my $fkey-name = Utils.base-name(self.fkey-name);
       return $!db.get-objects(:$class, :@fields, :table($name), :$join-table, :where($fkey-name => $!id));
     }
 

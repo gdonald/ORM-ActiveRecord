@@ -1,0 +1,74 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Picture {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: pictures => %(class => Picture, as => 'imageable');
+  }
+}
+
+class Post is Model {
+  submethod BUILD {
+    self.has-many: pictures => %(class => Picture, as => 'imageable');
+  }
+}
+
+class Picture is Model {
+  submethod BUILD {
+    self.belongs-to: imageable => :polymorphic;
+  }
+}
+
+plan 15;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
+ok $user.id, 'user saved';
+
+my $post = Post.create({title => 'Hello'});
+ok $post.id, 'post saved';
+
+# Empty collections before any pictures exist
+is $user.pictures.elems, 0, 'user has no pictures initially';
+is $post.pictures.elems, 0, 'post has no pictures initially';
+
+my $u-pic-a = Picture.create({name => 'avatar.png',   imageable => $user});
+my $u-pic-b = Picture.create({name => 'banner.jpg',   imageable => $user});
+my $p-pic-a = Picture.create({name => 'hero.png',     imageable => $post});
+
+ok $u-pic-a.id && $u-pic-b.id && $p-pic-a.id, 'pictures saved for both owners';
+
+# has-many :as returns only the rows whose imageable_type matches the owner
+my @u-pics = $user.pictures;
+is @u-pics.elems, 2, 'user has exactly 2 pictures via :as scope';
+is @u-pics.map(*.attrs<name>).sort.join(','), 'avatar.png,banner.jpg',
+  'user pictures returned by has-many :as';
+
+my @p-pics = $post.pictures;
+is @p-pics.elems, 1, 'post has exactly 1 picture via :as scope';
+is @p-pics[0].attrs<name>, 'hero.png', 'post picture returned by has-many :as';
+
+# imageable_type must match — pictures attached to one owner do not leak to the other
+ok @u-pics.grep({ .attrs<imageable_type> eq 'User' }).elems == 2,
+  'user pictures all carry imageable_type "User"';
+ok @p-pics.grep({ .attrs<imageable_type> eq 'Post' }).elems == 1,
+  'post pictures all carry imageable_type "Post"';
+
+# Round-trip the polymorphic association back to its parent
+ok $u-pic-a.imageable.WHAT === User, 'picture imageable resolves to User';
+ok $p-pic-a.imageable.WHAT === Post, 'picture imageable resolves to Post';
+
+# Reassign a picture's polymorphic parent and watch both sides update
+$u-pic-b.update({imageable => $post});
+is User.find($user.id).pictures.elems, 1, 'user picture count drops after reassignment';
+is Post.find($post.id).pictures.elems, 2, 'post picture count rises after reassignment';
+
+Picture.destroy-all;
+Post.destroy-all;
+User.destroy-all;

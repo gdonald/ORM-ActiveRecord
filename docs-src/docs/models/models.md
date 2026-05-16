@@ -347,6 +347,70 @@ The class name is resolved at runtime via the global symbol table, so any class 
 self.belongs-to: attachable => { :polymorphic, classes => (User, Post) };
 ```
 
+## Polymorphic Has Many
+
+A model on the inverse side of a polymorphic `belongs-to` declares the collection with `has-many` and `as => '<name>'`. The `<name>` is the same polymorphic name used on the `belongs-to` side. Several owner classes can each declare `has-many :pictures, as => 'imageable'` against the same `pictures` table; each owner's collection is scoped to rows whose `imageable_type` matches that owner's class.
+
+The migration is unchanged from a regular polymorphic reference:
+
+```perl6
+class CreatePictures is Migration {
+  method up {
+    self.create-table: 'pictures', [
+      name => { :string, limit => 80 },
+      imageable => { :reference, :polymorphic },
+    ]
+  }
+
+  method down {
+    self.drop-table: 'pictures';
+  }
+}
+```
+
+Each owner declares `has-many ... as => '<name>'`. The target model declares the polymorphic `belongs-to` exactly once:
+
+```perl6
+class Picture {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: pictures => %(class => Picture, as => 'imageable');
+  }
+}
+
+class Post is Model {
+  submethod BUILD {
+    self.has-many: pictures => %(class => Picture, as => 'imageable');
+  }
+}
+
+class Picture is Model {
+  submethod BUILD {
+    self.belongs-to: imageable => :polymorphic;
+  }
+}
+
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
+my $post = Post.create({title => 'Hello'});
+
+Picture.create({name => 'avatar.png', imageable => $user});
+Picture.create({name => 'banner.jpg', imageable => $user});
+Picture.create({name => 'hero.png',   imageable => $post});
+
+say $user.pictures.elems;
+say $post.pictures.elems;
+```
+
+Output
+
+```shell
+2
+1
+```
+
+Reading `$owner.pictures` filters on both `imageable_id = $owner.id` and `imageable_type = '<OwnerClass>'`, so collections never leak across owner types. Reassigning a picture (`$pic.update({imageable => $post})`) moves it from one owner's collection to the other on the next read.
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.
