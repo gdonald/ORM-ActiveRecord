@@ -1,0 +1,70 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {
+  submethod BUILD {
+    self.validate: 'fname', { :presence }
+    self.validate: 'lname', { :presence }
+  }
+}
+
+class Post is Model {
+  submethod BUILD {
+    self.validate: 'title', { :presence }
+  }
+}
+
+class Attachment is Model {
+  submethod BUILD {
+    self.belongs-to: attachable => :polymorphic;
+    self.validate: 'name', { :presence }
+  }
+}
+
+plan 17;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
+ok $user.id, 'user saved';
+
+my $post = Post.create({title => 'Hello'});
+ok $post.id, 'post saved';
+
+my $a1 = Attachment.create({name => 'avatar.png', attachable => $user});
+ok $a1.id, 'attachment with user saved';
+is $a1.attrs<attachable_id>,   $user.id, 'attachable_id is set to user id';
+is $a1.attrs<attachable_type>, 'User',   'attachable_type is set to "User"';
+
+my $a2 = Attachment.create({name => 'banner.jpg', attachable => $post});
+ok $a2.id, 'attachment with post saved';
+is $a2.attrs<attachable_id>,   $post.id, 'attachable_id is set to post id';
+is $a2.attrs<attachable_type>, 'Post',   'attachable_type is set to "Post"';
+
+# Read back: resolves correct class
+my $fetched-a1 = Attachment.find($a1.id);
+ok $fetched-a1.attachable.WHAT === User, 'fetched attachable resolves to User';
+ok $fetched-a1.attachable.id == $user.id, 'fetched attachable has the right id';
+
+my $fetched-a2 = Attachment.find($a2.id);
+ok $fetched-a2.attachable.WHAT === Post, 'fetched attachable resolves to Post';
+ok $fetched-a2.attachable.id == $post.id, 'fetched attachable has the right id';
+
+# Switch the polymorphic target via update
+$a1.update({attachable => $post});
+my $reloaded = Attachment.find($a1.id);
+ok $reloaded.attachable.WHAT === Post,    'updated attachable resolves to Post';
+is $reloaded.attrs<attachable_type>, 'Post', 'attachable_type was updated on update()';
+
+# Unset polymorphic association reads as Nil without crashing
+my $bare = Attachment.create({name => 'unattached.txt'});
+ok $bare.id, 'attachment with no polymorphic target saved';
+ok !$bare.attachable.defined, 'unset polymorphic returns Nil';
+is $bare.attrs<attachable_id>, 0, 'unset polymorphic _id stays 0';
+
+Attachment.destroy-all;
+Post.destroy-all;
+User.destroy-all;

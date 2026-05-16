@@ -319,7 +319,9 @@ class MySqlAdapter is SqlAdapter is export {
       method ddl-add-column(Str:D $table, Pair:D $param) {
         my @fk-clauses;
         my $fields = self!build-fields([$param], :@fk-clauses);
-        self.exec("ALTER TABLE $table ADD COLUMN $fields");
+        for $fields.split(', ') -> $col {
+          self.exec("ALTER TABLE $table ADD COLUMN $col");
+        }
       }
 
       method ddl-add-timestamps(Str:D $table) {
@@ -336,6 +338,15 @@ class MySqlAdapter is SqlAdapter is export {
           for @params {
             my $name = $_.keys.first;
             my $field_name = $name ~~ Pair ?? $name.keys.first !! $name;
+
+            my Bool $is-reference   = $_{$name}<reference>:exists;
+            my Bool $is-polymorphic = ($_{$name}<polymorphic>:exists) && $_{$name}<polymorphic>.so;
+
+            if $is-reference && $is-polymorphic {
+              @fields.push($field_name ~ '_id INT');
+              @fields.push($field_name ~ '_type VARCHAR(255)');
+              next;
+            }
 
             my $type    = '';
             my $limit   = '';

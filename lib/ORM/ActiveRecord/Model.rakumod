@@ -133,6 +133,7 @@ class Model
 
     if $name ~~ /_id$/ && %!attrs«$name» == 0 {
       my $base-name = $name.subst(/_id$/, '');
+      return 0 if self.is-polymorphic-assoc($base-name);
       return self."$base-name"().id;
     }
 
@@ -215,6 +216,18 @@ class Model
     }
 
     if any(%!belongs-tos.keys) eq $name {
+      if self.is-polymorphic-assoc($name) {
+        my $type-attr = $name ~ '_type';
+        my $type-name = %!attrs{$type-attr};
+        return Nil unless $type-name;
+        my $class = self.resolve-polymorphic-class($name, $type-name);
+        return Nil if $class === Nil;
+        my Str $table = Utils.table-name($class);
+        my Int $id = %!attrs{$name ~ '_id'};
+        return Nil unless $id;
+        my @fields = self.get-fields($table);
+        return $!db.get-object(:$class, :@fields, :$table, where => :$id);
+      }
       my Str $table = $name ~ 's';
       my Int $id = %!attrs{$name ~ '_id'};
       my @fields = self.get-fields($table);
@@ -248,6 +261,40 @@ class Model
 
   method belongs-to(*%rest) {
     %!belongs-tos.push: %rest.keys.first => %rest.values.first;
+  }
+
+  method is-polymorphic-assoc(Str:D $name --> Bool) {
+    return False unless %!belongs-tos{$name}:exists;
+    my $spec = %!belongs-tos{$name};
+    given $spec {
+      when Pair { return $spec.key eq 'polymorphic' && $spec.value.so }
+      when Hash | Map { return ($spec<polymorphic>:exists) && $spec<polymorphic>.so }
+      default { return False }
+    }
+  }
+
+  method polymorphic-classes(Str:D $name) {
+    my $spec = %!belongs-tos{$name};
+    given $spec {
+      when Hash | Map {
+        return @($spec<classes>) if $spec<classes>:exists;
+      }
+    }
+    ();
+  }
+
+  method resolve-polymorphic-class(Str:D $name, Str:D $type-name) {
+    my @candidates = self.polymorphic-classes($name);
+    if @candidates.elems {
+      for @candidates -> $c {
+        return $c if Utils.base-name($c.^name) eq $type-name;
+      }
+      return Nil;
+    }
+    my $klass = GLOBAL::{$type-name};
+    return Nil if $klass === Any;
+    return Nil if $klass ~~ Failure;
+    $klass;
   }
 
   method has-many(*%rest) {
@@ -410,7 +457,14 @@ class Model
   method update-foreign-keys {
     for $.belongs-tos.keys -> $key {
       next unless $.attrs{$key};
-      if $.attrs{$key}.^name eq $.belongs-tos{$key}.value.^name {
+      if self.is-polymorphic-assoc($key) {
+        my $record = $.attrs{$key};
+        next unless $record ~~ Model;
+        $.attrs{$key ~ '_id'}   = $record.id;
+        $.attrs{$key ~ '_type'} = Utils.base-name($record.WHAT.^name);
+        $.attrs{$key}:delete;
+      }
+      elsif $.attrs{$key}.^name eq $.belongs-tos{$key}.value.^name {
         $.attrs{$key ~ '_id'} = $.attrs{$key}.id;
         $.attrs{$key}:delete;
       }

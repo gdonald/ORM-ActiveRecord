@@ -287,6 +287,66 @@ raku
 0
 ```
 
+## Polymorphic Belongs To
+
+A `belongs-to` association can target rows from more than one table by declaring it polymorphic. The owning table stores two columns: `<name>_id` for the foreign key and `<name>_type` for the class name of the related row.
+
+The migration sets up both columns at once via `:reference, :polymorphic`:
+
+```perl6
+class CreateAttachments is Migration {
+  method up {
+    self.create-table: 'attachments', [
+      name => { :string, limit => 80 },
+      attachable => { :reference, :polymorphic },
+    ]
+  }
+
+  method down {
+    self.drop-table: 'attachments';
+  }
+}
+```
+
+That creates `attachments.attachable_id` (integer) and `attachments.attachable_type` (string). No foreign-key constraint is emitted because the referenced table varies per row.
+
+Declare the polymorphic side on the model with `:polymorphic` instead of `class => SomeClass`. The other models do not need any extra declaration to be linkable:
+
+```perl6
+class User is Model { }
+class Post is Model { }
+
+class Attachment is Model {
+  submethod BUILD {
+    self.belongs-to: attachable => :polymorphic;
+  }
+}
+
+my $user = User.create({fname => 'Greg', lname => 'Donald'});
+my $post = Post.create({title => 'Hello'});
+
+my $avatar = Attachment.create({name => 'avatar.png', attachable => $user});
+my $banner = Attachment.create({name => 'banner.jpg', attachable => $post});
+
+say $avatar.attachable.WHAT.^name;   # User
+say $banner.attachable.WHAT.^name;   # Post
+```
+
+Output
+
+```shell
+User
+Post
+```
+
+Assigning a record fills in both `<name>_id` and `<name>_type` automatically; reading `$record.<name>` looks the type column up at runtime and returns an instance of the appropriate class. Reading an unset polymorphic association returns `Nil`.
+
+The class name is resolved at runtime via the global symbol table, so any class accessible by short name works. If a model is loaded into a deeper package, list the candidates explicitly:
+
+```perl6
+self.belongs-to: attachable => { :polymorphic, classes => (User, Post) };
+```
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.

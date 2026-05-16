@@ -258,7 +258,9 @@ class SqliteAdapter is SqlAdapter is export {
     my @fk-clauses;
     my $fields = self!build-fields([$param], :@fk-clauses);
     # SQLite ALTER TABLE can't add FK constraints — use create-table for enforced FKs.
-    self.exec("ALTER TABLE $table ADD COLUMN $fields");
+    for $fields.split(', ') -> $col {
+      self.exec("ALTER TABLE $table ADD COLUMN $col");
+    }
   }
 
   method ddl-add-timestamps(Str:D $table) {
@@ -277,6 +279,15 @@ class SqliteAdapter is SqlAdapter is export {
     for @params {
       my $name = $_.keys.first;
       my $field_name = $name ~~ Pair ?? $name.keys.first !! $name;
+
+      my Bool $is-reference   = $_{$name}<reference>:exists;
+      my Bool $is-polymorphic = ($_{$name}<polymorphic>:exists) && $_{$name}<polymorphic>.so;
+
+      if $is-reference && $is-polymorphic {
+        @fields.push($field_name ~ '_id INTEGER');
+        @fields.push($field_name ~ '_type TEXT');
+        next;
+      }
 
       my $type = '';
       my $default = '';
