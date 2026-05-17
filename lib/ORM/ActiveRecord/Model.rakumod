@@ -179,6 +179,7 @@ class Model
           when 'as' { $as-name = ~$spec{'as'} }
           when 'foreign-key' { $fkey-override = ~$spec{'foreign-key'} }
           when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
+          when 'inverse-of' { }
           default { say 'Unknown has-many type ' ~ $spec; die }
         }
       }
@@ -190,11 +191,15 @@ class Model
       if $as-name {
         my $type-name = Utils.base-name(self.WHAT.^name);
         my %where = ($as-name ~ '_id') => $pkey-val, ($as-name ~ '_type') => $type-name;
-        return $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
+        my @records = $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
+        self.attach-inverse(@records, $spec, $class);
+        return @records;
       }
 
       my $fkey-name = $fkey-override || Utils.base-name(self.fkey-name);
-      return $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $pkey-val));
+      my @records = $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $pkey-val));
+      self.attach-inverse(@records, $spec, $class);
+      return @records;
     }
 
     if any(%!has-ones.keys) eq $name {
@@ -216,6 +221,7 @@ class Model
           }
           when 'foreign-key' { $fkey-name = ~$spec{'foreign-key'} }
           when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
+          when 'inverse-of' { }
           default { say 'Unknown has-one type ' ~ $spec; die }
         }
       }
@@ -225,10 +231,16 @@ class Model
 
       if $join-table {
         my @objects = $!db.get-objects(:$class, :@fields, :$table, :$join-table, where => ($fkey-name => $pkey-val).Hash, limit => 1);
-        return @objects.elems ?? @objects.first !! Nil;
+        return Nil unless @objects.elems;
+        my $only = @objects.first;
+        self.attach-inverse-single($only, $spec, $class);
+        return $only;
       }
 
-      return $!db.get-object(:$class, :@fields, :$table, where => ($fkey-name => $pkey-val).Hash);
+      my $obj = $!db.get-object(:$class, :@fields, :$table, where => ($fkey-name => $pkey-val).Hash);
+      return Nil unless $obj.defined;
+      self.attach-inverse-single($obj, $spec, $class);
+      return $obj;
     }
 
     if any(%!habtms.keys) eq $name {
@@ -314,6 +326,61 @@ class Model
   method assoc-pkey-from-spec(\spec, Str:D $default = 'id' --> Str) {
     return ~self.assoc-spec-value(spec, 'primary-key') if self.assoc-spec-has(spec, 'primary-key');
     $default;
+  }
+
+  method assoc-inverse-name(\spec --> Str) {
+    return '' unless self.assoc-spec-has(spec, 'inverse-of');
+    my $v = self.assoc-spec-value(spec, 'inverse-of');
+    given $v {
+      when Pair { return ~$v.key }
+      default   { return ~$v }
+    }
+  }
+
+  method assoc-auto-inverse-disabled(\spec --> Bool) {
+    for <foreign-key primary-key through as polymorphic> -> $opt {
+      return True if self.assoc-spec-has(spec, $opt);
+    }
+    False;
+  }
+
+  method auto-detect-inverse(Mu $target-class --> Str) {
+    return '' if $target-class === Mu;
+    my $owner = self.WHAT;
+    my $instance;
+    try { $instance = $target-class.new(:id(0)) };
+    return '' unless $instance.defined;
+    my @hits;
+    for $instance.belongs-tos.kv -> $bname, $bspec {
+      next if $instance.assoc-auto-inverse-disabled($bspec);
+      my $klass = $instance.assoc-class-from-spec($bspec);
+      @hits.push($bname) if $klass === $owner;
+    }
+    return @hits[0] if @hits.elems == 1;
+    '';
+  }
+
+  method resolve-inverse-name(\spec, Mu $target-class --> Str) {
+    my $explicit = self.assoc-inverse-name(spec);
+    return $explicit if $explicit;
+    return '' if self.assoc-auto-inverse-disabled(spec);
+    self.auto-detect-inverse($target-class);
+  }
+
+  method attach-inverse(@records, \spec, Mu $target-class) {
+    return unless @records.elems;
+    my $inverse = self.resolve-inverse-name(spec, $target-class);
+    return unless $inverse;
+    for @records -> $r {
+      $r.attrs{$inverse} = self;
+    }
+  }
+
+  method attach-inverse-single(Mu $record, \spec, Mu $target-class) {
+    return unless $record.defined;
+    my $inverse = self.resolve-inverse-name(spec, $target-class);
+    return unless $inverse;
+    $record.attrs{$inverse} = self;
   }
 
   method resolve-class-name(Str:D $name) {

@@ -600,6 +600,69 @@ say $usa.towns.map(*.attrs<name>);     # (Austin)
 
 On the `belongs-to` side, `primary-key:` names the column on the target table; on the `has-many` / `has-one` side, it names the column on the owning model whose value is matched against the foreign key.
 
+## Inverse Of
+
+When a `has-many` or `has-one` knows the name of the matching `belongs-to` on the other side, each child returned by the collection gets a back-pointer to the same in-memory parent. Iterating `parent.children` then `child.parent` returns the same object instance — no second query, no second copy.
+
+```perl6
+class Page {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: pages => class => Page;
+  }
+}
+
+class Page is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+my $u = User.find($id);
+my @pages = $u.pages;
+
+@pages.first.user.WHERE == $u.WHERE;     # True — same instance
+```
+
+### Automatic inverse detection
+
+Auto-detection runs when the association is declared with only `class:` and/or `class-name:`. It searches the target model's `belongs-to` declarations and uses one whose class matches the owning model — if and only if exactly one match exists.
+
+Auto-detection is **skipped** when any of these options appear on the owning side: `foreign-key`, `primary-key`, `through`, `as`, `polymorphic`. In those cases the heuristic isn't reliable, and an explicit `inverse-of:` is required to wire the back-pointer.
+
+### Explicit `inverse-of:`
+
+Pass `inverse-of:` in the hash form to name the inverse association by hand. This is required whenever overrides disable auto-detection, and useful when the back-pointer name does not match Rails-like convention.
+
+```perl6
+class Article {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: articles => %(
+      class       => Article,
+      foreign-key => 'author_id',
+      inverse-of  => :scribe,
+    );
+  }
+}
+
+class Article is Model {
+  submethod BUILD {
+    self.belongs-to: scribe => %(
+      class       => User,
+      foreign-key => 'author_id',
+    );
+  }
+}
+
+my $u = User.find($id);
+$u.articles.first.scribe.WHERE == $u.WHERE;   # True
+```
+
+`inverse-of:` accepts either a `:pair` form (`inverse-of => :scribe`) or a string (`inverse-of => 'scribe'`). It applies to `has-many` and `has-one`; the back-pointer is populated on every record returned from the collection or singular accessor. If no inverse is declared and auto-detection cannot run, the back-pointer is not wired and each `child.parent` access reloads from the database.
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.

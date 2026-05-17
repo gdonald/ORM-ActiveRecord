@@ -1,0 +1,141 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Page    {...}
+class Profile {...}
+class Article {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: pages    => class => Page;
+    self.has-one:  profile  => class => Profile;
+    # Explicit inverse-of with overrides; without it the FK override would
+    # disable auto-detection and the back-pointer would not be wired.
+    self.has-many: articles => %(
+      class       => Article,
+      foreign-key => 'author_id',
+      inverse-of  => :scribe,
+    );
+  }
+}
+
+class Page is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+class Profile is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+class Article is Model {
+  submethod BUILD {
+    self.belongs-to: scribe => %(
+      class       => User,
+      foreign-key => 'author_id',
+    );
+  }
+}
+
+# Self-referential, FK override, no inverse-of → auto-detect disabled
+class Employee is Model {
+  submethod BUILD {
+    self.belongs-to: manager => class => Employee;
+    self.has-many: subordinates => %(class => Employee, foreign-key => 'manager_id');
+  }
+}
+
+plan 17;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Page.destroy-all;
+Profile.destroy-all;
+Article.destroy-all;
+Employee.destroy-all;
+User.destroy-all;
+
+# === Auto-detected has-many → belongs-to (no overrides) ===
+my $u-seed = User.create({fname => 'Alice', lname => 'A'});
+Page.create({user => $u-seed, name => 'Home'});
+Page.create({user => $u-seed, name => 'About'});
+
+my $owner  = User.find($u-seed.id);
+my @pages  = $owner.pages;
+is @pages.elems, 2, 'has-many returns both pages';
+ok @pages.first.user.WHERE == $owner.WHERE,
+  'auto-detected inverse-of populates back-pointer on the first child';
+ok @pages[1].user.WHERE == $owner.WHERE,
+  'auto-detected inverse-of populates back-pointer on every child';
+
+my @pages-again = $owner.pages;
+ok @pages-again.first.user.WHERE == $owner.WHERE,
+  'auto-detected inverse-of re-applies on re-access';
+
+# === Auto-detected has-one → belongs-to (no overrides) ===
+Profile.create({user => $u-seed, bio => 'inverse-of test'});
+my $owner2 = User.find($u-seed.id);
+my $prof   = $owner2.profile;
+ok $prof.defined, 'has-one returns a profile';
+ok $prof.user.WHERE == $owner2.WHERE,
+  'auto-detected inverse-of populates back-pointer on has-one';
+
+# === Explicit inverse-of with foreign-key override (has-many → belongs-to) ===
+my $author = User.create({fname => 'Greg', lname => 'D'});
+my $a1 = Article.new(:id(0), :record({attrs => {title => 'Hi', body => 'world', author_id => $author.id}}));
+$a1.save;
+my $a2 = Article.new(:id(0), :record({attrs => {title => 'Yo', body => 'world', author_id => $author.id}}));
+$a2.save;
+
+my $writer = User.find($author.id);
+my @articles = $writer.articles;
+is @articles.elems, 2, 'explicit inverse-of: has-many returns rows';
+ok @articles.first.scribe.WHERE == $writer.WHERE,
+  'explicit inverse-of populates the back-pointer on the first child';
+ok @articles[1].scribe.WHERE == $writer.WHERE,
+  'explicit inverse-of populates the back-pointer on every child';
+
+# Without an explicit inverse-of, the FK override would block auto-detection.
+# Sanity check the disabling logic on a fresh spec.
+my $no-inverse-spec = %(class => Article, foreign-key => 'author_id');
+ok User.new(:id(0)).assoc-auto-inverse-disabled($no-inverse-spec),
+  'foreign-key override flags auto-detection as disabled';
+is User.new(:id(0)).resolve-inverse-name($no-inverse-spec, Article), '',
+  'resolve-inverse-name returns empty without inverse-of and with overrides';
+
+# === Overrides without inverse-of: each access reloads independently ===
+my $boss = Employee.create({name => 'Big'});
+Employee.create({name => 'Min', manager => $boss});
+my $boss-loaded = Employee.find($boss.id);
+my @subs = $boss-loaded.subordinates;
+is @subs.elems, 1, 'no-inverse has-many still returns the row';
+ok @subs.first.manager.WHERE != $boss-loaded.WHERE,
+  'foreign-key override + no inverse-of: back-pointer is a fresh load';
+
+# === Direct method coverage ===
+my $page-spec = User.new(:id(0)).has-manys<pages>;
+is User.new(:id(0)).resolve-inverse-name($page-spec, Page), 'user',
+  'auto-detect picks the single matching belongs-to on the target';
+
+my $art-spec = User.new(:id(0)).has-manys<articles>;
+is User.new(:id(0)).resolve-inverse-name($art-spec, Article), 'scribe',
+  'explicit inverse-of wins even with overrides present';
+
+is User.new(:id(0)).assoc-inverse-name($art-spec), 'scribe',
+  'assoc-inverse-name reads :pair-form inverse-of as a string';
+
+my $str-spec = %(class => Article, inverse-of => 'scribe');
+is User.new(:id(0)).assoc-inverse-name($str-spec), 'scribe',
+  'assoc-inverse-name accepts a plain string for inverse-of';
+
+Article.destroy-all;
+Profile.destroy-all;
+Page.destroy-all;
+Employee.destroy-all;
+User.destroy-all;
