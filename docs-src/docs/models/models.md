@@ -432,12 +432,12 @@ class CreateEmployees is Migration {
 }
 ```
 
-Both sides live on the same model. The `belongs-to` resolves the parent row; the `has-many` needs `foreign-key:` because the column does not follow the owner-class naming convention (`employee_id`).
+Both sides live on the same model. The `belongs-to` resolves the parent row; the `has-many` needs `foreign-key:` because the column does not follow the owner-class naming convention (`employee_id`). Mark the parent side `optional => True` so the root of the tree can save without a manager — `belongs-to` is required by default.
 
 ```perl6
 class Employee is Model {
   submethod BUILD {
-    self.belongs-to: manager => class => Employee;
+    self.belongs-to: manager => %(class => Employee, optional => True);
     self.has-many: subordinates => %(class => Employee, foreign-key => 'manager_id');
   }
 }
@@ -662,6 +662,50 @@ $u.articles.first.scribe.WHERE == $u.WHERE;   # True
 ```
 
 `inverse-of:` accepts either a `:pair` form (`inverse-of => :scribe`) or a string (`inverse-of => 'scribe'`). It applies to `has-many` and `has-one`; the back-pointer is populated on every record returned from the collection or singular accessor. If no inverse is declared and auto-detection cannot run, the back-pointer is not wired and each `child.parent` access reloads from the database.
+
+## Optional and Required Belongs-To
+
+By default every `belongs-to` is **required**: validation fails unless the record has either an in-memory parent instance or a non-zero foreign-key value. This matches the Rails 5+ default and turns a missing parent into a clear validation error rather than a `NOT NULL` constraint violation at insert time.
+
+```perl6
+class Page is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+my $orphan = Page.new(:id(0), :record({attrs => {name => 'Home'}}));
+say $orphan.is-valid;                    # False
+say $orphan.errors.errors.first.message; # must exist
+$orphan.save;                            # returns False, no row inserted
+```
+
+Pass `optional => True` (or the alias `required => False`) to allow the record to save without a parent. Use this for self-referential trees (the root has no parent), polymorphic targets that are sometimes detached, or any foreign-key column that is genuinely nullable.
+
+```perl6
+class Employee is Model {
+  submethod BUILD {
+    self.belongs-to: manager => %(class => Employee, optional => True);
+  }
+}
+
+my $ceo = Employee.create({name => 'Alice'});   # saves, manager_id stays 0
+```
+
+`optional` and `required` work the same way on a polymorphic `belongs-to`:
+
+```perl6
+self.belongs-to: attachable => %(:polymorphic, :optional);
+```
+
+The check runs before the row is written. It accepts the parent in either form:
+
+- `attrs<user>` set to a `Model` instance, or
+- `attrs<user_id>` (or the `foreign-key:` override column) set to a non-zero integer.
+
+For a polymorphic `belongs-to`, both `<name>_id` and `<name>_type` must be set.
+
+`is-belongs-to-optional($name)` reports whether the named association is optional, useful when introspecting a model's relations.
 
 ## Is Dirty
 

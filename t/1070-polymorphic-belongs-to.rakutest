@@ -19,7 +19,7 @@ class Post is Model {
 
 class Attachment is Model {
   submethod BUILD {
-    self.belongs-to: attachable => :polymorphic;
+    self.belongs-to: attachable => %(:polymorphic, :optional);
     self.validate: 'name', { :presence }
   }
 }

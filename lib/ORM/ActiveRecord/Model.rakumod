@@ -4,6 +4,7 @@ use ORM::ActiveRecord::Errors::Error;
 use ORM::ActiveRecord::Errors::Errors;
 use ORM::ActiveRecord::Errors::X;
 use ORM::ActiveRecord::Schema::Field;
+use ORM::ActiveRecord::Support::Message;
 use ORM::ActiveRecord::Relation::Query;
 use ORM::ActiveRecord::Relation::Scope;
 use ORM::ActiveRecord::Relation::Scopes;
@@ -326,6 +327,18 @@ class Model
   method assoc-pkey-from-spec(\spec, Str:D $default = 'id' --> Str) {
     return ~self.assoc-spec-value(spec, 'primary-key') if self.assoc-spec-has(spec, 'primary-key');
     $default;
+  }
+
+  method is-belongs-to-optional(Str:D $name --> Bool) {
+    return False unless %!belongs-tos{$name}:exists;
+    my $spec = %!belongs-tos{$name};
+    if self.assoc-spec-has($spec, 'optional') {
+      return so self.assoc-spec-value($spec, 'optional');
+    }
+    if self.assoc-spec-has($spec, 'required') {
+      return not so self.assoc-spec-value($spec, 'required');
+    }
+    False;
   }
 
   method assoc-inverse-name(\spec --> Str) {
@@ -786,7 +799,39 @@ class Model
   method is-invalid {
     $!errors = Errors.new;
     $!validators.validate($!db, self);
+    self.validate-belongs-tos;
     $!errors.errors.elems.so;
+  }
+
+  method validate-belongs-tos {
+    for %!belongs-tos.kv -> $name, $spec {
+      next if self.is-belongs-to-optional($name);
+
+      my $present = False;
+
+      if %!attrs{$name}:exists && %!attrs{$name}.defined && %!attrs{$name} ~~ Model {
+        $present = True;
+      }
+
+      if !$present && self.is-polymorphic-assoc($name) {
+        my $id   = %!attrs{$name ~ '_id'};
+        my $type = %!attrs{$name ~ '_type'};
+        $present = True if $id && $type;
+      }
+      elsif !$present {
+        my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
+        $present = True if (%!attrs{$fkey-col} // 0) != 0;
+      }
+
+      next if $present;
+
+      my $field = self.get-field($name);
+      next unless $field;
+      my $template = 'must exist';
+      my $message = Message.build(:$template, :obj(self), :$field);
+      my $e = Error.new(:$field, :$message);
+      $!errors.push($e);
+    }
   }
 
   method validate(Str:D $name, Hash:D $params) {

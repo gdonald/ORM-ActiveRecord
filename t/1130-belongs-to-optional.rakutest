@@ -1,0 +1,136 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class User is Model {}
+
+# Default: required (Rails 5+ default)
+class Page is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+# Explicit optional: True (passports.owner_id is plain integer, no DB FK)
+class Passport is Model {
+  submethod BUILD {
+    self.belongs-to: owner => %(class => User, foreign-key => 'owner_id', optional => True);
+  }
+}
+
+# Explicit required: False (alias for optional; articles.author_id is plain integer)
+class Article is Model {
+  submethod BUILD {
+    self.belongs-to: author => %(class => User, foreign-key => 'author_id', required => False);
+  }
+}
+
+# Polymorphic, optional
+class Attachment is Model {
+  submethod BUILD {
+    self.belongs-to: attachable => %(:polymorphic, :optional);
+  }
+}
+
+# Polymorphic, required (default)
+class Picture is Model {
+  submethod BUILD {
+    self.belongs-to: imageable => :polymorphic;
+  }
+}
+
+plan 23;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Page.destroy-all;
+Passport.destroy-all;
+Article.destroy-all;
+Attachment.destroy-all;
+Picture.destroy-all;
+User.destroy-all;
+
+# === Default required: missing parent fails validation ===
+my $orphan = Page.new(:id(0), :record({attrs => {name => 'Home'}}));
+ok $orphan.is-invalid,
+  'default-required belongs-to: record without parent is invalid';
+is $orphan.errors.errors.first.field.name, 'user_id',
+  'error is recorded against the FK field';
+like $orphan.errors.errors.first.message, /'exist'/,
+  'error message indicates the parent must exist';
+
+ok !$orphan.save,
+  'default-required belongs-to: save returns False without parent';
+is $orphan.id, 0,
+  'default-required belongs-to: id remains 0 when save fails';
+
+# With parent set, validates and saves
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+my $page  = Page.create({:user($alice), name => 'About'});
+ok $page.is-valid,
+  'default-required belongs-to: valid once parent is set';
+ok $page.id > 0,
+  'default-required belongs-to: persists when parent is set';
+
+# Set FK value directly (no Model in attrs) is also valid
+my $page2 = Page.new(:id(0), :record({attrs => {name => 'Direct', user_id => $alice.id}}));
+ok $page2.is-valid,
+  'default-required belongs-to: valid when FK is set directly';
+$page2.save;
+ok $page2.id > 0,
+  'default-required belongs-to: saves with FK set directly';
+
+# === optional: True ===
+my $passport = Passport.new(:id(0), :record({attrs => {number => 'AB123'}}));
+ok $passport.is-valid,
+  'optional belongs-to: record without parent is valid';
+ok $passport.save,
+  'optional belongs-to: save succeeds without parent';
+ok $passport.id > 0,
+  'optional belongs-to: persists without parent';
+
+# === required: False (alias) ===
+my $orphan-article = Article.new(:id(0), :record({attrs => {title => 'No Author', body => '...'}}));
+ok $orphan-article.is-valid,
+  'required: False acts as optional: True';
+ok $orphan-article.save,
+  'required: False: saves without parent';
+
+# === Polymorphic + optional ===
+my $bare-attach = Attachment.create({name => 'unattached.txt'});
+ok $bare-attach.id > 0,
+  'polymorphic + optional: saves without target';
+
+# Polymorphic with target set still works
+my $a-with = Attachment.create({name => 'avatar.png', attachable => $alice});
+ok $a-with.id > 0,
+  'polymorphic + optional: saves with target';
+is $a-with.attrs<attachable_id>,   $alice.id, 'attachable_id is filled';
+is $a-with.attrs<attachable_type>, 'User',    'attachable_type is filled';
+
+# === Polymorphic, required (default) ===
+my $bare-pic = Picture.new(:id(0), :record({attrs => {name => 'orphan.png'}}));
+ok $bare-pic.is-invalid,
+  'polymorphic + default-required: invalid without target';
+
+# Polymorphic with only one of _id/_type set is still invalid
+my $half = Picture.new(:id(0), :record({attrs => {name => 'half.png', imageable_id => 1}}));
+ok $half.is-invalid,
+  'polymorphic + default-required: invalid when only _id is set';
+
+# Predicate access
+ok !User.new(:id(0)).is-belongs-to-optional('user'),
+  'is-belongs-to-optional returns False on missing key';
+ok Passport.new(:id(0)).is-belongs-to-optional('owner'),
+  'is-belongs-to-optional returns True for optional: True';
+ok !Page.new(:id(0)).is-belongs-to-optional('user'),
+  'is-belongs-to-optional returns False when default-required';
+
+Attachment.destroy-all;
+Picture.destroy-all;
+Passport.destroy-all;
+Article.destroy-all;
+Page.destroy-all;
+User.destroy-all;

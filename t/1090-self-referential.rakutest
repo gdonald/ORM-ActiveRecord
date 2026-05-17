@@ -6,7 +6,7 @@ use Test;
 
 class Employee is Model {
   submethod BUILD {
-    self.belongs-to: manager => class => Employee;
+    self.belongs-to: manager => %(class => Employee, optional => True);
     self.has-many: subordinates => %(class => Employee, foreign-key => 'manager_id');
   }
 }
