@@ -788,6 +788,112 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#optimistic-locking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optimistic locking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Optimistic locking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bulk-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bulk updates
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pessimistic-locking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pessimistic locking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pessimistic locking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lock-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lock modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suppression-and-write-guards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suppression and write guards
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Suppression and write guards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modelsuppress" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model.suppress
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#while-preventing-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        while-preventing-writes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prohibit-shard-swapping-prohibit-replica-swapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prohibit-shard-swapping / prohibit-replica-swapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#limitations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1098,6 +1204,112 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#optimistic-locking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optimistic locking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Optimistic locking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bulk-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bulk updates
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pessimistic-locking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pessimistic locking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pessimistic locking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lock-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lock modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suppression-and-write-guards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suppression and write guards
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Suppression and write guards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modelsuppress" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model.suppress
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#while-preventing-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        while-preventing-writes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prohibit-shard-swapping-prohibit-replica-swapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prohibit-shard-swapping / prohibit-replica-swapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#limitations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1324,6 +1536,189 @@ transaction's perspective.</p>
   exception) fires <code>after-rollback</code> for the records inside it
   immediately, and drops their commit callbacks.</li>
 </ul>
+<h2 id="optimistic-locking">Optimistic locking</h2>
+<p>Add an integer <code>lock_version</code> column (default <code>0</code>) to a table and ORM::ActiveRecord
+will check-and-bump it on every update. The save succeeds only when the row in
+the database still has the same <code>lock_version</code> the in-memory record was loaded
+with; otherwise the save raises <code>X::StaleObjectError</code> and the row is left
+untouched.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Note</span> <span class="k">is</span> <span class="n">Model</span> {}
+
+<span class="k">my</span> <span class="nv">$a</span> = <span class="n">Note</span>.<span class="n">create</span>({ <span class="n">title</span> =&gt; <span class="s">&#39;one&#39;</span> });
+<span class="k">my</span> <span class="nv">$stale</span> = <span class="n">Note</span>.<span class="n">find</span>(<span class="nv">$a</span>.<span class="nb">id</span>);
+
+<span class="nv">$a</span>.<span class="n">title</span> = <span class="s">&#39;winner&#39;</span>;
+<span class="nv">$a</span>.<span class="n">save</span>;                       <span class="c1"># lock_version: 0 -&gt; 1</span>
+
+<span class="nv">$stale</span>.<span class="n">title</span> = <span class="s">&#39;loser&#39;</span>;
+<span class="nv">$stale</span>.<span class="n">save</span>;                   <span class="c1"># raises X::StaleObjectError</span>
+
+<span class="nv">$stale</span>.<span class="n">reload</span>;                 <span class="c1"># pulls the winning row back in</span>
+<span class="nv">$stale</span>.<span class="n">title</span> = <span class="s">&#39;after reload&#39;</span>;
+<span class="nv">$stale</span>.<span class="n">save</span>;                   <span class="c1"># lock_version: 1 -&gt; 2</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Detection is column-driven: <code>Note.new.is-locking-enabled</code> returns <code>True</code> when
+the table has the <code>lock_version</code> column. Tables without the column behave like
+they always did — no version check, no bump.</p>
+<h3 id="bulk-updates">Bulk updates</h3>
+<p><code>update-all</code> and <code>update-counters</code> also bump <code>lock_version</code> when the column
+exists, so in-memory records that were loaded before the bulk update become
+stale on their next save:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Note</span>.<span class="n">update-all</span>({ <span class="n">views</span> =&gt; <span class="mi">5</span> });                  <span class="c1"># lock_version += 1 on every row</span>
+<span class="n">Note</span>.<span class="n">where</span>({ <span class="nb">id</span> =&gt; <span class="nv">$id</span> }).<span class="n">update-counters</span>(<span class="n">views</span> =&gt; <span class="mi">1</span>);
+
+<span class="c1"># An explicit lock_version in the attrs hash wins; nothing else is bumped:</span>
+<span class="n">Note</span>.<span class="n">where</span>({ <span class="nb">id</span> =&gt; <span class="nv">$id</span> }).<span class="n">update-all</span>({ <span class="n">lock_version</span> =&gt; <span class="mi">42</span> });
+</code></pre></div></td></tr></table></div>
+
+<p>The bump fires once per row regardless of how many columns the update touches,
+matching the per-save behavior on individual records.</p>
+<h2 id="pessimistic-locking">Pessimistic locking</h2>
+<p>Where optimistic locking detects a conflict <em>after</em> the fact, pessimistic
+locking acquires a row-level lock at read time so other transactions are
+forced to wait. ORM::ActiveRecord exposes three entry points:</p>
+<ul>
+<li><code>Model.lock</code> / <code>relation.lock</code> — chainable; appends <code>FOR UPDATE</code> to the
+  next SELECT</li>
+<li><code>record.lock-or-die</code> — re-fetches the receiver with <code>FOR UPDATE</code></li>
+<li><code>record.with-lock { ... }</code> — opens a transaction, locks the receiver,
+  yields the freshly-locked record to the block</li>
+</ul>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Account</span>.<span class="n">transaction</span>({
+  <span class="k">my</span> <span class="nv">$account</span> = <span class="n">Account</span>.<span class="nb">lock</span>.<span class="n">find</span>(<span class="nv">$id</span>);   <span class="c1"># SELECT ... FOR UPDATE</span>
+  <span class="nv">$account</span>.<span class="n">update</span>({ <span class="n">balance</span> =&gt; <span class="nv">$account</span>.<span class="n">balance</span> - <span class="mi">100</span> });
+});
+</code></pre></div></td></tr></table></div>
+
+<p><code>lock-or-die</code> is the per-record reload form. It reads the row again with a
+lock, copies the row's current attrs onto the receiver, and raises
+<code>X::RecordNotFound</code> if the row is gone. It must be called inside a
+transaction — without one the lock is released the moment the SELECT
+returns.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Account</span>.<span class="n">transaction</span>({
+  <span class="nv">$account</span>.<span class="n">lock-or-die</span>;
+  <span class="nv">$account</span>.<span class="n">update</span>({ <span class="n">balance</span> =&gt; <span class="nv">$account</span>.<span class="n">balance</span> - <span class="mi">100</span> });
+});
+</code></pre></div></td></tr></table></div>
+
+<p><code>with-lock</code> packages the common case — a transaction plus a locking
+reload — into one call:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$account</span>.<span class="n">with-lock</span>(-&gt; <span class="nv">$locked</span> {
+  <span class="nv">$locked</span>.<span class="n">update</span>({ <span class="n">balance</span> =&gt; <span class="nv">$locked</span>.<span class="n">balance</span> - <span class="mi">100</span> });
+});
+</code></pre></div></td></tr></table></div>
+
+<p>The block receives the freshly-locked record. If the block returns
+normally the transaction commits; if it raises, the transaction rolls
+back and the exception propagates.</p>
+<h3 id="lock-modes">Lock modes</h3>
+<p><code>lock</code> accepts an optional mode string that's emitted verbatim, so any
+adapter-specific clause works without library support:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Account</span>.<span class="nb">lock</span>(<span class="s">&#39;FOR SHARE&#39;</span>).<span class="n">where</span>(:<span class="n">active</span>).<span class="nb">all</span>;
+<span class="n">Account</span>.<span class="nb">lock</span>(<span class="s">&#39;FOR NO KEY UPDATE&#39;</span>).<span class="n">find</span>(<span class="nv">$id</span>);   <span class="c1"># Postgres</span>
+<span class="n">Account</span>.<span class="nb">lock</span>(<span class="s">&#39;FOR UPDATE NOWAIT&#39;</span>).<span class="n">find</span>(<span class="nv">$id</span>);   <span class="c1"># Postgres / MySQL 8+</span>
+<span class="n">Account</span>.<span class="nb">lock</span>(<span class="s">&#39;FOR UPDATE SKIP LOCKED&#39;</span>).<span class="n">find</span>(<span class="nv">$id</span>);
+</code></pre></div></td></tr></table></div>
+
+<p><code>lock(True)</code> (the default) is <code>FOR UPDATE</code>; <code>lock(False)</code> clears any
+prior lock setting. <code>unscope(:lock)</code> removes the lock from a chained
+relation.</p>
+<p>Per-adapter notes:</p>
+<ul>
+<li><strong>PostgreSQL</strong> supports <code>FOR UPDATE</code>, <code>FOR NO KEY UPDATE</code>, <code>FOR SHARE</code>,
+  <code>FOR KEY SHARE</code>, and the <code>NOWAIT</code> / <code>SKIP LOCKED</code> modifiers.</li>
+<li><strong>MySQL</strong> supports <code>FOR UPDATE</code> and <code>FOR SHARE</code> (8.0+); older versions
+  used <code>LOCK IN SHARE MODE</code>, which still works.</li>
+<li><strong>SQLite</strong> has no row-level lock syntax — the entire database is locked
+  by the surrounding transaction. The library quietly drops the clause
+  so cross-adapter code keeps running.</li>
+</ul>
+<h2 id="suppression-and-write-guards">Suppression and write guards</h2>
+<p>Three block-scoped guards let you reason about <em>what may be written</em> without
+having to thread flags through every call site. They're stack-friendly:
+nesting works, and the flag is always cleared on exit, including when the
+block dies.</p>
+<h3 id="modelsuppress"><code>Model.suppress</code></h3>
+<p><code>Model.suppress({ ... })</code> short-circuits <code>save</code> inside the block. The
+record's in-memory attributes still update, but no <code>INSERT</code> or <code>UPDATE</code> is
+emitted and <code>save</code> returns <code>True</code>. Useful when a callback chain would
+normally produce a side-record (audit row, notification) that you don't want
+this code path to write.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Note</span>.<span class="n">suppress</span>({
+  <span class="k">my</span> <span class="nv">$obj</span> = <span class="n">Note</span>.<span class="n">create</span>({ <span class="n">title</span> =&gt; <span class="s">&#39;ghost&#39;</span> });
+  <span class="nv">$obj</span>.<span class="nb">id</span>;     <span class="c1"># 0 — never persisted</span>
+  <span class="n">Note</span>.<span class="nb">count</span>;  <span class="c1"># unchanged</span>
+});
+</code></pre></div></td></tr></table></div>
+
+<p><code>Note.is-suppressed</code> reports the current state. Suppression is scoped to
+the class it's called on — <code>Note.suppress</code> does not affect <code>Memo.create</code>.
+Nested <code>Note.suppress</code> blocks compose: the outer block stays suppressed
+after the inner block returns.</p>
+<h3 id="while-preventing-writes"><code>while-preventing-writes</code></h3>
+<p><code>DB.shared.while-preventing-writes({ ... })</code> rejects <em>any</em> write SQL that
+reaches the adapter inside the block. <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>,
+<code>REPLACE</code>, <code>TRUNCATE</code>, and <code>MERGE</code> raise <code>X::ReadOnlyDatabase</code>; <code>SELECT</code>
+and other read queries are unaffected. CTEs that wrap a data-modifying
+statement (<code>WITH foo AS (DELETE ... RETURNING *) SELECT ...</code>, as emitted
+by Postgres <code>delete-records</code>) are detected and rejected too.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">DB</span>.<span class="n">shared</span>.<span class="n">while-preventing-writes</span>({
+  <span class="n">Account</span>.<span class="nb">count</span>;            <span class="c1"># ok — SELECT</span>
+  <span class="n">Account</span>.<span class="n">create</span>({...});    <span class="c1"># raises X::ReadOnlyDatabase</span>
+});
+</code></pre></div></td></tr></table></div>
+
+<p>This is the replica-role guard: turn it on around code paths you only want
+to read from a read replica, and the guard surfaces any accidental write
+instead of silently routing it to the wrong place.</p>
+<p><code>DB.shared.is-preventing-writes</code> reports the current state; nesting and
+exception unwinding work the same way as <code>Model.suppress</code>.</p>
+<h3 id="prohibit-shard-swapping-prohibit-replica-swapping"><code>prohibit-shard-swapping</code> / <code>prohibit-replica-swapping</code></h3>
+<p><code>DB.shared.prohibit-shard-swapping({ ... })</code> and
+<code>DB.shared.prohibit-replica-swapping({ ... })</code> set independent block-scoped
+flags that downstream code can consult before changing the connection's
+shard or replica role. The two flags don't interact — entering one does
+not raise the other — and both clear cleanly on block exit, even on
+exception. The accompanying predicates are <code>is-shard-swapping-prohibited</code>
+and <code>is-replica-swapping-prohibited</code>. These hooks exist so application
+code (and the planned connection pool) can refuse to swap when the
+surrounding scope has declared a hard pin.</p>
 <h2 id="limitations">Limitations</h2>
 <p><code>DB.shared</code> wraps a single shared connection, so transactions are
 process-wide on that connection. Concurrent threads sharing the
