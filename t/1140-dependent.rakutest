@@ -1,0 +1,255 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+use Test;
+
+# Shared child models. Tables: belongings, singletons. Destroy counters
+# are file-scoped so callback invocations are observable across the
+# freshly-loaded instances the dependent dispatcher iterates over.
+my Int $belonging-destroys = 0;
+my Int $singleton-destroys = 0;
+
+class Belonging is Model {
+  submethod BUILD {
+    self.before-destroy: -> { $belonging-destroys++ };
+  }
+}
+
+class Singleton is Model {
+  submethod BUILD {
+    self.before-destroy: -> { $singleton-destroys++ };
+  }
+}
+
+# One parent class per dependent strategy; each gets its own table.
+class DestroyOwner is Model {
+  submethod BUILD {
+    self.has-many: belongings => %(
+      class       => Belonging,
+      foreign-key => 'owner_id',
+      dependent   => 'destroy',
+    );
+  }
+}
+
+class DeleteOwner is Model {
+  submethod BUILD {
+    self.has-many: belongings => %(
+      class       => Belonging,
+      foreign-key => 'owner_id',
+      dependent   => 'delete-all',
+    );
+  }
+}
+
+class NullifyOwner is Model {
+  submethod BUILD {
+    self.has-many: belongings => %(
+      class       => Belonging,
+      foreign-key => 'owner_id',
+      dependent   => 'nullify',
+    );
+  }
+}
+
+class RestErrOwner is Model {
+  submethod BUILD {
+    self.has-many: belongings => %(
+      class       => Belonging,
+      foreign-key => 'owner_id',
+      dependent   => 'restrict-with-error',
+    );
+  }
+}
+
+class RestExcOwner is Model {
+  submethod BUILD {
+    self.has-many: belongings => %(
+      class       => Belonging,
+      foreign-key => 'owner_id',
+      dependent   => 'restrict-with-exception',
+    );
+  }
+}
+
+class OneDestroyOwner is Model {
+  submethod BUILD {
+    self.has-one: singleton => %(
+      class       => Singleton,
+      foreign-key => 'owner_id',
+      dependent   => 'destroy',
+    );
+  }
+}
+
+class OneNullifyOwner is Model {
+  submethod BUILD {
+    self.has-one: singleton => %(
+      class       => Singleton,
+      foreign-key => 'owner_id',
+      dependent   => 'nullify',
+    );
+  }
+}
+
+class OneRestExcOwner is Model {
+  submethod BUILD {
+    self.has-one: singleton => %(
+      class       => Singleton,
+      foreign-key => 'owner_id',
+      dependent   => 'restrict-with-exception',
+    );
+  }
+}
+
+plan 28;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub clear-all {
+  DB.shared.delete-records(:table('belongings'), :where({}));
+  DB.shared.delete-records(:table('singletons'), :where({}));
+  for <destroyowners deleteowners nullifyowners resterrowners restexcowners
+       onedestroyowners onenullifyowners onerestexcowners> -> $t {
+    DB.shared.delete-records(:table($t), :where({}));
+  }
+}
+
+sub belonging-count(--> Int) {
+  DB.shared.exec('SELECT COUNT(*) FROM belongings')[0][0].Int;
+}
+
+sub singleton-count(--> Int) {
+  DB.shared.exec('SELECT COUNT(*) FROM singletons')[0][0].Int;
+}
+
+# ----- has-many, dependent: :destroy -----
+clear-all;
+{
+  my $owner = DestroyOwner.create({name => 'destroy'});
+  Belonging.create({owner_id => $owner.id, label => 'a'});
+  Belonging.create({owner_id => $owner.id, label => 'b'});
+
+  is belonging-count(), 2, 'destroy: two children present before parent destroy';
+  ok $owner.destroy,        'destroy: parent.destroy returns True';
+  is belonging-count(), 0,  'destroy: all children removed';
+  is DestroyOwner.count, 0, 'destroy: parent removed';
+}
+
+# Children's before-destroy callbacks fire under :destroy
+clear-all;
+{
+  $belonging-destroys = 0;
+  my $owner = DestroyOwner.create({name => 'destroy-cb'});
+  Belonging.create({owner_id => $owner.id, label => 'a'});
+
+  ok $owner.destroy, 'destroy with callbacks succeeds';
+  is $belonging-destroys, 1,
+    'destroy: child before-destroy callback fired';
+}
+
+# ----- has-many, dependent: :delete-all -----
+clear-all;
+{
+  $belonging-destroys = 0;
+  my $owner = DeleteOwner.create({name => 'delete-all'});
+  Belonging.create({owner_id => $owner.id, label => 'a'});
+  Belonging.create({owner_id => $owner.id, label => 'b'});
+
+  ok $owner.destroy, 'delete-all: parent.destroy returns True';
+  is belonging-count(), 0, 'delete-all: all children removed';
+  is $belonging-destroys, 0,
+    'delete-all: child before-destroy callback did NOT fire';
+}
+
+# ----- has-many, dependent: :nullify -----
+clear-all;
+{
+  my $owner = NullifyOwner.create({name => 'nullify'});
+  Belonging.create({owner_id => $owner.id, label => 'a'});
+  Belonging.create({owner_id => $owner.id, label => 'b'});
+
+  ok $owner.destroy, 'nullify: parent.destroy returns True';
+  is belonging-count(), 2, 'nullify: children remain';
+  my @rows = DB.shared.exec('SELECT owner_id FROM belongings');
+  ok @rows.map({ !$_[0].defined }).all.so,
+    'nullify: every child owner_id is NULL';
+}
+
+# ----- has-many, dependent: :restrict-with-error -----
+clear-all;
+{
+  my $owner = RestErrOwner.create({name => 'restrict-err'});
+  Belonging.create({owner_id => $owner.id, label => 'a'});
+
+  ok !$owner.destroy, 'restrict-with-error: destroy returns False when children exist';
+  is RestErrOwner.count, 1, 'restrict-with-error: parent NOT removed';
+  is belonging-count(), 1,  'restrict-with-error: children NOT removed';
+  ok $owner.errors.errors.elems > 0,
+    'restrict-with-error: an error is recorded';
+  like $owner.errors.errors[0].message, /'belongings'/,
+    'restrict-with-error: error mentions the association';
+}
+
+# With no children, destroy succeeds
+clear-all;
+{
+  my $owner = RestErrOwner.create({name => 'restrict-err-empty'});
+  ok $owner.destroy, 'restrict-with-error: destroy works when no children';
+  is RestErrOwner.count, 0, 'restrict-with-error: empty parent removed';
+}
+
+# ----- has-many, dependent: :restrict-with-exception -----
+clear-all;
+{
+  my $owner = RestExcOwner.create({name => 'restrict-exc'});
+  Belonging.create({owner_id => $owner.id, label => 'a'});
+
+  dies-ok { $owner.destroy }, 'restrict-with-exception: raises when children exist';
+  my $err;
+  try { $owner.destroy; CATCH { default { $err = $_ } } }
+  isa-ok $err, X::DeleteRestrictionError,
+    'restrict-with-exception: raises X::DeleteRestrictionError';
+  is RestExcOwner.count, 1, 'restrict-with-exception: parent NOT removed';
+}
+
+# With no children, destroy succeeds
+clear-all;
+{
+  my $owner = RestExcOwner.create({name => 'restrict-exc-empty'});
+  ok $owner.destroy, 'restrict-with-exception: destroy works when no children';
+}
+
+# ----- has-one, dependent: :destroy -----
+clear-all;
+{
+  my $owner = OneDestroyOwner.create({name => 'has-one-destroy'});
+  Singleton.create({owner_id => $owner.id, label => 'only'});
+
+  ok $owner.destroy, 'has-one destroy: parent.destroy returns True';
+  is singleton-count(), 0, 'has-one destroy: child removed';
+}
+
+# ----- has-one, dependent: :nullify -----
+clear-all;
+{
+  my $owner = OneNullifyOwner.create({name => 'has-one-nullify'});
+  Singleton.create({owner_id => $owner.id, label => 'only'});
+
+  ok $owner.destroy, 'has-one nullify: parent.destroy returns True';
+  is singleton-count(), 1, 'has-one nullify: child remains';
+}
+
+# ----- has-one, dependent: :restrict-with-exception -----
+clear-all;
+{
+  my $owner = OneRestExcOwner.create({name => 'has-one-restrict'});
+  Singleton.create({owner_id => $owner.id, label => 'only'});
+
+  dies-ok { $owner.destroy }, 'has-one restrict-with-exception: raises when child exists';
+}
+
+clear-all;

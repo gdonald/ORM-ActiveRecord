@@ -707,6 +707,52 @@ For a polymorphic `belongs-to`, both `<name>_id` and `<name>_type` must be set.
 
 `is-belongs-to-optional($name)` reports whether the named association is optional, useful when introspecting a model's relations.
 
+## Dependent
+
+The `dependent:` option on an association decides what happens to the related rows when the owner is destroyed. The five strategies match Rails:
+
+- `:destroy` — call `destroy` on each related record. `before-destroy` / `after-destroy` callbacks run on every child.
+- `:delete-all` — bulk-delete related rows in one SQL statement. No child callbacks fire.
+- `:nullify` — keep related rows in place and set their foreign-key column(s) to `NULL`.
+- `:restrict-with-error` — refuse to destroy the owner if any related rows exist. `destroy` returns `False` and an error is recorded in `owner.errors`.
+- `:restrict-with-exception` — refuse to destroy the owner if any related rows exist. `destroy` raises `X::DeleteRestrictionError`.
+
+Strategy names accept either underscores (`'restrict_with_error'`) or hyphens (`'restrict-with-error'`); both forms resolve to the same dispatch.
+
+```perl6
+class Comment {...}
+
+class Post is Model {
+  submethod BUILD {
+    self.has-many: comments => %(class => Comment, dependent => 'destroy');
+  }
+}
+```
+
+`dependent:` works on `has-many` and `has-one`. The strategy is applied before the owner's row is deleted, so child-side `before-destroy` callbacks always see the owner still present in the database.
+
+For polymorphic `has-many :as`, `:nullify` sets both the `<as>_id` and `<as>_type` columns to `NULL`.
+
+The two restrict strategies are pre-flight checks. They run before `before-destroy` and never partially apply: if children exist, no other side effect occurs.
+
+```perl6
+class Library is Model {
+  submethod BUILD {
+    self.has-many: books => %(class => Book, dependent => 'restrict-with-error');
+  }
+}
+
+my $lib = Library.create({name => 'Main'});
+Book.create({library => $lib, title => 'AR'});
+
+$lib.destroy;                          # returns False
+$lib.errors.errors[0].message;         # Cannot delete record because dependent books exist
+```
+
+`belongs-to` accepts `dependent: 'destroy'` (or `'delete'`) to cascade upward — destroying the child first destroys (or deletes) its parent. Polymorphic `belongs-to` is skipped because the target class is not known until access time.
+
+`has-many :through` does not currently honor `dependent:` on the through-association — declare it on the underlying join model's association instead.
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.

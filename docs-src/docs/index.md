@@ -47,4 +47,4 @@ zef install --/test ORM::ActiveRecord
 ```
 
 `--/test` is suggested because you probably don't have a test database setup.
-You can of course [setup a test database](/orm-activerecord/tests/#database-configuration).
+You can of course [setup a test database](tests.md#database-configuration).

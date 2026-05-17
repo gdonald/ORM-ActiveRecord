@@ -73,3 +73,13 @@ class X::ProhibitedShardSwap is Exception is export {
 class X::ProhibitedReplicaSwap is Exception is export {
   method message { 'Replica role swapping is prohibited in this scope' }
 }
+
+class X::DeleteRestrictionError is Exception is export {
+  has Str $.model;
+  has Str $.association;
+  method message {
+    my $m = $!model // 'record';
+    my $a = $!association // 'dependent records';
+    "Cannot delete $m because of dependent $a";
+  }
+}

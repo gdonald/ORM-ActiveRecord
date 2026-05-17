@@ -181,6 +181,7 @@ class Model
           when 'foreign-key' { $fkey-override = ~$spec{'foreign-key'} }
           when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
           when 'inverse-of' { }
+          when 'dependent' { }
           default { say 'Unknown has-many type ' ~ $spec; die }
         }
       }
@@ -223,6 +224,7 @@ class Model
           when 'foreign-key' { $fkey-name = ~$spec{'foreign-key'} }
           when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
           when 'inverse-of' { }
+          when 'dependent' { }
           default { say 'Unknown has-one type ' ~ $spec; die }
         }
       }
@@ -327,6 +329,17 @@ class Model
   method assoc-pkey-from-spec(\spec, Str:D $default = 'id' --> Str) {
     return ~self.assoc-spec-value(spec, 'primary-key') if self.assoc-spec-has(spec, 'primary-key');
     $default;
+  }
+
+  method assoc-dependent(\spec --> Str) {
+    return '' unless self.assoc-spec-has(spec, 'dependent');
+    my $v = self.assoc-spec-value(spec, 'dependent');
+    my $raw = '';
+    given $v {
+      when Pair { $raw = ~$v.key }
+      default   { $raw = ~$v }
+    }
+    $raw.subst('_', '-', :g);
   }
 
   method is-belongs-to-optional(Str:D $name --> Bool) {
@@ -886,11 +899,156 @@ class Model
 
   method destroy {
     return False unless $!id;
+    return False unless self.check-dependent-restrictions;
     self.do-before-destroys;
+    self.apply-dependent-actions;
     self.delete;
     self.do-after-destroys;
     $!db.register-txn-callback(self, 'destroy');
     True;
+  }
+
+  method check-dependent-restrictions(--> Bool) {
+    for %!has-manys.kv -> $name, $spec {
+      my $strategy = self.assoc-dependent($spec);
+      next unless $strategy;
+      next if self.assoc-spec-has($spec, 'through');
+      next unless $strategy eq 'restrict-with-error' | 'restrict-with-exception';
+      next unless self.dependent-many-has-children($name, $spec);
+      if $strategy eq 'restrict-with-exception' {
+        die X::DeleteRestrictionError.new(:model(self.WHAT.^name), :association($name));
+      }
+      self.add-restrict-error($name);
+      return False;
+    }
+    for %!has-ones.kv -> $name, $spec {
+      my $strategy = self.assoc-dependent($spec);
+      next unless $strategy;
+      next if self.assoc-spec-has($spec, 'through');
+      next unless $strategy eq 'restrict-with-error' | 'restrict-with-exception';
+      next unless self.dependent-one-has-child($name, $spec);
+      if $strategy eq 'restrict-with-exception' {
+        die X::DeleteRestrictionError.new(:model(self.WHAT.^name), :association($name));
+      }
+      self.add-restrict-error($name);
+      return False;
+    }
+    True;
+  }
+
+  method apply-dependent-actions {
+    for %!has-manys.kv -> $name, $spec {
+      my $strategy = self.assoc-dependent($spec);
+      next unless $strategy;
+      next if self.assoc-spec-has($spec, 'through');
+      given $strategy {
+        when 'destroy'    { self.dependent-destroy-children($name, $spec, :many) }
+        when 'delete-all' { self.dependent-delete-children($name, $spec)         }
+        when 'nullify'    { self.dependent-nullify-children($name, $spec)        }
+      }
+    }
+    for %!has-ones.kv -> $name, $spec {
+      my $strategy = self.assoc-dependent($spec);
+      next unless $strategy;
+      next if self.assoc-spec-has($spec, 'through');
+      given $strategy {
+        when 'destroy'    { self.dependent-destroy-children($name, $spec, :!many) }
+        when 'delete-all' { self.dependent-delete-children($name, $spec)          }
+        when 'nullify'    { self.dependent-nullify-children($name, $spec)         }
+      }
+    }
+    for %!belongs-tos.kv -> $name, $spec {
+      my $strategy = self.assoc-dependent($spec);
+      next unless $strategy;
+      next if self.is-polymorphic-assoc($name);
+      given $strategy {
+        when 'destroy' {
+          my $parent = self."$name"();
+          $parent.destroy if $parent.defined;
+        }
+        when 'delete' | 'delete-all' {
+          my $parent = self."$name"();
+          $parent.delete if $parent.defined;
+        }
+      }
+    }
+  }
+
+  method dependent-many-has-children(Str:D $name, \spec --> Bool) {
+    my @records = self."$name"().list;
+    @records.elems > 0;
+  }
+
+  method dependent-one-has-child(Str:D $name, \spec --> Bool) {
+    my $record = self."$name"();
+    $record.defined.so;
+  }
+
+  method add-restrict-error(Str:D $assoc) {
+    my $field = Field.new(:name('base'), :type('association'));
+    my $message = 'Cannot delete record because dependent ' ~ $assoc ~ ' exist';
+    $!errors.push(Error.new(:$field, :$message));
+  }
+
+  method dependent-destroy-children(Str:D $name, \spec, Bool:D :$many) {
+    if $many {
+      for self."$name"().list -> $child { $child.destroy }
+    } else {
+      my $child = self."$name"();
+      $child.destroy if $child.defined;
+    }
+  }
+
+  method dependent-delete-children(Str:D $name, \spec) {
+    my $class = self.assoc-class-from-spec(spec);
+    return if $class === Mu;
+    my Str $target-table = Utils.table-name($class);
+    if self.assoc-spec-has(spec, 'as') {
+      my $as-name = ~self.assoc-spec-value(spec, 'as');
+      my $type-name = Utils.base-name(self.WHAT.^name);
+      my $id-col = $as-name ~ '_id';
+      my $type-col = $as-name ~ '_type';
+      my $stmt = $!db.sanitize-sql-array([
+        "DELETE FROM $target-table WHERE $id-col = ? AND $type-col = ?",
+        $!id, $type-name,
+      ]);
+      $!db.exec-stmt($stmt);
+    } else {
+      my $fkey-col = self.assoc-fkey-from-spec(spec, Utils.base-name(self.fkey-name));
+      my $pkey-col = self.assoc-pkey-from-spec(spec, 'id');
+      my $pkey-val = $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
+      my $stmt = $!db.sanitize-sql-array([
+        "DELETE FROM $target-table WHERE $fkey-col = ?",
+        $pkey-val,
+      ]);
+      $!db.exec-stmt($stmt);
+    }
+  }
+
+  method dependent-nullify-children(Str:D $name, \spec) {
+    my $class = self.assoc-class-from-spec(spec);
+    return if $class === Mu;
+    my Str $target-table = Utils.table-name($class);
+    if self.assoc-spec-has(spec, 'as') {
+      my $as-name = ~self.assoc-spec-value(spec, 'as');
+      my $type-name = Utils.base-name(self.WHAT.^name);
+      my $id-col = $as-name ~ '_id';
+      my $type-col = $as-name ~ '_type';
+      my $stmt = $!db.sanitize-sql-array([
+        "UPDATE $target-table SET $id-col = NULL, $type-col = NULL WHERE $id-col = ? AND $type-col = ?",
+        $!id, $type-name,
+      ]);
+      $!db.exec-stmt($stmt);
+    } else {
+      my $fkey-col = self.assoc-fkey-from-spec(spec, Utils.base-name(self.fkey-name));
+      my $pkey-col = self.assoc-pkey-from-spec(spec, 'id');
+      my $pkey-val = $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
+      my $stmt = $!db.sanitize-sql-array([
+        "UPDATE $target-table SET $fkey-col = NULL WHERE $fkey-col = ?",
+        $pkey-val,
+      ]);
+      $!db.exec-stmt($stmt);
+    }
   }
 
   method delete {
