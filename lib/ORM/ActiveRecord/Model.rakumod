@@ -94,6 +94,7 @@ class Model
 
     if %!record && %!record<attrs> {
       self.merge-attrs(%!record<attrs>);
+      self.update-db-attrs if $!id;
     } elsif $!id {
       self.get-attrs(:$!id);
     }
@@ -163,6 +164,7 @@ class Model
 
     if any(%!has-manys.keys) eq $name {
       my $spec = %!has-manys{$name};
+      self.check-strict-loading($name, $spec);
       my $class = Mu:U;
       my $join-table = '';
       my $as-name = '';
@@ -175,13 +177,14 @@ class Model
           when 'class-name' { $class = self.resolve-class-name(~$spec{'class-name'}) }
           when 'through' {
             $join-table = $spec{'through'}.key;
-            $class = self.get-through-class($name, $join-table);
+            $class = self.get-through-class($name, $join-table, $spec);
           }
           when 'as' { $as-name = ~$spec{'as'} }
           when 'foreign-key' { $fkey-override = ~$spec{'foreign-key'} }
           when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
           when 'inverse-of' { }
           when 'dependent' { }
+          when 'source' | 'source-type' | 'disable-joins' | 'strict-loading' | 'autosave' | 'validate' | 'query-constraints' { }
           default { say 'Unknown has-many type ' ~ $spec; die }
         }
       }
@@ -199,6 +202,35 @@ class Model
       }
 
       my $fkey-name = $fkey-override || Utils.base-name(self.fkey-name);
+
+      if !$join-table && self.assoc-spec-has($spec, 'query-constraints') {
+        my @cols = self.assoc-spec-value($spec, 'query-constraints').list;
+        my $natural-fkey = $fkey-override || Utils.base-name(self.fkey-name);
+        my %where;
+        for @cols -> $col {
+          %where{$col} = $col eq $natural-fkey ?? $pkey-val !! %!attrs{$col};
+        }
+        my @records = $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
+        self.attach-inverse(@records, $spec, $class);
+        return @records;
+      }
+
+      if $join-table && self.assoc-spec-has($spec, 'disable-joins') && so self.assoc-spec-value($spec, 'disable-joins') {
+        my $target-fkey = Utils.to-foreign-key($target-table);
+        my $select = $!db.sanitize-sql-array([
+          "SELECT $target-fkey FROM $join-table WHERE $fkey-name = ?",
+          $pkey-val,
+        ]);
+        my @rows = $!db.exec-stmt($select);
+        my @ids = @rows.map({ $_[0] }).grep(*.defined);
+        my @records;
+        if @ids.elems {
+          @records = $!db.get-objects(:$class, :@fields, :table($target-table), :where({ id => @ids }));
+        }
+        self.attach-inverse(@records, $spec, $class);
+        return @records;
+      }
+
       my @records = $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $pkey-val));
       self.attach-inverse(@records, $spec, $class);
       return @records;
@@ -206,8 +238,8 @@ class Model
 
     if any(%!has-ones.keys) eq $name {
       my $spec = %!has-ones{$name};
+      self.check-strict-loading($name, $spec);
       my $fkey-name = Utils.base-name(self.fkey-name);
-      my Str $table = $name ~ 's';
       my $class = Mu:U;
       my $join-table = '';
       my $pkey-col = 'id';
@@ -219,18 +251,36 @@ class Model
           when 'through' {
             my $through-key = $spec{'through'}.key;
             $join-table = $through-key ~ 's';
-            $class = self.get-through-class-has-one($name, $through-key);
+            $class = self.get-through-class-has-one($name, $through-key, $spec);
           }
           when 'foreign-key' { $fkey-name = ~$spec{'foreign-key'} }
           when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
           when 'inverse-of' { }
           when 'dependent' { }
+          when 'source' | 'source-type' | 'disable-joins' | 'strict-loading' | 'autosave' | 'validate' | 'query-constraints' { }
           default { say 'Unknown has-one type ' ~ $spec; die }
         }
       }
 
+      my Str $table = $class === Mu:U ?? $name ~ 's' !! Utils.table-name($class);
       my @fields = self.get-fields($table);
       my $pkey-val = $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
+
+      if $join-table && self.assoc-spec-has($spec, 'disable-joins') && so self.assoc-spec-value($spec, 'disable-joins') {
+        my $target-fkey = Utils.to-foreign-key($table);
+        my $select = $!db.sanitize-sql-array([
+          "SELECT $target-fkey FROM $join-table WHERE $fkey-name = ? LIMIT 1",
+          $pkey-val,
+        ]);
+        my @rows = $!db.exec-stmt($select);
+        return Nil unless @rows.elems;
+        my $target-id = @rows[0][0];
+        return Nil unless $target-id.defined;
+        my $obj = $!db.get-object(:$class, :@fields, :$table, where => { id => $target-id });
+        return Nil unless $obj.defined;
+        self.attach-inverse-single($obj, $spec, $class);
+        return $obj;
+      }
 
       if $join-table {
         my @objects = $!db.get-objects(:$class, :@fields, :$table, :$join-table, where => ($fkey-name => $pkey-val).Hash, limit => 1);
@@ -247,6 +297,7 @@ class Model
     }
 
     if any(%!habtms.keys) eq $name {
+      self.check-strict-loading($name, %!habtms{$name});
       my $class = self.assoc-class-from-spec(%!habtms{$name});
       my $join-table = self.habtm-join-table($name);
       my $owner-key = Utils.base-name(self.fkey-name);
@@ -255,6 +306,7 @@ class Model
     }
 
     if any(%!belongs-tos.keys) eq $name {
+      self.check-strict-loading($name, %!belongs-tos{$name});
       if self.is-polymorphic-assoc($name) {
         my $type-attr = $name ~ '_type';
         my $type-name = %!attrs{$type-attr};
@@ -284,17 +336,44 @@ class Model
     say 'Unknown attribute or method "' ~ $name ~ '"'; die;
   }
 
-  method get-through-class(Str:D $name, Str:D $join-table) {
+  method assoc-source-name(\spec, Str:D $default --> Str) {
+    return $default unless self.assoc-spec-has(spec, 'source');
+    my $v = self.assoc-spec-value(spec, 'source');
+    given $v {
+      when Pair { return ~$v.key }
+      default   { return ~$v }
+    }
+  }
+
+  method assoc-source-type(\spec --> Str) {
+    return '' unless self.assoc-spec-has(spec, 'source-type');
+    ~self.assoc-spec-value(spec, 'source-type');
+  }
+
+  method get-through-class(Str:D $name, Str:D $join-table, \spec) {
     my $class = self.assoc-class-from-spec(%!has-manys{$join-table});
-    my $singular = Utils.singular($name);
+    my $singular = self.assoc-source-name(spec, Utils.singular($name));
     my $instance = $class.new(:id(0));
+    if $instance.is-polymorphic-assoc($singular) {
+      my $stype = self.assoc-source-type(spec);
+      die "has_many :through with polymorphic source '$singular' requires source-type:"
+        unless $stype;
+      return $instance.resolve-polymorphic-class($singular, $stype);
+    }
     $instance.assoc-class-from-spec($instance.belongs-tos{$singular});
   }
 
-  method get-through-class-has-one(Str:D $name, Str:D $through-key) {
+  method get-through-class-has-one(Str:D $name, Str:D $through-key, \spec) {
     my $class = self.assoc-class-from-spec(%!has-ones{$through-key});
+    my $source = self.assoc-source-name(spec, $name);
     my $instance = $class.new(:id(0));
-    $instance.assoc-class-from-spec($instance.belongs-tos{$name});
+    if $instance.is-polymorphic-assoc($source) {
+      my $stype = self.assoc-source-type(spec);
+      die "has_one :through with polymorphic source '$source' requires source-type:"
+        unless $stype;
+      return $instance.resolve-polymorphic-class($source, $stype);
+    }
+    $instance.assoc-class-from-spec($instance.belongs-tos{$source});
   }
 
   method assoc-spec-has(\spec, Str:D $key --> Bool) {
@@ -352,6 +431,47 @@ class Model
       return not so self.assoc-spec-value($spec, 'required');
     }
     False;
+  }
+
+  method assoc-counter-cache-column(\spec --> Str) {
+    return '' unless self.assoc-spec-has(spec, 'counter-cache');
+    my $v = self.assoc-spec-value(spec, 'counter-cache');
+    given $v {
+      when Bool { return $v ?? self.table-name ~ '_count' !! '' }
+      default   { return ~$v }
+    }
+  }
+
+  method assoc-touch-columns(\spec --> List) {
+    return () unless self.assoc-spec-has(spec, 'touch');
+    my $v = self.assoc-spec-value(spec, 'touch');
+    given $v {
+      when Bool { return $v ?? ('updated_at',) !! () }
+      default   { return ('updated_at', ~$v) }
+    }
+  }
+
+  method assoc-strict-loading(\spec --> Bool) {
+    return False unless self.assoc-spec-has(spec, 'strict-loading');
+    so self.assoc-spec-value(spec, 'strict-loading');
+  }
+
+  method check-strict-loading(Str:D $name, \spec) {
+    return unless self.assoc-strict-loading(spec);
+    die X::StrictLoadingViolationError.new(
+      :model(self.WHAT.^name),
+      :association($name),
+    );
+  }
+
+  method assoc-autosave(\spec) {
+    return Bool unless self.assoc-spec-has(spec, 'autosave');
+    so self.assoc-spec-value(spec, 'autosave');
+  }
+
+  method assoc-validate-flag(\spec --> Bool) {
+    return False unless self.assoc-spec-has(spec, 'validate');
+    so self.assoc-spec-value(spec, 'validate');
   }
 
   method assoc-inverse-name(\spec --> Str) {
@@ -566,10 +686,102 @@ class Model
     so self.fields.first({ .name eq self.locking-column });
   }
 
+  method counter-cache-bump(Int:D $fkey-val, Str:D $target-table, Str:D $col, Str:D $pkey-col, Int:D $delta) {
+    return unless $fkey-val;
+    my $stmt = $!db.sanitize-sql-array([
+      "UPDATE $target-table SET $col = $col + ? WHERE $pkey-col = ?",
+      $delta, $fkey-val,
+    ]);
+    $!db.exec-stmt($stmt);
+  }
+
+  method apply-counter-cache-on-create {
+    for %!belongs-tos.kv -> $name, $spec {
+      next if self.is-polymorphic-assoc($name);
+      my $col = self.assoc-counter-cache-column($spec);
+      next unless $col;
+      my $class = self.assoc-class-from-spec($spec);
+      next if $class === Mu;
+      my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
+      my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
+      my $fkey-val = (%!attrs{$fkey-col} // 0).Int;
+      next unless $fkey-val;
+      self.counter-cache-bump($fkey-val, Utils.table-name($class), $col, $pkey-col, 1);
+    }
+  }
+
+  method apply-counter-cache-on-update(%snapshot) {
+    for %!belongs-tos.kv -> $name, $spec {
+      next if self.is-polymorphic-assoc($name);
+      my $col = self.assoc-counter-cache-column($spec);
+      next unless $col;
+      my $class = self.assoc-class-from-spec($spec);
+      next if $class === Mu;
+      my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
+      next unless %snapshot{$fkey-col}:exists;
+      my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
+      my $target-table = Utils.table-name($class);
+      my ($old-val, $new-val) = %snapshot{$fkey-col}.list;
+      self.counter-cache-bump(($old-val // 0).Int, $target-table, $col, $pkey-col, -1);
+      self.counter-cache-bump(($new-val // 0).Int, $target-table, $col, $pkey-col, 1);
+    }
+  }
+
+  method apply-counter-cache-on-destroy {
+    for %!belongs-tos.kv -> $name, $spec {
+      next if self.is-polymorphic-assoc($name);
+      my $col = self.assoc-counter-cache-column($spec);
+      next unless $col;
+      my $class = self.assoc-class-from-spec($spec);
+      next if $class === Mu;
+      my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
+      my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
+      my $fkey-val = (%!attrs{$fkey-col} // 0).Int;
+      next unless $fkey-val;
+      self.counter-cache-bump($fkey-val, Utils.table-name($class), $col, $pkey-col, -1);
+    }
+  }
+
+  method touch-parent(Int:D $fkey-val, Str:D $target-table, Str:D $pkey-col, @cols) {
+    return unless $fkey-val;
+    return unless @cols.elems;
+    my $now = DateTime.now;
+    my %attrs;
+    my %types;
+    for @cols -> $col {
+      %attrs{$col} = $now;
+      %types{$col} = 'timestamp';
+    }
+    my %where = ($pkey-col => $fkey-val);
+    my $stmt = $!db.build-update-where(
+      :table($target-table), :%attrs, :%types, :%where,
+    );
+    $!db.exec-stmt($stmt);
+  }
+
+  method apply-touch-on-belongs-to {
+    for %!belongs-tos.kv -> $name, $spec {
+      next if self.is-polymorphic-assoc($name);
+      my @cols = self.assoc-touch-columns($spec);
+      next unless @cols.elems;
+      my $class = self.assoc-class-from-spec($spec);
+      next if $class === Mu;
+      my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
+      my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
+      my $fkey-val = (%!attrs{$fkey-col} // 0).Int;
+      next unless $fkey-val;
+      my $target-table = Utils.table-name($class);
+      my @target-fields = self.get-fields($target-table).map({ .name });
+      my @existing = @cols.grep({ @target-fields.first(* eq $_).defined });
+      self.touch-parent($fkey-val, $target-table, $pkey-col, @existing);
+    }
+  }
+
   method save(Bool :$validate = True, Bool :$touch = True) {
     die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!is-readonly;
     die X::FrozenRecord.new(model => self.WHAT.^name)   if $!is-destroyed;
     return True if self.is-suppressed;
+    self.apply-autosave-on-belongs-to;
     if !$validate || self.is-valid {
       self.update-foreign-keys;
       self.do-before-saves;
@@ -593,6 +805,8 @@ class Model
         when 0 {
           self.do-before-creates;
           %!attrs<id> = $!id = $!db.create-object(self);
+          self.apply-counter-cache-on-create;
+          self.apply-touch-on-belongs-to;
           self.do-after-creates;
         }
         default {
@@ -611,6 +825,8 @@ class Model
           } else {
             $!db.update-object(self);
           }
+          self.apply-counter-cache-on-update(%snapshot);
+          self.apply-touch-on-belongs-to;
           self.do-after-updates;
         }
       }
@@ -818,6 +1034,18 @@ class Model
 
   method validate-belongs-tos {
     for %!belongs-tos.kv -> $name, $spec {
+      my $record = %!attrs{$name};
+
+      if $record && $record ~~ Model && self.assoc-validate-flag($spec) {
+        unless $record.is-valid {
+          my $field = self.get-field($name);
+          if $field {
+            my $message = 'is invalid';
+            $!errors.push(Error.new(:$field, :$message));
+          }
+        }
+      }
+
       next if self.is-belongs-to-optional($name);
 
       my $present = False;
@@ -844,6 +1072,23 @@ class Model
       my $message = Message.build(:$template, :obj(self), :$field);
       my $e = Error.new(:$field, :$message);
       $!errors.push($e);
+    }
+  }
+
+  method apply-autosave-on-belongs-to {
+    for %!belongs-tos.kv -> $name, $spec {
+      next if self.is-polymorphic-assoc($name);
+      my $record = %!attrs{$name};
+      next unless $record && $record ~~ Model;
+      my $setting = self.assoc-autosave($spec);
+      my $is-new = $record.id == 0;
+      my $should;
+      given $setting {
+        when Bool:D { $should = $_ }
+        default     { $should = $is-new }
+      }
+      next unless $should;
+      $record.save;
     }
   }
 
@@ -902,6 +1147,8 @@ class Model
     return False unless self.check-dependent-restrictions;
     self.do-before-destroys;
     self.apply-dependent-actions;
+    self.apply-counter-cache-on-destroy;
+    self.apply-touch-on-belongs-to;
     self.delete;
     self.do-after-destroys;
     $!db.register-txn-callback(self, 'destroy');

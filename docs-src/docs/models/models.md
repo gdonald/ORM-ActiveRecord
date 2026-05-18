@@ -753,6 +753,184 @@ $lib.errors.errors[0].message;         # Cannot delete record because dependent 
 
 `has-many :through` does not currently honor `dependent:` on the through-association — declare it on the underlying join model's association instead.
 
+## Counter Cache
+
+The `counter-cache:` option on a `belongs-to` keeps a running count of children on the parent table. Each `create` increments the counter; each `destroy` decrements it; reassigning the foreign key to a different parent moves the count from the old parent to the new one.
+
+`counter-cache => True` uses the default column name `<child-table>_count` on the parent. Pass a string for a custom column name.
+
+```perl6
+class Shop is Model {
+  submethod BUILD {
+    self.has-many: books => %(class => Book);
+  }
+}
+
+class Book is Model {
+  submethod BUILD {
+    self.belongs-to: shop => %(
+      class         => Shop,
+      counter-cache => True,
+    );
+  }
+}
+```
+
+The parent table needs a non-null integer column for the counter, defaulting to zero:
+
+```perl6
+self.create-table: 'shops', [
+  name        => { :string, limit => 64 },
+  books_count => { :integer, null => False, default => 0 },
+];
+```
+
+For a custom column name, pass the column name as a string:
+
+```perl6
+self.belongs-to: librarian => %(
+  class         => Librarian,
+  counter-cache => 'managed_books_ct',
+);
+```
+
+A child can declare counter caches on more than one `belongs-to` — both counters are kept in sync independently.
+
+Counter caches are wired into `save` and `destroy`. Methods that intentionally bypass the persistence layer — `delete` (no callbacks), `update-column`, `update-columns`, `update-all`, `delete-all`, `insert-all`, and `upsert` — do not adjust the counter, matching Rails. Polymorphic `belongs-to` is skipped because the target class is not known until access time.
+
+## Touch
+
+The `touch:` option on a `belongs-to` bumps timestamps on the parent whenever the child is saved or destroyed. `touch => True` updates `updated_at`. Pass a column name (string) to update that column **and** `updated_at`:
+
+```perl6
+class Item is Model {
+  submethod BUILD {
+    self.belongs-to: shop => %(
+      class => Shop,
+      touch => 'reviewed_at',  # or `touch => True` for updated_at only
+    );
+  }
+}
+```
+
+The same persistence-bypassing methods listed under [Counter Cache](#counter-cache) also bypass `touch:`. Polymorphic `belongs-to` is skipped.
+
+## Autosave
+
+The `autosave:` option on a `belongs-to` controls whether the parent is saved when the child is saved. The default is "save new parents only" — i.e. an unsaved parent instance gets saved first so the foreign-key column can carry its id. `autosave => True` also re-saves existing parents on every child save; `autosave => False` disables autosaving entirely.
+
+```perl6
+class Book is Model {
+  submethod BUILD {
+    self.belongs-to: author => %(
+      class    => Author,
+      autosave => True,
+    );
+  }
+}
+
+my $author = Author.new(:id(0), :record({attrs => {name => 'X'}}));
+my $book   = Book.create({title => 'Y', author => $author});
+# $author now has an id, $book.attrs<author_id> points to it
+```
+
+`autosave:` on `has-many` / `has-one` is recognised but inert until the in-memory collection proxy (phase 6.4 of the roadmap) lands — there is no place yet to attach unsaved children to a parent.
+
+## Validate (Cascade)
+
+The `validate:` option on a `belongs-to` cascades validation. With `validate => True`, validating the child also validates the parent; if the parent is invalid, the child accumulates a single `<assoc> is invalid` error.
+
+```perl6
+class Article is Model {
+  submethod BUILD {
+    self.belongs-to: author => %(
+      class    => Author,
+      validate => True,
+    );
+  }
+}
+```
+
+Per-field parent errors are not merged — Rails' `validates_associated` rolls up to one summary message, and that is what `validate => True` does here.
+
+## Strict Loading
+
+`strict-loading => True` on any association causes lazy access to raise `X::StrictLoadingViolationError`. Use it to surface N+1 patterns; once eager loading lands (phase 7), the exception will be suppressed when the association was pre-loaded.
+
+```perl6
+class Order is Model {
+  submethod BUILD {
+    self.has-many: line-items => %(
+      class           => LineItem,
+      strict-loading  => True,
+    );
+  }
+}
+
+$order.line-items;   # → dies with X::StrictLoadingViolationError
+```
+
+The exception's `model` and `association` accessors expose the model class name and the association name for diagnostics.
+
+## Through Source and Source Type
+
+`has-many :through` and `has-one :through` resolve the target class by looking up a `belongs-to` on the join model whose name matches the singular of the through-association. When the through-association name doesn't follow that convention, name the underlying `belongs-to` with `source:`.
+
+```perl6
+class User is Model {
+  submethod BUILD {
+    self.has-many: subscriptions => %(class => Subscription);
+    # The has-many name 'readers' doesn't match the join model's belongs-to ':user',
+    # so name it explicitly via source:
+    self.has-many: readers => %(
+      class   => User,
+      through => :subscriptions,
+      source  => :user,
+    );
+  }
+}
+```
+
+When the source `belongs-to` is polymorphic, `source-type:` filters to a single target type and resolves the class:
+
+```perl6
+self.has-many: messages => %(
+  through     => :subscriptions,
+  source      => :receivable,
+  source-type => 'Message',
+);
+```
+
+## Disable Joins (Through)
+
+`disable-joins => True` on a `has-many :through` or `has-one :through` issues two separate queries — first against the join table, then against the target — instead of one `LEFT JOIN`. This is the right choice when the target lives on a different shard or schema than the join table.
+
+```perl6
+self.has-many: magazines => %(
+  through       => :subscriptions,
+  disable-joins => True,
+);
+```
+
+The result set is identical to the `LEFT JOIN` form.
+
+## Query Constraints
+
+`query-constraints:` on a `has-many` declares a composite foreign-key match against multiple columns. Pass an array of column names on the child; the owner's natural foreign-key column (`<owner-singular>_id`) is filled from `id`, and every other column is filled from `%!attrs` of the same name on the owner.
+
+```perl6
+class Org is Model {
+  submethod BUILD {
+    self.has-many: docs => %(
+      class             => Doc,
+      query-constraints => ['org_id', 'user_id'],
+    );
+  }
+}
+```
+
+With this declaration, `org.docs` fetches `WHERE org_id = ? AND user_id = ?`, with both values pulled from the owner. Full composite-primary-key support — including the inverse `belongs-to` direction — lands in phase 12.9.
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.

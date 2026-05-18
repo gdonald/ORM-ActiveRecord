@@ -1,0 +1,59 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+use Test;
+
+class Slowner is Model {
+  submethod BUILD {
+    self.has-many: slthings => %(
+      class-name      => 'Slthing',
+      strict-loading  => True,
+    );
+  }
+}
+
+class Slthing is Model {
+  submethod BUILD {
+    self.belongs-to: slowner => %(
+      class-name      => 'Slowner',
+      strict-loading  => True,
+      optional        => True,
+    );
+  }
+}
+
+plan 6;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+DB.shared.delete-records(:table('slthings'), :where({}));
+DB.shared.delete-records(:table('slowners'), :where({}));
+
+my $owner = Slowner.create({name => 'strict'});
+Slthing.create({label => 'x', slowner_id => $owner.id});
+
+# has-many strict-loading raises on access
+dies-ok { $owner.slthings },
+  'has-many flagged strict-loading raises on access';
+
+my $err;
+try { $owner.slthings; CATCH { default { $err = $_ } } }
+isa-ok $err, X::StrictLoadingViolationError,
+  'raises X::StrictLoadingViolationError';
+like $err.message, /'strict-loading'/,
+  'error message mentions strict-loading';
+is $err.association, 'slthings',
+  'error names the association';
+is $err.model, 'Slowner',
+  'error names the model';
+
+# belongs-to strict-loading raises on access
+my $child = Slthing.find-by({label => 'x'});
+dies-ok { $child.slowner },
+  'belongs-to flagged strict-loading raises on access';
+
+DB.shared.delete-records(:table('slthings'), :where({}));
+DB.shared.delete-records(:table('slowners'), :where({}));

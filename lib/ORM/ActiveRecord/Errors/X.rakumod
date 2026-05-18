@@ -74,6 +74,16 @@ class X::ProhibitedReplicaSwap is Exception is export {
   method message { 'Replica role swapping is prohibited in this scope' }
 }
 
+class X::StrictLoadingViolationError is Exception is export {
+  has Str $.model;
+  has Str $.association;
+  method message {
+    my $m = $!model // 'record';
+    my $a = $!association // 'association';
+    "$m: '$a' is marked as strict-loading; lazy loading is not allowed";
+  }
+}
+
 class X::DeleteRestrictionError is Exception is export {
   has Str $.model;
   has Str $.association;

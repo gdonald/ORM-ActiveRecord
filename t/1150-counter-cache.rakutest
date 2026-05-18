@@ -1,0 +1,138 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::DB;
+use Test;
+
+class Ccshop is Model {
+  submethod BUILD {
+    self.has-many: ccbooks => %(class-name => 'Ccbook', foreign-key => 'ccshop_id');
+  }
+}
+
+class Ccteam is Model {
+  submethod BUILD {
+    self.has-many: ccbooks => %(class-name => 'Ccbook', foreign-key => 'ccteam_id');
+  }
+}
+
+class Ccbook is Model {
+  submethod BUILD {
+    self.belongs-to: ccshop => %(
+      class-name    => 'Ccshop',
+      counter-cache => True,
+      optional      => True,
+    );
+    self.belongs-to: ccteam => %(
+      class-name    => 'Ccteam',
+      counter-cache => 'managed_books_ct',
+      optional      => True,
+    );
+  }
+}
+
+plan 24;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub clear-all {
+  DB.shared.delete-records(:table('ccbooks'), :where({}));
+  DB.shared.delete-records(:table('ccshops'), :where({}));
+  DB.shared.delete-records(:table('ccteams'), :where({}));
+}
+
+sub shop-count(Int:D $id --> Int) {
+  DB.shared.exec("SELECT ccbooks_count FROM ccshops WHERE id = $id")[0][0].Int;
+}
+
+sub team-count(Int:D $id --> Int) {
+  DB.shared.exec("SELECT managed_books_ct FROM ccteams WHERE id = $id")[0][0].Int;
+}
+
+# ----- default column name on create -----
+clear-all;
+my $shop = Ccshop.create({name => 'main'});
+is shop-count($shop.id), 0, 'counter starts at 0';
+
+Ccbook.create({title => 'A', ccshop_id => $shop.id});
+is shop-count($shop.id), 1, 'create bumps default counter to 1';
+
+Ccbook.create({title => 'B', ccshop_id => $shop.id});
+is shop-count($shop.id), 2, 'second create bumps to 2';
+
+# ----- create via association instance -----
+my $shop2 = Ccshop.create({name => 'branch'});
+Ccbook.create({title => 'C', ccshop => $shop2});
+is shop-count($shop2.id), 1,
+  'assigning belongs-to instance still bumps counter';
+
+# ----- destroy decrements -----
+my $book-d = Ccbook.create({title => 'X', ccshop_id => $shop.id});
+is shop-count($shop.id), 3, 'three books in main';
+ok $book-d.destroy, 'destroy returns True';
+is shop-count($shop.id), 2, 'destroy decrements counter';
+
+# ----- update with FK change moves counter -----
+my $book-mv = Ccbook.create({title => 'Move', ccshop_id => $shop.id});
+is shop-count($shop.id), 3, 'before move: main has 3';
+is shop-count($shop2.id), 1, 'before move: branch has 1';
+
+$book-mv.update({ccshop_id => $shop2.id});
+is shop-count($shop.id), 2, 'after move: main decremented';
+is shop-count($shop2.id), 2, 'after move: branch incremented';
+
+# ----- update with no FK change leaves counter alone -----
+my $shop-before = shop-count($shop.id);
+my $book-still = Ccbook.where({ccshop_id => $shop.id}).first;
+$book-still.update({title => 'renamed'});
+is shop-count($shop.id), $shop-before,
+  'update of non-FK column does not touch counter';
+
+# ----- update FK from 0 → set increments only (no decrement of 0-row) -----
+my $book-orphan = Ccbook.create({title => 'Orphan'});  # ccshop_id = 0
+is shop-count($shop.id), $shop-before, 'orphan create does not bump';
+$book-orphan.update({ccshop_id => $shop.id});
+is shop-count($shop.id), $shop-before + 1,
+  'orphan adoption bumps new parent only';
+
+# ----- update FK to 0 decrements old parent only -----
+my $shop-pre = shop-count($shop.id);
+$book-orphan.update({ccshop_id => 0});
+is shop-count($shop.id), $shop-pre - 1,
+  'detaching to 0 decrements old parent';
+$book-orphan.destroy;  # no-op on counter since FK is 0
+
+# ----- custom column name -----
+my $team = Ccteam.create({name => 'team-a'});
+is team-count($team.id), 0, 'custom counter starts at 0';
+
+my $book-t = Ccbook.create({title => 'T1', ccteam_id => $team.id});
+is team-count($team.id), 1, 'create bumps custom-named counter';
+
+Ccbook.create({title => 'T2', ccteam_id => $team.id});
+is team-count($team.id), 2, 'second create bumps custom counter';
+
+ok $book-t.destroy, 'custom: destroy returns True';
+is team-count($team.id), 1, 'custom: destroy decrements';
+
+# ----- both counters on the same child -----
+clear-all;
+my $shopA = Ccshop.create({name => 'A'});
+my $teamA = Ccteam.create({name => 'TA'});
+Ccbook.create({title => 'dual', ccshop_id => $shopA.id, ccteam_id => $teamA.id});
+is shop-count($shopA.id), 1, 'dual: shop counter bumped';
+is team-count($teamA.id), 1, 'dual: team counter bumped';
+
+# ----- delete (bare) does NOT decrement counter -----
+clear-all;
+my $shopD = Ccshop.create({name => 'D'});
+my $book-bare = Ccbook.create({title => 'bare', ccshop_id => $shopD.id});
+is shop-count($shopD.id), 1, 'created via shop D';
+$book-bare.delete;
+is shop-count($shopD.id), 1,
+  'bare delete bypasses counter-cache (matches Rails)';
+
+clear-all;
+Ccshop.destroy-all;
+Ccteam.destroy-all;

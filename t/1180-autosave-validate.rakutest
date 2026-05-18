@@ -1,0 +1,76 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::DB;
+use Test;
+
+class Asparent is Model {
+  submethod BUILD {
+    self.validate: 'name', { :presence };
+    self.has-many: aschilds => %(class-name => 'Aschild');
+  }
+}
+
+class Aschild is Model {
+  submethod BUILD {
+    self.belongs-to: asparent => %(
+      class-name => 'Asparent',
+      autosave   => True,
+      validate   => True,
+      optional   => True,
+    );
+  }
+}
+
+plan 10;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+DB.shared.delete-records(:table('aschilds'),  :where({}));
+DB.shared.delete-records(:table('asparents'), :where({}));
+
+# autosave: True saves a new parent before the child
+my $new-parent = Asparent.new(:id(0), :record({attrs => {name => 'Parent'}}));
+is $new-parent.id, 0, 'parent starts unsaved';
+my $child = Aschild.create({title => 'C', asparent => $new-parent});
+ok $new-parent.id > 0, 'autosave: True saved the new parent';
+is $child.attrs<asparent_id>, $new-parent.id,
+  'foreign-key column points to the saved parent';
+
+# autosave on an existing parent re-saves it (Rails parity)
+my $loaded = Asparent.find($new-parent.id);
+$loaded.attrs<name> = 'Parent-Renamed';
+Aschild.create({title => 'C2', asparent => $loaded});
+my $reloaded = Asparent.find($new-parent.id);
+is $reloaded.attrs<name>, 'Parent-Renamed',
+  'autosave: True on an existing parent persists changes';
+
+# Cascade validation: child rolls up parent's errors
+DB.shared.delete-records(:table('aschilds'),  :where({}));
+DB.shared.delete-records(:table('asparents'), :where({}));
+
+my $invalid-parent = Asparent.new(:id(0), :record({attrs => {name => ''}}));
+nok $invalid-parent.is-valid, 'parent fails its own presence validation';
+
+my $cv-child = Aschild.new(:id(0), :record({
+  attrs => {title => 'X', asparent => $invalid-parent},
+}));
+nok $cv-child.is-valid,
+  'child with validate: True fails when parent invalid';
+ok $cv-child.errors.errors.elems > 0,
+  'child accumulates an error from the parent';
+like $cv-child.errors.errors.first.message, /'is invalid'/,
+  'cascaded error reads "is invalid"';
+
+# A valid parent passes through validate: True
+my $good-parent = Asparent.create({name => 'OK'});
+my $good-child = Aschild.new(:id(0), :record({
+  attrs => {title => 'Y', asparent => $good-parent},
+}));
+ok $good-child.is-valid,
+  'child with validate: True passes when parent is valid';
+ok $good-child.save, 'child saves under validate: True';
+
+DB.shared.delete-records(:table('aschilds'),  :where({}));
+DB.shared.delete-records(:table('asparents'), :where({}));

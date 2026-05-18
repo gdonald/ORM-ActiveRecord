@@ -1,0 +1,62 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::DB;
+use Test;
+
+class Qcorg is Model {
+  submethod BUILD {
+    self.has-many: qcdocs => %(
+      class-name        => 'Qcdoc',
+      query-constraints => ['qcorg_id', 'qcuser_id'],
+    );
+  }
+}
+
+class Qcdoc is Model {}
+
+plan 5;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+DB.shared.delete-records(:table('qcdocs'), :where({}));
+DB.shared.delete-records(:table('qcorgs'), :where({}));
+
+my $org-a = Qcorg.create({name => 'A'});
+my $org-b = Qcorg.create({name => 'B'});
+
+# Owner A, user 7
+Qcdoc.create({title => 'a7-1', qcorg_id => $org-a.id, qcuser_id => 7});
+Qcdoc.create({title => 'a7-2', qcorg_id => $org-a.id, qcuser_id => 7});
+# Owner A, user 8 (same org, different user — should NOT match the A/7 owner)
+Qcdoc.create({title => 'a8-1', qcorg_id => $org-a.id, qcuser_id => 8});
+# Owner B, user 7
+Qcdoc.create({title => 'b7-1', qcorg_id => $org-b.id, qcuser_id => 7});
+
+# query-constraints filters on multiple columns: org + user
+# Owner A with qcuser_id = 7 in attrs only sees a7-* rows
+my $a-as-user7 = Qcorg.find($org-a.id);
+$a-as-user7.attrs<qcuser_id> = 7;
+my @docs = $a-as-user7.qcdocs.sort({ $_.attrs<title> });
+is @docs.elems, 2, 'query-constraints filters by both columns (a7 only)';
+is @docs.map({ $_.attrs<title> }).join(','), 'a7-1,a7-2',
+  'returns the right two rows';
+
+my $a-as-user8 = Qcorg.find($org-a.id);
+$a-as-user8.attrs<qcuser_id> = 8;
+is $a-as-user8.qcdocs.elems, 1,
+  'query-constraints picks up the different user_id';
+
+my $b-as-user7 = Qcorg.find($org-b.id);
+$b-as-user7.attrs<qcuser_id> = 7;
+is $b-as-user7.qcdocs.elems, 1,
+  'query-constraints scopes by org too: B with user 7 returns just b7-1';
+
+my $b-as-user8 = Qcorg.find($org-b.id);
+$b-as-user8.attrs<qcuser_id> = 8;
+is $b-as-user8.qcdocs.elems, 0,
+  'no matching docs for (B, 8)';
+
+DB.shared.delete-records(:table('qcdocs'), :where({}));
+DB.shared.delete-records(:table('qcorgs'), :where({}));
