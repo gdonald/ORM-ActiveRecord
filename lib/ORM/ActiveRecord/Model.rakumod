@@ -184,7 +184,7 @@ class Model
           when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
           when 'inverse-of' { }
           when 'dependent' { }
-          when 'source' | 'source-type' | 'disable-joins' | 'strict-loading' | 'autosave' | 'validate' | 'query-constraints' { }
+          when 'source' | 'source-type' | 'disable-joins' | 'strict-loading' | 'autosave' | 'validate' | 'query-constraints' | 'scope' { }
           default { say 'Unknown has-many type ' ~ $spec; die }
         }
       }
@@ -192,11 +192,19 @@ class Model
       my Str $target-table = Utils.table-name($class);
       my @fields = self.get-fields($target-table);
       my $pkey-val = $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
+      my $scope-block = self.assoc-scope-block($spec);
 
       if $as-name {
         my $type-name = Utils.base-name(self.WHAT.^name);
         my %where = ($as-name ~ '_id') => $pkey-val, ($as-name ~ '_type') => $type-name;
-        my @records = $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
+        my @records;
+        if $scope-block.defined {
+          my $q = Query.new(:$class, :params(%where));
+          $q = self.apply-assoc-scope($scope-block, $q, @rest);
+          @records = $q.all;
+        } else {
+          @records = $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
+        }
         self.attach-inverse(@records, $spec, $class);
         return @records;
       }
@@ -210,7 +218,14 @@ class Model
         for @cols -> $col {
           %where{$col} = $col eq $natural-fkey ?? $pkey-val !! %!attrs{$col};
         }
-        my @records = $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
+        my @records;
+        if $scope-block.defined {
+          my $q = Query.new(:$class, :params(%where));
+          $q = self.apply-assoc-scope($scope-block, $q, @rest);
+          @records = $q.all;
+        } else {
+          @records = $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
+        }
         self.attach-inverse(@records, $spec, $class);
         return @records;
       }
@@ -225,13 +240,44 @@ class Model
         my @ids = @rows.map({ $_[0] }).grep(*.defined);
         my @records;
         if @ids.elems {
-          @records = $!db.get-objects(:$class, :@fields, :table($target-table), :where({ id => @ids }));
+          if $scope-block.defined {
+            my $q = Query.new(:$class, :params({ id => @ids.list }));
+            $q = self.apply-assoc-scope($scope-block, $q, @rest);
+            @records = $q.all;
+          } else {
+            @records = $!db.get-objects(:$class, :@fields, :table($target-table), :where({ id => @ids }));
+          }
         }
         self.attach-inverse(@records, $spec, $class);
         return @records;
       }
 
-      my @records = $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $pkey-val));
+      if $join-table && $scope-block.defined {
+        my $target-fkey = Utils.to-foreign-key($target-table);
+        my $select = $!db.sanitize-sql-array([
+          "SELECT $target-fkey FROM $join-table WHERE $fkey-name = ?",
+          $pkey-val,
+        ]);
+        my @rows = $!db.exec-stmt($select);
+        my @ids = @rows.map({ $_[0] }).grep(*.defined);
+        my @records;
+        if @ids.elems {
+          my $q = Query.new(:$class, :params({ id => @ids.list }));
+          $q = self.apply-assoc-scope($scope-block, $q, @rest);
+          @records = $q.all;
+        }
+        self.attach-inverse(@records, $spec, $class);
+        return @records;
+      }
+
+      my @records;
+      if $scope-block.defined {
+        my $q = Query.new(:$class, :params({ $fkey-name => $pkey-val }));
+        $q = self.apply-assoc-scope($scope-block, $q, @rest);
+        @records = $q.all;
+      } else {
+        @records = $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $pkey-val));
+      }
       self.attach-inverse(@records, $spec, $class);
       return @records;
     }
@@ -257,7 +303,7 @@ class Model
           when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
           when 'inverse-of' { }
           when 'dependent' { }
-          when 'source' | 'source-type' | 'disable-joins' | 'strict-loading' | 'autosave' | 'validate' | 'query-constraints' { }
+          when 'source' | 'source-type' | 'disable-joins' | 'strict-loading' | 'autosave' | 'validate' | 'query-constraints' | 'scope' { }
           default { say 'Unknown has-one type ' ~ $spec; die }
         }
       }
@@ -265,6 +311,7 @@ class Model
       my Str $table = $class === Mu:U ?? $name ~ 's' !! Utils.table-name($class);
       my @fields = self.get-fields($table);
       my $pkey-val = $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
+      my $scope-block = self.assoc-scope-block($spec);
 
       if $join-table && self.assoc-spec-has($spec, 'disable-joins') && so self.assoc-spec-value($spec, 'disable-joins') {
         my $target-fkey = Utils.to-foreign-key($table);
@@ -276,13 +323,37 @@ class Model
         return Nil unless @rows.elems;
         my $target-id = @rows[0][0];
         return Nil unless $target-id.defined;
-        my $obj = $!db.get-object(:$class, :@fields, :$table, where => { id => $target-id });
+        my $obj;
+        if $scope-block.defined {
+          my $q = Query.new(:$class, :params({ id => $target-id }));
+          $q = self.apply-assoc-scope($scope-block, $q, @rest);
+          $obj = $q.first;
+        } else {
+          $obj = $!db.get-object(:$class, :@fields, :$table, where => { id => $target-id });
+        }
         return Nil unless $obj.defined;
         self.attach-inverse-single($obj, $spec, $class);
         return $obj;
       }
 
       if $join-table {
+        if $scope-block.defined {
+          my $target-fkey = Utils.to-foreign-key($table);
+          my $select = $!db.sanitize-sql-array([
+            "SELECT $target-fkey FROM $join-table WHERE $fkey-name = ?",
+            $pkey-val,
+          ]);
+          my @rows = $!db.exec-stmt($select);
+          return Nil unless @rows.elems;
+          my @ids = @rows.map({ $_[0] }).grep(*.defined);
+          return Nil unless @ids.elems;
+          my $q = Query.new(:$class, :params({ id => @ids.list }));
+          $q = self.apply-assoc-scope($scope-block, $q, @rest);
+          my $only = $q.first;
+          return Nil unless $only.defined;
+          self.attach-inverse-single($only, $spec, $class);
+          return $only;
+        }
         my @objects = $!db.get-objects(:$class, :@fields, :$table, :$join-table, where => ($fkey-name => $pkey-val).Hash, limit => 1);
         return Nil unless @objects.elems;
         my $only = @objects.first;
@@ -290,23 +361,46 @@ class Model
         return $only;
       }
 
-      my $obj = $!db.get-object(:$class, :@fields, :$table, where => ($fkey-name => $pkey-val).Hash);
+      my $obj;
+      if $scope-block.defined {
+        my $q = Query.new(:$class, :params({ $fkey-name => $pkey-val }));
+        $q = self.apply-assoc-scope($scope-block, $q, @rest);
+        $obj = $q.first;
+      } else {
+        $obj = $!db.get-object(:$class, :@fields, :$table, where => ($fkey-name => $pkey-val).Hash);
+      }
       return Nil unless $obj.defined;
       self.attach-inverse-single($obj, $spec, $class);
       return $obj;
     }
 
     if any(%!habtms.keys) eq $name {
-      self.check-strict-loading($name, %!habtms{$name});
-      my $class = self.assoc-class-from-spec(%!habtms{$name});
+      my $spec = %!habtms{$name};
+      self.check-strict-loading($name, $spec);
+      my $class = self.assoc-class-from-spec($spec);
       my $join-table = self.habtm-join-table($name);
       my $owner-key = Utils.base-name(self.fkey-name);
       my @fields = self.get-fields($name);
+      my $scope-block = self.assoc-scope-block($spec);
+      if $scope-block.defined {
+        my $target-fkey = Utils.to-foreign-key($name);
+        my $select = $!db.sanitize-sql-array([
+          "SELECT $target-fkey FROM $join-table WHERE $owner-key = ?",
+          $!id,
+        ]);
+        my @rows = $!db.exec-stmt($select);
+        my @ids = @rows.map({ $_[0] }).grep(*.defined);
+        return () unless @ids.elems;
+        my $q = Query.new(:$class, :params({ id => @ids.list }));
+        $q = self.apply-assoc-scope($scope-block, $q, @rest);
+        return $q.all;
+      }
       return $!db.get-objects(:$class, :@fields, :table($name), :$join-table, :where(($owner-key => $!id).Hash));
     }
 
     if any(%!belongs-tos.keys) eq $name {
-      self.check-strict-loading($name, %!belongs-tos{$name});
+      my $spec = %!belongs-tos{$name};
+      self.check-strict-loading($name, $spec);
       if self.is-polymorphic-assoc($name) {
         my $type-attr = $name ~ '_type';
         my $type-name = %!attrs{$type-attr};
@@ -319,7 +413,6 @@ class Model
         my @fields = self.get-fields($table);
         return $!db.get-object(:$class, :@fields, :$table, where => :$id);
       }
-      my $spec = %!belongs-tos{$name};
       my $class = self.assoc-class-from-spec($spec);
       my Str $table = Utils.table-name($class);
       my Str $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
@@ -327,6 +420,12 @@ class Model
       my $fkey-val = %!attrs{$fkey-col};
       return Nil unless $fkey-val;
       my @fields = self.get-fields($table);
+      my $scope-block = self.assoc-scope-block($spec);
+      if $scope-block.defined {
+        my $q = Query.new(:$class, :params({ $pkey-col => $fkey-val }));
+        $q = self.apply-assoc-scope($scope-block, $q, @rest);
+        return $q.first;
+      }
       my %where = ($pkey-col => $fkey-val);
       return $!db.get-object(:$class, :@fields, :$table, :%where);
     }
@@ -472,6 +571,18 @@ class Model
   method assoc-validate-flag(\spec --> Bool) {
     return False unless self.assoc-spec-has(spec, 'validate');
     so self.assoc-spec-value(spec, 'validate');
+  }
+
+  method assoc-scope-block(\spec) {
+    return Block unless self.assoc-spec-has(spec, 'scope');
+    my $v = self.assoc-spec-value(spec, 'scope');
+    $v ~~ Block ?? $v !! Block;
+  }
+
+  method apply-assoc-scope(Block $block, Query:D $q, @args) {
+    return $q unless $block.defined;
+    my $result = $block.count == 1 ?? $block($q) !! $block($q, |@args);
+    $result ~~ Query ?? $result !! $q;
   }
 
   method assoc-inverse-name(\spec --> Str) {

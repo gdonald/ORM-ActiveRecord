@@ -931,6 +931,64 @@ class Org is Model {
 
 With this declaration, `org.docs` fetches `WHERE org_id = ? AND user_id = ?`, with both values pulled from the owner. Full composite-primary-key support — including the inverse `belongs-to` direction — lands in phase 12.9.
 
+## Association Scope
+
+`scope:` accepts a block that narrows the association's relation just before it runs. The block receives the partial `Query` (already keyed to the owner's foreign key) and returns a query with any additional `where` / `order` / `limit` applied. Works on `has-many`, `has-one`, `belongs-to`, and `has-and-belongs-to-many`.
+
+```perl6
+class Author is Model {
+  submethod BUILD {
+    self.has-many: articles => %(
+      class => Article,
+      scope => -> $q { $q.where({ :published }) },
+    );
+
+    self.has-many: top-articles => %(
+      class       => Article,
+      foreign-key => 'author_id',
+      scope       => -> $q { $q.where({ :published }).order('rank').limit(5) },
+    );
+
+    self.has-one: profile => %(
+      class => Profile,
+      scope => -> $q { $q.where({ :visible }) },
+    );
+  }
+}
+
+class Article is Model {
+  submethod BUILD {
+    self.belongs-to: author => %(
+      class => Author,
+      scope => -> $q { $q.where({ is_active => True }) },
+    );
+  }
+}
+```
+
+`author.articles` returns published articles only. `author.top-articles` chains `where`, `order`, and `limit` together. `author.profile` returns the visible profile (or `Nil` if none match). `article.author` returns `Nil` when the parent row exists but fails the `is_active` filter — the scope is applied after the foreign-key lookup.
+
+### Argument-Taking Scopes
+
+If the block takes additional positional parameters, pass them when invoking the association:
+
+```perl6
+class Author is Model {
+  submethod BUILD {
+    self.has-many: ranked-articles => %(
+      class       => Article,
+      foreign-key => 'author_id',
+      scope       => -> $q, $min { $q.where({ rank => $min..* }) },
+    );
+  }
+}
+
+$author.ranked-articles(5);   # only rank >= 5
+$author.ranked-articles(9);   # only rank >= 9
+```
+
+The first block parameter is always the partial `Query`. Anything after that is filled from positional arguments at the call site.
+
 ## Is Dirty
 
 If you modify a record it will need to be persisted back to the database or the changes will eventually be lost.  To know if you actually have pending changes that need to be saved you can call `is-dirty` on the model instance.

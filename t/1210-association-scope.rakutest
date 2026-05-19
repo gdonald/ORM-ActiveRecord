@@ -1,0 +1,120 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Relation::Query;
+use Test;
+
+class Scarticle  {...}
+class Scprofile  {...}
+class Sctag      {...}
+
+class Scauthor is Model {
+  submethod BUILD {
+    self.has-many: scarticles => %(
+      class => Scarticle,
+      scope => -> $q { $q.where({ :published }) },
+    );
+    self.has-many: top-articles => %(
+      class       => Scarticle,
+      foreign-key => 'scauthor_id',
+      scope       => -> $q { $q.where({ :published }).order('score').limit(2) },
+    );
+    self.has-many: by-score => %(
+      class       => Scarticle,
+      foreign-key => 'scauthor_id',
+      scope       => -> $q, $min { $q.where({ score => $min..* }) },
+    );
+    self.has-one: scprofile => %(
+      class => Scprofile,
+      scope => -> $q { $q.where({ :visible }) },
+    );
+  }
+}
+
+class Scarticle is Model {
+  submethod BUILD {
+    self.belongs-to: scauthor => %(
+      class => Scauthor,
+      scope => -> $q { $q.where({ is_active => True }) },
+    );
+    self.has-and-belongs-to-many: sctags => %(
+      class => Sctag,
+      scope => -> $q { $q.where({ :hot }) },
+    );
+  }
+}
+
+class Scprofile is Model {
+  submethod BUILD {
+    self.belongs-to: scauthor => %(class => Scauthor);
+  }
+}
+
+class Sctag is Model {}
+
+plan 11;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+DB.shared.delete-records(:table('scarticles_sctags'), :where({}));
+DB.shared.delete-records(:table('sctags'),     :where({}));
+DB.shared.delete-records(:table('scprofiles'), :where({}));
+DB.shared.delete-records(:table('scarticles'), :where({}));
+DB.shared.delete-records(:table('scauthors'),  :where({}));
+
+my $alice    = Scauthor.create({name => 'Alice', is_active => True});
+my $inactive = Scauthor.create({name => 'Zed',   is_active => False});
+
+my $pub-low  = Scarticle.create({title => 'low',  score => 1, published => True,  scauthor => $alice});
+my $pub-mid  = Scarticle.create({title => 'mid',  score => 5, published => True,  scauthor => $alice});
+my $pub-high = Scarticle.create({title => 'high', score => 9, published => True,  scauthor => $alice});
+my $draft    = Scarticle.create({title => 'wip',  score => 2, published => False, scauthor => $alice});
+
+# block scope on has-many filters by where
+my @published = $alice.scarticles;
+is @published.elems, 3, 'has-many scope where(:published) filters out drafts';
+ok @published.map({ .id }).Bag{$draft.id}:!exists, 'draft excluded from scoped collection';
+
+# block scope chains order + limit
+my @top = $alice.top-articles;
+is @top.elems, 2, 'scope with limit(2) returns two records';
+is @top.map({ .attrs<title> }).join(','), 'low,mid', 'scope orders by score ASC then limits';
+
+# argument-taking scope
+my @ranked = $alice.by-score(5);
+is @ranked.map({ .attrs<title> }).sort.join(','), 'high,mid',
+  'argument-taking has-many scope filters with caller-supplied bound';
+
+my @ranked-high = $alice.by-score(9);
+is @ranked-high.map({ .attrs<title> }).join(','), 'high',
+  'argument-taking scope reflects different bound';
+
+# has-one scope
+my $visible-prof = Scprofile.create({bio => 'pinned', visible => True, scauthor => $alice});
+Scprofile.create({bio => 'hidden', visible => False, scauthor => $alice});
+is Scauthor.find($alice.id).scprofile.id, $visible-prof.id,
+  'has-one scope filters by visible';
+
+# belongs-to scope: an article whose author is inactive returns Nil
+my $orphan = Scarticle.create({title => 'orphan', published => True, score => 0, scauthor => $inactive});
+nok Scarticle.find($orphan.id).scauthor.defined,
+  'belongs-to scope hides inactive author';
+ok Scarticle.find($pub-low.id).scauthor.defined,
+  'belongs-to scope still returns active author';
+
+# habtm scope filters tag rows after the join
+my $hot  = Sctag.create({name => 'raku', hot => True});
+my $cool = Sctag.create({name => 'old',  hot => False});
+$pub-low.add-sctag($hot);
+$pub-low.add-sctag($cool);
+my @hot-tags = Scarticle.find($pub-low.id).sctags;
+is @hot-tags.elems, 1, 'habtm scope filters out non-hot rows';
+is @hot-tags.first.attrs<name>, 'raku', 'habtm scope returns matching row';
+
+DB.shared.delete-records(:table('scarticles_sctags'), :where({}));
+DB.shared.delete-records(:table('sctags'),     :where({}));
+DB.shared.delete-records(:table('scprofiles'), :where({}));
+DB.shared.delete-records(:table('scarticles'), :where({}));
+DB.shared.delete-records(:table('scauthors'),  :where({}));
