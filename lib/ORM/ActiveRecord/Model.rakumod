@@ -5,6 +5,7 @@ use ORM::ActiveRecord::Errors::Errors;
 use ORM::ActiveRecord::Errors::X;
 use ORM::ActiveRecord::Schema::Field;
 use ORM::ActiveRecord::Support::Message;
+use ORM::ActiveRecord::Relation::Collection;
 use ORM::ActiveRecord::Relation::Query;
 use ORM::ActiveRecord::Relation::Scope;
 use ORM::ActiveRecord::Relation::Scopes;
@@ -184,6 +185,7 @@ class Model
           when 'primary-key' { $pkey-col = ~$spec{'primary-key'} }
           when 'inverse-of' { }
           when 'dependent' { }
+          when 'extension' { }
           when 'source' | 'source-type' | 'disable-joins' | 'strict-loading' | 'autosave' | 'validate' | 'query-constraints' | 'scope' { }
           default { say 'Unknown has-many type ' ~ $spec; die }
         }
@@ -206,7 +208,7 @@ class Model
           @records = $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
         }
         self.attach-inverse(@records, $spec, $class);
-        return @records;
+        return self.wrap-collection(@records, $name, $spec, $class, @rest);
       }
 
       my $fkey-name = $fkey-override || Utils.base-name(self.fkey-name);
@@ -227,7 +229,7 @@ class Model
           @records = $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
         }
         self.attach-inverse(@records, $spec, $class);
-        return @records;
+        return self.wrap-collection(@records, $name, $spec, $class, @rest);
       }
 
       if $join-table && self.assoc-spec-has($spec, 'disable-joins') && so self.assoc-spec-value($spec, 'disable-joins') {
@@ -249,7 +251,7 @@ class Model
           }
         }
         self.attach-inverse(@records, $spec, $class);
-        return @records;
+        return self.wrap-collection(@records, $name, $spec, $class, @rest);
       }
 
       if $join-table && $scope-block.defined {
@@ -267,7 +269,7 @@ class Model
           @records = $q.all;
         }
         self.attach-inverse(@records, $spec, $class);
-        return @records;
+        return self.wrap-collection(@records, $name, $spec, $class, @rest);
       }
 
       my @records;
@@ -279,7 +281,7 @@ class Model
         @records = $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $pkey-val));
       }
       self.attach-inverse(@records, $spec, $class);
-      return @records;
+      return self.wrap-collection(@records, $name, $spec, $class, @rest);
     }
 
     if any(%!has-ones.keys) eq $name {
@@ -702,6 +704,24 @@ class Model
 
   method has-many(*%rest) {
     %!has-manys.push: %rest.keys.first => %rest.values.first;
+  }
+
+  method assoc-extension-role(\spec) {
+    return Mu unless self.assoc-spec-has(spec, 'extension');
+    self.assoc-spec-value(spec, 'extension');
+  }
+
+  method wrap-collection(@records, Str:D $name, $spec, Mu $class, @args) {
+    my @col = @records;
+    @col does CollectionProxy;
+    @col.owner        = self;
+    @col.spec         = $spec;
+    @col.target-class = $class;
+    @col.assoc-name   = $name;
+    @col.args         = @args.Array;
+    my $ext = self.assoc-extension-role($spec);
+    @col does $ext if $ext !=== Mu;
+    @col;
   }
 
   method has-one(*%rest) {

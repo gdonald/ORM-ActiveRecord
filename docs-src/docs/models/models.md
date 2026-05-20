@@ -287,6 +287,88 @@ raku
 0
 ```
 
+## Collection Proxy Methods
+
+A `has-many` accessor returns a *collection proxy* — an Array of records with extra methods that act on the association as a whole. Iteration, indexing, and `.elems` still behave like a plain Array, so existing code that assigns the result to `@arr` keeps working.
+
+```perl6
+class Post {...}
+
+class Author is Model {
+  submethod BUILD {
+    self.has-many: posts => class => Post;
+  }
+}
+
+class Post is Model {
+  submethod BUILD {
+    self.belongs-to: author => class => Author;
+  }
+}
+
+my $alice = Author.create({name => 'alice'});
+```
+
+**Building and creating through the association** sets the foreign key automatically:
+
+```perl6
+my $draft   = $alice.posts.build({title => 'wip'});       # unsaved, fkey set
+my $live    = $alice.posts.create({title => 'live'});     # saved
+my $forced  = $alice.posts.create-or-die({title => 'pinned'});
+```
+
+**Push** moves an existing record into the collection (sets its fkey and saves). Raku reserves `<<` for hyperops, so the proxy uses `.push` and `.append`:
+
+```perl6
+my $orphan = Post.create({title => 'orphan'});
+$alice.posts.push($orphan);   # also: $alice.posts.append($orphan)
+```
+
+**Membership queries** without re-running SQL:
+
+```perl6
+$alice.posts.is-empty;        # Bool
+$alice.posts.size;            # same as .elems
+$alice.posts.length;          # same as .elems
+$alice.posts.count;           # same as .elems
+$alice.posts.exists;          # Bool — non-empty?
+$alice.posts.exists($id);     # Bool — id in collection?
+$alice.posts.exists({title => 'live'});
+$alice.posts.find($id);       # raises X::RecordNotFound if missing
+```
+
+**Mutators** — `delete`, `destroy`, `clear`, and `replace`:
+
+```perl6
+$alice.posts.delete($live);   # nullifies fkey (or follows dependent: strategy)
+$alice.posts.destroy($draft); # destroys the row outright
+$alice.posts.clear;           # unlinks every member
+$alice.posts.replace([$keep, $newone]);
+```
+
+`delete` and `clear` use the association's `dependent:` strategy when one is set (`:destroy`, `:delete-all`, `:nullify`); otherwise they default to nullifying the foreign key.
+
+**Association extensions** mix a role of extra methods into the collection. The methods see `self` as the collection (so `self.records`, `self.elems`, `self.first` all work):
+
+```perl6
+role PostsExtension {
+  method recent-titles {
+    self.records.sort({ .attrs<created_at> }).reverse.map({ .attrs<title> });
+  }
+}
+
+class Author is Model {
+  submethod BUILD {
+    self.has-many: posts => %(
+      class     => Post,
+      extension => PostsExtension,
+    );
+  }
+}
+
+say $alice.posts.recent-titles.join(', ');
+```
+
 ## Polymorphic Belongs To
 
 A `belongs-to` association can target rows from more than one table by declaring it polymorphic. The owning table stores two columns: `<name>_id` for the foreign key and `<name>_type` for the class name of the related row.
