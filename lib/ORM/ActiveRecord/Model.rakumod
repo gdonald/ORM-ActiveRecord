@@ -161,6 +161,28 @@ class Model
       return self.habtm-clear($assoc) if %!habtms{$assoc}:exists;
     }
 
+    if $name ~~ /^ 'build-' (.+) $/ {
+      my $assoc = ~$0;
+      if %!has-ones{$assoc}:exists {
+        my %attrs = @rest.elems ?? @rest[0] !! {};
+        return self.has-one-build($assoc, %attrs);
+      }
+    }
+    if $name ~~ /^ 'create-' (.+) '-or-die' $/ {
+      my $assoc = ~$0;
+      if %!has-ones{$assoc}:exists {
+        my %attrs = @rest.elems ?? @rest[0] !! {};
+        return self.has-one-create-or-die($assoc, %attrs);
+      }
+    }
+    if $name ~~ /^ 'create-' (.+) $/ {
+      my $assoc = ~$0;
+      if %!has-ones{$assoc}:exists {
+        my %attrs = @rest.elems ?? @rest[0] !! {};
+        return self.has-one-create($assoc, %attrs);
+      }
+    }
+
     return-rw %!attrs«$name» if %!attrs«$name»:exists;
 
     if any(%!has-manys.keys) eq $name {
@@ -726,6 +748,36 @@ class Model
 
   method has-one(*%rest) {
     %!has-ones.push: %rest.keys.first => %rest.values.first;
+  }
+
+  method has-one-attrs(Str:D $name, %attrs) {
+    my $spec = %!has-ones{$name};
+    die "build-/create-$name is not supported for has_one :through"
+      if self.assoc-spec-has($spec, 'through');
+    my $class = self.assoc-class-from-spec($spec);
+    die "build-/create-$name needs class: or class-name: on the has-one"
+      if $class === Mu;
+    my $fkey-col = self.assoc-fkey-from-spec($spec, Utils.base-name(self.fkey-name));
+    my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
+    my $pkey-val = $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
+    my %a = %attrs;
+    %a{$fkey-col} = $pkey-val;
+    ($class, %a);
+  }
+
+  method has-one-build(Str:D $name, %attrs) {
+    my ($class, %a) = self.has-one-attrs($name, %attrs);
+    $class.build(%a);
+  }
+
+  method has-one-create(Str:D $name, %attrs) {
+    my ($class, %a) = self.has-one-attrs($name, %attrs);
+    $class.create(%a);
+  }
+
+  method has-one-create-or-die(Str:D $name, %attrs) {
+    my ($class, %a) = self.has-one-attrs($name, %attrs);
+    $class.create-or-die(%a);
   }
 
   method has-and-belongs-to-many(*%rest) {

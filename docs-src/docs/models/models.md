@@ -150,6 +150,20 @@ Raku enthusiast
 
 When no associated record exists, `has-one` returns `Nil`.
 
+### Singular proxy methods
+
+For each `has-one` declaration, the owner gets `build-<assoc>`, `create-<assoc>`, and `create-<assoc>-or-die` methods. They construct the associated record with the foreign key already set to the owner's primary key. `build-` returns an unsaved record; `create-` saves and returns the record (with errors if invalid); `create-...-or-die` saves and raises `X::RecordInvalid` when the target fails validation.
+
+```perl6
+my $user = User.create({fname => 'Greg'});
+
+my $draft = $user.build-profile({bio => 'unsaved'});
+my $saved = $user.create-profile({bio => 'persisted'});
+my $forced = $user.create-profile-or-die({bio => 'forced'});
+```
+
+These methods are not available on `has-one :through` declarations.
+
 ## Has Many Through
 
 You can access related models using `has-many` with `through`.

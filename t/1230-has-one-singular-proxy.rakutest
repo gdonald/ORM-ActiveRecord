@@ -1,0 +1,84 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::X;
+use Test;
+
+class Profile {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-one: profile => class => Profile;
+  }
+}
+
+class Profile is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+    self.validate: 'bio', { :presence };
+  }
+}
+
+plan 11;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Profile.destroy-all;
+User.destroy-all;
+
+# build-<assoc>
+{
+  my $user = User.create({fname => 'Greg', lname => 'Donald'});
+  my $built = $user.build-profile({bio => 'hello'});
+  ok !$built.id, 'build-<assoc> returns an unsaved record';
+  is $built.attrs<user_id>, $user.id, 'build-<assoc> sets the foreign key';
+  is $built.attrs<bio>, 'hello', 'build-<assoc> applies attribute overrides';
+}
+
+Profile.destroy-all;
+User.destroy-all;
+
+# build-<assoc> with no arguments
+{
+  my $user = User.create({fname => 'Jane', lname => 'Roe'});
+  my $built = $user.build-profile;
+  ok !$built.id, 'build-<assoc> with no args returns an unsaved record';
+  is $built.attrs<user_id>, $user.id, 'build-<assoc> with no args still sets the foreign key';
+}
+
+Profile.destroy-all;
+User.destroy-all;
+
+# create-<assoc>
+{
+  my $user = User.create({fname => 'Greg', lname => 'Donald'});
+  my $created = $user.create-profile({bio => 'persisted'});
+  ok $created.id > 0, 'create-<assoc> returns a saved record';
+  is $created.attrs<user_id>, $user.id, 'create-<assoc> sets the foreign key';
+  is $user.profile.id, $created.id, 'create-<assoc> is visible through the accessor';
+}
+
+Profile.destroy-all;
+User.destroy-all;
+
+# create-<assoc>-or-die success path
+{
+  my $user = User.create({fname => 'Greg', lname => 'Donald'});
+  my $forced = $user.create-profile-or-die({bio => 'forced'});
+  ok $forced.id > 0, 'create-<assoc>-or-die returns a saved record on success';
+  is $forced.attrs<user_id>, $user.id, 'create-<assoc>-or-die sets the foreign key';
+}
+
+Profile.destroy-all;
+User.destroy-all;
+
+# create-<assoc>-or-die failure path
+{
+  my $user = User.create({fname => 'Greg', lname => 'Donald'});
+  dies-ok { $user.create-profile-or-die({}) },
+    'create-<assoc>-or-die raises when the target is invalid';
+}
+
+Profile.destroy-all;
+User.destroy-all;
