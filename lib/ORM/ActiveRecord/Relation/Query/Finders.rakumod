@@ -24,6 +24,7 @@ role QueryFinders is export {
     if self.readonly-value {
       .make-readonly for @objects;
     }
+    self.apply-preloads(@objects);
     @objects;
   }
 

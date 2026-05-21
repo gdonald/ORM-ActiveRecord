@@ -47,6 +47,7 @@
     "ORM::ActiveRecord::Relation::Query::Joins": "lib/ORM/ActiveRecord/Relation/Query/Joins.rakumod",
     "ORM::ActiveRecord::Relation::Query::Modifiers": "lib/ORM/ActiveRecord/Relation/Query/Modifiers.rakumod",
     "ORM::ActiveRecord::Relation::Query::Predicates": "lib/ORM/ActiveRecord/Relation/Query/Predicates.rakumod",
+    "ORM::ActiveRecord::Relation::Query::Preloader": "lib/ORM/ActiveRecord/Relation/Query/Preloader.rakumod",
     "ORM::ActiveRecord::Relation::Query::Sql": "lib/ORM/ActiveRecord/Relation/Query/Sql.rakumod",
     "ORM::ActiveRecord::Relation::Scope": "lib/ORM/ActiveRecord/Relation/Scope.rakumod",
     "ORM::ActiveRecord::Relation::Scopes": "lib/ORM/ActiveRecord/Relation/Scopes.rakumod",

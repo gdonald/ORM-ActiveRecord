@@ -146,3 +146,67 @@ row matches.
 User.where({active => True}).count;
 User.where({active => True}).exists;
 ```
+
+## preload, eager-load, includes
+
+These three modifiers eliminate the N+1 query problem by loading associations
+up front and caching them on each parent record.
+
+`preload(...)` runs one extra query per named association after fetching the
+parent rows. It is the right default when you only need to read the children
+back through the accessor.
+
+```perl6
+my @users = User.where({}).preload(:pages).all;
+for @users -> $u {
+  say $u.pages.elems;     # no extra DB query — pages came from the cache
+}
+```
+
+`eager-load(...)` does the same caching but also adds a LEFT OUTER JOIN to the
+parent query. Use this when you need to filter on a joined column:
+
+```perl6
+User.where({}).eager-load(:profile).where({'profiles.is_active' => True}).all;
+```
+
+`includes(...)` behaves like `preload` by default. It promotes itself to
+`eager-load` if the same chain calls `references(...)`, mirroring Rails'
+auto-decision:
+
+```perl6
+User.includes(:profile).references(:profile)
+    .where({'profiles.is_active' => True}).all;   # JOIN + cache
+User.includes(:profile).all;                       # plain preload
+```
+
+Both forms Rails uses for nested includes are supported, and the three
+loaders (`preload`, `eager-load`, `includes`) accept the same shapes.
+
+Array form — multiple top-level associations:
+
+```perl6
+User.where({}).preload(:pages, :profile).all;
+User.where({}).includes(:pages, :profile).all;
+```
+
+Hash form (Raku `Pair`) — load a child association on top of its parent:
+
+```perl6
+User.where({}).preload(articles => :scribe).all;
+User.where({}).includes(articles => :scribe).all;
+```
+
+The two forms compose, including for arbitrary depth. The value side of a
+`Pair` can itself be another `Pair`, a `Hash`, or a list:
+
+```perl6
+# users → articles → scribe → pages
+User.where({}).preload(articles => { scribe => :pages }).all;
+
+# users → pages (no nested) AND users → articles → scribe
+User.where({}).preload(:pages, articles => :scribe).all;
+```
+
+Each loaded record exposes its cache as `record.assoc-cache<name>`, so tests
+and instrumentation can verify what was preloaded without re-querying.

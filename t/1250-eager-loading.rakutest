@@ -1,0 +1,223 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Page    {...}
+class Profile {...}
+class Article {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: pages    => class => Page;
+    self.has-one:  profile  => class => Profile;
+    self.has-many: articles => %(
+      class       => Article,
+      foreign-key => 'author_id',
+      inverse-of  => :scribe,
+    );
+  }
+}
+
+class Page is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+class Profile is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+class Article is Model {
+  submethod BUILD {
+    self.belongs-to: scribe => %(
+      class       => User,
+      foreign-key => 'author_id',
+    );
+  }
+}
+
+plan 35;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Article.destroy-all;
+Page.destroy-all;
+Profile.destroy-all;
+User.destroy-all;
+
+# Seed a small graph: 2 users, each with 2 pages and 1 profile + N articles.
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+my $bob   = User.create({fname => 'Bob',   lname => 'B'});
+
+Page.create({user => $alice, name => 'Home'});
+Page.create({user => $alice, name => 'About'});
+Page.create({user => $bob,   name => 'Bio'});
+
+Profile.create({user => $alice, bio => 'A bio'});
+Profile.create({user => $bob,   bio => 'B bio'});
+
+Article.new(:id(0), :record({attrs => {title => 'A1', body => 'b', author_id => $alice.id}})).save;
+Article.new(:id(0), :record({attrs => {title => 'A2', body => 'b', author_id => $alice.id}})).save;
+Article.new(:id(0), :record({attrs => {title => 'B1', body => 'b', author_id => $bob.id}})).save;
+
+# --- preload: has-many ---
+{
+  my @users = User.where({}).preload(:pages).all;
+  is @users.elems, 2, 'preload has-many: parents loaded';
+  for @users -> $u {
+    ok $u.assoc-cache<pages>:exists,
+      'preload populates assoc-cache for has-many';
+  }
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  is $alice-loaded.pages.elems, 2,
+    'preloaded pages returned through accessor';
+}
+
+# --- preload: has-one ---
+{
+  my @users = User.where({}).preload(:profile).all;
+  for @users -> $u {
+    ok $u.assoc-cache<profile>:exists,
+      'preload populates assoc-cache for has-one';
+  }
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  is $alice-loaded.profile.attrs<bio>, 'A bio',
+    'preloaded has-one returns the correct child';
+}
+
+# --- preload: belongs-to (with FK override) ---
+{
+  my @articles = Article.where({}).preload(:scribe).all;
+  is @articles.elems, 3, 'preload belongs-to: all articles loaded';
+  for @articles -> $a {
+    ok $a.assoc-cache<scribe>:exists,
+      'preload populates assoc-cache for belongs-to';
+  }
+  my $a1 = @articles.first({ .attrs<title> eq 'A1' });
+  is $a1.scribe.attrs<fname>, 'Alice',
+    'preloaded belongs-to returns the correct parent';
+}
+
+# --- includes: defaults to preload behaviour without references ---
+{
+  my @users = User.where({}).includes(:pages).all;
+  ok @users.first.assoc-cache<pages>:exists,
+    'includes without references behaves like preload';
+}
+
+# --- eager-load: adds a LEFT OUTER JOIN AND populates the cache ---
+{
+  my @users = User.where({}).eager-load(:pages).all;
+  ok @users.first.assoc-cache<pages>:exists,
+    'eager-load populates the assoc-cache';
+}
+
+# --- nested preload via Pair ---
+{
+  my @users = User.where({}).preload(:pages, articles => :scribe).all;
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  ok $alice-loaded.assoc-cache<articles>:exists,
+    'nested preload loads the top-level association';
+  my @as = $alice-loaded.articles;
+  ok @as.first.assoc-cache<scribe>:exists,
+    'nested preload populates the child association';
+}
+
+# --- array form: multiple top-level names ---
+{
+  my @users = User.where({}).preload(:pages, :profile).all;
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  ok $alice-loaded.assoc-cache<pages>:exists,
+    'array-form preload loads first named association';
+  ok $alice-loaded.assoc-cache<profile>:exists,
+    'array-form preload loads second named association';
+  is $alice-loaded.pages.elems, 2,
+    'array-form preload returns correct pages count';
+  is $alice-loaded.profile.attrs<bio>, 'A bio',
+    'array-form preload returns correct profile';
+}
+
+# --- hash form: nested via Pair value ---
+{
+  my @users = User.where({}).preload(articles => :scribe).all;
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  ok $alice-loaded.assoc-cache<articles>:exists,
+    'hash-form (Pair) preload loads parent';
+  my @as = $alice-loaded.articles;
+  ok @as.first.assoc-cache<scribe>:exists,
+    'hash-form (Pair) preload loads child';
+  is @as.first.scribe.attrs<fname>, 'Alice',
+    'hash-form (Pair) preload child returns correct record';
+}
+
+# --- deep nesting: articles -> scribe -> pages ---
+{
+  my @users = User.where({}).preload(articles => { scribe => :pages }).all;
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  my $art          = $alice-loaded.articles.first;
+  ok $art.assoc-cache<scribe>:exists,
+    'deep nested: scribe cached on article';
+  my $scribe = $art.scribe;
+  ok $scribe.assoc-cache<pages>:exists,
+    'deep nested: pages cached on scribe (grandchild)';
+  is $scribe.pages.elems, 2,
+    'deep nested: grandchild pages returned via cache';
+}
+
+# --- includes: array form ---
+{
+  my @users = User.where({}).includes(:pages, :profile).all;
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  ok $alice-loaded.assoc-cache<pages>:exists,
+    'includes array-form loads pages';
+  ok $alice-loaded.assoc-cache<profile>:exists,
+    'includes array-form loads profile';
+}
+
+# --- includes: hash form (nested) ---
+{
+  my @users = User.where({}).includes(articles => :scribe).all;
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  ok $alice-loaded.assoc-cache<articles>:exists,
+    'includes hash-form loads parent';
+  ok $alice-loaded.articles.first.assoc-cache<scribe>:exists,
+    'includes hash-form loads nested child';
+}
+
+# --- eager-load: caches nested levels even when only the top-level joins ---
+{
+  my @users = User.where({}).eager-load(:pages).all;
+  ok @users.first.assoc-cache<pages>:exists,
+    'eager-load top-level: caches';
+}
+
+# --- eager-load: nested via hash also fills caches at every depth ---
+{
+  my @users = User.where({}).eager-load(:pages).preload(profile => True).all;
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  ok $alice-loaded.assoc-cache<pages>:exists,
+    'eager-load + preload: top-level cached';
+  ok $alice-loaded.assoc-cache<profile>:exists,
+    'eager-load + preload: secondary association cached';
+}
+
+# --- includes with references: still loads nested associations ---
+{
+  my @users = User.where({}).references(:profile)
+                 .includes(pages => True, :profile).all;
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  ok $alice-loaded.assoc-cache<pages>:exists,
+    'includes (eager path) caches first association';
+  ok $alice-loaded.assoc-cache<profile>:exists,
+    'includes (eager path) caches second association';
+}
+
+Article.destroy-all;
+Page.destroy-all;
+Profile.destroy-all;
+User.destroy-all;

@@ -11,6 +11,7 @@ use ORM::ActiveRecord::Relation::Query::Aggregations;
 use ORM::ActiveRecord::Relation::Query::Finders;
 use ORM::ActiveRecord::Relation::Query::Bulk;
 use ORM::ActiveRecord::Relation::Query::Batching;
+use ORM::ActiveRecord::Relation::Query::Preloader;
 
 class Query
 does QueryConditions
@@ -22,6 +23,7 @@ does QueryAggregations
 does QueryFinders
 does QueryBulk
 does QueryBatching
+does QueryPreloader
 is export
 {
   has Mu $!class;
@@ -48,6 +50,8 @@ is export
   has @!annotations;
   has @!optimizer-hints;
   has $!lock = False;
+  has @!preloads;
+  has @!eager-loads;
 
   submethod BUILD(Mu:U :$!class, Hash:D :$params) {
     $!table = Utils.table-name($!class);
@@ -78,6 +82,8 @@ is export
   method annotations-values     is rw { @!annotations }
   method optimizer-hints-values is rw { @!optimizer-hints }
   method lock-value             is rw { $!lock }
+  method preloads-values        is rw { @!preloads }
+  method eager-loads-values     is rw { @!eager-loads }
   method class-of               { $!class }
   method table-of               { $!table }
   method fields-of              { @!fields }
@@ -110,5 +116,7 @@ is export
     @!annotations       = $src.annotations-values.clone;
     @!optimizer-hints   = $src.optimizer-hints-values.clone;
     $!lock              = $src.lock-value;
+    @!preloads          = $src.preloads-values.clone;
+    @!eager-loads       = $src.eager-loads-values.clone;
   }
 }

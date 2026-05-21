@@ -79,6 +79,8 @@ class Model
 
   has @.filter-attributes;
 
+  has %.assoc-cache;
+
   my Scopes $.scopes;
 
   submethod DESTROY {
@@ -188,6 +190,10 @@ class Model
     if any(%!has-manys.keys) eq $name {
       my $spec = %!has-manys{$name};
       self.check-strict-loading($name, $spec);
+      if %!assoc-cache{$name}:exists {
+        my $cached-class = self.assoc-class-from-spec($spec) // Mu:U;
+        return self.wrap-collection(%!assoc-cache{$name}.list, $name, $spec, $cached-class, @rest);
+      }
       my $class = Mu:U;
       my $join-table = '';
       my $as-name = '';
@@ -309,6 +315,7 @@ class Model
     if any(%!has-ones.keys) eq $name {
       my $spec = %!has-ones{$name};
       self.check-strict-loading($name, $spec);
+      return %!assoc-cache{$name} if %!assoc-cache{$name}:exists;
       my $fkey-name = Utils.base-name(self.fkey-name);
       my $class = Mu:U;
       my $join-table = '';
@@ -401,6 +408,7 @@ class Model
     if any(%!habtms.keys) eq $name {
       my $spec = %!habtms{$name};
       self.check-strict-loading($name, $spec);
+      return %!assoc-cache{$name}.list if %!assoc-cache{$name}:exists;
       my $class = self.assoc-class-from-spec($spec);
       my $join-table = self.habtm-join-table($name);
       my $owner-key = Utils.base-name(self.fkey-name);
@@ -425,6 +433,7 @@ class Model
     if any(%!belongs-tos.keys) eq $name {
       my $spec = %!belongs-tos{$name};
       self.check-strict-loading($name, $spec);
+      return %!assoc-cache{$name} if %!assoc-cache{$name}:exists;
       if self.is-polymorphic-assoc($name) {
         my $type-attr = $name ~ '_type';
         my $type-name = %!attrs{$type-attr};

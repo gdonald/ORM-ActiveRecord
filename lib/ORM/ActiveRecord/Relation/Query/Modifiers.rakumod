@@ -176,6 +176,58 @@ role QueryModifiers is export {
     $obj;
   }
 
+  method preload(*@names, *%kw) {
+    self!collect-includes(self.preloads-values, @names, %kw);
+    self;
+  }
+
+  method eager-load(*@names, *%kw) {
+    self!collect-includes(self.eager-loads-values, @names, %kw);
+    for self!flatten-include-names(@names, %kw) -> $n {
+      next if self.references-values.first({ $_ eq $n });
+      self.references-values.push: $n;
+      self.left-outer-joins($n);
+    }
+    self;
+  }
+
+  method includes(*@names, *%kw) {
+    if self.references-values.elems {
+      self.eager-load(|@names, |%kw);
+    } else {
+      self.preload(|@names, |%kw);
+    }
+    self;
+  }
+
+  method !collect-includes(@target, @names, %kw) {
+    for @names -> $n {
+      given $n {
+        when Pair { @target.push: $n }
+        when Hash | Map {
+          for $n.kv -> $k, $v { @target.push: ($k.Str => $v) }
+        }
+        when Iterable { self!collect-includes(@target, $n.list, {}) }
+        default { @target.push: $n.Str }
+      }
+    }
+    for %kw.kv -> $k, $v { @target.push: ($k.Str => $v) }
+  }
+
+  method !flatten-include-names(@names, %kw) {
+    my @out;
+    for @names -> $n {
+      given $n {
+        when Pair        { @out.push: $n.key.Str }
+        when Hash | Map  { @out.append: $n.keys.map(*.Str) }
+        when Iterable    { @out.append: self!flatten-include-names($n.list, {}) }
+        default          { @out.push: $n.Str }
+      }
+    }
+    @out.append: %kw.keys.map(*.Str);
+    @out;
+  }
+
   method having(*@parts, *%kw) {
     if %kw.elems {
       self.having-values.push: %kw.item;
