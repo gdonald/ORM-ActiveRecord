@@ -109,7 +109,7 @@ role CollectionProxy is export {
     if self!is-polymorphic-as {
       my $as = self!as-name;
       %a{$as ~ '_id'}   = self!owner-pkey-val;
-      %a{$as ~ '_type'} = Utils.base-name($!owner.WHAT.^name);
+      %a{$as ~ '_type'} = $!owner.polymorphic-name;
     } else {
       %a{self!fkey-col} = self!owner-pkey-val;
     }
@@ -124,7 +124,7 @@ role CollectionProxy is export {
     if self!is-polymorphic-as {
       my $as = self!as-name;
       $record.attrs{$as ~ '_id'}   = self!owner-pkey-val;
-      $record.attrs{$as ~ '_type'} = Utils.base-name($!owner.WHAT.^name);
+      $record.attrs{$as ~ '_type'} = $!owner.polymorphic-name;
     } else {
       $record.attrs{self!fkey-col} = self!owner-pkey-val;
     }

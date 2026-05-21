@@ -4,12 +4,31 @@ class Utils is export {
     $name.split('::').first(:end);
   }
 
+  method lookup-class(Str:D $name) {
+    return Nil unless $name;
+    my @parts = $name.split('::').grep(*.chars);
+    return Nil unless @parts.elems;
+
+    my $current := GLOBAL;
+    for @parts -> $part {
+      my %stash := $current.WHO;
+      return Nil unless %stash{$part}:exists;
+      my $next := %stash{$part};
+      return Nil if $next === Any;
+      return Nil if $next ~~ Failure;
+      $current := $next;
+    }
+    $current;
+  }
+
   multi method table-name(Mu:D $obj) {
+    return $obj.table-name if $obj.^can('table-name');
     Utils.base-name($obj.WHAT.raku.lc) ~ 's';
   }
 
   multi method table-name(Mu:U $type) {
-    $type.^name.lc ~ 's';
+    return $type.table-name if $type.^can('table-name');
+    Utils.base-name($type.^name).lc ~ 's';
   }
 
   method singular(Str:D $name) {

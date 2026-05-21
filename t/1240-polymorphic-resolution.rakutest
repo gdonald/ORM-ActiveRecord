@@ -1,0 +1,138 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+# A polymorphic target that overrides polymorphic-name to a custom string.
+class User is Model {
+  submethod BUILD {
+    self.validate: 'fname', { :presence }
+    self.validate: 'lname', { :presence }
+  }
+
+  method polymorphic-name { 'Person' }
+}
+
+# A polymorphic target stored under a module-qualified name.
+module App {
+  our class Post is Model {
+    submethod BUILD {
+      self.validate: 'title', { :presence }
+    }
+
+    method table-name { 'posts' }
+
+    method polymorphic-name { 'App::Post' }
+  }
+}
+
+# Default Attachment uses Utils.lookup-class for resolution (handles "App::Post").
+class Attachment is Model {
+  submethod BUILD {
+    self.belongs-to: attachable => %(:polymorphic, :optional);
+    self.validate: 'name', { :presence }
+  }
+}
+
+# Custom resolver via polymorphic-class-for hook. Maps stored strings to classes.
+class MappedAttachment is Model {
+  method table-name { 'attachments' }
+
+  submethod BUILD {
+    self.belongs-to: attachable => %(:polymorphic, :optional);
+    self.validate: 'name', { :presence }
+  }
+
+  method polymorphic-class-for(Str:D $assoc, Str:D $type) {
+    given $type {
+      when 'Person'    { return User }
+      when 'App::Post' { return App::Post }
+      default          { return Nil }
+    }
+  }
+}
+
+plan 13;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Attachment.destroy-all;
+App::Post.destroy-all;
+User.destroy-all;
+
+# 1. polymorphic-name override: User stores as 'Person'
+{
+  my $user = User.create({fname => 'Greg', lname => 'Donald'});
+  ok $user.id, 'user saved';
+  is User.polymorphic-name, 'Person',
+    'class-level polymorphic-name override returns custom string';
+
+  my $a = Attachment.create({name => 'avatar.png', attachable => $user});
+  ok $a.id, 'attachment saved with overridden polymorphic name';
+  is $a.attrs<attachable_type>, 'Person',
+    'attachable_type stored using polymorphic-name override';
+}
+
+Attachment.destroy-all;
+User.destroy-all;
+
+# 2. Module-qualified storage round-trips via Utils.lookup-class
+{
+  my $post = App::Post.create({title => 'Hello'});
+  ok $post.id, 'module-qualified post saved';
+  is App::Post.polymorphic-name, 'App::Post',
+    'module-qualified polymorphic-name preserved';
+
+  my $a = Attachment.create({name => 'banner.jpg', attachable => $post});
+  is $a.attrs<attachable_type>, 'App::Post',
+    'module-qualified type string stored on attachable_type';
+
+  my $fetched = Attachment.find($a.id);
+  ok $fetched.attachable.WHAT === App::Post,
+    'fetched polymorphic target resolves to module-qualified class';
+  ok $fetched.attachable.id == $post.id,
+    'fetched polymorphic target has correct id';
+}
+
+Attachment.destroy-all;
+App::Post.destroy-all;
+
+# 3. polymorphic-class-for hook on owner overrides default resolution
+{
+  my $user = User.create({fname => 'Jane', lname => 'Roe'});
+  my $post = App::Post.create({title => 'Hooked'});
+
+  my $au = MappedAttachment.create({name => 'u.png', attachable => $user});
+  is $au.attrs<attachable_type>, 'Person',
+    'owner-side hook still uses target polymorphic-name when writing';
+
+  my $fetched-u = MappedAttachment.find($au.id);
+  ok $fetched-u.attachable.WHAT === User,
+    'polymorphic-class-for hook maps "Person" back to User';
+
+  my $ap = MappedAttachment.create({name => 'p.jpg', attachable => $post});
+  my $fetched-p = MappedAttachment.find($ap.id);
+  ok $fetched-p.attachable.WHAT === App::Post,
+    'polymorphic-class-for hook maps "App::Post" back to App::Post';
+
+  MappedAttachment.destroy-all;
+  App::Post.destroy-all;
+  User.destroy-all;
+}
+
+# 4. polymorphic-class-for returning Nil for an unknown type yields Nil target
+{
+  my $user = User.create({fname => 'Anon', lname => 'Anon'});
+  my $a = MappedAttachment.create({name => 'rogue.bin', attachable => $user});
+  # Tamper with attachable_type to a value the hook does not recognize.
+  $a.attrs<attachable_type> = 'Unknown';
+  $a.save(:validate(False));
+
+  my $fetched = MappedAttachment.find($a.id);
+  ok !$fetched.attachable.defined,
+    'unknown stored type returns Nil from polymorphic-class-for';
+
+  MappedAttachment.destroy-all;
+  User.destroy-all;
+}

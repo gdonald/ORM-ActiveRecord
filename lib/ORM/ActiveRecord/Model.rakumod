@@ -219,7 +219,7 @@ class Model
       my $scope-block = self.assoc-scope-block($spec);
 
       if $as-name {
-        my $type-name = Utils.base-name(self.WHAT.^name);
+        my $type-name = self.polymorphic-name;
         my %where = ($as-name ~ '_id') => $pkey-val, ($as-name ~ '_type') => $type-name;
         my @records;
         if $scope-block.defined {
@@ -430,7 +430,7 @@ class Model
         my $type-name = %!attrs{$type-attr};
         return Nil unless $type-name;
         my $class = self.resolve-polymorphic-class($name, $type-name);
-        return Nil if $class === Nil;
+        return Nil unless $class.defined === False && $class !=== Any && $class !=== Mu;
         my Str $table = Utils.table-name($class);
         my Int $id = %!attrs{$name ~ '_id'};
         return Nil unless $id;
@@ -679,7 +679,7 @@ class Model
   }
 
   method table-name {
-    self.WHAT.raku.lc ~ 's';
+    Utils.base-name(self.^name).lc ~ 's';
   }
 
   method fkey-name {
@@ -710,18 +710,23 @@ class Model
     ();
   }
 
-  method resolve-polymorphic-class(Str:D $name, Str:D $type-name) {
-    my @candidates = self.polymorphic-classes($name);
+  method polymorphic-name {
+    Utils.base-name(self.WHAT.^name);
+  }
+
+  method polymorphic-class-for(Str:D $assoc-name, Str:D $type-name) {
+    my @candidates = self.polymorphic-classes($assoc-name);
     if @candidates.elems {
       for @candidates -> $c {
-        return $c if Utils.base-name($c.^name) eq $type-name;
+        return $c if $c.polymorphic-name eq $type-name;
       }
       return Nil;
     }
-    my $klass = GLOBAL::{$type-name};
-    return Nil if $klass === Any;
-    return Nil if $klass ~~ Failure;
-    $klass;
+    Utils.lookup-class($type-name);
+  }
+
+  method resolve-polymorphic-class(Str:D $name, Str:D $type-name) {
+    self.polymorphic-class-for($name, $type-name);
   }
 
   method has-many(*%rest) {
@@ -1032,7 +1037,7 @@ class Model
         my $record = $.attrs{$key};
         next unless $record ~~ Model;
         $.attrs{$key ~ '_id'}   = $record.id;
-        $.attrs{$key ~ '_type'} = Utils.base-name($record.WHAT.^name);
+        $.attrs{$key ~ '_type'} = $record.polymorphic-name;
         $.attrs{$key}:delete;
       }
       else {
@@ -1435,7 +1440,7 @@ class Model
     my Str $target-table = Utils.table-name($class);
     if self.assoc-spec-has(spec, 'as') {
       my $as-name = ~self.assoc-spec-value(spec, 'as');
-      my $type-name = Utils.base-name(self.WHAT.^name);
+      my $type-name = self.polymorphic-name;
       my $id-col = $as-name ~ '_id';
       my $type-col = $as-name ~ '_type';
       my $stmt = $!db.sanitize-sql-array([
@@ -1461,7 +1466,7 @@ class Model
     my Str $target-table = Utils.table-name($class);
     if self.assoc-spec-has(spec, 'as') {
       my $as-name = ~self.assoc-spec-value(spec, 'as');
-      my $type-name = Utils.base-name(self.WHAT.^name);
+      my $type-name = self.polymorphic-name;
       my $id-col = $as-name ~ '_id';
       my $type-col = $as-name ~ '_type';
       my $stmt = $!db.sanitize-sql-array([

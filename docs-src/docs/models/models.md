@@ -507,6 +507,92 @@ Output
 
 Reading `$owner.pictures` filters on both `imageable_id = $owner.id` and `imageable_type = '<OwnerClass>'`, so collections never leak across owner types. Reassigning a picture (`$pic.update({imageable => $post})`) moves it from one owner's collection to the other on the next read.
 
+## Polymorphic Resolution
+
+Two methods control how polymorphic associations move between Raku classes and the strings stored in `<name>_type`. Both have sensible defaults; override them when the stored string needs to differ from the short class name or when the owner needs custom dispatch.
+
+### Target-side: `polymorphic-name`
+
+`polymorphic-name` is called on the **target** model whenever its identity needs to be written into a `<name>_type` column. The default returns the short class name (the part after the last `::`).
+
+Override it to write a different string. Useful when:
+
+- the class lives inside a module and you want the bare name in the database (or vice-versa),
+- you renamed a class but do not want to migrate the existing `_type` values,
+- two model classes need to share a stored type string.
+
+```perl6
+class User is Model {
+  method polymorphic-name { 'Person' }
+}
+
+my $u = User.create({fname => 'Greg', lname => 'Donald'});
+my $a = Attachment.create({name => 'avatar.png', attachable => $u});
+say $a.attrs<attachable_type>;
+```
+
+Output
+
+```shell
+Person
+```
+
+The same method is consulted when scoping a `has-many :as` collection, when nullifying / deleting children, and when collection-proxy methods (`push`, `replace`, etc.) write through to a polymorphic child.
+
+### Owner-side: `polymorphic-class-for`
+
+When reading a polymorphic association, the owner asks `polymorphic-class-for($assoc-name, $type-name)` for the class that matches the stored string. Override it on the owner to customize how stored strings map back to classes.
+
+The default implementation:
+
+- if the association was declared with `classes => (...)`, return the candidate whose `polymorphic-name` matches the stored string (or `Nil` if none match),
+- otherwise resolve `$type-name` as a fully-qualified package via `GLOBAL`, supporting nested names like `App::Post`.
+
+```perl6
+class Attachment is Model {
+  submethod BUILD {
+    self.belongs-to: attachable => %(:polymorphic, :optional);
+  }
+
+  method polymorphic-class-for(Str:D $assoc, Str:D $type) {
+    given $type {
+      when 'Person'    { return User }
+      when 'App::Post' { return App::Post }
+      default          { return Nil }
+    }
+  }
+}
+```
+
+If the hook returns `Nil`, reading the association returns `Nil` instead of raising. That is the right behavior when stored type strings can drift (e.g., rows imported from another system).
+
+### Module-qualified storage
+
+`polymorphic-name` may return a fully-qualified name. The default resolver walks the package separators, so the round-trip works without any further configuration:
+
+```perl6
+module App {
+  our class Post is Model {
+    method polymorphic-name { 'App::Post' }
+  }
+}
+
+my $post = App::Post.create({title => 'Hello'});
+my $a    = Attachment.create({name => 'banner.jpg', attachable => $post});
+
+say $a.attrs<attachable_type>;
+say Attachment.find($a.id).attachable.WHAT.^name;
+```
+
+Output
+
+```shell
+App::Post
+App::Post
+```
+
+This is the most common reason to override `polymorphic-name`: keep the database value stable when classes are reorganized into deeper namespaces.
+
 ## Self-Referential Associations
 
 A model can declare associations that point at its own class. The classic shape is an employee who reports to another employee, and who in turn has zero or more direct reports.
