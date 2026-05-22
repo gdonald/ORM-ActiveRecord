@@ -5,6 +5,7 @@ role QueryBatching is export {
   method find-in-batches(Int:D :$batch-size = 1000) {
     die "find-in-batches: batch-size must be > 0" if $batch-size <= 0;
     return Seq.new(().iterator) if self.is-none-value;
+    self.finalize-includes;
 
     my $table           = self.table-of;
     my $class           = self.class-of;

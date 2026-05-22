@@ -12,6 +12,7 @@ role QueryAggregations is export {
 
   method !do-count($col) {
     return self.group-values.elems ?? %() !! 0 if self.is-none-value;
+    self.finalize-includes;
     if self.group-values.elems || ($col.defined && $col !~~ '*') {
       return self!aggregate('COUNT', $col);
     }
@@ -51,6 +52,7 @@ role QueryAggregations is export {
   }
 
   method !aggregate(Str:D $op, $col) {
+    self.finalize-includes;
     my @or-groups = self.or-groups-payload;
     DB.shared.aggregate(
       table => self.table-of, :$op, :$col,

@@ -171,14 +171,24 @@ User.where({}).eager-load(:profile).where({'profiles.is_active' => True}).all;
 ```
 
 `includes(...)` behaves like `preload` by default. It promotes itself to
-`eager-load` if the same chain calls `references(...)`, mirroring Rails'
-auto-decision:
+`eager-load` when something later in the chain proves a JOIN is required:
+
+- An explicit `references(:assoc)` — order of the two calls doesn't matter.
+- A `where`/`order`/`having` fragment that mentions a column on the joined
+  table, in any of the supported forms.
 
 ```perl6
-User.includes(:profile).references(:profile)
-    .where({'profiles.is_active' => True}).all;   # JOIN + cache
-User.includes(:profile).all;                       # plain preload
+# all four chains end up doing the same SELECT … LEFT OUTER JOIN profiles …
+User.includes(:profile).references(:profile);
+User.references(:profile).includes(:profile);
+User.includes(:profile).where({'profiles.is_active' => True});
+User.includes(:profile).where(profiles => { is_active => True });
+User.includes(:profile).all;                       # plain preload — no JOIN
 ```
+
+`preload(:assoc)` and `eager-load(:assoc)` are explicit and never get
+re-routed: a chain like `preload(:profile).references(:profile)` stays a
+preload, and `eager-load(:profile)` stays a JOIN even with no `references`.
 
 Both forms Rails uses for nested includes are supported, and the three
 loaders (`preload`, `eager-load`, `includes`) accept the same shapes.

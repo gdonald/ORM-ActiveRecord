@@ -6,6 +6,7 @@ use ORM::ActiveRecord::Schema::Field;
 role QueryFinders is export {
   method perform {
     return () if self.is-none-value;
+    self.finalize-includes;
     my @or-groups = self.or-groups-payload;
     my @objects = DB.shared.get-objects(
       table => self.table-of, class => self.class-of, fields => self.fields-of,
@@ -34,6 +35,7 @@ role QueryFinders is export {
 
   multi method first {
     return Any if self.is-none-value;
+    self.finalize-includes;
     my @order = self.order-values.elems ?? self.order-values !! ('id',);
     my @or-groups = self.or-groups-payload;
     my $obj = DB.shared.get-object(table => self.table-of, class => self.class-of, fields => self.fields-of, where => self.where-values, where-not => self.where-not-values, :@or-groups, :@order, distinct => self.distinct-value, group => self.group-values, having => self.having-values, from-source => self.from-source, from-alias => self.from-alias, joins => self.joins-values, ctes => self.ctes-values, annotations => self.annotations-values, optimizer-hints => self.optimizer-hints-values, lock => self.lock-value);
@@ -45,6 +47,7 @@ role QueryFinders is export {
     return () if self.is-none-value;
     die "first($n): N must be >= 0" if $n < 0;
     return () if $n == 0;
+    self.finalize-includes;
     my @order = self.order-values.elems ?? self.order-values !! ('id',);
     my @or-groups = self.or-groups-payload;
     my @objects = DB.shared.get-objects(
@@ -68,6 +71,7 @@ role QueryFinders is export {
 
   multi method last {
     return Any if self.is-none-value;
+    self.finalize-includes;
     my @order = self.order-values.elems
       ?? self.order-values
       !! ('id DESC',);
@@ -81,6 +85,7 @@ role QueryFinders is export {
     return () if self.is-none-value;
     die "last($n): N must be >= 0" if $n < 0;
     return () if $n == 0;
+    self.finalize-includes;
     my @order = self.order-values.elems
       ?? self.order-values.map({ self!reverse-order-fragment($_) })
       !! ('id DESC',);
@@ -117,6 +122,7 @@ role QueryFinders is export {
 
   method sole {
     die X::RecordNotFound.new(:model(self.class-of.^name)) if self.is-none-value;
+    self.finalize-includes;
     my @or-groups = self.or-groups-payload;
     my @rows = DB.shared.get-objects(
       table => self.table-of, class => self.class-of, fields => self.fields-of,
@@ -141,6 +147,7 @@ role QueryFinders is export {
 
   method pluck(*@cols) {
     return () if self.is-none-value;
+    self.finalize-includes;
     my @names = @cols.elems ?? @cols.map({ .Str }) !! self.select-values.elems ?? self.select-values !! die 'pluck requires at least one column';
     my @fields = @names.map({ Field.new(:name($_), :type('character varying')) });
     my @or-groups = self.or-groups-payload;

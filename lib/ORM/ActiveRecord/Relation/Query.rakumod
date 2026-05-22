@@ -52,6 +52,7 @@ is export
   has $!lock = False;
   has @!preloads;
   has @!eager-loads;
+  has @!pending-includes;
 
   submethod BUILD(Mu:U :$!class, Hash:D :$params) {
     $!table = Utils.table-name($!class);
@@ -84,6 +85,7 @@ is export
   method lock-value             is rw { $!lock }
   method preloads-values        is rw { @!preloads }
   method eager-loads-values     is rw { @!eager-loads }
+  method pending-includes-values is rw { @!pending-includes }
   method class-of               { $!class }
   method table-of               { $!table }
   method fields-of              { @!fields }
@@ -118,5 +120,6 @@ is export
     $!lock              = $src.lock-value;
     @!preloads          = $src.preloads-values.clone;
     @!eager-loads       = $src.eager-loads-values.clone;
+    @!pending-includes  = $src.pending-includes-values.clone;
   }
 }

@@ -5,6 +5,7 @@ use ORM::ActiveRecord::DB;
 role QuerySql is export {
   # Shares bind numbering with $stmt so CTE sub-queries don't re-start at $1.
   method to-sql-into(SqlStmt:D $stmt --> Str) {
+    self.finalize-includes;
     my @or-groups = self.or-groups-payload;
     DB.shared.build-select-body(
       $stmt,
@@ -28,6 +29,7 @@ role QuerySql is export {
   }
 
   method build-select-stmt(--> SqlStmt) {
+    self.finalize-includes;
     my @or-groups = self.or-groups-payload;
     DB.shared.build-select(
       table => self.table-of, fields => self.fields-of,

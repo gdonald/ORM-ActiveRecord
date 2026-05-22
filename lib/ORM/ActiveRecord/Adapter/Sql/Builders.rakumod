@@ -309,7 +309,8 @@ role SqlBuilders is export {
           @out.push: self!fragment-for($stmt, "$k.$col", $op, $val);
         }
       } else {
-        my $col = $qualifier.defined ?? "$qualifier.$k" !! $k;
+        my $col = ($qualifier.defined && !$k.contains('.'))
+                  ?? "$qualifier.$k" !! $k;
         @out.push: self!fragment-for($stmt, $col, $op, $v);
       }
     }

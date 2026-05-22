@@ -81,7 +81,17 @@ role QueryJoins is export {
       my $other-class = $stub.assoc-class-from-spec($hm);
       if $other-class !=== Mu {
         my $other-table = Utils.table-name($other-class);
-        my $fkey = Utils.to-foreign-key($base-table);
+        my $fkey = $stub.assoc-fkey-from-spec($hm, Utils.to-foreign-key($base-table));
+        self.joins-values.push: "$kind $other-table ON $other-table.$fkey = $base-table.id";
+        return ($other-class, $other-table);
+      }
+    }
+    if $stub.has-ones{$name}:exists {
+      my $ho = $stub.has-ones{$name};
+      my $other-class = $stub.assoc-class-from-spec($ho);
+      if $other-class !=== Mu {
+        my $other-table = Utils.table-name($other-class);
+        my $fkey = $stub.assoc-fkey-from-spec($ho, Utils.to-foreign-key($base-table));
         self.joins-values.push: "$kind $other-table ON $other-table.$fkey = $base-table.id";
         return ($other-class, $other-table);
       }

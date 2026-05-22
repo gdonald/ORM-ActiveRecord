@@ -1,0 +1,124 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Page    {...}
+class Profile {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: pages   => class => Page;
+    self.has-one:  profile => class => Profile;
+  }
+}
+
+class Page is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+class Profile is Model {
+  submethod BUILD {
+    self.belongs-to: user => class => User;
+  }
+}
+
+plan 14;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Page.destroy-all;
+Profile.destroy-all;
+User.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+my $bob   = User.create({fname => 'Bob',   lname => 'B'});
+
+Page.create({user => $alice, name => 'A1'});
+Page.create({user => $alice, name => 'A2'});
+Page.create({user => $bob,   name => 'B1'});
+
+Profile.create({user => $alice, bio => 'alice bio'});
+Profile.create({user => $bob,   bio => 'bob bio'});
+
+# --- 7.3.1: references after includes promotes to eager-load ---
+{
+  my $q = User.where({}).includes(:profile).references(:profile);
+  my $sql = $q.to-sql;
+  ok $sql.contains('LEFT OUTER JOIN profiles'),
+    'includes(:assoc).references(:assoc) → JOIN appears in SQL';
+  my @users = $q.all;
+  ok @users.first.assoc-cache<profile>:exists,
+    'includes(:assoc).references(:assoc) → cache populated';
+}
+
+# --- 7.3.1: order does not matter (references before includes still works) ---
+{
+  my $q = User.where({}).references(:profile).includes(:profile);
+  my $sql = $q.to-sql;
+  ok $sql.contains('LEFT OUTER JOIN profiles'),
+    'references(:assoc).includes(:assoc) → JOIN appears in SQL';
+  my @users = $q.all;
+  ok @users.first.assoc-cache<profile>:exists,
+    'references(:assoc).includes(:assoc) → cache populated';
+}
+
+# --- 7.3.1: includes alone (no references) stays as preload ---
+{
+  my $sql = User.where({}).includes(:profile).to-sql;
+  ok ! $sql.contains('LEFT OUTER JOIN profiles'),
+    'includes(:assoc) alone → no JOIN (preload path)';
+}
+
+# --- 7.3.1: explicit preload is not promoted by references ---
+{
+  my $sql = User.where({}).preload(:profile).references(:profile).to-sql;
+  ok ! $sql.contains('LEFT OUTER JOIN profiles'),
+    'preload(:assoc).references(:assoc) → still no JOIN (preload is explicit)';
+}
+
+# --- 7.3.2: auto-references via dotted where key ---
+{
+  my $q = User.where({}).includes(:profile).where({'profiles.bio' => 'alice bio'});
+  my $sql = $q.to-sql;
+  ok $sql.contains('LEFT OUTER JOIN profiles'),
+    'auto-references: where("profiles.bio" => …) promotes includes';
+  my @users = $q.all;
+  is @users.elems, 1, 'auto-references query filters correctly';
+  is @users.first.attrs<fname>, 'Alice',
+    'auto-references returns the right row';
+  ok @users.first.assoc-cache<profile>:exists,
+    'auto-references still caches the association';
+}
+
+# --- 7.3.2: auto-references via nested-hash where form ---
+{
+  my $q = User.where({}).includes(:profile).where({profiles => {bio => 'bob bio'}});
+  my $sql = $q.to-sql;
+  ok $sql.contains('LEFT OUTER JOIN profiles'),
+    'auto-references: where(profiles => { … }) promotes includes';
+  my @users = $q.all;
+  is @users.first.attrs<fname>, 'Bob',
+    'nested-hash auto-references filters correctly';
+}
+
+# --- 7.3.2: auto-references via order on joined table ---
+{
+  my $sql = User.where({}).includes(:profile).order('profiles.bio DESC').to-sql;
+  ok $sql.contains('LEFT OUTER JOIN profiles'),
+    'auto-references: order("profiles.bio") promotes includes';
+}
+
+# --- 7.3.2: where filtering on the base table does NOT promote ---
+{
+  my $sql = User.where({fname => 'Alice'}).includes(:profile).to-sql;
+  ok ! $sql.contains('LEFT OUTER JOIN profiles'),
+    'auto-references: filtering on the base table does not promote';
+}
+
+Page.destroy-all;
+Profile.destroy-all;
+User.destroy-all;
