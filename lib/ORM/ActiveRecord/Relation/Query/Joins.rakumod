@@ -56,6 +56,11 @@ role QueryJoins is export {
   method add-assoc-join(Str:D $kind, Str:D $name, Mu $base-class, Str $base-table) {
     my $stub = $base-class.new(:id(0));
     if $stub.belongs-tos{$name}:exists {
+      if $stub.is-polymorphic-assoc($name) {
+        die "joins: polymorphic belongs_to '$name' on "
+            ~ $base-class.^name
+            ~ " cannot be joined; use preload instead of eager-load";
+      }
       my $other-class = $stub.assoc-class-from-spec($stub.belongs-tos{$name});
       my $other-table = Utils.table-name($other-class);
       my $fkey = $name ~ '_id';
@@ -67,9 +72,14 @@ role QueryJoins is export {
       if $stub.assoc-spec-value($hm, 'through').defined {
         my $through-name = $stub.assoc-spec-value($hm, 'through').key.Str;
         my ($mid-class, $mid-table) = self.add-assoc-join($kind, $through-name, $base-class, $base-table);
-        my $singular = Utils.singular($name);
+        my $singular = $stub.assoc-source-name($hm, Utils.singular($name));
         my $mid-stub = $mid-class.new(:id(0));
         if $mid-stub.belongs-tos{$singular}:exists {
+          if $mid-stub.is-polymorphic-assoc($singular) {
+            die "joins: polymorphic source '$singular' on "
+                ~ $mid-class.^name
+                ~ " cannot be joined; use preload instead of eager-load";
+          }
           my $other-class = $mid-stub.assoc-class-from-spec($mid-stub.belongs-tos{$singular});
           my $other-table = Utils.table-name($other-class);
           my $fkey = $singular ~ '_id';
@@ -77,6 +87,19 @@ role QueryJoins is export {
           return ($other-class, $other-table);
         }
         die "joins: cannot resolve has_many :through '$name' on " ~ $base-class.^name;
+      }
+      if $stub.assoc-spec-has($hm, 'as') {
+        my $as-name = ~$stub.assoc-spec-value($hm, 'as');
+        my $other-class = $stub.assoc-class-from-spec($hm);
+        if $other-class !=== Mu {
+          my $other-table = Utils.table-name($other-class);
+          my $type-name = $stub.polymorphic-name;
+          my $type-q = $type-name.subst("'", "''", :g);
+          my $fkey = $as-name ~ '_id';
+          my $tcol = $as-name ~ '_type';
+          self.joins-values.push: "$kind $other-table ON $other-table.$fkey = $base-table.id AND $other-table.$tcol = '$type-q'";
+          return ($other-class, $other-table);
+        }
       }
       my $other-class = $stub.assoc-class-from-spec($hm);
       if $other-class !=== Mu {
@@ -88,6 +111,34 @@ role QueryJoins is export {
     }
     if $stub.has-ones{$name}:exists {
       my $ho = $stub.has-ones{$name};
+      if $stub.assoc-spec-value($ho, 'through').defined {
+        my $through-name = $stub.assoc-spec-value($ho, 'through').key.Str;
+        my ($mid-class, $mid-table) = self.add-assoc-join($kind, $through-name, $base-class, $base-table);
+        my $source = $stub.assoc-source-name($ho, $name);
+        my $mid-stub = $mid-class.new(:id(0));
+        if $mid-stub.belongs-tos{$source}:exists {
+          if $mid-stub.is-polymorphic-assoc($source) {
+            die "joins: polymorphic source '$source' on "
+                ~ $mid-class.^name
+                ~ " cannot be joined; use preload instead of eager-load";
+          }
+          my $other-class = $mid-stub.assoc-class-from-spec($mid-stub.belongs-tos{$source});
+          my $other-table = Utils.table-name($other-class);
+          my $fkey = $source ~ '_id';
+          self.joins-values.push: "$kind $other-table ON $other-table.id = $mid-table.$fkey";
+          return ($other-class, $other-table);
+        }
+        if $mid-stub.has-ones{$source}:exists {
+          my $other-class = $mid-stub.assoc-class-from-spec($mid-stub.has-ones{$source});
+          if $other-class !=== Mu {
+            my $other-table = Utils.table-name($other-class);
+            my $fkey = $mid-stub.assoc-fkey-from-spec($mid-stub.has-ones{$source}, Utils.to-foreign-key($mid-table));
+            self.joins-values.push: "$kind $other-table ON $other-table.$fkey = $mid-table.id";
+            return ($other-class, $other-table);
+          }
+        }
+        die "joins: cannot resolve has_one :through '$name' on " ~ $base-class.^name;
+      }
       my $other-class = $stub.assoc-class-from-spec($ho);
       if $other-class !=== Mu {
         my $other-table = Utils.table-name($other-class);

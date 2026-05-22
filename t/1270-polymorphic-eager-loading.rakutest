@@ -1,0 +1,161 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Picture {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: pictures => %(class => Picture, as => 'imageable');
+  }
+}
+
+class Post is Model {
+  submethod BUILD {
+    self.has-many: pictures => %(class => Picture, as => 'imageable');
+  }
+}
+
+class Picture is Model {
+  submethod BUILD {
+    self.belongs-to: imageable => :polymorphic;
+  }
+}
+
+class Attachment is Model {
+  submethod BUILD {
+    self.belongs-to: attachable => %(:polymorphic, :optional);
+  }
+}
+
+plan 27;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Picture.destroy-all;
+Attachment.destroy-all;
+Post.destroy-all;
+User.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+my $bob   = User.create({fname => 'Bob',   lname => 'B'});
+my $p1    = Post.create({title => 'Hello'});
+my $p2    = Post.create({title => 'World'});
+
+Picture.create({name => 'a-avatar.png', imageable => $alice});
+Picture.create({name => 'a-banner.jpg', imageable => $alice});
+Picture.create({name => 'b-avatar.png', imageable => $bob});
+Picture.create({name => 'p1-hero.png',  imageable => $p1});
+
+Attachment.create({name => 'a-doc.txt',  attachable => $alice});
+Attachment.create({name => 'a-spec.txt', attachable => $alice});
+Attachment.create({name => 'b-doc.txt',  attachable => $bob});
+Attachment.create({name => 'p1-doc.txt', attachable => $p1});
+Attachment.create({name => 'p2-doc.txt', attachable => $p2});
+Attachment.create({name => 'orphan.txt'});
+
+# --- preload polymorphic belongs-to: batched per type, all rows cached ---
+{
+  my @atts = Attachment.where({}).preload(:attachable).all;
+  is @atts.elems, 6,
+    'preload polymorphic belongs-to: every attachment loaded';
+  for @atts -> $a {
+    ok $a.assoc-cache<attachable>:exists,
+      'preload polymorphic belongs-to: assoc-cache populated for ' ~ $a.attrs<name>;
+  }
+
+  my $a1 = @atts.first({ .attrs<name> eq 'a-doc.txt' });
+  ok $a1.attachable.WHAT === User,
+    'preloaded polymorphic belongs-to resolves User';
+  is $a1.attachable.id, $alice.id,
+    'preloaded polymorphic belongs-to returns correct User id';
+
+  my $p1-att = @atts.first({ .attrs<name> eq 'p1-doc.txt' });
+  ok $p1-att.attachable.WHAT === Post,
+    'preloaded polymorphic belongs-to resolves Post';
+  is $p1-att.attachable.id, $p1.id,
+    'preloaded polymorphic belongs-to returns correct Post id';
+
+  my $orphan = @atts.first({ .attrs<name> eq 'orphan.txt' });
+  ok !$orphan.attachable.defined,
+    'preloaded polymorphic belongs-to leaves orphans as Nil';
+}
+
+# --- preload polymorphic has-many :as: only matching rows per parent ---
+{
+  my @users = User.where({}).preload(:pictures).all;
+  for @users -> $u {
+    ok $u.assoc-cache<pictures>:exists,
+      'preload has-many :as caches collection on user';
+  }
+  my $alice-loaded = @users.first({ .attrs<fname> eq 'Alice' });
+  is $alice-loaded.pictures.elems, 2,
+    'preloaded has-many :as returns the correct collection size';
+  is $alice-loaded.pictures.map(*.attrs<name>).sort.join(','),
+    'a-avatar.png,a-banner.jpg',
+    'preloaded has-many :as returns the correct rows';
+
+  my $bob-loaded = @users.first({ .attrs<fname> eq 'Bob' });
+  is $bob-loaded.pictures.elems, 1,
+    'preloaded has-many :as returns Bob exactly one row';
+
+  my @posts = Post.where({}).preload(:pictures).all;
+  my $p1-loaded = @posts.first({ .attrs<title> eq 'Hello' });
+  is $p1-loaded.pictures.elems, 1,
+    'preloaded has-many :as on Post returns matching rows only';
+  is $p1-loaded.pictures[0].attrs<name>, 'p1-hero.png',
+    'preloaded has-many :as on Post returns the right row';
+
+  my $p2-loaded = @posts.first({ .attrs<title> eq 'World' });
+  is $p2-loaded.pictures.elems, 0,
+    'preloaded has-many :as: empty collection when no matches';
+}
+
+# --- includes(:polymorphic-assoc) defaults to preload (no JOIN) ---
+{
+  my @atts = Attachment.where({}).includes(:attachable).all;
+  ok @atts.first.assoc-cache<attachable>:exists,
+    'includes polymorphic belongs-to caches via preload path';
+}
+
+# --- eager-load on polymorphic belongs-to raises a clear error ---
+{
+  my $threw = False;
+  my $msg;
+  {
+    CATCH {
+      default { $threw = True; $msg = .message }
+    }
+    Attachment.where({}).eager-load(:attachable).all;
+  }
+  ok $threw,
+    'eager-load on polymorphic belongs-to raises';
+  ok ($msg // '').contains('polymorphic'),
+    'eager-load error message mentions polymorphic';
+}
+
+# --- nested preload from polymorphic belongs-to: mixed-type children OK ---
+# Each User has pictures; Post does not need :pictures to resolve here.
+# The preloader must group children by class so requesting a nested
+# association that exists on User and Post both succeeds without crashing.
+{
+  my @atts = Attachment.where({}).preload(attachable => :pictures).all;
+  my $a1 = @atts.first({ .attrs<name> eq 'a-doc.txt' });
+  ok $a1.attachable.assoc-cache<pictures>:exists,
+    'nested preload from polymorphic belongs-to caches on User parent';
+  is $a1.attachable.pictures.elems, 2,
+    'nested polymorphic preload returns correct count for User parent';
+
+  my $p1-att = @atts.first({ .attrs<name> eq 'p1-doc.txt' });
+  ok $p1-att.attachable.assoc-cache<pictures>:exists,
+    'nested preload from polymorphic belongs-to caches on Post parent';
+  is $p1-att.attachable.pictures.elems, 1,
+    'nested polymorphic preload returns correct count for Post parent';
+}
+
+Picture.destroy-all;
+Attachment.destroy-all;
+Post.destroy-all;
+User.destroy-all;

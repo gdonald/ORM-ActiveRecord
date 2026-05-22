@@ -220,3 +220,74 @@ User.where({}).preload(:pages, articles => :scribe).all;
 
 Each loaded record exposes its cache as `record.assoc-cache<name>`, so tests
 and instrumentation can verify what was preloaded without re-querying.
+
+### Polymorphic associations
+
+`preload` and `includes` both batch polymorphic associations by type:
+
+```perl6
+class Attachment is Model {
+  submethod BUILD {
+    self.belongs-to: attachable => %(:polymorphic, :optional);
+  }
+}
+
+# One query for attachments, plus one query per distinct attachable_type.
+my @atts = Attachment.where({}).preload(:attachable).all;
+```
+
+`eager-load(:polymorphic-assoc)` raises an error — the target table varies
+per row, so a single LEFT OUTER JOIN cannot resolve it. Use `preload` (or
+`includes` without a JOIN-forcing chain) instead.
+
+The polymorphic *inverse* (`has_many :as`) is loaded with a single query
+scoped by `<as>_id` and `<as>_type`:
+
+```perl6
+class User is Model {
+  submethod BUILD {
+    self.has-many: pictures => %(class => Picture, as => 'imageable');
+  }
+}
+
+# One query for users, one query for matching pictures.
+my @users = User.where({}).preload(:pictures).all;
+```
+
+Nested preloads from a polymorphic `belongs-to` work even though the parents
+returned have different classes. The preloader partitions the cached parents
+by class before recursing, and silently skips classes that do not declare the
+named child association:
+
+```perl6
+Attachment.where({}).preload(attachable => :pictures).all;
+```
+
+### has_many / has_one :through
+
+Through-associations are loaded in two batched steps: first the intermediate
+collection on the parents, then the source association on the intermediates.
+The final cache on each parent is the flattened (`has_many`) or singular
+(`has_one`) source value.
+
+```perl6
+class User is Model {
+  submethod BUILD {
+    self.has-many: subscriptions => class => Subscription;
+    self.has-many: magazines => through => :subscriptions;
+    self.has-one:  profile  => class => Profile;
+    self.has-one:  account  => through => :profile;
+  }
+}
+
+# Two queries: one for subscriptions, one for the magazines they point at.
+User.where({}).preload(:magazines).all;
+
+# Same shape for has_one :through.
+User.where({}).preload(:account).all;
+```
+
+`eager-load(:through-assoc)` joins through the intermediate table to the
+source. With `has_many :through`, the JOIN inflates the result set with one
+row per join row — pair it with `distinct` (or fall back to `preload`) when
+you only need the parents.

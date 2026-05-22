@@ -1,0 +1,162 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Subscription {...}
+class Profile      {...}
+class Account      {...}
+
+class User is Model {
+  submethod BUILD {
+    self.has-many: subscriptions => class => Subscription;
+    self.has-many: magazines => through => :subscriptions;
+    self.has-one:  profile  => class => Profile;
+    self.has-one:  account  => through => :profile;
+  }
+}
+
+class Magazine is Model {
+  submethod BUILD {
+    self.has-many: subscriptions => class => Subscription;
+  }
+}
+
+class Subscription is Model {
+  submethod BUILD {
+    self.belongs-to: user     => class => User;
+    self.belongs-to: magazine => class => Magazine;
+  }
+}
+
+class Profile is Model {
+  submethod BUILD {
+    self.belongs-to: user    => class => User;
+    self.belongs-to: account => class => Account;
+  }
+}
+
+class Account is Model {}
+
+plan 21;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Subscription.destroy-all;
+Magazine.destroy-all;
+Profile.destroy-all;
+Account.destroy-all;
+User.destroy-all;
+
+my $alice = User.create({fname => 'Alice', lname => 'A'});
+my $bob   = User.create({fname => 'Bob',   lname => 'B'});
+my $carol = User.create({fname => 'Carol', lname => 'C'});
+
+my $mag-a = Magazine.create({title => 'Wired'});
+my $mag-b = Magazine.create({title => 'Time'});
+my $mag-c = Magazine.create({title => 'Vogue'});
+
+Subscription.create({user => $alice, magazine => $mag-a});
+Subscription.create({user => $alice, magazine => $mag-b});
+Subscription.create({user => $bob,   magazine => $mag-a});
+Subscription.create({user => $bob,   magazine => $mag-c});
+# Carol has no subscriptions
+
+my $acct-a = Account.create({name => 'alice-acct'});
+my $acct-b = Account.create({name => 'bob-acct'});
+Profile.create({user => $alice, account => $acct-a, bio => 'A bio'});
+Profile.create({user => $bob,   account => $acct-b, bio => 'B bio'});
+# Carol has no profile
+
+# --- preload has-many :through caches the target collection on the owner ---
+{
+  my @users = User.where({}).preload(:magazines).all;
+  for @users -> $u {
+    ok $u.assoc-cache<magazines>:exists,
+      'preload has-many :through caches collection on ' ~ $u.attrs<fname>;
+  }
+
+  my $a = @users.first({ .attrs<fname> eq 'Alice' });
+  is $a.magazines.elems, 2,
+    'preloaded :through returns correct count for Alice';
+  is $a.magazines.map(*.attrs<title>).sort.join(','), 'Time,Wired',
+    'preloaded :through returns correct rows for Alice';
+
+  my $b = @users.first({ .attrs<fname> eq 'Bob' });
+  is $b.magazines.map(*.attrs<title>).sort.join(','), 'Vogue,Wired',
+    'preloaded :through returns correct rows for Bob';
+
+  my $c = @users.first({ .attrs<fname> eq 'Carol' });
+  is $c.magazines.elems, 0,
+    'preloaded :through returns empty collection when no join rows';
+}
+
+# --- preload also stitches the through (join) collection on the owner ---
+{
+  my @users = User.where({}).preload(:magazines).all;
+  my $a = @users.first({ .attrs<fname> eq 'Alice' });
+  ok $a.assoc-cache<subscriptions>:exists,
+    'preload :through also caches the intermediate join collection';
+  is $a.subscriptions.elems, 2,
+    'cached intermediate join collection has the right count';
+}
+
+# --- preload has-one :through caches the singular target on the owner ---
+{
+  my @users = User.where({}).preload(:account).all;
+  my $a = @users.first({ .attrs<fname> eq 'Alice' });
+  ok $a.assoc-cache<account>:exists,
+    'preload has-one :through caches the account on user';
+  is $a.account.attrs<name>, 'alice-acct',
+    'preloaded has-one :through returns the correct account';
+
+  my $c = @users.first({ .attrs<fname> eq 'Carol' });
+  ok $c.assoc-cache<account>:exists,
+    'preload has-one :through caches even when there is no join row';
+  ok !$c.account.defined,
+    'preloaded has-one :through returns Nil when no join row';
+}
+
+# --- eager-load on has-many :through emits a JOIN and still caches ---
+# The JOIN inflates row counts (one per join row); take the first hit per name.
+{
+  my @users = User.where({}).eager-load(:magazines).all;
+  my %seen;
+  for @users -> $u {
+    next if %seen{$u.attrs<fname>}:exists;
+    %seen{$u.attrs<fname>} = True;
+    ok $u.assoc-cache<magazines>:exists,
+      'eager-load :through caches collection on ' ~ $u.attrs<fname>;
+  }
+  my $a = @users.first({ .attrs<fname> eq 'Alice' });
+  is $a.magazines.elems, 2,
+    'eager-load :through returns correct count for Alice';
+}
+
+# --- includes(:through) without references stays a preload but still caches ---
+{
+  my @users = User.where({}).includes(:magazines).all;
+  my $a = @users.first({ .attrs<fname> eq 'Alice' });
+  ok $a.assoc-cache<magazines>:exists,
+    'includes :through caches via the preload path';
+  is $a.magazines.elems, 2,
+    'includes :through returns the right collection';
+}
+
+# --- nested preload: through -> further association on the target ---
+{
+  my @users = User.where({}).preload(magazines => :subscriptions).all;
+  my $a = @users.first({ .attrs<fname> eq 'Alice' });
+  my $mag = $a.magazines.first({ .attrs<title> eq 'Wired' });
+  ok $mag.assoc-cache<subscriptions>:exists,
+    'nested preload through -> belongs-to/has-many caches grandchild';
+  ok $mag.subscriptions.elems >= 1,
+    'nested preload through resolves grandchild rows';
+}
+
+Subscription.destroy-all;
+Magazine.destroy-all;
+Profile.destroy-all;
+Account.destroy-all;
+User.destroy-all;
