@@ -36,6 +36,7 @@
     "ORM::ActiveRecord::Model::Relations": "lib/ORM/ActiveRecord/Model/Relations.rakumod",
     "ORM::ActiveRecord::Model::Serialization": "lib/ORM/ActiveRecord/Model/Serialization.rakumod",
     "ORM::ActiveRecord::Model::StatePredicates": "lib/ORM/ActiveRecord/Model/StatePredicates.rakumod",
+    "ORM::ActiveRecord::Model::StrictLoading": "lib/ORM/ActiveRecord/Model/StrictLoading.rakumod",
     "ORM::ActiveRecord::Model::Suppressor": "lib/ORM/ActiveRecord/Model/Suppressor.rakumod",
     "ORM::ActiveRecord::Relation::Collection": "lib/ORM/ActiveRecord/Relation/Collection.rakumod",
     "ORM::ActiveRecord::Relation::Query": "lib/ORM/ActiveRecord/Relation/Query.rakumod",

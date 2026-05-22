@@ -1037,7 +1037,7 @@ Per-field parent errors are not merged — Rails' `validates_associated` rolls u
 
 ## Strict Loading
 
-`strict-loading => True` on any association causes lazy access to raise `X::StrictLoadingViolationError`. Use it to surface N+1 patterns; once eager loading lands (phase 7), the exception will be suppressed when the association was pre-loaded.
+`strict-loading => True` on any association causes lazy access to raise `X::StrictLoadingViolationError`. Use it to surface N+1 patterns.
 
 ```perl6
 class Order is Model {
@@ -1053,6 +1053,34 @@ $order.line-items;   # → dies with X::StrictLoadingViolationError
 ```
 
 The exception's `model` and `association` accessors expose the model class name and the association name for diagnostics.
+
+Eager loading bypasses the check: an association loaded via `preload`, `eager-load`, or `includes` is served from the cache without triggering `X::StrictLoadingViolationError`. Strict loading therefore only fires on genuinely lazy access.
+
+### Per-instance
+
+`make-strict-loading` flips the flag on a single record so that every association on that record raises on lazy access. `is-strict-loading` reports the current state.
+
+```perl6
+my $order = Order.find($id);
+$order.make-strict-loading;
+$order.is-strict-loading;   # → True
+$order.line-items;          # → dies with X::StrictLoadingViolationError
+```
+
+### Class-level
+
+`strict-loading-by-default` opts a whole class in to the same behaviour without touching each association. `is-strict-loading-by-default` is the predicate.
+
+```perl6
+class Order is Model {
+  submethod BUILD {
+    self.strict-loading-by-default;
+    self.has-many: line-items => %(class => LineItem);
+  }
+}
+
+Order.find($id).line-items;   # → dies with X::StrictLoadingViolationError
+```
 
 ## Through Source and Source Type
 

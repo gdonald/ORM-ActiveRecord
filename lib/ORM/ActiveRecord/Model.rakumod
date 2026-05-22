@@ -22,6 +22,7 @@ use ORM::ActiveRecord::Model::RawSql;
 use ORM::ActiveRecord::Model::Relations;
 use ORM::ActiveRecord::Model::Serialization;
 use ORM::ActiveRecord::Model::StatePredicates;
+use ORM::ActiveRecord::Model::StrictLoading;
 use ORM::ActiveRecord::Model::Suppressor;
 
 class Model
@@ -35,6 +36,7 @@ class Model
   does ModelRelations
   does ModelSerialization
   does ModelStatePredicates
+  does ModelStrictLoading
   does ModelSuppressor
   is export
 {
@@ -53,6 +55,7 @@ class Model
   has %.attrs;
   has %.attrs-db;
   has Bool $.is-readonly is rw = False;
+  has Bool $.is-strict-loading is rw = False;
   has Bool $.is-destroyed is rw = False;
   has Bool $.was-new-record is rw = False;
   has Bool $.was-persisted is rw = False;
@@ -189,11 +192,11 @@ class Model
 
     if any(%!has-manys.keys) eq $name {
       my $spec = %!has-manys{$name};
-      self.check-strict-loading($name, $spec);
       if %!assoc-cache{$name}:exists {
         my $cached-class = self.assoc-class-from-spec($spec) // Mu:U;
         return self.wrap-collection(%!assoc-cache{$name}.list, $name, $spec, $cached-class, @rest);
       }
+      self.check-strict-loading($name, $spec);
       my $class = Mu:U;
       my $join-table = '';
       my $as-name = '';
@@ -314,8 +317,8 @@ class Model
 
     if any(%!has-ones.keys) eq $name {
       my $spec = %!has-ones{$name};
-      self.check-strict-loading($name, $spec);
       return %!assoc-cache{$name} if %!assoc-cache{$name}:exists;
+      self.check-strict-loading($name, $spec);
       my $fkey-name = Utils.base-name(self.fkey-name);
       my $class = Mu:U;
       my $join-table = '';
@@ -407,8 +410,8 @@ class Model
 
     if any(%!habtms.keys) eq $name {
       my $spec = %!habtms{$name};
-      self.check-strict-loading($name, $spec);
       return %!assoc-cache{$name}.list if %!assoc-cache{$name}:exists;
+      self.check-strict-loading($name, $spec);
       my $class = self.assoc-class-from-spec($spec);
       my $join-table = self.habtm-join-table($name);
       my $owner-key = Utils.base-name(self.fkey-name);
@@ -432,8 +435,8 @@ class Model
 
     if any(%!belongs-tos.keys) eq $name {
       my $spec = %!belongs-tos{$name};
-      self.check-strict-loading($name, $spec);
       return %!assoc-cache{$name} if %!assoc-cache{$name}:exists;
+      self.check-strict-loading($name, $spec);
       if self.is-polymorphic-assoc($name) {
         my $type-attr = $name ~ '_type';
         my $type-name = %!attrs{$type-attr};
@@ -589,11 +592,17 @@ class Model
   }
 
   method check-strict-loading(Str:D $name, \spec) {
-    return unless self.assoc-strict-loading(spec);
+    return unless self.is-association-strict-loading(spec);
     die X::StrictLoadingViolationError.new(
       :model(self.WHAT.^name),
       :association($name),
     );
+  }
+
+  method is-association-strict-loading(\spec --> Bool) {
+    return True if $!is-strict-loading;
+    return True if self.is-strict-loading-by-default;
+    self.assoc-strict-loading(spec);
   }
 
   method assoc-autosave(\spec) {

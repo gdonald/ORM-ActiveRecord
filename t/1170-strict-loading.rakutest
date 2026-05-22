@@ -18,14 +18,39 @@ class Slowner is Model {
 class Slthing is Model {
   submethod BUILD {
     self.belongs-to: slowner => %(
-      class-name      => 'Slowner',
+      class-name      => 'Slthing',
       strict-loading  => True,
       optional        => True,
     );
   }
 }
 
-plan 6;
+class Slowner2 is Model {
+  method table-name { 'slowners' }
+
+  submethod BUILD {
+    self.has-many: slthings => %(
+      class       => Slthing,
+      class-name  => 'Slthing',
+      foreign-key => 'slowner_id',
+    );
+  }
+}
+
+class Slowner3 is Model {
+  method table-name { 'slowners' }
+
+  submethod BUILD {
+    self.strict-loading-by-default;
+    self.has-many: slthings => %(
+      class       => Slthing,
+      class-name  => 'Slthing',
+      foreign-key => 'slowner_id',
+    );
+  }
+}
+
+plan 17;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -35,7 +60,7 @@ DB.shared.delete-records(:table('slowners'), :where({}));
 my $owner = Slowner.create({name => 'strict'});
 Slthing.create({label => 'x', slowner_id => $owner.id});
 
-# has-many strict-loading raises on access
+# per-relation strict-loading raises X::StrictLoadingViolationError
 dies-ok { $owner.slthings },
   'has-many flagged strict-loading raises on access';
 
@@ -50,10 +75,53 @@ is $err.association, 'slthings',
 is $err.model, 'Slowner',
   'error names the model';
 
-# belongs-to strict-loading raises on access
 my $child = Slthing.find-by({label => 'x'});
 dies-ok { $child.slowner },
   'belongs-to flagged strict-loading raises on access';
+
+# per-instance make-strict-loading
+my $owner2 = Slowner2.find($owner.id);
+ok !$owner2.is-strict-loading,
+  'is-strict-loading defaults to False';
+lives-ok { $owner2.slthings },
+  'untouched association loads lazily by default';
+
+my $owner2b = Slowner2.find($owner.id);
+$owner2b.make-strict-loading;
+ok $owner2b.is-strict-loading,
+  'make-strict-loading sets the instance flag';
+dies-ok { $owner2b.slthings },
+  'per-instance strict-loading raises on lazy access';
+
+my $err2;
+try { $owner2b.slthings; CATCH { default { $err2 = $_ } } }
+isa-ok $err2, X::StrictLoadingViolationError,
+  'per-instance raises X::StrictLoadingViolationError';
+
+# class-level strict-loading-by-default
+my $owner3 = Slowner3.find($owner.id);
+ok $owner3.is-strict-loading-by-default,
+  'class flag visible via predicate';
+dies-ok { $owner3.slthings },
+  'class-level strict-loading-by-default raises on lazy access';
+
+my $err3;
+try { $owner3.slthings; CATCH { default { $err3 = $_ } } }
+isa-ok $err3, X::StrictLoadingViolationError,
+  'class-level raises X::StrictLoadingViolationError';
+
+# strict-loading does not fire when the association was preloaded
+my @preloaded = Slowner.where({}).preload(:slthings).all;
+my $preloaded-owner = @preloaded.first;
+ok $preloaded-owner.assoc-cache<slthings>:exists,
+  'preload populates the assoc-cache';
+lives-ok { $preloaded-owner.slthings },
+  'per-relation strict-loading allows preloaded access';
+
+# class-level strict-loading-by-default also permits preloaded access
+my @preloaded3 = Slowner3.where({}).preload(:slthings).all;
+lives-ok { @preloaded3.first.slthings },
+  'class-level strict-loading-by-default allows preloaded access';
 
 DB.shared.delete-records(:table('slthings'), :where({}));
 DB.shared.delete-records(:table('slowners'), :where({}));

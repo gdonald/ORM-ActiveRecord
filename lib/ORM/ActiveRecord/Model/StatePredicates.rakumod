@@ -5,6 +5,11 @@ role ModelStatePredicates is export {
     self;
   }
 
+  method make-strict-loading(Bool:D $on = True) {
+    self.is-strict-loading = $on;
+    self;
+  }
+
   method is-new-record(--> Bool) {
     self.id == 0 && !self.is-destroyed;
   }
