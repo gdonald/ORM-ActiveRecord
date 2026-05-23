@@ -1,13 +1,17 @@
 # Errors
 
-ORM::ActiveRecord raises typed exceptions for the failure modes that callers
-typically want to handle (a missing row, a record that failed validation, a
-modification attempt on a `readonly` record, an irreversible migration). All
-of them live in one module:
+ORM::ActiveRecord exposes two complementary error surfaces:
+
+- **Typed exceptions** for failure modes that callers want to `try { … CATCH { … } }` around — things like a missing row, an invalid record, or an irreversible migration.
+- **A per-record `errors` collection** that captures validation failures without throwing, so the caller can inspect every problem on a record at once.
+
+The exceptions live in:
 
 ```perl6
 use ORM::ActiveRecord::Errors::X;
 ```
+
+The collection is what `record.errors` returns. It is documented in [The errors collection](#the-errors-collection) at the bottom of this page.
 
 Each exception is a regular Raku `Exception`, so the usual `try { … CATCH { when … } }`
 idiom applies. The table below summarises which methods raise which exception;
@@ -144,3 +148,115 @@ try {
 
 See [Validator Options &raquo; strict](validations/options.md#strict) for the
 declaration syntax.
+
+## The errors collection
+
+Every model instance carries an `errors` object — an instance of
+`ORM::ActiveRecord::Errors::Errors` — that validators populate during
+`is-valid` / `is-invalid`. The collection mirrors Rails' `ActiveModel::Errors`
+API so the same patterns (`add`, `delete`, `clear`, `where`, `details`,
+`full-messages`, `is-added`, `group-by-attribute`, `merge`, …) work without
+translation.
+
+Each entry is an `ORM::ActiveRecord::Errors::Error` carrying:
+
+| Field      | Meaning                                                              |
+| ---------- | -------------------------------------------------------------------- |
+| `attribute`| Attribute the error is attached to (`'base'` for record-level errors)|
+| `type`     | Short symbolic kind (e.g. `'blank'`, `'taken'`, `'greater-than'`)    |
+| `message`  | Human-readable failure message (already interpolated)                |
+| `options`  | Hash of options preserved from the `add` call (e.g. `count => 5`)    |
+
+### Adding errors
+
+`add` is the primary way to append an error from user code or from a custom
+validator. The second argument is the error *type*; pass `:message` to override
+the rendered text, and any extra named options interpolate into the template.
+
+```perl6
+$record.errors.add('email', 'blank');                                 # type=blank, message='must be present'
+$record.errors.add('email', 'taken', message => 'is already used');   # type=taken, overridden message
+$record.errors.add('email', 'must be valid');                         # type=invalid (any whitespace ⇒ literal message)
+$record.errors.add('age',   'greater-than', count => 0);              # interpolates {count}
+```
+
+Pre-built `Error` instances (for example, when copying errors from one record
+to another) can be appended with `import`:
+
+```perl6
+$record.errors.import(Error.new(:$field, :message<imported>, :type<custom>));
+```
+
+### Removing errors
+
+```perl6
+$record.errors.delete('email');               # remove every error on :email
+$record.errors.delete('email', 'taken');      # only the :taken kind on :email
+$record.errors.clear;                         # wipe the collection
+```
+
+### Reading errors
+
+```perl6
+$record.errors.size;             # Int — number of errors
+$record.errors.count;            # alias of size
+$record.errors.is-any;           # Bool — any errors?
+$record.errors.is-empty;         # Bool — no errors?
+$record.errors.attribute-names;  # ('email', 'age') — unique attributes with errors
+
+$record.errors.full-messages;             # ('email must be present', 'age must be greater than 0')
+$record.errors.full-messages-for('email');# ('email must be present')
+$record.errors.messages;                  # { email => ('must be present',) }
+
+$record.errors.details;
+# { email => ({error => 'blank'}, ), age => ({error => 'greater-than', count => 0}, ) }
+
+$record.errors.group-by-attribute;
+# { email => [Error, Error], age => [Error] }
+
+$record.errors.objects;          # full sequence of Error objects
+```
+
+Indexed access (`$record.errors[0]`) and FALLBACK access by attribute name
+(`$record.errors.email`) are both supported. The FALLBACK form returns a
+sequence of messages for that attribute, so it composes with `[0]` or
+stringification: `$record.errors.email[0] eq 'must be present'`.
+
+### Looking for specific errors
+
+```perl6
+$record.errors.where(:attribute<email>);            # all errors on email
+$record.errors.where(:type<taken>);                 # all 'taken' errors
+$record.errors.where(:attribute<email>, :type<blank>);
+
+$record.errors.is-of-kind('email', 'blank');        # Bool — any blank error on email?
+$record.errors.is-added('age', 'greater-than', count => 0);  # Bool — exact match incl. options
+```
+
+### Merging errors between records
+
+`merge` appends another record's errors onto this one. Useful when bubbling
+errors up from an associated record.
+
+```perl6
+$parent.errors.merge($child.errors);
+```
+
+### Error types emitted by built-in validators
+
+| Validator                  | Type(s) recorded                                        |
+| -------------------------- | ------------------------------------------------------- |
+| `:presence`                | `blank`                                                 |
+| `length` (`max`)           | `too-long` (carries `:count`)                           |
+| `length` (`min`)           | `too-short` (carries `:count`)                          |
+| `length` (`is` / `in`)     | `wrong-length` (carries `:count` when `is`)             |
+| `:acceptance`              | `accepted`                                              |
+| `:confirmation`            | `confirmation`                                          |
+| `inclusion`                | `inclusion`                                             |
+| `exclusion`                | `exclusion`                                             |
+| `format`                   | `invalid`                                               |
+| `numericality` / `comparison` | `greater-than`, `greater-than-or-equal-to`, `less-than`, `less-than-or-equal-to`, `equal-to`, `other-than` (each carries `:count`) |
+| `uniqueness`               | `taken`                                                 |
+| `validates-associated`     | `invalid`                                               |
+| automatic `belongs-to` presence | `blank`                                            |
+| `dependent: :restrict_with_error` | `restrict-dependent-destroy`                     |

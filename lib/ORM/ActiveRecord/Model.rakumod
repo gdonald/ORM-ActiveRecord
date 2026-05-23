@@ -1249,7 +1249,7 @@ class Model
           my $field = self.get-field($name);
           if $field {
             my $message = 'is invalid';
-            $!errors.push(Error.new(:$field, :$message));
+            $!errors.push(Error.new(:$field, :$message, :type<invalid>));
           }
         }
       }
@@ -1278,7 +1278,7 @@ class Model
       next unless $field;
       my $template = 'must exist';
       my $message = Message.build(:$template, :obj(self), :$field);
-      my $e = Error.new(:$field, :$message);
+      my $e = Error.new(:$field, :$message, :type<blank>);
       $!errors.push($e);
     }
   }
@@ -1493,7 +1493,7 @@ class Model
   method add-restrict-error(Str:D $assoc) {
     my $field = Field.new(:name('base'), :type('association'));
     my $message = 'Cannot delete record because dependent ' ~ $assoc ~ ' exist';
-    $!errors.push(Error.new(:$field, :$message));
+    $!errors.push(Error.new(:$field, :$message, :type<restrict-dependent-destroy>));
   }
 
   method dependent-destroy-children(Str:D $name, \spec, Bool:D :$many) {

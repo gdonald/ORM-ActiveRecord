@@ -1,0 +1,245 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::Error;
+use ORM::ActiveRecord::Errors::Errors;
+use ORM::ActiveRecord::Schema::Field;
+use Test;
+
+class ErrPhevent is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'name',  { :presence }
+    self.validate: 'score', { numericality => { gt => 0 } }
+  }
+}
+
+plan 51;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+ErrPhevent.destroy-all;
+
+# errors.add with a type symbol
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name', 'blank');
+
+  ok $e.errors.is-any,             'add type populates errors';
+  is $e.errors.size, 1,            'size reflects single add';
+  is $e.errors[0].type, 'blank',   'stored type matches what was added';
+  is $e.errors[0].message, 'must be present', 'default template chosen for known type';
+}
+
+# errors.add with explicit :message override
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name', 'taken', message => 'is already taken by friend');
+
+  is $e.errors[0].type,    'taken',                    'type kept when :message overrides';
+  is $e.errors[0].message, 'is already taken by friend', 'explicit :message used';
+}
+
+# errors.add with bare-string message
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name', 'must be cool');
+
+  is $e.errors[0].type,    'invalid',     'whitespace-bearing arg becomes message; type defaults to invalid';
+  is $e.errors[0].message, 'must be cool', 'message stored verbatim';
+}
+
+# errors.add option interpolation
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('score', 'greater-than', count => 0);
+
+  is $e.errors[0].message,        'must be greater than 0', '{count} interpolated from options';
+  is $e.errors[0].options<count>, 0,                        'option preserved on error';
+}
+
+# errors.import accepts a prebuilt Error
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $field = Field.new(:name<name>, :type<attribute>);
+  $e.errors.import(Error.new(:$field, :message<imported>, :type<custom>));
+
+  is $e.errors[0].message, 'imported', 'imported error stored';
+  is $e.errors[0].type,    'custom',   'imported error type preserved';
+}
+
+# errors.delete by attribute
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name',  'blank');
+  $e.errors.add('score', 'greater-than', count => 0);
+
+  my @removed = $e.errors.delete('name');
+
+  is @removed.elems,   1,       'delete returns removed errors';
+  is $e.errors.size,   1,       'remaining errors keep the other attribute';
+  is $e.errors[0].attribute, 'score', 'score error survived deletion';
+}
+
+# errors.delete by attribute + type
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name', 'blank');
+  $e.errors.add('name', 'taken');
+
+  $e.errors.delete('name', 'blank');
+
+  is $e.errors.size, 1,            'only the matching-type error removed';
+  is $e.errors[0].type, 'taken',   'non-matching error kept';
+}
+
+# errors.clear
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name', 'blank');
+  $e.errors.add('score', 'greater-than', count => 0);
+
+  $e.errors.clear;
+
+  ok $e.errors.is-empty, 'clear empties all errors';
+}
+
+# full-messages prepends attribute
+{
+  my $e = ErrPhevent.build({name => '', score => 5});
+  $e.is-invalid;
+
+  my @msgs = $e.errors.full-messages;
+  ok @msgs.elems == 1,                           'one error from presence';
+  is @msgs[0], 'name must be present',           'full-message prefixed with attribute';
+}
+
+# base errors are not prefixed
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('base', 'something broke');
+
+  is $e.errors.full-messages[0], 'something broke', 'base attribute not prepended';
+}
+
+# full-messages-for filters by attribute
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name',  'blank');
+  $e.errors.add('score', 'greater-than', count => 0);
+
+  is $e.errors.full-messages-for('score').elems, 1,                     'one match for score';
+  is $e.errors.full-messages-for('score')[0],    'score must be greater than 0', 'attribute-scoped full message';
+}
+
+# errors.details
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name', 'blank');
+  $e.errors.add('score', 'greater-than', count => 0);
+
+  my %d = $e.errors.details;
+
+  is %d<name>[0]<error>,  'blank',        'details captures type as error key';
+  is %d<score>[0]<error>, 'greater-than', 'details key matches attribute';
+  is %d<score>[0]<count>, 0,              'options surfaced inside details';
+}
+
+# errors.where filters by attribute and type
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name', 'blank');
+  $e.errors.add('name', 'taken');
+  $e.errors.add('score', 'greater-than', count => 0);
+
+  is $e.errors.where(:attribute<name>).elems,      2, 'two name-scoped errors';
+  is $e.errors.where(:type<taken>).elems,          1, 'one taken-scoped error';
+  is $e.errors.where(:attribute<name>, :type<blank>).elems, 1, 'attribute + type narrows correctly';
+}
+
+# errors.is-of-kind
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name', 'blank');
+
+  ok  $e.errors.is-of-kind('name',  'blank'),   'matches recorded kind';
+  nok $e.errors.is-of-kind('name',  'taken'),   'unmatched kind returns False';
+  nok $e.errors.is-of-kind('score', 'blank'),   'attribute mismatch returns False';
+}
+
+# errors.is-added with options
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('score', 'greater-than', count => 0);
+
+  ok  $e.errors.is-added('score', 'greater-than', count => 0), 'matches with options';
+  nok $e.errors.is-added('score', 'greater-than', count => 1), 'option mismatch returns False';
+  nok $e.errors.is-added('score', 'less-than'),                'type mismatch returns False';
+}
+
+# size / count / is-any / is-empty
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+
+  ok  $e.errors.is-empty,    'fresh errors object is empty';
+  nok $e.errors.is-any,      'is-any False when empty';
+
+  $e.errors.add('name', 'blank');
+
+  is  $e.errors.size,  1,    'size reflects one error';
+  is  $e.errors.count, 1,    'count is alias of size';
+  ok  $e.errors.is-any,      'is-any True after add';
+  nok $e.errors.is-empty,    'is-empty False after add';
+}
+
+# group-by-attribute
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('name',  'blank');
+  $e.errors.add('name',  'taken');
+  $e.errors.add('score', 'greater-than', count => 0);
+
+  my %g = $e.errors.group-by-attribute;
+
+  is %g<name>.elems,  2, 'two errors grouped under name';
+  is %g<score>.elems, 1, 'one error grouped under score';
+  ok %g<name>[0] ~~ Error, 'group values are Error objects';
+}
+
+# objects iteration exposes message / type / options
+{
+  my $e = ErrPhevent.build({name => 'A', score => 5});
+  $e.errors.add('score', 'greater-than', count => 0);
+
+  my @objs = $e.errors.objects;
+  is @objs.elems, 1,                        'objects yields stored errors';
+  is @objs[0].message, 'must be greater than 0', 'object exposes .message';
+  is @objs[0].type,    'greater-than',           'object exposes .type';
+  is @objs[0].options<count>, 0,                 'object exposes .options';
+}
+
+# merge between records
+{
+  my $a = ErrPhevent.build({name => 'A', score => 5});
+  my $b = ErrPhevent.build({name => 'B', score => 5});
+
+  $a.errors.add('name',  'blank');
+  $b.errors.add('score', 'greater-than', count => 0);
+
+  $a.errors.merge($b.errors);
+
+  is $a.errors.size, 2,                          'merge appends other errors';
+  ok $a.errors.is-of-kind('score', 'greater-than'), 'merged error retains type';
+}
+
+# backward compatible FALLBACK access still works
+{
+  my $e = ErrPhevent.build({name => '', score => 5});
+  $e.is-invalid;
+
+  ok $e.errors.name[0] eq 'must be present', 'FALLBACK access by attribute name unchanged';
+}
+
+ErrPhevent.destroy-all;
