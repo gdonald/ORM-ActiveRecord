@@ -1307,6 +1307,57 @@ class Model
     $!validators.validators.push($v);
   }
 
+  multi method validates(@names, Hash:D $params) {
+    for @names -> $name {
+      next if $name eq '';
+      if $params<associated> {
+        self.validates-associated($name, $params);
+      } else {
+        self.validate($name, $params);
+      }
+    }
+  }
+
+  multi method validates(Str:D $name, Hash:D $params) {
+    self.validates([$name], $params);
+  }
+
+  multi method validates(*@names, *%params) {
+    self.validates(@names.list, %params.Hash);
+  }
+
+  method validates-with($validator, *%options) {
+    my $klass = self.WHAT;
+    my $wv = WithValidator.new(:$klass, :$validator, options => %options.Hash);
+    $!validators.with-validators.push($wv);
+  }
+
+  multi method validates-each(@names, Block:D $block, *%opts) {
+    my $klass = self.WHAT;
+    my @fields = @names.map(*.Str);
+    my %params = %opts.Hash;
+    my $ev = EachValidator.new(:$klass, :@fields, :$block, params => %params);
+    $!validators.each-validators.push($ev);
+  }
+
+  multi method validates-each(Str:D $name, Block:D $block, *%opts) {
+    self.validates-each([$name], $block, |%opts);
+  }
+
+  multi method validates-each(*@names, :&block!, *%opts) {
+    self.validates-each(@names.list, &block, |%opts);
+  }
+
+  multi method validates-associated(Str:D $name, Hash:D $params = {}) {
+    my $klass = self.WHAT;
+    my $av = AssociatedValidator.new(:$klass, :$name, :$params);
+    $!validators.associated.push($av);
+  }
+
+  multi method validates-associated(*@names) {
+    self.validates-associated($_, {}) for @names;
+  }
+
   method scope(Str:D $name, Block:D $block) {
     my $klass = self.WHAT;
 

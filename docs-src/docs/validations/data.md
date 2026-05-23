@@ -360,6 +360,144 @@ False
 400 to 1000 required
 ```
 
+## Comparison
+
+The `comparison` validation compares a field value against either a literal value or another attribute on the same record. Comparison works for any types Raku can `cmp` — numbers, strings, dates, datetimes.
+
+Options:
+
+- `gt`  — strictly greater than
+- `gte` — greater than or equal to
+- `lt`  — strictly less than
+- `lte` — less than or equal to
+- `eq`  — equal to
+- `ne`  — other than
+
+If the option value is a `Str` and names an attribute on the record, it resolves to that attribute's current value. Otherwise it is used as a literal.
+
+```perl6
+use ORM::ActiveRecord::Model;
+
+class Event is Model {
+  submethod BUILD {
+    self.validate: 'score',     { comparison => { gt => 0 } }
+    self.validate: 'max_score', { comparison => { gte => 'score' } }
+    self.validate: 'ends_at',   { comparison => { gt => 'starts_at' } }
+  }
+}
+
+my $e = Event.build({score => 0, max_score => 10, starts_at => now, ends_at => now});
+say $e.is-invalid;
+say $e.errors.score[0];
+say $e.errors.ends_at[0];
+```
+
+Output
+
+```shell
+True
+must be greater than 0
+must be greater than starts_at
+```
+
+## Aggregated declaration
+
+The `validates` method accepts one or more field names and a hash of validators to apply to each. It is equivalent to calling `validate` once per field.
+
+```perl6
+use ORM::ActiveRecord::Model;
+
+class User is Model {
+  submethod BUILD {
+    self.validates: <fname lname>, { :presence, length => { min => 2, max => 32 } }
+  }
+}
+
+my $u = User.build({fname => '', lname => ''});
+say $u.is-invalid;
+say $u.errors.fname[0];
+say $u.errors.lname[0];
+```
+
+Output
+
+```shell
+True
+must be present
+must be present
+```
+
+## Custom validator classes
+
+Pass any class (or instance) with a `validate($record)` method to `validates-with`. Named arguments are forwarded to `.new()` when a type object is supplied.
+
+```perl6
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::Error;
+use ORM::ActiveRecord::Schema::Field;
+
+class CapValidator {
+  has Int $.max = 100;
+
+  method validate($record) {
+    if $record.attrs<score> > $!max {
+      my $field = Field.new(:name('score'), :type('integer'));
+      $record.errors.push(Error.new(:$field, :message("exceeds $!max")));
+    }
+  }
+}
+
+class Game is Model {
+  submethod BUILD {
+    self.validates-with(CapValidator, :max(50));
+  }
+}
+```
+
+## Block validators
+
+`validates-each` runs the same block once per named field, receiving the record, attribute name, and current value.
+
+```perl6
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::Error;
+use ORM::ActiveRecord::Schema::Field;
+
+class User is Model {
+  submethod BUILD {
+    self.validates-each: <fname lname>, -> $rec, $attr, $value {
+      if $value && $value ~~ /^ <:Ll> / {
+        my $f = Field.new(:name($attr), :type('string'));
+        $rec.errors.push(Error.new(:field($f), :message('must start with capital letter')));
+      }
+    }
+  }
+}
+```
+
+## Validates associated
+
+When a model owns other records (`has_many`, `has_one`, `has_and_belongs_to_many`, or `belongs_to`), `validates-associated` rolls up each child's `is-valid` into the parent. A failed child contributes a single `is invalid` error on the named association.
+
+```perl6
+use ORM::ActiveRecord::Model;
+
+class Book {...}
+
+class Library is Model {
+  submethod BUILD {
+    self.has-many: books => %(class-name => 'Book');
+    self.validates-associated: 'books';
+  }
+}
+```
+
+A custom error message is available through the aggregated `validates` form:
+
+```perl6
+self.validates: <books>, { :associated, message => 'has bad children' }
+```
+
 ## Presence
 
 The `presence` validation requires a field value to simply exist for the `Model` instance to be valid.

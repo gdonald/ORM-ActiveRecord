@@ -1,0 +1,61 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::DB;
+use Test;
+
+class Phbook is Model {
+  submethod BUILD {
+    self.belongs-to: phlibrary => %(class-name => 'Phlibrary', optional => True);
+    self.validate: 'title', { :presence }
+  }
+}
+
+class Phlibrary is Model {
+  method table-name { 'phlibraries' }
+
+  submethod BUILD {
+    self.has-many: phbooks => %(class-name => 'Phbook');
+    self.validate: 'name', { :presence }
+    self.validates-associated: 'phbooks';
+  }
+}
+
+plan 7;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+DB.shared.delete-records(:table('phbooks'),     :where({}));
+DB.shared.delete-records(:table('phlibraries'), :where({}));
+
+my $lib = Phlibrary.create({name => 'Main'});
+ok $lib.is-valid, 'library with no books is valid';
+ok $lib.id > 0, 'library saved';
+
+Phbook.create({title => 'Good Book', phlibrary_id => $lib.id});
+my $loaded = Phlibrary.find($lib.id);
+ok $loaded.is-valid, 'library with all-valid books is valid';
+
+Phbook.new(:id(0), :record({attrs => {title => '', phlibrary_id => $lib.id}})).save(:!validate);
+my $bad = Phlibrary.find($lib.id);
+nok $bad.is-valid, 'library invalid when a child book is invalid';
+ok $bad.errors.phbooks[0] eq 'is invalid', 'parent records "is invalid" from validates-associated';
+
+# Custom message via hash form
+class Phlibrary2 is Model {
+  method table-name { 'phlibraries' }
+
+  submethod BUILD {
+    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
+    self.validate: 'name', { :presence }
+    self.validates: <phbooks>, { :associated, message => 'has bad children' }
+  }
+}
+
+my $lib2 = Phlibrary2.find($lib.id);
+nok $lib2.is-valid, 'custom-message variant still detects invalid children';
+ok $lib2.errors.phbooks[0] eq 'has bad children', 'custom message via validates DSL';
+
+DB.shared.delete-records(:table('phbooks'),     :where({}));
+DB.shared.delete-records(:table('phlibraries'), :where({}));

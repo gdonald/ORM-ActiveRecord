@@ -1,0 +1,49 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Phdt is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'ends_at', { comparison => { gt => 'starts_at' } }
+  }
+}
+
+class PhdtLit is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'starts_at', { comparison => { gte => DateTime.new('2026-01-01T00:00:00Z') } }
+  }
+}
+
+plan 6;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Phdt.destroy-all;
+
+my $start = DateTime.new('2026-06-01T10:00:00Z');
+my $end-good = DateTime.new('2026-06-01T12:00:00Z');
+my $end-bad  = DateTime.new('2026-06-01T08:00:00Z');
+
+my $d = Phdt.build({name => 'E', starts_at => $start, ends_at => $end-good});
+ok $d.is-valid, 'ends_at after starts_at is valid';
+
+$d = Phdt.build({name => 'E', starts_at => $start, ends_at => $end-bad});
+ok $d.is-invalid, 'ends_at before starts_at fails';
+ok $d.errors.ends_at[0] eq 'must be greater than starts_at', 'datetime gt message names other attr';
+
+$d = Phdt.build({name => 'E', starts_at => $start, ends_at => $start});
+ok $d.is-invalid, 'equal datetimes fail strict gt';
+
+my $lit = PhdtLit.build({name => 'L', starts_at => DateTime.new('2026-02-01T00:00:00Z'), ends_at => $end-good});
+ok $lit.is-valid, 'datetime >= literal cutoff is valid';
+
+$lit = PhdtLit.build({name => 'L', starts_at => DateTime.new('2025-12-31T23:59:59Z'), ends_at => $end-good});
+ok $lit.is-invalid, 'datetime before literal cutoff fails gte';
+
+Phdt.destroy-all;

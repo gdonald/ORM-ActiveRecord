@@ -7,7 +7,10 @@ use ORM::ActiveRecord::Validations::Validator;
 use ORM::ActiveRecord::Support::Utils;
 
 class Validators is export {
-  has @.validators of Validator;
+  has @.validators       of Validator;
+  has @.each-validators  of EachValidator;
+  has @.with-validators  of WithValidator;
+  has @.associated       of AssociatedValidator;
 
   method validate(DB $db, Mu:D $obj) {
     for @!validators -> $validator {
@@ -43,11 +46,41 @@ class Validators is export {
           when 'inclusion' { self.validate-inclusion(:$obj, :$field, :$ons, :$if, :$unless, :$inclusion, :$msg) }
           when 'format' { self.validate-format(:$obj, :$field, :$ons, :$if, :$unless, :$format, :$msg) }
           when 'numericality' { self.validate-numericality(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
+          when 'comparison' { self.validate-comparison(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
           when 'uniqueness' { self.validate-uniqueness(:$db, :$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
           when /on|message|if|unless/ {}
           default { say 'unknown validation: ' ~ $param.keys.first; die }
         }
       }
+    }
+
+    for @!each-validators -> $ev {
+      next unless $obj.^name eq $ev.klass.raku;
+      my $if = -> { True };
+      my $unless = -> { False };
+      for $ev.params.pairs -> $param {
+        given $param.keys.first {
+          when /if/ { $if = $param{"if\tTrue"} }
+          when /unless/ { $unless = $param{"unless\tTrue"} }
+        }
+      }
+      next unless $if() && !$unless();
+      for $ev.fields -> $name {
+        my $value = $obj."$name"();
+        $ev.block.($obj, $name, $value);
+      }
+    }
+
+    for @!with-validators -> $wv {
+      next unless $obj.^name eq $wv.klass.raku;
+      my $v = $wv.validator;
+      my $instance = $v.DEFINITE ?? $v !! $v.new(|%($wv.options // {}));
+      $instance.validate($obj);
+    }
+
+    for @!associated -> $av {
+      next unless $obj.^name eq $av.klass.raku;
+      self.validate-associated(:$obj, :name($av.name), :params($av.params));
     }
   }
 
@@ -257,6 +290,105 @@ class Validators is export {
       my $message = Message.build(:$template, :$obj, :$field, :$value);
       my $e = Error.new(:$field, :$message);
       $obj.errors.push($e);
+    }
+  }
+
+  method validate-comparison(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg) {
+    my $validate-on = self.validate-on(:$obj, :$ons);
+    return unless $if() && !$unless() && $validate-on;
+
+    my $opts = $param<comparison>;
+    my $actual = $obj."$field.name()"();
+    return unless $actual.defined;
+
+    my sub resolve($v) {
+      return Nil unless $v.defined;
+      if $v ~~ Str && $obj.has-attribute($v) {
+        return $obj."$v"();
+      }
+      $v;
+    }
+
+    my sub cmp-ok($a, $b, $op) {
+      given $op {
+        when 'gt'  { return $a cmp $b == More }
+        when 'gte' { return ($a cmp $b) == More || ($a cmp $b) == Same }
+        when 'lt'  { return $a cmp $b == Less }
+        when 'lte' { return ($a cmp $b) == Less || ($a cmp $b) == Same }
+        when 'eq'  { return $a cmp $b == Same }
+        when 'ne'  { return $a cmp $b != Same }
+      }
+      False;
+    }
+
+    my %templates = %(
+      gt  => 'must be greater than {value}',
+      gte => 'must be greater than or equal to {value}',
+      lt  => 'must be less than {value}',
+      lte => 'must be less than or equal to {value}',
+      eq  => 'must be equal to {value}',
+      ne  => 'must be other than {value}',
+    );
+
+    for <gt gte lt lte eq ne> -> $op {
+      next unless $opts{$op}:exists;
+      my $resolved = resolve($opts{$op});
+      next unless $resolved.defined;
+      next if cmp-ok($actual, $resolved, $op);
+      my $label = $opts{$op} ~~ Str && $obj.has-attribute($opts{$op})
+        ?? $opts{$op}
+        !! "$resolved";
+      my $template = $msg || %templates{$op};
+      my $message = Message.build(:$template, :$obj, :$field, :value($label));
+      my $e = Error.new(:$field, :$message);
+      $obj.errors.push($e);
+    }
+  }
+
+  method validate-associated(Mu:D :$obj, Str:D :$name, Hash:D :$params) {
+    my $if = -> { True };
+    my $unless = -> { False };
+    my $msg = '';
+    my $ons = {};
+    for $params.pairs -> $param {
+      given $param.keys.first {
+        when 'on' { $ons = $param<on> }
+        when /if/ { $if = $param{"if\tTrue"} }
+        when /unless/ { $unless = $param{"unless\tTrue"} }
+        when 'message' { $msg = $param<message> }
+      }
+    }
+    my $validate-on = self.validate-on(:$obj, :$ons);
+    return unless $if() && !$unless() && $validate-on;
+
+    my @targets;
+    my $is-many   = ($obj.has-manys{$name}:exists);
+    my $is-habtm  = ($obj.habtms{$name}:exists);
+    my $is-one    = ($obj.has-ones{$name}:exists);
+    my $is-bt     = ($obj.belongs-tos{$name}:exists);
+    if $is-many || $is-habtm {
+      @targets = $obj."$name"().list;
+    } elsif $is-one {
+      my $r = $obj."$name"();
+      @targets = ($r,) if $r.defined;
+    } elsif $is-bt {
+      my $r = $obj.attrs{$name} // $obj."$name"();
+      @targets = ($r,) if $r.defined;
+    } else {
+      return;
+    }
+
+    my $bad = False;
+    for @targets -> $r {
+      next unless $r.defined;
+      $bad = True unless $r.is-valid;
+    }
+
+    if $bad {
+      my $field = $obj.get-field($name) // Field.new(:$name, :type('association'));
+      my $template = $msg || 'is invalid';
+      my $message = Message.build(:$template, :$obj, :$field);
+      $obj.errors.push(Error.new(:$field, :$message));
     }
   }
 

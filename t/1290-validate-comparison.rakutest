@@ -1,0 +1,85 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Phevent is Model {
+  submethod BUILD {
+    self.validate: 'score', { comparison => { gt => 0 } }
+    self.validate: 'max_score', { comparison => { gte => 'score' } }
+  }
+}
+
+class PhCmp is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'score', { comparison => { lt => 100 } }
+    self.validate: 'max_score', { comparison => { lte => 100 } }
+  }
+}
+
+class PhEq is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'score', { comparison => { eq => 'max_score' } }
+  }
+}
+
+class PhNe is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'score', { comparison => { ne => 'max_score' } }
+  }
+}
+
+plan 16;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Phevent.destroy-all;
+
+# basic literal-value gt/gte
+my $ev = Phevent.build({name => 'A', score => 5, max_score => 10});
+ok $ev.is-valid, 'score>0 and max_score>=score passes';
+
+$ev = Phevent.build({name => 'A', score => 0, max_score => 10});
+ok $ev.is-invalid, 'score must be > 0';
+ok $ev.errors.score[0] eq 'must be greater than 0', 'gt message uses literal value';
+
+$ev = Phevent.build({name => 'A', score => 5, max_score => 3});
+ok $ev.is-invalid, 'max_score must be >= score';
+ok $ev.errors.max_score[0] eq 'must be greater than or equal to score', 'gte message names other attr';
+
+# lt/lte
+my $c = PhCmp.build({name => 'A', score => 100, max_score => 50});
+ok $c.is-invalid, 'score must be < 100';
+ok $c.errors.score[0] eq 'must be less than 100', 'lt literal message';
+
+$c = PhCmp.build({name => 'A', score => 50, max_score => 101});
+ok $c.is-invalid, 'max_score must be <= 100';
+ok $c.errors.max_score[0] eq 'must be less than or equal to 100', 'lte literal message';
+
+$c = PhCmp.build({name => 'A', score => 50, max_score => 75});
+ok $c.is-valid, 'lt/lte boundaries OK';
+
+# eq
+my $eq = PhEq.build({name => 'E', score => 5, max_score => 5});
+ok $eq.is-valid, 'eq passes when values are equal';
+
+$eq = PhEq.build({name => 'E', score => 4, max_score => 5});
+ok $eq.is-invalid, 'eq fails when values differ';
+ok $eq.errors.score[0] eq 'must be equal to max_score', 'eq message names other attr';
+
+# ne
+my $ne = PhNe.build({name => 'N', score => 5, max_score => 5});
+ok $ne.is-invalid, 'ne fails when values equal';
+ok $ne.errors.score[0] eq 'must be other than max_score', 'ne message names other attr';
+
+$ne = PhNe.build({name => 'N', score => 5, max_score => 6});
+ok $ne.is-valid, 'ne passes when values differ';
+
+Phevent.destroy-all;

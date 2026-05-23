@@ -1,0 +1,56 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::Error;
+use ORM::ActiveRecord::Schema::Field;
+use Test;
+
+class PhEach is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validates-each: <name>, -> $rec, $attr, $value {
+      if $value && $value ~~ /^ <:Ll> / {
+        my $f = Field.new(:name($attr), :type('string'));
+        $rec.errors.push(Error.new(:field($f), :message('must start with capital letter')));
+      }
+    }
+  }
+}
+
+class PhEachMulti is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validates-each: <score max_score>, -> $rec, $attr, $value {
+      if $value < 0 {
+        my $f = Field.new(:name($attr), :type('integer'));
+        $rec.errors.push(Error.new(:field($f), :message('must not be negative')));
+      }
+    }
+  }
+}
+
+plan 7;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+PhEach.destroy-all;
+
+my $e = PhEach.build({name => 'lowercase', score => 1, max_score => 1});
+ok $e.is-invalid, 'lowercase name triggers block';
+ok $e.errors.name[0] eq 'must start with capital letter', 'block message added';
+
+$e = PhEach.build({name => 'Capital', score => 1, max_score => 1});
+ok $e.is-valid, 'capital name passes';
+
+my $m = PhEachMulti.build({name => 'A', score => -1, max_score => -2});
+ok $m.is-invalid, 'multi-field block validation triggers';
+ok $m.errors.score[0] eq 'must not be negative', 'block applies to score';
+ok $m.errors.max_score[0] eq 'must not be negative', 'block applies to max_score';
+
+$m = PhEachMulti.build({name => 'A', score => 1, max_score => 2});
+ok $m.is-valid, 'no negative scores -> valid';
+
+PhEach.destroy-all;
