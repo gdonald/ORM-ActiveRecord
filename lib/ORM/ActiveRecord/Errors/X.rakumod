@@ -84,6 +84,18 @@ class X::StrictLoadingViolationError is Exception is export {
   }
 }
 
+class X::StrictValidationFailed is Exception is export {
+  has Str $.model;
+  has Str $.attribute;
+  has Str $.message-text;
+  method message {
+    my $m = $!model // 'record';
+    my $a = $!attribute // 'attribute';
+    my $t = $!message-text // 'is invalid';
+    "$m: $a $t";
+  }
+}
+
 class X::DeleteRestrictionError is Exception is export {
   has Str $.model;
   has Str $.association;

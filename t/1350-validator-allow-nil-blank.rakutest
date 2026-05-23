@@ -1,0 +1,63 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class AnbPhevent is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'score', { :presence, numericality => { gt => 0 }, allow-nil => True }
+  }
+}
+
+class AnbPhevent2 is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'name', { :presence, length => { min => 3 }, allow-blank => True }
+  }
+}
+
+class AnbPhevent3 is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'name', { length => { min => 3 }, allow_blank => True }
+  }
+}
+
+plan 9;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+AnbPhevent.destroy-all;
+
+my $ev = AnbPhevent.build({name => 'A', score => 5});
+ok $ev.is-valid, 'score>0 passes';
+
+$ev = AnbPhevent.build({name => 'A', score => 0});
+ok $ev.is-invalid, 'score=0 still fails when value is defined';
+
+$ev = AnbPhevent.build({name => 'A'});
+$ev.write-attribute('score', Nil);
+ok $ev.is-valid, 'allow-nil skips both presence + numericality when nil';
+
+$ev = AnbPhevent2.build({name => 'AB'});
+ok $ev.is-invalid, 'non-blank short value still fails length';
+ok $ev.errors.name[0] eq 'at least 3 characters required', 'length error reported';
+
+$ev = AnbPhevent2.build({name => ''});
+ok $ev.is-valid, 'allow-blank skips all validators when value is blank';
+
+$ev = AnbPhevent2.build({name => '   '});
+ok $ev.is-valid, 'allow-blank treats whitespace-only as blank';
+
+$ev = AnbPhevent3.build({name => ''});
+ok $ev.is-valid, 'snake_case allow_blank works too';
+
+$ev = AnbPhevent3.build({name => 'XY'});
+ok $ev.is-invalid, 'snake_case allow_blank still fails non-blank short value';
+
+AnbPhevent.destroy-all;

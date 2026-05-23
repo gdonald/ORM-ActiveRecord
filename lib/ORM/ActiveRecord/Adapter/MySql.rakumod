@@ -60,6 +60,13 @@ class MySqlAdapter is SqlAdapter is export {
 
   method bind-placeholder(Int:D $n --> Str) { '?' }
 
+  # MySQL's default collation (utf8mb4_0900_ai_ci) makes `col = ?` compare
+  # case-insensitively. Use BINARY to force a byte-level comparison when the
+  # caller asks for case-sensitive matching.
+  method case-eq-sql(Str:D $col, Bool:D :$case-sensitive --> Str) {
+    $case-sensitive ?? "BINARY $col = ?" !! "LOWER($col) = LOWER(?)";
+  }
+
   # MySQL doesn't accept ISOLATION LEVEL inside START TRANSACTION the way
   # PG accepts it in BEGIN; emit a separate SET TRANSACTION first.
   method begin-sql(Str :$isolation) {

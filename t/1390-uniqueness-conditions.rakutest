@@ -1,0 +1,57 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class PhuserActive is Model {
+  method table-name { 'phusers' }
+
+  submethod BUILD {
+    self.validate: 'username', { uniqueness => { conditions => { is_active => True } } }
+  }
+}
+
+class PhuserScopeCond is Model {
+  method table-name { 'phusers' }
+
+  submethod BUILD {
+    self.validate: 'username',
+      { uniqueness => { scope => :tenant_id, conditions => { is_active => True } } }
+  }
+}
+
+plan 7;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+PhuserActive.destroy-all;
+
+# Conditions narrow uniqueness to a subset
+PhuserActive.create({username => 'inactive_dupe', is_active => False, tenant_id => 1});
+my $ok = PhuserActive.build({username => 'inactive_dupe', is_active => True, tenant_id => 1});
+ok $ok.is-valid, 'inactive duplicate is allowed because conditions limit lookup to is_active=True';
+
+PhuserActive.create({username => 'active_user', is_active => True, tenant_id => 1});
+my $clash = PhuserActive.build({username => 'active_user', is_active => True, tenant_id => 2});
+ok $clash.is-invalid, 'duplicate within active scope fails uniqueness';
+ok $clash.errors.username[0] eq 'must be unique', 'reports must be unique';
+
+# Conditions combine with scope
+PhuserActive.destroy-all;
+PhuserScopeCond.create({username => 'shared', is_active => True, tenant_id => 1});
+
+my $other-tenant = PhuserScopeCond.build({username => 'shared', is_active => True, tenant_id => 2});
+ok $other-tenant.is-valid, 'scope keeps name unique per tenant';
+
+my $same-tenant = PhuserScopeCond.build({username => 'shared', is_active => True, tenant_id => 1});
+ok $same-tenant.is-invalid, 'same name + same tenant + active fails';
+
+PhuserScopeCond.create({username => 'inactive_in_scope', is_active => False, tenant_id => 1});
+my $allow-inactive-dup = PhuserScopeCond.build({username => 'inactive_in_scope', is_active => False, tenant_id => 1});
+ok $allow-inactive-dup.is-valid, 'inactive records ignored by conditions clause';
+
+my $promote = PhuserScopeCond.build({username => 'inactive_in_scope', is_active => True, tenant_id => 1});
+ok $promote.is-valid, 'no active record yet for tenant - validates';
+
+PhuserScopeCond.destroy-all;

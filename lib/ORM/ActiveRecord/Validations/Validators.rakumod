@@ -1,6 +1,7 @@
 
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::Error;
+use ORM::ActiveRecord::Errors::X;
 use ORM::ActiveRecord::Schema::Field;
 use ORM::ActiveRecord::Support::Message;
 use ORM::ActiveRecord::Validations::Validator;
@@ -11,8 +12,10 @@ class Validators is export {
   has @.each-validators  of EachValidator;
   has @.with-validators  of WithValidator;
   has @.associated       of AssociatedValidator;
+  has Str $.context is rw = '';
 
-  method validate(DB $db, Mu:D $obj) {
+  method validate(DB $db, Mu:D $obj, Str :$context = '') {
+    $!context = $context;
     for @!validators -> $validator {
       next unless $obj.^name eq $validator.klass.raku;
       my $field = $validator.field;
@@ -23,6 +26,10 @@ class Validators is export {
       my $inclusion = {};
       my $format = {};
       my $msg = '';
+      my Bool $allow-nil   = False;
+      my Bool $allow-blank = False;
+      my Bool $strict      = False;
+      my Str  $as          = '';
 
       for $validator.params -> $param {
         given $param.keys.first {
@@ -33,22 +40,28 @@ class Validators is export {
           when 'exclusion' { $exclusion = $param<exclusion> }
           when 'inclusion' { $inclusion = $param<inclusion> }
           when 'format' { $format = $param<format> }
+          when 'allow-nil' | 'allow_nil' { $allow-nil = so $param.value }
+          when 'allow-blank' | 'allow_blank' { $allow-blank = so $param.value }
+          when 'strict' { $strict = so $param.value }
+          when 'as' { $as = ~$param.value }
         }
       }
 
+      next if self.should-allow-skip(:$obj, :$field, :$allow-nil, :$allow-blank);
+
       for $validator.params -> $param {
         given $param.keys.first {
-          when 'presence' { self.validate-presence(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
-          when 'length' { self.validate-length(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
-          when 'acceptance' { self.validate-acceptance(:$obj, :$field, :$ons, :$if, :$unless, :$msg) }
-          when 'confirmation' { self.validate-confirmation(:$obj, :$field, :$ons, :$if, :$unless, :$msg) }
-          when 'exclusion' { self.validate-exclusion(:$obj, :$field, :$ons, :$if, :$unless, :$exclusion, :$msg) }
-          when 'inclusion' { self.validate-inclusion(:$obj, :$field, :$ons, :$if, :$unless, :$inclusion, :$msg) }
-          when 'format' { self.validate-format(:$obj, :$field, :$ons, :$if, :$unless, :$format, :$msg) }
-          when 'numericality' { self.validate-numericality(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
-          when 'comparison' { self.validate-comparison(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
-          when 'uniqueness' { self.validate-uniqueness(:$db, :$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg) }
-          when /on|message|if|unless/ {}
+          when 'presence' { self.validate-presence(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg, :$strict, :$as) }
+          when 'length' { self.validate-length(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg, :$strict, :$as) }
+          when 'acceptance' { self.validate-acceptance(:$obj, :$field, :$ons, :$if, :$unless, :$msg, :$strict, :$as) }
+          when 'confirmation' { self.validate-confirmation(:$obj, :$field, :$ons, :$if, :$unless, :$msg, :$strict, :$as) }
+          when 'exclusion' { self.validate-exclusion(:$obj, :$field, :$ons, :$if, :$unless, :$exclusion, :$msg, :$strict, :$as) }
+          when 'inclusion' { self.validate-inclusion(:$obj, :$field, :$ons, :$if, :$unless, :$inclusion, :$msg, :$strict, :$as) }
+          when 'format' { self.validate-format(:$obj, :$field, :$ons, :$if, :$unless, :$format, :$msg, :$strict, :$as) }
+          when 'numericality' { self.validate-numericality(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg, :$strict, :$as) }
+          when 'comparison' { self.validate-comparison(:$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg, :$strict, :$as) }
+          when 'uniqueness' { self.validate-uniqueness(:$db, :$obj, :$field, :$ons, :$if, :$unless, :$param, :$msg, :$strict, :$as) }
+          when /on|message|if|unless|allow\-nil|allow_nil|allow\-blank|allow_blank|strict|as/ {}
           default { say 'unknown validation: ' ~ $param.keys.first; die }
         }
       }
@@ -84,65 +97,153 @@ class Validators is export {
     }
   }
 
-  method validate-uniqueness(DB :$db, Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg) {
-    my ($, $scope) = $param.kv;
+  method should-allow-skip(Mu:D :$obj, Field:D :$field, Bool:D :$allow-nil, Bool:D :$allow-blank --> Bool) {
+    return False unless $allow-nil || $allow-blank;
+    my $val;
+    try { $val = $obj."{$field.name}"() }
+    return True if $allow-nil && !$val.defined;
 
-    if $scope ~~ Bool {
-      self.validate-unique(:$db, :$obj, :$field, :$ons, :$if, :$unless, :$msg);
+    if $allow-blank {
+      return True unless $val.defined;
+      given $val {
+        when Str  { return True if $val eq '' || $val ~~ /^\s*$/ }
+        when Bool { return True unless $val }
+        when Positional { return True if $val.elems == 0 }
+      }
+    }
+
+    False;
+  }
+
+  method record-error(Mu:D :$obj, Field:D :$field, Str:D :$message, Bool:D :$strict) {
+    if $strict {
+      die X::StrictValidationFailed.new(
+        :model($obj.^name),
+        :attribute($field.name),
+        :message-text($message),
+      );
+    }
+
+    $obj.errors.push(Error.new(:$field, :$message));
+  }
+
+  method validate-uniqueness(DB :$db, Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
+    my $val = $param.value;
+    my $scope-pair = Pair;
+    my Bool $case-sensitive = True;
+    my %conditions;
+
+    given $val {
+      when Bool {
+      }
+      when Pair {
+        if $val.key eq 'scope' {
+          $scope-pair = $val;
+        }
+      }
+      when Hash | Map {
+        if $val<scope>:exists {
+          $scope-pair = (scope => $val<scope>);
+        }
+        if $val<case-sensitive>:exists {
+          $case-sensitive = so $val<case-sensitive>;
+        }
+        elsif $val<case_sensitive>:exists {
+          $case-sensitive = so $val<case_sensitive>;
+        }
+        if $val<conditions>:exists {
+          %conditions = $val<conditions>.Hash;
+        }
+      }
+    }
+
+    if $scope-pair.defined {
+      self.validate-unique-scope(:$db, :$obj, :$field, :scope($scope-pair), :$ons, :$if, :$unless, :$msg, :$strict, :$as, :$case-sensitive, :%conditions);
     } else {
-      self.validate-unique-scope(:$db, :$obj, :$field, :$scope, :$ons, :$if, :$unless, :$msg);
+      self.validate-unique(:$db, :$obj, :$field, :$ons, :$if, :$unless, :$msg, :$strict, :$as, :$case-sensitive, :%conditions);
     }
   }
 
-  method validate-unique(DB :$db, Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg) {
+  method validate-unique(DB :$db, Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg, Bool:D :$strict, Str:D :$as, Bool:D :$case-sensitive = True, :%conditions) {
     return if $obj.id || $obj."$field.name()"() ~~ Empty;
 
-    my @fields = @$field;
     my $table = Utils.table-name($obj);
-    my %where = $field.name => $obj."$field.name()"();
-    my %record = $db.get-record(:@fields, :$table, :%where);
+    my $col = $field.name;
+    my $val = $obj."$col"();
 
+    my $found = self.unique-lookup(:$db, :$table, :$col, :$val, :$case-sensitive, :%conditions);
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    if $if() && !$unless() && $validate-on && %record{$field.name} ~~ $obj."$field.name()"() {
-      my $value = '';
+    if $if() && !$unless() && $validate-on && $found {
       my $template = $msg || 'must be unique';
-      my $message = Message.build(:$template, :$obj, :$field, :$value);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
-  method validate-unique-scope(DB :$db, Mu:D :$obj, Field:D :$field, Pair:D :$scope, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg) {
+  method validate-unique-scope(DB :$db, Mu:D :$obj, Field:D :$field, Pair:D :$scope, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg, Bool:D :$strict, Str:D :$as, Bool:D :$case-sensitive = True, :%conditions) {
     return if $obj.id || $obj."$field.name()"() ~~ Empty;
 
-    my @fields = @$field;
     my $table = Utils.table-name($obj);
-    my $keys = ($field.name, slip($scope.value.keys));
-    my %where = $keys.map({ $_ => $obj."$_"() });
-    my %record = $db.get-record(:@fields, :$table, :%where);
+    my $col = $field.name;
+    my $val = $obj."$col"();
+
+    my %scope-where;
+    for $scope.value.keys -> $k {
+      %scope-where{$k} = $obj."$k"();
+    }
+    for %conditions.kv -> $k, $v { %scope-where{$k} = $v }
+
+    my $found = self.unique-lookup(:$db, :$table, :$col, :$val, :$case-sensitive, :conditions(%scope-where));
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    if $if() && !$unless() && $validate-on && %record{$field.name} ~~ $obj."$field.name()"() {
+    if $if() && !$unless() && $validate-on && $found {
       my $template = $msg || 'must be unique';
-      my $message = Message.build(:$template, :$obj, :$field);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
-  method validate-presence(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg) {
+  method unique-lookup(DB :$db, Str:D :$table, Str:D :$col, :$val, Bool:D :$case-sensitive, :%conditions --> Bool) {
+    my @sql-parts;
+    my @binds;
+
+    if $val ~~ Str {
+      @sql-parts.push: $db.case-eq-sql($col, :$case-sensitive);
+      @binds.push: $val;
+    } else {
+      @sql-parts.push: "$col = ?";
+      @binds.push: $val;
+    }
+
+    for %conditions.kv -> $k, $v {
+      if $v.defined {
+        @sql-parts.push: "$k = ?";
+        @binds.push: $v;
+      } else {
+        @sql-parts.push: "$k IS NULL";
+      }
+    }
+
+    my $where-clause = @sql-parts.join(' AND ');
+    my $sql = "SELECT 1 FROM $table WHERE $where-clause LIMIT 1";
+    my $stmt = $db.sanitize-sql-array([$sql, |@binds]);
+    my @rows = $db.exec-stmt($stmt);
+
+    @rows.elems.so;
+  }
+
+  method validate-presence(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && !$obj."$field.name()"() {
       my $template = $msg || 'must be present';
-      my $message = Message.build(:$template, :$obj, :$field);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
-  method validate-length(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg) {
+  method validate-length(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     my $max = $param<length><max>;
@@ -156,92 +257,83 @@ class Validators is export {
     if $if() && !$unless() && $validate-on && $max && $chars > $max {
       my $value = "$max";
       my $template = $msg || 'only {value} characters allowed';
-      my $message = Message.build(:$template, :$obj, :$field, :$value);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
 
     if $if() && !$unless() && $validate-on && $min && $chars < $min {
       my $value = "$min";
       my $template = $msg || 'at least {value} characters required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
 
     if $if() && !$unless() && $validate-on && $is && $chars != $is {
       my $value = "$is";
       my $template = $msg || 'exactly {value} characters required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
 
     if $if() && !$unless() && $validate-on && $in && $chars !~~ $in {
       my $value = "{$in.min} to {$in.max}";
       my $template = $msg || '{value} characters required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
-  method validate-acceptance(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg) {
+  method validate-acceptance(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     unless $if() && !$unless() && $validate-on && $obj."$field.name()"() {
       my $template = $msg || 'must be accepted';
-      my $message = Message.build(:$template, :$obj, :$field);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
-  method validate-confirmation(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg) {
+  method validate-confirmation(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && $obj."{$field.name()}_confirmation"() ~~ Empty || $obj."{$field.name()}_confirmation"() !~~ $obj."$field.name()"() {
       my $template = $msg || 'must be confirmed';
-      my $message = Message.build(:$template, :$obj, :$field);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
-  method validate-exclusion(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Hash:D :$exclusion, Str:D :$msg) {
+  method validate-exclusion(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Hash:D :$exclusion, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && !$obj."$field.name()"() || $obj."$field.name()"() (elem) $exclusion<in> {
       my $template = $msg || 'is invalid';
-      my $message = Message.build(:$template, :$obj, :$field);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
-  method validate-inclusion(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Hash:D :$inclusion, Str:D :$msg) {
+  method validate-inclusion(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Hash:D :$inclusion, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && $obj."$field.name()"() ~~ Empty || (not $obj."$field.name()"() (elem) $inclusion<in>) {
       my $template = $msg || 'is invalid';
-      my $message = Message.build(:$template, :$obj, :$field);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
-  method validate-format(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Hash:D :$format, Str:D :$msg) {
+  method validate-format(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Hash:D :$format, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && $obj."$field.name()"() !~~ $format<with> {
       my $template = $msg || 'is invalid';
-      my $message = Message.build(:$template, :$obj, :$field);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
-  method validate-numericality(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg) {
+  method validate-numericality(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     my $gt = $param<numericality><gt>;
@@ -255,45 +347,40 @@ class Validators is export {
     if $if() && !$unless() && $validate-on && $gt && $number <= $gt {
       my $value = "$gt";
       my $template = $msg || 'more than {value} required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
 
     if $if() && !$unless() && $validate-on && $gte && $number < $gte {
       my $value = "$gte";
       my $template = $msg || '{value} or more required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
 
     if $if() && !$unless() && $validate-on && $lt && $number >= $lt {
       my $value = "$lt";
       my $template = $msg || 'less than {value} required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
 
     if $if() && !$unless() && $validate-on && $lte && $number > $lte {
       my $value = "$lte";
       my $template = $msg || '{value} or less required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
 
     if $if() && !$unless() && $validate-on && $in && $number !~~ $in {
       my $value = "{$in.min} to {$in.max}";
       my $template = $msg || '{value} required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value);
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
-  method validate-comparison(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg) {
+  method validate-comparison(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Pair:D :$param, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
     my $validate-on = self.validate-on(:$obj, :$ons);
     return unless $if() && !$unless() && $validate-on;
 
@@ -339,9 +426,8 @@ class Validators is export {
         ?? $opts{$op}
         !! "$resolved";
       my $template = $msg || %templates{$op};
-      my $message = Message.build(:$template, :$obj, :$field, :value($label));
-      my $e = Error.new(:$field, :$message);
-      $obj.errors.push($e);
+      my $message = Message.build(:$template, :$obj, :$field, :value($label), :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
@@ -350,12 +436,16 @@ class Validators is export {
     my $unless = -> { False };
     my $msg = '';
     my $ons = {};
+    my Bool $strict = False;
+    my Str  $as     = '';
     for $params.pairs -> $param {
       given $param.keys.first {
         when 'on' { $ons = $param<on> }
         when /if/ { $if = $param{"if\tTrue"} }
         when /unless/ { $unless = $param{"unless\tTrue"} }
         when 'message' { $msg = $param<message> }
+        when 'strict' { $strict = so $param.value }
+        when 'as' { $as = ~$param.value }
       }
     }
     my $validate-on = self.validate-on(:$obj, :$ons);
@@ -387,15 +477,13 @@ class Validators is export {
     if $bad {
       my $field = $obj.get-field($name) // Field.new(:$name, :type('association'));
       my $template = $msg || 'is invalid';
-      my $message = Message.build(:$template, :$obj, :$field);
-      $obj.errors.push(Error.new(:$field, :$message));
+      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      self.record-error(:$obj, :$field, :$message, :$strict);
     }
   }
 
   method validate-on(Mu:D :$obj, Hash:D :$ons) {
-    my $on-create = $ons<create>;
-    my $on-update = $ons<update>;
-
-    ($on-create && $obj.id == 0) || ($on-update && $obj.id != 0) || (!$on-create && !$on-update);
+    return True unless $ons.keys.elems;
+    so $ons{$!context};
   }
 }

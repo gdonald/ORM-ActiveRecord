@@ -20,6 +20,7 @@ nav:
   - Validations:
     - Data: validations/data.md
     - Conditionals: validations/conditionals.md
+    - Options: validations/options.md
   - Errors: errors.md
   - Logging: logging.md
   - Tests: tests.md

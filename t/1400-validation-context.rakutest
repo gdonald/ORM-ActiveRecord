@@ -1,0 +1,66 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class CtxPhevent is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'name',      { :presence }
+    self.validate: 'score',     { :presence, on => { :step_one } }
+    self.validate: 'max_score', { :presence, on => { :step_two } }
+  }
+}
+
+class CtxPhevent2 is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'name',      { :presence }
+    self.validate: 'score',     { :presence, on => { :create } }
+    self.validate: 'max_score', { :presence, on => { :step_two } }
+  }
+}
+
+plan 15;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+CtxPhevent.destroy-all;
+
+my $e = CtxPhevent.build({name => 'A', score => 0, max_score => 0});
+ok $e.is-valid, 'default context skips step_one/step_two validators';
+
+ok $e.is-invalid(:context<step_one>), 'step_one context fires presence(score)';
+ok $e.errors.score[0] eq 'must be present', 'score error reported under step_one';
+nok $e.errors.max_score, 'step_two validator not run under step_one';
+
+ok $e.is-invalid(:context<step_two>), 'step_two context fires presence(max_score)';
+ok $e.errors.max_score[0] eq 'must be present', 'max_score error reported under step_two';
+nok $e.errors.score, 'errors cleared between is-invalid calls';
+
+$e = CtxPhevent.build({name => '', score => 5, max_score => 5});
+ok $e.is-invalid(:context<step_one>), 'no-context validator still fires under any context';
+ok $e.errors.name[0] eq 'must be present', 'presence(name) still runs without on:';
+
+# validation-context= sticky setter
+$e = CtxPhevent.build({name => 'A', score => 0, max_score => 0});
+$e.validation-context = 'step_one';
+ok $e.is-invalid, 'sticky validation-context drives bare is-invalid call';
+ok $e.errors.score[0] eq 'must be present', 'sticky context fires step_one validators';
+
+$e.validation-context = Str;
+ok $e.is-valid, 'clearing sticky context restores default behavior';
+
+# explicit context overrides sticky setter
+$e.validation-context = 'step_one';
+ok $e.is-invalid(:context<step_two>), 'explicit :context arg wins over sticky setter';
+ok $e.errors.max_score[0] eq 'must be present', 'explicit context picked step_two';
+
+# :create still derived for new records when no context given
+$e = CtxPhevent2.build({name => 'A', max_score => 5});
+ok $e.is-invalid, 'create context derived for new record fires on: :create validator';
+
+CtxPhevent.destroy-all;

@@ -1,0 +1,47 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::X;
+use Test;
+
+class StPhevent is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'name', { :presence, strict => True }
+  }
+}
+
+class StPhevent2 is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'score', { numericality => { gt => 5 }, :strict, message => 'is too low' }
+  }
+}
+
+plan 7;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+StPhevent.destroy-all;
+
+my $ev = StPhevent.build({name => 'OK', score => 1});
+ok $ev.is-valid, 'passes when valid - strict only fires on failure';
+
+$ev = StPhevent.build({name => '', score => 1});
+my $caught;
+try { $ev.is-valid; CATCH { default { $caught = $_ } } }
+ok $caught.defined, 'strict raises an exception';
+ok $caught ~~ X::StrictValidationFailed, 'raises X::StrictValidationFailed';
+ok $caught.attribute eq 'name', 'exception carries attribute name';
+ok $caught.message-text eq 'must be present', 'exception carries underlying message';
+
+my $ev2 = StPhevent2.build({name => 'A', score => 1});
+my $caught2;
+try { $ev2.is-valid; CATCH { default { $caught2 = $_ } } }
+ok $caught2 ~~ X::StrictValidationFailed, 'strict works with custom message';
+ok $caught2.message-text eq 'is too low', 'custom message preserved';
+
+StPhevent.destroy-all;

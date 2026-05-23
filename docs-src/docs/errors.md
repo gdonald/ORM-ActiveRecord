@@ -19,6 +19,7 @@ the sections that follow document the attributes each one carries.
 | `X::RecordInvalid`         | `save-or-die`, `update-or-die`, `create-or-die`      |
 | `X::ReadOnlyRecord`        | `save` / `update` / `destroy` / `delete` on a record from a `readonly` relation |
 | `X::IrreversibleMigration` | `self.irreversible-migration` inside a migration `down` |
+| `X::StrictValidationFailed`| validator declared with `:strict` — see [Validator Options &raquo; strict](validations/options.md#strict) |
 
 ## X::RecordNotFound
 
@@ -118,3 +119,28 @@ class DropLegacyAuditLog is Migration {
 `self.irreversible-migration` is a one-liner that constructs and throws the
 exception — it exists so the intent reads as a migration step rather than
 manual exception plumbing. See [Migrations &raquo; Irreversible migrations](migrations.md#irreversible-migrations).
+
+## X::StrictValidationFailed
+
+Raised from `is-valid` / `is-invalid` when a validator declared with `:strict`
+fails — instead of pushing onto `errors`, the chain aborts and this exception
+carries the underlying message and the failing attribute name.
+
+```perl6
+use ORM::ActiveRecord::Errors::X;
+
+try {
+  $event.is-valid;
+
+  CATCH {
+    when X::StrictValidationFailed {
+      say .model;          # Event
+      say .attribute;      # name
+      say .message-text;   # must be present
+    }
+  }
+}
+```
+
+See [Validator Options &raquo; strict](validations/options.md#strict) for the
+declaration syntax.

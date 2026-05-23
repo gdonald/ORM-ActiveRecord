@@ -1,0 +1,41 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class RerunPhevent is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validate: 'name',  { :presence }
+    self.validate: 'score', { numericality => { gt => 0 } }
+  }
+}
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+RerunPhevent.destroy-all;
+
+# Fix the attribute between is-valid calls and confirm errors clear
+my $e = RerunPhevent.build({name => '', score => 5});
+ok $e.is-invalid, 'first call reports invalid';
+ok $e.errors.name[0] eq 'must be present', 'error captured on first call';
+
+$e.name = 'OK';
+ok $e.is-valid, 'fixing the attribute makes the next call valid';
+nok $e.errors.name, 'errors object no longer carries stale name error';
+
+# Break the attribute again - errors should re-appear without lingering state
+$e.name = '';
+ok $e.is-invalid, 'breaking the attribute again reports invalid';
+ok $e.errors.name[0] eq 'must be present', 'fresh error after re-break';
+is $e.errors.errors.elems, 1, 'no duplicate errors from previous run';
+
+# Repeated calls do not accumulate errors
+$e.is-invalid for ^5;
+is $e.errors.errors.elems, 1, 'five back-to-back calls still produce a single error';
+
+RerunPhevent.destroy-all;

@@ -35,6 +35,14 @@ role Adapter is export {
   # and DATETIME as ISO TEXT, MySQL uses TINYINT(1) for Bool).
   method coerce-read($value, Str :$type)  { $value }
   method coerce-write($value, Str :$type) { $value }
+
+  # SQL fragment for equality with explicit case-sensitivity. Default is
+  # case-sensitive `=`, which already matches PG and SQLite. MySQL overrides
+  # the case-sensitive branch to `BINARY col = ?` because its default
+  # `_ci` collation otherwise compares case-insensitively.
+  method case-eq-sql(Str:D $col, Bool:D :$case-sensitive --> Str) {
+    $case-sensitive ?? "$col = ?" !! "LOWER($col) = LOWER(?)";
+  }
 }
 
 class SqlStmt is export {

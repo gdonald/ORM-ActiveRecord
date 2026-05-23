@@ -59,6 +59,7 @@ class Model
   has Bool $.is-destroyed is rw = False;
   has Bool $.was-new-record is rw = False;
   has Bool $.was-persisted is rw = False;
+  has Str  $.validation-context is rw;
   has %.previous-changes is rw;
   has %.will-change is rw;
 
@@ -1227,13 +1228,14 @@ class Model
     self.build({});
   }
 
-  method is-valid {
-    !self.is-invalid;
+  method is-valid(Str :$context) {
+    !self.is-invalid(:$context);
   }
 
-  method is-invalid {
+  method is-invalid(Str :$context) {
     $!errors = Errors.new;
-    $!validators.validate($!db, self);
+    my $ctx = $context // $!validation-context // ($!id == 0 ?? 'create' !! 'update');
+    $!validators.validate($!db, self, :context($ctx));
     self.validate-belongs-tos;
     $!errors.errors.elems.so;
   }
