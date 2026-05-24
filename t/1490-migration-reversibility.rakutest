@@ -1,0 +1,179 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+my @reversible-calls;
+
+sub table-exists($name) {
+  my @names = $adapter.get-table-names.list;
+  ?@names.grep({ $_ eq $name }).elems;
+}
+
+sub column-names($name) {
+  $adapter.get-fields(table => $name).map({ $_[0] }).list;
+}
+
+my @test-tables = <_rev_a _rev_b _rev_c _rev_revert>;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+cleanup-tables;
+
+class BareMigration is Migration {}
+
+throws-like { BareMigration.new.up }, X::IrreversibleMigration,
+  'an un-overridden change method throws X::IrreversibleMigration';
+
+class CreateRevA is Migration {
+  method change {
+    self.create-table: '_rev_a', [
+      name => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateRevA.new.up;
+ok table-exists('_rev_a'), 'change up creates the table';
+
+CreateRevA.new.down;
+nok table-exists('_rev_a'), 'change down auto-inverts and drops the table';
+
+class CreateRevB is Migration {
+  method change {
+    self.create-table: '_rev_b', [
+      name => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateRevB.new.up;
+
+class AddRevBYear is Migration {
+  method change {
+    self.add-column: '_rev_b', :year => { :integer };
+  }
+}
+
+AddRevBYear.new.up;
+ok 'year' (elem) column-names('_rev_b'), 'change up adds the column';
+
+AddRevBYear.new.down;
+nok 'year' (elem) column-names('_rev_b'),
+  'change down auto-inverts and removes the column';
+
+CreateRevB.new.down;
+
+class CreateAandC is Migration {
+  method change {
+    self.create-table: '_rev_a', [name => { :string }];
+    self.create-table: '_rev_c', [name => { :string }];
+  }
+}
+
+CreateAandC.new.up;
+ok table-exists('_rev_a') && table-exists('_rev_c'),
+  'change up creates multiple tables in declaration order';
+
+CreateAandC.new.down;
+ok !table-exists('_rev_a') && !table-exists('_rev_c'),
+  'change down drops both tables (reverse order)';
+
+class ReversibleSides is Migration {
+  method change {
+    self.create-table: '_rev_a', [name => { :string }];
+
+    self.reversible: -> $dir {
+      $dir.up:   { @reversible-calls.push: 'UP'   };
+      $dir.down: { @reversible-calls.push: 'DOWN' };
+    };
+  }
+}
+
+@reversible-calls = ();
+ReversibleSides.new.up;
+
+is @reversible-calls.join(','), 'UP',
+  'reversible runs the up block during up direction';
+
+ok table-exists('_rev_a'), 'reversible up also ran create-table';
+
+@reversible-calls = ();
+ReversibleSides.new.down;
+
+is @reversible-calls.join(','), 'DOWN',
+  'reversible runs the down block during down direction';
+
+nok table-exists('_rev_a'),
+  'reversible down auto-inverts the create-table too';
+
+class CreateRevertTarget is Migration {
+  method change {
+    self.create-table: '_rev_revert', [name => { :string }];
+  }
+}
+
+CreateRevertTarget.new.up;
+ok table-exists('_rev_revert'), 'revert target table created';
+
+class RevertCreateTarget is Migration {
+  method change {
+    self.revert: -> {
+      self.create-table: '_rev_revert', [name => { :string }];
+    };
+  }
+}
+
+RevertCreateTarget.new.up;
+nok table-exists('_rev_revert'),
+  'revert(block) executes the inverse of the block on up';
+
+RevertCreateTarget.new.down;
+ok table-exists('_rev_revert'),
+  'revert(block) re-runs the block forward on down';
+
+CreateRevertTarget.new.down;
+
+class ExecuteIrreversible is Migration {
+  method change {
+    self.execute('SELECT 1');
+  }
+}
+
+lives-ok { ExecuteIrreversible.new.up },
+  'execute runs raw SQL on up';
+
+throws-like { ExecuteIrreversible.new.down }, X::IrreversibleMigration,
+  'execute inside change throws X::IrreversibleMigration on down';
+
+class LegacyStyle is Migration {
+  method up   { self.create-table: '_rev_a', [name => { :string }] }
+  method down { self.drop-table:   '_rev_a' }
+}
+
+LegacyStyle.new.up;
+ok table-exists('_rev_a'), 'legacy up/down style still creates';
+
+LegacyStyle.new.down;
+nok table-exists('_rev_a'), 'legacy up/down style still drops';
+
+cleanup-tables;
+
+done-testing;

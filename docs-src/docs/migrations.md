@@ -2,7 +2,11 @@
 
 ORM::ActiveRecord includes commands to migrate your database.  Migrations include adding and removing tables as well as adding and removing columns and indexes.
 
-Migration files should contain two methods: an `up` and a `down`.  The `up` method is the forward change you want to perform.  The `down` method should contain what you want to happen if you decide to rollback the changes from the `up` method.
+Migration files contain either a single `change` method (the recommended
+form, see [Reversible migrations](#reversible-migrations)) or a pair of
+`up` and `down` methods.  The `up` method is the forward change you want to
+perform.  The `down` method should contain what you want to happen if you
+decide to rollback the changes from the `up` method.
 
 ## Examples
 
@@ -179,6 +183,82 @@ To remove the timestamp columns:
 ```perl6
 self.remove-timestamps: 'articles';
 ```
+
+## Reversible migrations
+
+Most schema operations have an obvious inverse: `create-table` ↔ `drop-table`,
+`add-column` ↔ `remove-column`, `add-index` ↔ `remove-index`,
+`add-timestamps` ↔ `remove-timestamps`. Instead of writing both `up` and `down`,
+define a single `change` method and let the runner derive the rollback:
+
+```perl6
+use ORM::ActiveRecord::Schema::Migration;
+
+class CreateArticles is Migration {
+  method change {
+    self.create-table: 'articles', [
+      title => { :string, limit => 64 },
+      body  => { :text },
+    ];
+    self.add-timestamps: 'articles';
+  }
+}
+```
+
+Running this migration forward calls each operation in `change` in order.
+Rolling it back records each call, then plays the inverses in reverse order
+— so `articles` loses its timestamps first, then the table is dropped.
+
+### `reversible` for asymmetric blocks
+
+When an operation needs different code in each direction (typically raw
+SQL), wrap it in `reversible`. The block is invoked with a direction
+helper that exposes `up` and `down`:
+
+```perl6
+class BackfillStatus is Migration {
+  method change {
+    self.add-column: 'orders', :status => { :string, default => 'pending' };
+
+    self.reversible: -> $dir {
+      $dir.up:   { self.execute("UPDATE orders SET status = 'legacy' WHERE created_at < '2025-01-01'") };
+      $dir.down: { self.execute("UPDATE orders SET status = 'pending' WHERE status = 'legacy'") };
+    };
+  }
+}
+```
+
+Going up adds the column then runs the up-block. Going down runs the
+down-block first, then removes the column.
+
+### `revert` to undo a previous block
+
+`revert` takes a block and performs the *inverse* of every operation
+inside, in reverse order. It is the easiest way to write a migration that
+undoes an earlier one without copy-pasting the original:
+
+```perl6
+class RemoveLegacyAuditLog is Migration {
+  method change {
+    self.revert: -> {
+      self.create-table: 'legacy_audit_log', [
+        message => { :text },
+      ];
+    };
+  }
+}
+```
+
+Up: drops the `legacy_audit_log` table.
+Down: re-creates it with the original definition.
+
+### `execute` is irreversible inside `change`
+
+`execute` runs raw SQL. There is no way to derive its inverse
+automatically, so calling it inside `change` makes the migration
+irreversible — the rollback will raise `X::IrreversibleMigration`. Either
+provide an `up`/`down` pair, or wrap the SQL in `reversible` and supply
+both directions.
 
 ## Irreversible migrations
 
