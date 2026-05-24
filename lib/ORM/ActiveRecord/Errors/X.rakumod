@@ -105,3 +105,13 @@ class X::DeleteRestrictionError is Exception is export {
     "Cannot delete $m because of dependent $a";
   }
 }
+
+class X::Callback::Abort is Exception is export {
+  has Str $.event;
+  has Str $.timing;
+  method message {
+    my $e = $!event // 'callback';
+    my $t = $!timing // '';
+    $t ?? "$t-$e chain halted" !! "$e chain halted";
+  }
+}

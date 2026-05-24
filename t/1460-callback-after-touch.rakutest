@@ -1,0 +1,30 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Article is Model {
+  has Int $.touch-count is rw = 0;
+
+  submethod BUILD {
+    self.after-touch: -> { self.touch-count++ };
+  }
+}
+
+plan 3;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Article.destroy-all;
+
+my $a = Article.create({ title => 'hello', body => 'world' });
+ok $a.touch-count == 0, 'after-touch does not fire on create';
+
+$a.touch;
+ok $a.touch-count == 1, 'after-touch fires once after touch';
+
+$a.touch;
+ok $a.touch-count == 2, 'after-touch fires again after another touch';
+
+Article.destroy-all;

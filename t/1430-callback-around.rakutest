@@ -1,0 +1,109 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+my @events;
+
+class Client is Model {
+  submethod BUILD {
+    self.validate: 'email', { :presence };
+    self.around-save: -> &yield {
+      @events.push: 'around-save-before';
+      &yield();
+      @events.push: 'around-save-after';
+    };
+    self.around-create: -> &yield {
+      @events.push: 'around-create-before';
+      &yield();
+      @events.push: 'around-create-after';
+    };
+    self.around-update: -> &yield {
+      @events.push: 'around-update-before';
+      &yield();
+      @events.push: 'around-update-after';
+    };
+    self.around-destroy: -> &yield {
+      @events.push: 'around-destroy-before';
+      &yield();
+      @events.push: 'around-destroy-after';
+    };
+    self.before-save:   -> { @events.push: 'before-save' };
+    self.after-save:    -> { @events.push: 'after-save'  };
+    self.before-create: -> { @events.push: 'before-create' };
+    self.after-create:  -> { @events.push: 'after-create'  };
+    self.before-update: -> { @events.push: 'before-update' };
+    self.after-update:  -> { @events.push: 'after-update'  };
+    self.before-destroy: -> { @events.push: 'before-destroy' };
+    self.after-destroy:  -> { @events.push: 'after-destroy'  };
+  }
+}
+
+plan 4;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Client.destroy-all;
+
+{
+  @events = ();
+  my $c = Client.create({ email => 'fred@aol.com' });
+  is-deeply @events, [
+    'around-save-before',
+    'before-save',
+    'around-create-before',
+    'before-create',
+    'after-create',
+    'around-create-after',
+    'after-save',
+    'around-save-after',
+  ], 'around-save / around-create wrap before/after on insert';
+}
+
+{
+  @events = ();
+  my $c = Client.where({ email => 'fred@aol.com' }).first;
+  $c.email = 'barney@compuserve.net';
+  $c.save;
+  is-deeply @events, [
+    'around-save-before',
+    'before-save',
+    'around-update-before',
+    'before-update',
+    'after-update',
+    'around-update-after',
+    'after-save',
+    'around-save-after',
+  ], 'around-save / around-update wrap before/after on update';
+}
+
+{
+  @events = ();
+  my $c = Client.where({ email => 'barney@compuserve.net' }).first;
+  $c.destroy;
+  is-deeply @events, [
+    'around-destroy-before',
+    'before-destroy',
+    'after-destroy',
+    'around-destroy-after',
+  ], 'around-destroy wraps before-/after-destroy';
+}
+
+{
+  # If around-save fails to yield, save is halted (returns False)
+  Client.destroy-all;
+  my $halt = class HaltClient is Model {
+    method table-name { 'clients' }
+    submethod BUILD {
+      self.validate: 'email', { :presence };
+      self.around-save: -> &yield {
+        # never yield → halts
+      };
+    }
+  };
+  my $c = $halt.new(:id(0), :record({ attrs => { email => 'never@save.com' } }));
+  ok !$c.save, 'failing to yield in around-save halts save';
+}
+
+Client.destroy-all;

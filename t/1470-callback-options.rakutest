@@ -1,0 +1,90 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+my @events;
+
+class Client is Model {
+  has Bool $.skip-it is rw = False;
+
+  submethod BUILD {
+    self.validate: 'email', { :presence };
+
+    # method-name callback (Str handler)
+    self.before-save: 'note-save';
+
+    # multiple callbacks fire in declaration order
+    self.after-save: -> { @events.push: 'after-1' };
+    self.after-save: -> { @events.push: 'after-2' };
+
+    # prepend: inserts at front of chain (runs first)
+    self.after-save: 'prepended-after', :prepend;
+
+    # conditional with Block
+    self.after-save: -> { @events.push: 'maybe-block' }, :if(-> { self.email.chars > 3 });
+    self.after-save: -> { @events.push: 'never-block' }, :unless(-> { True });
+
+    # conditional with Str method name
+    self.after-save: -> { @events.push: 'should-skip' }, :if('skip-it');
+
+    # conditional with Array (all must be true)
+    self.after-save: -> { @events.push: 'both-conds' },
+      :if(['email-long', -> { True }]);
+
+    # halt the chain by returning False
+    self.before-update: -> { False };
+  }
+
+  method note-save     { @events.push: 'before-save-method'; True }
+  method prepended-after { @events.push: 'prepended-after-method' }
+  method email-long(--> Bool) { self.email.chars > 3 }
+}
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Client.destroy-all;
+
+{
+  @events = ();
+  my $c = Client.create({ email => 'fred@aol.com' });
+  my @after-events = @events.grep({ $_ ne 'before-save-method' });
+  is @after-events[0], 'prepended-after-method',
+     'prepend places callback at the front of the after-save chain';
+}
+
+{
+  ok @events.first('before-save-method').defined,
+     'method-name callback for before-save runs via method dispatch';
+}
+
+{
+  my @ordered = @events.grep({ $_ eq 'after-1' || $_ eq 'after-2' }).Array;
+  is-deeply
+    @ordered,
+    ['after-1', 'after-2'],
+    'multiple callbacks fire in declaration order';
+}
+
+{
+  ok @events.first('maybe-block').defined,
+     'conditional :if(Block) fires when condition true';
+  ok !@events.first('never-block').defined,
+     ':unless(-> True) suppresses callback';
+  ok !@events.first('should-skip').defined,
+     'conditional :if(Str) suppresses when method returns False';
+  ok @events.first('both-conds').defined,
+     ':if(Array) fires when every condition true';
+}
+
+# halt
+{
+  my $c = Client.where({ email => 'fred@aol.com' }).first;
+  $c.email = 'wilma@aol.com';
+  ok !$c.save, 'before-update returning False halts save';
+}
+
+Client.destroy-all;

@@ -1,0 +1,45 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+my @events;
+
+class Client is Model {
+  submethod BUILD {
+    self.validate: 'email', { :presence };
+    self.before-validation: -> { @events.push: 'before' };
+    self.after-validation:  -> { @events.push: 'after'  };
+  }
+}
+
+plan 5;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Client.destroy-all;
+
+{
+  @events = ();
+  my $c = Client.build({ email => 'fred@aol.com' });
+  $c.is-valid;
+  is-deeply @events, ['before', 'after'], 'before/after-validation fire on is-valid';
+}
+
+{
+  @events = ();
+  my $c = Client.build({ email => '' });
+  ok $c.is-invalid, 'invalid record is invalid';
+  is-deeply @events, ['before', 'after'], 'callbacks fire even when invalid';
+}
+
+{
+  @events = ();
+  my $c = Client.create({ email => 'wilma@aol.com' });
+  ok $c.id != 0, 'record was created';
+  ok @events.grep('before').elems >= 1 && @events.grep('after').elems >= 1,
+     'validation callbacks fire during save';
+}
+
+Client.destroy-all;

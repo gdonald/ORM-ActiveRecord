@@ -71,8 +71,20 @@ class Model
   has @.after-updates;
   has @.after-creates;
 
+  has @.around-saves;
+  has @.around-updates;
+  has @.around-creates;
+  has @.around-destroys;
+
   has @.before-destroys;
   has @.after-destroys;
+
+  has @.before-validations;
+  has @.after-validations;
+
+  has @.after-initializes;
+  has @.after-finds;
+  has @.after-touches;
 
   has @.after-commits;
   has @.after-rollbacks;
@@ -80,6 +92,9 @@ class Model
   has @.after-update-commits;
   has @.after-destroy-commits;
   has @.after-save-commits;
+
+  has %.callback-terminators;
+  has Bool $.was-found-from-db is rw = False;
 
   has @.filter-attributes;
 
@@ -102,9 +117,18 @@ class Model
     if %!record && %!record<attrs> {
       self.merge-attrs(%!record<attrs>);
       self.update-db-attrs if $!id;
+      $!was-found-from-db = $!id != 0;
     } elsif $!id {
       self.get-attrs(:$!id);
+      $!was-found-from-db = True;
     }
+  }
+
+  method new(|c) {
+    my $obj = self.bless(|c);
+    $obj.do-after-initializes;
+    $obj.do-after-finds if $obj.was-found-from-db;
+    $obj;
   }
 
   method FALLBACK(Str:D $name, *@rest) is raw {
@@ -989,54 +1013,62 @@ class Model
     die X::FrozenRecord.new(model => self.WHAT.^name)   if $!is-destroyed;
     return True if self.is-suppressed;
     self.apply-autosave-on-belongs-to;
-    if !$validate || self.is-valid {
-      self.update-foreign-keys;
-      self.do-before-saves;
+    return False if $validate && !self.is-valid;
+    self.update-foreign-keys;
+
+    my Bool $was-new = $!id == 0;
+    my Bool $locking = self.is-locking-enabled;
+    my $lock-col = self.locking-column;
+    my $prev-lock;
+    my %snapshot;
+
+    my $do-create = -> {
+      return False unless self.do-before-creates;
+      %!attrs<id> = $!id = $!db.create-object(self);
+      self.apply-counter-cache-on-create;
+      self.apply-touch-on-belongs-to;
+      self.do-after-creates;
+      True;
+    };
+    my $do-update = -> {
+      return False unless self.do-before-updates;
+      if $locking {
+        my %types = @!fields.map({ .name => .type }).Hash;
+        my $affected = $!db.update-records(
+          :table(self.table-name),
+          :attrs(%!attrs),
+          :%types,
+          :where({ id => $!id, $lock-col => $prev-lock }),
+        );
+        if $affected == 0 {
+          die X::StaleObjectError.new(model => self.WHAT.^name);
+        }
+      } else {
+        $!db.update-object(self);
+      }
+      self.apply-counter-cache-on-update(%snapshot);
+      self.apply-touch-on-belongs-to;
+      self.do-after-updates;
+      True;
+    };
+
+    my $inner-save = -> {
+      return False unless self.do-before-saves;
       self.touch-timestamps if $touch;
 
-      my Bool $was-new = $!id == 0;
-      my Bool $locking = self.is-locking-enabled;
-      my $lock-col = self.locking-column;
-      my $prev-lock;
       if $locking && !$was-new {
         $prev-lock = (%!attrs-db{$lock-col} // 0).Int;
         %!attrs{$lock-col} = $prev-lock + 1;
       }
 
-      my %snapshot;
       for self.changed -> $name {
         %snapshot{$name} = [%!attrs-db{$name}, %!attrs{$name}];
       }
 
-      given $!id {
-        when 0 {
-          self.do-before-creates;
-          %!attrs<id> = $!id = $!db.create-object(self);
-          self.apply-counter-cache-on-create;
-          self.apply-touch-on-belongs-to;
-          self.do-after-creates;
-        }
-        default {
-          self.do-before-updates;
-          if $locking {
-            my %types = @!fields.map({ .name => .type }).Hash;
-            my $affected = $!db.update-records(
-              :table(self.table-name),
-              :attrs(%!attrs),
-              :%types,
-              :where({ id => $!id, $lock-col => $prev-lock }),
-            );
-            if $affected == 0 {
-              die X::StaleObjectError.new(model => self.WHAT.^name);
-            }
-          } else {
-            $!db.update-object(self);
-          }
-          self.apply-counter-cache-on-update(%snapshot);
-          self.apply-touch-on-belongs-to;
-          self.do-after-updates;
-        }
-      }
+      my Bool $op-ok = $was-new
+        ?? self.run-around-chain('create', $do-create)
+        !! self.run-around-chain('update', $do-update);
+      return False unless $op-ok;
 
       self.do-after-saves;
       self.update-db-attrs;
@@ -1044,9 +1076,10 @@ class Model
       %!will-change = ();
       $!was-new-record = $was-new;
       $!db.register-txn-callback(self, $was-new ?? 'create' !! 'update');
-      return True;
-    }
-    False;
+      True;
+    };
+
+    self.run-around-chain('save', $inner-save);
   }
 
   method update-foreign-keys {
@@ -1144,7 +1177,9 @@ class Model
       %attrs{$extra} = $now if self.has-attribute($extra);
     }
     return False unless %attrs.elems;
-    self.update-columns(%attrs);
+    my $ok = self.update-columns(%attrs);
+    self.do-after-touches if $ok;
+    $ok;
   }
 
   method increment(Str:D $name, Numeric:D $n = 1) {
@@ -1234,9 +1269,11 @@ class Model
 
   method is-invalid(Str :$context) {
     $!errors = Errors.new;
+    self.do-before-validations;
     my $ctx = $context // $!validation-context // ($!id == 0 ?? 'create' !! 'update');
     $!validators.validate($!db, self, :context($ctx));
     self.validate-belongs-tos;
+    self.do-after-validations;
     $!errors.errors.elems.so;
   }
 
@@ -1404,14 +1441,18 @@ class Model
   method destroy {
     return False unless $!id;
     return False unless self.check-dependent-restrictions;
-    self.do-before-destroys;
-    self.apply-dependent-actions;
-    self.apply-counter-cache-on-destroy;
-    self.apply-touch-on-belongs-to;
-    self.delete;
-    self.do-after-destroys;
-    $!db.register-txn-callback(self, 'destroy');
-    True;
+
+    my $do-destroy = -> {
+      return False unless self.do-before-destroys;
+      self.apply-dependent-actions;
+      self.apply-counter-cache-on-destroy;
+      self.apply-touch-on-belongs-to;
+      self.delete;
+      self.do-after-destroys;
+      $!db.register-txn-callback(self, 'destroy');
+      True;
+    };
+    self.run-around-chain('destroy', $do-destroy);
   }
 
   method check-dependent-restrictions(--> Bool) {

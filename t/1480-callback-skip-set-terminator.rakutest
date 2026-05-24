@@ -1,0 +1,96 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::X;
+use Test;
+
+my @events;
+
+class Client is Model {
+  submethod BUILD {
+    self.validate: 'email', { :presence };
+    self.before-save: -> { @events.push: 'b1' }, :tag<b1>;
+    self.before-save: -> { @events.push: 'b2' }, :tag<b2>;
+    self.before-save: -> { @events.push: 'b3' }, :tag<b3>;
+  }
+}
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Client.destroy-all;
+
+# Introspection: callbacks-for / callback-tags
+{
+  my $c = Client.build({ email => 'fred@aol.com' });
+  is $c.callbacks-for(:event<save>, :timing<before>).elems, 3,
+     'callbacks-for returns all registered callbacks';
+  is-deeply
+    $c.callback-tags(:event<save>, :timing<before>).Array,
+    ['b1', 'b2', 'b3'],
+    'callback-tags returns the registered tags in order';
+  ok $c.has-callback(:event<save>, :timing<before>, :tag<b2>),
+     'has-callback finds an entry by tag';
+}
+
+# skip-callback removes by tag
+{
+  @events = ();
+  my $c = Client.build({ email => 'wilma@aol.com' });
+  $c.skip-callback(:event<save>, :timing<before>, :tag<b2>);
+  $c.save;
+  is-deeply @events, ['b1', 'b3'], 'skip-callback removes the b2 entry';
+}
+
+# set-callback adds a new callback at runtime
+{
+  @events = ();
+  my $c = Client.build({ email => 'pebbles@aol.com' });
+  $c.set-callback(
+    :event<save>, :timing<before>,
+    :handler(-> { @events.push: 'b4' }),
+    :tag<b4>,
+  );
+  $c.save;
+  ok @events.tail eq 'b4', 'set-callback appended the new entry';
+}
+
+# Throwing X::Callback::Abort halts the chain
+{
+  @events = ();
+  my $c = Client.build({ email => 'bambam@aol.com' });
+  $c.set-callback(
+    :event<save>, :timing<before>,
+    :handler(-> { die X::Callback::Abort.new(:event<save>, :timing<before>) }),
+    :prepend,
+  );
+  ok !$c.save, 'throwing X::Callback::Abort halts save';
+  is @events.elems, 0, 'no further before-save callbacks ran after abort';
+}
+
+# Custom terminator: treat 0 as an abort signal
+{
+  @events = ();
+  my $c = Client.build({ email => 'dino@aol.com' });
+  $c.set-callback-terminator(
+    :event<save>, :timing<before>,
+    :block(-> $r { $r === 0 }),
+  );
+  $c.skip-callback(:event<save>, :timing<before>, :tag<b1>);
+  $c.skip-callback(:event<save>, :timing<before>, :tag<b2>);
+  $c.skip-callback(:event<save>, :timing<before>, :tag<b3>);
+  $c.set-callback(
+    :event<save>, :timing<before>,
+    :handler(-> { 0 }),
+  );
+  $c.set-callback(
+    :event<save>, :timing<before>,
+    :handler(-> { @events.push: 'after-zero' }),
+  );
+  $c.save;
+  is @events.elems, 0, 'custom terminator halts the chain on a 0 return';
+}
+
+Client.destroy-all;

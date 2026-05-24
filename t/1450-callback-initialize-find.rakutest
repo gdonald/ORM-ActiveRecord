@@ -1,0 +1,42 @@
+
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Model;
+use Test;
+
+class Article is Model {
+  has Int $.init-count is rw = 0;
+  has Int $.find-count is rw = 0;
+
+  submethod BUILD {
+    self.after-initialize: -> { self.init-count++ };
+    self.after-find:       -> { self.find-count++ };
+  }
+}
+
+plan 6;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Article.destroy-all;
+
+{
+  my $a = Article.new(:id(0));
+  ok $a.init-count == 1, 'after-initialize fires for new()';
+  ok $a.find-count == 0, 'after-find does not fire for new()';
+}
+
+{
+  my $a = Article.build({ title => 't', body => 'b' });
+  ok $a.init-count == 1, 'after-initialize fires for build()';
+  ok $a.find-count == 0, 'after-find does not fire for build()';
+  $a.save;
+}
+
+{
+  my $first = Article.first;
+  ok $first.init-count == 1, 'after-initialize fires when loading from DB';
+  ok $first.find-count == 1, 'after-find fires when loading from DB';
+}
+
+Article.destroy-all;

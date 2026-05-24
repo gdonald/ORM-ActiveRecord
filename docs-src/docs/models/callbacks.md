@@ -2,7 +2,16 @@
 
 ORM::ActiveRecord supports callbacks that can be performed during various life cycle events.
 
-These callbacks currently include `after-create`, `after-save`, `after-update`, `after-destroy`, `before-create`, `before-save`, `before-update`, and `before-destroy`.
+The available events are:
+
+- Save: `before-save` / `around-save` / `after-save`
+- Create: `before-create` / `around-create` / `after-create`
+- Update: `before-update` / `around-update` / `after-update`
+- Destroy: `before-destroy` / `around-destroy` / `after-destroy`
+- Validation: `before-validation` / `after-validation`
+- Initialize: `after-initialize`
+- Find: `after-find` (fires only when a record is loaded from the database)
+- Touch: `after-touch`
 
 For callbacks that wait until the surrounding transaction's outcome is
 decided — `after-commit`, `after-rollback`, and the per-action variants
@@ -283,4 +292,171 @@ Output
 ```shell
 True
 True
+```
+
+## Around Callbacks
+
+`around-save`, `around-create`, `around-update`, and `around-destroy` wrap
+the corresponding write operation. The block receives a `&yield` argument;
+calling it runs the wrapped operation (along with its `before-*`/`after-*`
+callbacks), so code before and after the call to `&yield` becomes the
+"before" and "after" halves of the wrapper. Forgetting to call `&yield`
+halts the operation (`save` / `destroy` returns `False`).
+
+```perl6
+class Client is Model {
+  submethod BUILD {
+    self.around-save: -> &yield {
+      my $started = now;
+      &yield();
+      my $elapsed = now - $started;
+      say "save took {$elapsed.fmt('%.4f')}s";
+    };
+  }
+}
+```
+
+## Validation, Initialize, Find, Touch
+
+```perl6
+class Client is Model {
+  submethod BUILD {
+    self.before-validation: -> { self.email .= trim };
+    self.after-validation:  -> { say 'errors so far: ' ~ self.errors.count };
+    self.after-initialize:  -> { self.role //= 'guest' };
+    self.after-find:        -> { say 'loaded ' ~ self.id };
+    self.after-touch:       -> { self.bump-cache };
+  }
+}
+```
+
+- `after-initialize` fires for every freshly constructed instance (both
+  records loaded from the database and ones built in memory).
+- `after-find` fires only when the instance was hydrated from the database.
+- `after-touch` fires after a successful call to `.touch(...)`.
+
+## Method-name Handlers
+
+Any callback registration accepts a method name (`Str`) instead of a block.
+The method is dispatched on `self`.
+
+```perl6
+class Client is Model {
+  submethod BUILD {
+    self.before-save: 'lowercase-email';
+    self.after-create: 'send-welcome-email';
+  }
+
+  method lowercase-email { self.email .= lc }
+  method send-welcome-email { ... }
+}
+```
+
+## Multiple Callbacks per Event
+
+Multiple callbacks registered for the same event fire in declaration order.
+
+```perl6
+class Client is Model {
+  submethod BUILD {
+    self.after-save: -> { say 'first'  };
+    self.after-save: -> { say 'second' };
+    self.after-save: -> { say 'third'  };
+  }
+}
+```
+
+## `:prepend`
+
+Use `:prepend` to put a callback at the front of its chain instead of
+appending it.
+
+```perl6
+self.after-save: -> { say 'runs before the rest' }, :prepend;
+```
+
+## Conditional Callbacks (`:if` / `:unless`)
+
+Both `:if` and `:unless` accept a `Block`, a `Str` method name, or an
+`Array` of either. With an `Array`, every entry must be satisfied for the
+callback to run.
+
+```perl6
+class Client is Model {
+  submethod BUILD {
+    self.after-save: -> { self.send-welcome },
+      :if(-> { self.is-new-record });
+    self.after-save: -> { self.send-billing },
+      :if('is-paid'),
+      :unless('is-archived');
+    self.after-save: -> { self.audit },
+      :if(['is-paid', -> { self.email.chars > 0 }]);
+  }
+
+  method is-paid     { ... }
+  method is-archived { ... }
+}
+```
+
+## Halting the Chain
+
+A callback can stop the rest of its chain (and abort the surrounding
+`save` / `destroy`) by returning `False` or by throwing
+`X::Callback::Abort`.
+
+```perl6
+use ORM::ActiveRecord::Errors::X;
+
+class Client is Model {
+  submethod BUILD {
+    self.before-save: -> {
+      return False unless self.email.chars;
+      True;
+    };
+    self.before-destroy: -> {
+      die X::Callback::Abort.new if self.is-protected;
+    };
+  }
+}
+```
+
+## Introspection: `set-callback` / `skip-callback`
+
+Callbacks can be added or removed by tag at runtime. Pass a `:tag` when
+registering so they can later be looked up or removed.
+
+```perl6
+class Client is Model {
+  submethod BUILD {
+    self.before-save: -> { self.normalize }, :tag<normalize>;
+  }
+}
+
+my $c = Client.build({ email => 'fred@aol.com' });
+
+$c.has-callback(:event<save>, :timing<before>, :tag<normalize>);  # True
+$c.callback-tags(:event<save>, :timing<before>);                  # ('normalize',)
+
+# Disable just this one callback for this instance
+$c.skip-callback(:event<save>, :timing<before>, :tag<normalize>);
+
+# Or add a new one
+$c.set-callback(
+  :event<save>, :timing<before>,
+  :handler(-> { ... }),
+  :tag<custom>,
+);
+```
+
+## Custom Chain Terminator
+
+By default, a callback halts the chain when it returns the value `False`
+(or when `X::Callback::Abort` is thrown). The terminator can be customised
+per event/timing by passing a `Block` that decides whether a result aborts.
+
+```perl6
+$c.set-callback-terminator(
+  :event<save>, :timing<before>,
+  :block(-> $result { $result === 0 || $result === False }),
+);
 ```
