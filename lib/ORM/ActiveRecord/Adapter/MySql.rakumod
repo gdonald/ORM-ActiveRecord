@@ -331,6 +331,144 @@ class MySqlAdapter is SqlAdapter is export {
         }
       }
 
+      method ddl-change-column(Str:D $table, Str:D $name, Str:D $type, *%opts) {
+        my $sql-type = self!sql-type-for($type, limit => %opts<limit>);
+        my %info     = self!column-info($table, $name);
+
+        my Bool $null = %opts<null>:exists ?? %opts<null>.so !! %info<null>;
+        my $default-lit = %opts<default>:exists
+          ?? (%opts<default>.defined ?? self!default-literal(%opts<default>) !! Nil)
+          !! %info<default-literal>;
+        my $comment   = %opts<comment>:exists ?? %opts<comment> !! %info<comment>;
+
+        my $clause = self!modify-column-clause(
+          $name, $sql-type,
+          :$null,
+          default => $default-lit,
+          :$comment,
+        );
+        self.exec("ALTER TABLE $table MODIFY COLUMN $clause");
+      }
+
+      method ddl-change-column-default(Str:D $table, Str:D $name, $value) {
+        if $value.defined {
+          my $literal = self!default-literal($value);
+          self.exec("ALTER TABLE $table ALTER COLUMN $name SET DEFAULT $literal");
+        } else {
+          self.exec("ALTER TABLE $table ALTER COLUMN $name DROP DEFAULT");
+        }
+      }
+
+      method ddl-change-column-null(Str:D $table, Str:D $name, Bool:D $null, :$default) {
+        if !$null && $default.defined {
+          my $literal = self!default-literal($default);
+          self.exec("UPDATE $table SET $name = $literal WHERE $name IS NULL");
+        }
+
+        my %info   = self!column-info($table, $name);
+        my $clause = self!modify-column-clause(
+          $name, %info<sql-type>,
+          :$null,
+          default => %info<default-literal>,
+          comment => %info<comment>,
+        );
+        self.exec("ALTER TABLE $table MODIFY COLUMN $clause");
+      }
+
+      method ddl-change-column-comment(Str:D $table, Str:D $name, $comment) {
+        my %info   = self!column-info($table, $name);
+        my $clause = self!modify-column-clause(
+          $name, %info<sql-type>,
+          null    => %info<null>,
+          default => %info<default-literal>,
+          comment => ($comment.defined ?? $comment.Str !! ''),
+        );
+        self.exec("ALTER TABLE $table MODIFY COLUMN $clause");
+      }
+
+      method ddl-change-table-comment(Str:D $table, $comment) {
+        my $literal = $comment.defined
+          ?? self!string-literal($comment.Str)
+          !! "''";
+        self.exec("ALTER TABLE $table COMMENT = $literal");
+      }
+
+      method !modify-column-clause(Str:D $name, Str:D $sql-type, Bool :$null, :$default, :$comment --> Str) {
+        my $null-clause    = $null.defined ?? ($null ?? ' NULL' !! ' NOT NULL') !! '';
+        my $default-clause = $default.defined && $default.Str.chars
+          ?? " DEFAULT $default"
+          !! '';
+        my $comment-clause = $comment.defined && $comment.Str.chars
+          ?? ' COMMENT ' ~ self!string-literal($comment.Str)
+          !! '';
+
+        "$name $sql-type$null-clause$default-clause$comment-clause";
+      }
+
+      method !column-info(Str:D $table, Str:D $name --> Hash) {
+        my $stmt = SqlStmt.new(:adapter(self));
+        my $tph  = $stmt.placeholder($table);
+        my $nph  = $stmt.placeholder($name);
+        $stmt.sql = qq:to/SQL/;
+          SELECT column_type, is_nullable, column_default, column_comment
+            FROM information_schema.columns
+           WHERE table_schema = DATABASE()
+             AND table_name = $tph
+             AND column_name = $nph
+          SQL
+
+        my @rows = self.exec-stmt($stmt);
+        die "MySqlAdapter: no such column $table.$name" unless @rows.elems;
+
+        my $row    = @rows[0];
+        my $type   = self!stringify($row[0]);
+        my $is-nul = self!stringify($row[1]);
+        my $dflt   = $row[2].defined ?? self!stringify($row[2]) !! Nil;
+        my $cmt    = self!stringify($row[3]);
+
+        %( sql-type        => $type,
+           null            => ($is-nul.uc eq 'YES'),
+           default-literal => ($dflt.defined && $dflt.chars ?? self!quote-mysql-default($dflt) !! Nil),
+           comment         => $cmt );
+      }
+
+      # MySQL's information_schema returns column_default as a raw expression
+      # (e.g. CURRENT_TIMESTAMP) or as a bare literal (no surrounding quotes
+      # for strings). Heuristic: numeric / NULL / CURRENT_* pass through, the
+      # rest are treated as string literals and re-quoted.
+      method !quote-mysql-default(Str:D $raw --> Str) {
+        return $raw if $raw ~~ /^ '-'? \d+ ('.' \d+)? $/;
+        return $raw if $raw.uc eq 'NULL';
+        return $raw if $raw.uc.starts-with('CURRENT_');
+        self!string-literal($raw);
+      }
+
+      method !sql-type-for(Str:D $type, :$limit) {
+        given $type {
+          when 'string'                 { 'VARCHAR(' ~ ($limit // 255) ~ ')' }
+          when 'text'                   { 'TEXT' }
+          when 'integer'                { 'INT' }
+          when 'bigint'                 { 'BIGINT' }
+          when 'smallint'               { 'SMALLINT' }
+          when 'boolean'                { 'TINYINT(1)' }
+          when 'datetime' | 'timestamp' { 'DATETIME(6)' }
+          when 'date'                   { 'DATE' }
+          when 'time'                   { 'TIME' }
+          default                       { $type.uc }
+        }
+      }
+
+      method !default-literal($value --> Str) {
+        return 'NULL' without $value;
+        return ($value ?? '1' !! '0') if $value ~~ Bool;
+        return $value.Str if $value ~~ Numeric;
+        self!string-literal($value.Str);
+      }
+
+      method !string-literal(Str:D $s --> Str) {
+        "'" ~ $s.subst("\\", "\\\\", :g).subst("'", "''", :g) ~ "'";
+      }
+
       method ddl-add-timestamps(Str:D $table) {
         self.exec(qq:to/SQL/);
       ALTER TABLE $table

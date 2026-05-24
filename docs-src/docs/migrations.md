@@ -108,6 +108,84 @@ class AddGamesYear is Migration {
 }
 ```
 
+## Changing columns
+
+After a table exists, four methods alter the shape of a column in place:
+
+| Method                   | Effect                                            |
+| ------------------------ | ------------------------------------------------- |
+| `change-column`          | Replace the column's type (and optionally its default / null / comment) |
+| `change-column-default`  | Set or drop the column's default value            |
+| `change-column-null`     | Toggle the `NOT NULL` constraint                  |
+| `change-column-comment`  | Set or clear the column comment                   |
+
+```perl6
+self.change-column:         'users', 'name', 'text';
+self.change-column:         'users', 'name', 'string', limit => 80, null => False;
+
+self.change-column-default: 'orders', 'status', 'pending';
+self.change-column-default: 'orders', 'status', Nil;          # drop the default
+
+self.change-column-null:    'users', 'email', False;          # SET NOT NULL
+self.change-column-null:    'users', 'email', True;           # DROP NOT NULL
+self.change-column-null:    'users', 'label', False, 'unknown';  # backfill, then NOT NULL
+
+self.change-column-comment: 'users', 'email', 'primary contact address';
+```
+
+### Reversibility
+
+Inside `change`, the auto-revert behavior is conservative — only operations
+whose inverse is unambiguous run on `down`:
+
+| Operation                                | Reversible in `change`?                           |
+| ---------------------------------------- | ------------------------------------------------- |
+| `change-column-null(t, c, $bool)`        | Yes — the bool is toggled on `down`               |
+| `change-column-default(t, c, :from, :to)` | Yes — `from`/`to` are swapped on `down`           |
+| `change-column-comment(t, c, :from, :to)` | Yes — `from`/`to` are swapped on `down`           |
+| `change-table-comment(t, :from, :to)`     | Yes — `from`/`to` are swapped on `down`           |
+| `change-column`                          | No — raises `X::IrreversibleMigration` on `down`  |
+| `change-column-default(t, c, $value)`    | No — raises unless the `from:`/`to:` form is used |
+| `change-column-comment(t, c, $value)`    | No — raises unless the `from:`/`to:` form is used |
+| `change-table-comment(t, $value)`        | No — raises unless the `from:`/`to:` form is used |
+
+For the irreversible cases, provide explicit `up` / `down` pairs or wrap the
+call in `reversible`. The `from:` / `to:` shorthand is the easiest way to keep
+a default / comment change inside `change`:
+
+```perl6
+class RenameOrderStatus is Migration {
+  method change {
+    self.change-column-default: 'orders', 'status',
+      from => 'pending', to => 'awaiting_review';
+  }
+}
+```
+
+### Table comments
+
+`change-table-comment` sets a comment on the whole table:
+
+```perl6
+self.change-table-comment: 'orders', 'one row per checkout';
+self.change-table-comment: 'orders', :from('old text'), :to('new text');
+```
+
+### Adapter differences
+
+| Operation                  | PostgreSQL | MySQL                 | SQLite                                |
+| -------------------------- | ---------- | --------------------- | ------------------------------------- |
+| `change-column`            | `ALTER ... TYPE` | `MODIFY COLUMN` (re-emits the column definition with introspected null / default / comment merged) | Not supported — raises |
+| `change-column-default`    | `ALTER ... SET/DROP DEFAULT` | `ALTER ... SET/DROP DEFAULT` | Not supported — raises |
+| `change-column-null`       | `ALTER ... SET/DROP NOT NULL` | `MODIFY COLUMN` with introspected type | Not supported — raises |
+| `change-column-comment`    | `COMMENT ON COLUMN ...` | `MODIFY COLUMN ... COMMENT '...'` | Silent no-op (SQLite has no column comments) |
+| `change-table-comment`     | `COMMENT ON TABLE ...` | `ALTER TABLE ... COMMENT = '...'` | Silent no-op (SQLite has no table comments) |
+
+SQLite has no `ALTER COLUMN` and would need a table rebuild for type / default
+/ null changes. Those methods raise rather than silently doing the wrong thing
+— use `reversible` with raw `execute` if you need parity in a SQLite-only
+migration.
+
 ## Adding and removing indexes
 
 `add-index` creates an index on a column (or set of columns). The simplest

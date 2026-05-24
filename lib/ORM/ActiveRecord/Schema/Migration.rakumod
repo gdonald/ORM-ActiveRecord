@@ -79,6 +79,50 @@ class CommandRecorder {
       when 'execute' {
         die X::IrreversibleMigration.new;
       }
+      when 'change-column' {
+        die X::IrreversibleMigration.new;
+      }
+      when 'change-column-default' {
+        my %kw = %cmd<kw>.hash;
+        my @args = %cmd<args>.list;
+
+        die X::IrreversibleMigration.new
+          unless %kw<from>.defined && %kw<to>.defined;
+
+        %( name => 'change-column-default',
+           args => [ @args[0], @args[1] ],
+           kw   => { from => %kw<to>, to => %kw<from> } );
+      }
+      when 'change-column-null' {
+        my @args = %cmd<args>.list;
+        my ($table, $name, $null) = @args[0], @args[1], @args[2];
+
+        %( name => 'change-column-null',
+           args => [ $table, $name, !$null ],
+           kw   => {} );
+      }
+      when 'change-column-comment' {
+        my %kw = %cmd<kw>.hash;
+        my @args = %cmd<args>.list;
+
+        die X::IrreversibleMigration.new
+          unless %kw<from>.defined && %kw<to>.defined;
+
+        %( name => 'change-column-comment',
+           args => [ @args[0], @args[1] ],
+           kw   => { from => %kw<to>, to => %kw<from> } );
+      }
+      when 'change-table-comment' {
+        my %kw = %cmd<kw>.hash;
+        my @args = %cmd<args>.list;
+
+        die X::IrreversibleMigration.new
+          unless %kw<from>.defined && %kw<to>.defined;
+
+        %( name => 'change-table-comment',
+           args => [ @args[0] ],
+           kw   => { from => %kw<to>, to => %kw<from> } );
+      }
       default {
         die X::IrreversibleMigration.new;
       }
@@ -198,6 +242,54 @@ class Migration is export {
     my $field = params.keys.first;
     my $name = $table ~ '_' ~ $field ~ '_idx';
     $!db.ddl-remove-index(:$name);
+  }
+
+  method change-column(Str:D $table, Str:D $name, Str:D $type, *%opts) {
+    if $!recorder {
+      $!recorder.record('change-column', $table, $name, $type, |%opts);
+      return;
+    }
+
+    $!db.ddl-change-column($table, $name, $type, |%opts);
+  }
+
+  method change-column-default(Str:D $table, Str:D $name, $value = Nil, :$from, :$to) {
+    if $!recorder {
+      $!recorder.record('change-column-default', $table, $name, $value, :$from, :$to);
+      return;
+    }
+
+    my $new = ($from.defined && $to.defined) ?? $to !! $value;
+    $!db.ddl-change-column-default($table, $name, $new);
+  }
+
+  method change-column-null(Str:D $table, Str:D $name, Bool:D $null, $default = Nil) {
+    if $!recorder {
+      $!recorder.record('change-column-null', $table, $name, $null, $default);
+      return;
+    }
+
+    $!db.ddl-change-column-null($table, $name, $null, :$default);
+  }
+
+  method change-column-comment(Str:D $table, Str:D $name, $comment = Nil, :$from, :$to) {
+    if $!recorder {
+      $!recorder.record('change-column-comment', $table, $name, $comment, :$from, :$to);
+      return;
+    }
+
+    my $new = ($from.defined && $to.defined) ?? $to !! $comment;
+    $!db.ddl-change-column-comment($table, $name, $new);
+  }
+
+  method change-table-comment(Str:D $table, $comment = Nil, :$from, :$to) {
+    if $!recorder {
+      $!recorder.record('change-table-comment', $table, $comment, :$from, :$to);
+      return;
+    }
+
+    my $new = ($from.defined && $to.defined) ?? $to !! $comment;
+    $!db.ddl-change-table-comment($table, $new);
   }
 
   method execute(Str:D $sql) {

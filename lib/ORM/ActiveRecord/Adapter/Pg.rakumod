@@ -244,6 +244,89 @@ class PgAdapter is SqlAdapter is export {
     }
   }
 
+  method ddl-change-column(Str:D $table, Str:D $name, Str:D $type, *%opts) {
+    my $sql-type = self!sql-type-for($type, limit => %opts<limit>);
+    my $using    = %opts<using> // '';
+    my $using-clause = $using ?? " USING $using" !! '';
+
+    self.exec("ALTER TABLE $table ALTER COLUMN $name TYPE $sql-type$using-clause");
+
+    self.ddl-change-column-default($table, $name, %opts<default>)
+      if %opts<default>:exists;
+
+    self.ddl-change-column-null($table, $name, %opts<null>.so)
+      if %opts<null>:exists;
+
+    self.ddl-change-column-comment($table, $name, %opts<comment>)
+      if %opts<comment>:exists;
+  }
+
+  method ddl-change-column-default(Str:D $table, Str:D $name, $value) {
+    if $value.defined {
+      my $literal = self!default-literal($value);
+      self.exec("ALTER TABLE $table ALTER COLUMN $name SET DEFAULT $literal");
+    } else {
+      self.exec("ALTER TABLE $table ALTER COLUMN $name DROP DEFAULT");
+    }
+  }
+
+  method ddl-change-column-null(Str:D $table, Str:D $name, Bool:D $null, :$default) {
+    if !$null && $default.defined {
+      my $literal = self!default-literal($default);
+      self.exec("UPDATE $table SET $name = $literal WHERE $name IS NULL");
+    }
+
+    if $null {
+      self.exec("ALTER TABLE $table ALTER COLUMN $name DROP NOT NULL");
+    } else {
+      self.exec("ALTER TABLE $table ALTER COLUMN $name SET NOT NULL");
+    }
+  }
+
+  method ddl-change-column-comment(Str:D $table, Str:D $name, $comment) {
+    if $comment.defined {
+      my $literal = self!string-literal($comment.Str);
+      self.exec("COMMENT ON COLUMN $table.$name IS $literal");
+    } else {
+      self.exec("COMMENT ON COLUMN $table.$name IS NULL");
+    }
+  }
+
+  method ddl-change-table-comment(Str:D $table, $comment) {
+    if $comment.defined {
+      my $literal = self!string-literal($comment.Str);
+      self.exec("COMMENT ON TABLE $table IS $literal");
+    } else {
+      self.exec("COMMENT ON TABLE $table IS NULL");
+    }
+  }
+
+  method !sql-type-for(Str:D $type, :$limit) {
+    given $type {
+      when 'string'                 { 'VARCHAR' ~ ($limit ?? "($limit)" !! '') }
+      when 'text'                   { 'TEXT' }
+      when 'integer'                { 'INTEGER' }
+      when 'bigint'                 { 'BIGINT' }
+      when 'smallint'               { 'SMALLINT' }
+      when 'boolean'                { 'BOOL' }
+      when 'datetime' | 'timestamp' { 'TIMESTAMPTZ' }
+      when 'date'                   { 'DATE' }
+      when 'time'                   { 'TIME' }
+      default                       { $type.uc }
+    }
+  }
+
+  method !default-literal($value --> Str) {
+    return 'NULL' without $value;
+    return ($value ?? "'t'" !! "'f'") if $value ~~ Bool;
+    return $value.Str if $value ~~ Numeric;
+    self!string-literal($value.Str);
+  }
+
+  method !string-literal(Str:D $s --> Str) {
+    "'" ~ $s.subst("'", "''", :g) ~ "'";
+  }
+
   method ddl-add-timestamps(Str:D $table) {
     self.exec(qq:to/SQL/);
       ALTER TABLE $table

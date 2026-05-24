@@ -1,0 +1,294 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Errors::X;
+use ORM::ActiveRecord::Support::TestSkip;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+skip-on(:adapter<sqlite>,
+        :reason('SQLite has no ALTER COLUMN; change-column* requires table rebuild'));
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub column-types($table) {
+  my %h;
+  for $adapter.get-fields(table => $table) -> $row {
+    %h{$row[0]} = $row[1];
+  }
+  %h;
+}
+
+sub column-default(Str:D $table, Str:D $name) {
+  my $sql = qq:to/SQL/;
+    SELECT column_default
+      FROM information_schema.columns
+     WHERE table_name = '$table' AND column_name = '$name'
+    SQL
+  my @rows = $adapter.exec($sql);
+  return Nil unless @rows.elems;
+
+  my $raw = @rows[0][0];
+  return Nil without $raw;
+  $raw ~~ Blob ?? $raw.decode('utf-8') !! $raw.Str;
+}
+
+my @test-tables = <_cc_basic _cc_default _cc_null _cc_comment _cc_rev_null _cc_rev_default _cc_rev_comment _cc_table_comment _cc_irreversible>;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+cleanup-tables;
+
+# change-column changes column type
+class CreateBasic is Migration {
+  method change {
+    self.create-table: '_cc_basic', [
+      name => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateBasic.new.up;
+
+class WidenBasicName is Migration {
+  method up {
+    self.change-column: '_cc_basic', 'name', 'text';
+  }
+  method down {
+    self.change-column: '_cc_basic', 'name', 'string', limit => 32;
+  }
+}
+
+WidenBasicName.new.up;
+
+my %types = column-types('_cc_basic');
+my $name-type = (%types<name> // '').lc;
+ok $name-type.contains('text'),
+  "change-column updates column type to text (got '$name-type')";
+
+# change-column-default sets and removes the default
+class CreateDefault is Migration {
+  method change {
+    self.create-table: '_cc_default', [
+      status => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateDefault.new.up;
+
+class SetDefault is Migration {
+  method up {
+    self.change-column-default: '_cc_default', 'status', 'pending';
+  }
+  method down {
+    self.change-column-default: '_cc_default', 'status', Nil;
+  }
+}
+
+SetDefault.new.up;
+
+my $default-after-set = column-default('_cc_default', 'status');
+ok ($default-after-set // '').contains('pending'),
+  "change-column-default applies the new default (got '{$default-after-set // 'Nil'}')";
+
+SetDefault.new.down;
+
+my $default-after-drop = column-default('_cc_default', 'status');
+ok !$default-after-drop.defined,
+  'change-column-default with Nil drops the default';
+
+# change-column-null toggles NOT NULL
+class CreateNull is Migration {
+  method change {
+    self.create-table: '_cc_null', [
+      email => { :string, limit => 64 },
+    ];
+  }
+}
+
+CreateNull.new.up;
+
+class TightenNull is Migration {
+  method change {
+    self.change-column-null: '_cc_null', 'email', False;
+  }
+}
+
+TightenNull.new.up;
+
+throws-like { $adapter.exec("INSERT INTO _cc_null (email) VALUES (NULL)") },
+  Exception,
+  'NOT NULL is enforced after change-column-null(_, _, False)';
+
+# change-column-null auto-inverts (toggle bool)
+TightenNull.new.down;
+
+lives-ok { $adapter.exec("INSERT INTO _cc_null (email) VALUES (NULL)") },
+  'auto-inverted change-column-null restores nullability';
+
+# change-column-null backfill default for existing NULLs before NOT NULL
+class CreateRevNull is Migration {
+  method change {
+    self.create-table: '_cc_rev_null', [
+      label => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateRevNull.new.up;
+
+$adapter.exec("INSERT INTO _cc_rev_null (label) VALUES (NULL)");
+
+class BackfillThenTighten is Migration {
+  method change {
+    self.change-column-null: '_cc_rev_null', 'label', False, 'unknown';
+  }
+}
+
+BackfillThenTighten.new.up;
+
+my @rev-rows = $adapter.exec('SELECT label FROM _cc_rev_null');
+is @rev-rows[0][0], 'unknown',
+  'change-column-null with backfill default fills existing NULL rows';
+
+# change-column-comment runs on real-adapter DDL
+class CreateCommentTbl is Migration {
+  method change {
+    self.create-table: '_cc_comment', [
+      note => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateCommentTbl.new.up;
+
+class AddNoteComment is Migration {
+  method up {
+    self.change-column-comment: '_cc_comment', 'note', 'free-form text';
+  }
+  method down {
+    self.change-column-comment: '_cc_comment', 'note', Nil;
+  }
+}
+
+lives-ok { AddNoteComment.new.up },
+  'change-column-comment runs without error';
+
+# change-table-comment runs on real-adapter DDL
+class CreateTableCommentTbl is Migration {
+  method change {
+    self.create-table: '_cc_table_comment', [
+      n => { :integer },
+    ];
+  }
+}
+
+CreateTableCommentTbl.new.up;
+
+class AddTblComment is Migration {
+  method up {
+    self.change-table-comment: '_cc_table_comment', 'sample table';
+  }
+  method down {
+    self.change-table-comment: '_cc_table_comment', Nil;
+  }
+}
+
+lives-ok { AddTblComment.new.up },
+  'change-table-comment runs without error';
+
+# change-column-default with from/to is reversible (swap on down)
+class CreateRevDefault is Migration {
+  method change {
+    self.create-table: '_cc_rev_default', [
+      status => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateRevDefault.new.up;
+$adapter.ddl-change-column-default('_cc_rev_default', 'status', 'pending');
+
+class SwapDefault is Migration {
+  method change {
+    self.change-column-default: '_cc_rev_default', 'status',
+      from => 'pending', to => 'active';
+  }
+}
+
+SwapDefault.new.up;
+my $after-up = column-default('_cc_rev_default', 'status') // '';
+ok $after-up.contains('active'),
+  "change-column-default with from/to applies to (got '$after-up')";
+
+SwapDefault.new.down;
+my $after-down = column-default('_cc_rev_default', 'status') // '';
+ok $after-down.contains('pending'),
+  "change-column-default with from/to auto-inverts back to from (got '$after-down')";
+
+# change-column-comment / change-table-comment with from/to are reversible
+class CreateRevComment is Migration {
+  method change {
+    self.create-table: '_cc_rev_comment', [
+      n => { :integer },
+    ];
+  }
+}
+
+CreateRevComment.new.up;
+
+class SwapComment is Migration {
+  method change {
+    self.change-column-comment: '_cc_rev_comment', 'n',
+      from => 'old', to => 'new';
+    self.change-table-comment: '_cc_rev_comment',
+      from => 'old tbl', to => 'new tbl';
+  }
+}
+
+lives-ok { SwapComment.new.up },  'change-column-comment / change-table-comment with from/to run forward';
+lives-ok { SwapComment.new.down }, 'change-column-comment / change-table-comment with from/to auto-invert';
+
+# change-column inside change is irreversible
+class IrreversibleChangeCol is Migration {
+  method change {
+    self.create-table: '_cc_irreversible', [name => { :string, limit => 32 }];
+    self.change-column: '_cc_irreversible', 'name', 'text';
+  }
+}
+
+IrreversibleChangeCol.new.up;
+throws-like { IrreversibleChangeCol.new.down }, X::IrreversibleMigration,
+  'change-column inside change throws X::IrreversibleMigration on down';
+
+# change-column-default without from/to is irreversible
+class IrreversibleDefault is Migration {
+  method change {
+    self.change-column-default: '_cc_default', 'status', 'frozen';
+  }
+}
+
+throws-like { IrreversibleDefault.new.down }, X::IrreversibleMigration,
+  'change-column-default without from/to throws X::IrreversibleMigration on down';
+
+cleanup-tables;
+
+done-testing;

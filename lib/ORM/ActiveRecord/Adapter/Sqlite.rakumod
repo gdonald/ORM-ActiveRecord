@@ -263,6 +263,27 @@ class SqliteAdapter is SqlAdapter is export {
     }
   }
 
+  method ddl-change-column(Str:D $table, Str:D $name, Str:D $type, *%opts) {
+    die 'SqliteAdapter: change-column is not supported (SQLite has no ALTER COLUMN; rebuild the table manually)';
+  }
+
+  method ddl-change-column-default(Str:D $table, Str:D $name, $value) {
+    die 'SqliteAdapter: change-column-default is not supported (SQLite has no ALTER COLUMN; rebuild the table manually)';
+  }
+
+  method ddl-change-column-null(Str:D $table, Str:D $name, Bool:D $null, :$default) {
+    die 'SqliteAdapter: change-column-null is not supported (SQLite has no ALTER COLUMN; rebuild the table manually)';
+  }
+
+  method ddl-change-column-comment(Str:D $table, Str:D $name, $comment) {
+    # SQLite has no concept of column comments — silently no-op so cross-adapter
+    # migrations don't fail. Use a dedicated comment table if you need parity.
+  }
+
+  method ddl-change-table-comment(Str:D $table, $comment) {
+    # SQLite has no concept of table comments — silently no-op.
+  }
+
   method ddl-add-timestamps(Str:D $table) {
     self.exec("ALTER TABLE $table ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
     self.exec("ALTER TABLE $table ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
