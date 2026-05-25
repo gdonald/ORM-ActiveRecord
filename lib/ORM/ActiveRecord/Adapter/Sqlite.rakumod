@@ -289,6 +289,35 @@ class SqliteAdapter is SqlAdapter is export {
     self.exec("ALTER TABLE $table ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
   }
 
+  method ref-text-sql-type(--> Str) { 'TEXT' }
+
+  method ref-sql-type(Str:D $type --> Str) {
+    given $type {
+      when 'integer' | 'bigint' | 'smallint' { 'INTEGER' }
+      default { $type.uc }
+    }
+  }
+
+  # SQLite has no ALTER INDEX rename. Look up the existing CREATE statement,
+  # drop it, and recreate with the new identifier swapped in.
+  method ddl-rename-index(Str:D $table, Str:D $from, Str:D $to) {
+    my $rows = self.exec("SELECT sql FROM sqlite_master WHERE type='index' AND name='$from'");
+    die "SqliteAdapter: no such index '$from'" unless $rows.elems && $rows[0][0].defined;
+
+    my $sql = $rows[0][0].Str;
+    self.exec("DROP INDEX $from");
+    my $new-sql = $sql.subst(/INDEX \s+ "$from"/, "INDEX $to");
+    self.exec($new-sql);
+  }
+
+  method ddl-add-foreign-key(Str:D $from-table, Str:D $to-table, *%opts) {
+    die 'SqliteAdapter: add-foreign-key on an existing table is not supported (SQLite needs a table rebuild; declare the FK in create-table instead)';
+  }
+
+  method ddl-remove-foreign-key(Str:D $from-table, *%opts) {
+    die 'SqliteAdapter: remove-foreign-key on an existing table is not supported (SQLite needs a table rebuild)';
+  }
+
   method ddl-remove-timestamps(Str:D $table) {
     self.exec("ALTER TABLE $table DROP COLUMN created_at");
     self.exec("ALTER TABLE $table DROP COLUMN updated_at");

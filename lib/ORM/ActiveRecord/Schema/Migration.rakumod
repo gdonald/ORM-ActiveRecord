@@ -123,6 +123,46 @@ class CommandRecorder {
            args => [ @args[0] ],
            kw   => { from => %kw<to>, to => %kw<from> } );
       }
+      when 'rename-table' {
+        my @args = %cmd<args>.list;
+        %( name => 'rename-table',
+           args => [ @args[1], @args[0] ],
+           kw   => {} );
+      }
+      when 'rename-column' {
+        my @args = %cmd<args>.list;
+        %( name => 'rename-column',
+           args => [ @args[0], @args[2], @args[1] ],
+           kw   => {} );
+      }
+      when 'rename-index' {
+        my @args = %cmd<args>.list;
+        %( name => 'rename-index',
+           args => [ @args[0], @args[2], @args[1] ],
+           kw   => {} );
+      }
+      when 'add-reference' {
+        my @args = %cmd<args>.list;
+        %( name => 'remove-reference',
+           args => @args,
+           kw   => %cmd<kw> );
+      }
+      when 'remove-reference' {
+        die X::IrreversibleMigration.new;
+      }
+      when 'add-foreign-key' {
+        my @args = %cmd<args>.list;
+        my %kw   = %cmd<kw>.hash;
+        my %rm-kw;
+        %rm-kw<column> = %kw<column> if %kw<column>:exists;
+        %rm-kw<name>   = %kw<name>   if %kw<name>:exists;
+        %( name => 'remove-foreign-key',
+           args => [ @args[0] ],
+           kw   => { :to-table(@args[1]), |%rm-kw } );
+      }
+      when 'remove-foreign-key' {
+        die X::IrreversibleMigration.new;
+      }
       default {
         die X::IrreversibleMigration.new;
       }
@@ -290,6 +330,62 @@ class Migration is export {
 
     my $new = ($from.defined && $to.defined) ?? $to !! $comment;
     $!db.ddl-change-table-comment($table, $new);
+  }
+
+  method rename-table(Str:D $from, Str:D $to) {
+    if $!recorder { $!recorder.record('rename-table', $from, $to); return }
+
+    $!db.ddl-rename-table($from, $to);
+  }
+
+  method rename-column(Str:D $table, Str:D $from, Str:D $to) {
+    if $!recorder { $!recorder.record('rename-column', $table, $from, $to); return }
+
+    $!db.ddl-rename-column($table, $from, $to);
+  }
+
+  method rename-index(Str:D $table, Str:D $from, Str:D $to) {
+    if $!recorder { $!recorder.record('rename-index', $table, $from, $to); return }
+
+    $!db.ddl-rename-index($table, $from, $to);
+  }
+
+  method add-reference(Str:D $table, Str:D $name, *%opts) {
+    if $!recorder { $!recorder.record('add-reference', $table, $name, |%opts); return }
+
+    $!db.ddl-add-reference($table, $name, |%opts);
+  }
+
+  method add-belongs-to(Str:D $table, Str:D $name, *%opts) {
+    self.add-reference($table, $name, |%opts);
+  }
+
+  method remove-reference(Str:D $table, Str:D $name, *%opts) {
+    if $!recorder { $!recorder.record('remove-reference', $table, $name, |%opts); return }
+
+    $!db.ddl-remove-reference($table, $name, |%opts);
+  }
+
+  method remove-belongs-to(Str:D $table, Str:D $name, *%opts) {
+    self.remove-reference($table, $name, |%opts);
+  }
+
+  method add-foreign-key(Str:D $from-table, Str:D $to-table, *%opts) {
+    if $!recorder { $!recorder.record('add-foreign-key', $from-table, $to-table, |%opts); return }
+
+    $!db.ddl-add-foreign-key($from-table, $to-table, |%opts);
+  }
+
+  method remove-foreign-key(Str:D $from-table, *%opts) {
+    if $!recorder { $!recorder.record('remove-foreign-key', $from-table, |%opts); return }
+
+    $!db.ddl-remove-foreign-key($from-table, |%opts);
+  }
+
+  method validate-foreign-key(Str:D $table, Str:D $name) {
+    if $!recorder { $!recorder.record('validate-foreign-key', $table, $name); return }
+
+    $!db.ddl-validate-foreign-key($table, $name);
   }
 
   method execute(Str:D $sql) {

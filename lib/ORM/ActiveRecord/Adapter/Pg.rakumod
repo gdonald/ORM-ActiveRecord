@@ -335,6 +335,12 @@ class PgAdapter is SqlAdapter is export {
       SQL
   }
 
+  method ref-fk-not-valid-suffix(--> Str) { ' NOT VALID' }
+
+  method ddl-validate-foreign-key(Str:D $table, Str:D $name) {
+    self.exec("ALTER TABLE $table VALIDATE CONSTRAINT $name");
+  }
+
   method !build-fields(@params, :@foreign-keys) {
     my @fields;
 

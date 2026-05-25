@@ -217,6 +217,129 @@ internally:
 self.remove-index: 'games', :year;
 ```
 
+## Renaming tables, columns, indexes
+
+`rename-table` moves a table, `rename-column` renames a column in place, and
+`rename-index` renames an existing index. All three are reversible — the
+inverse swaps the from / to identifiers, so a `change` method can call them
+directly:
+
+```perl6
+class RenameAccountToProfile is Migration {
+  method change {
+    self.rename-table:  'accounts', 'profiles';
+    self.rename-column: 'profiles', 'login_name', 'username';
+    self.rename-index:  'profiles', 'accounts_username_idx', 'profiles_username_idx';
+  }
+}
+```
+
+`rename-index` takes the table name first because MySQL's `RENAME INDEX`
+syntax is rooted at the table. PostgreSQL and SQLite ignore the table name
+but follow the same call signature for cross-adapter parity. SQLite has no
+native `ALTER INDEX RENAME` — the adapter looks up the original
+`CREATE INDEX` SQL, drops it, and re-runs it with the new identifier.
+
+## References
+
+A reference is the "I belong to X" shortcut for a foreign-key column.
+`add-reference :user` adds a `user_id` column plus a matching index. The
+inverse — `remove-reference :user` — drops the index and the column.
+
+```perl6
+class AddUserToPosts is Migration {
+  method change {
+    self.add-reference: 'posts', 'user';
+  }
+}
+```
+
+`add-belongs-to` is an alias for `add-reference`; `remove-belongs-to` is the
+inverse alias. Options accepted by both:
+
+| Option              | Default     | Effect                                                              |
+| ------------------- | ----------- | ------------------------------------------------------------------- |
+| `null`              | `True`      | Set to `False` to make `<name>_id` (and `<name>_type`) NOT NULL.    |
+| `index`             | `True`      | Set to `False` to skip the index.                                   |
+| `unique`            | `False`     | Make the index unique.                                              |
+| `polymorphic`       | `False`     | Add both `<name>_id` and `<name>_type`; the index becomes composite (`<name>_type`, `<name>_id`). |
+| `type`              | `'integer'` | Override the integer type (e.g. `bigint`).                          |
+| `foreign-key`       | `False`     | Also add an `ALTER TABLE ... ADD CONSTRAINT FOREIGN KEY` — see below.|
+| `to-table`          | `<name>s`   | The referenced table when `foreign-key` is set and the inferred plural is wrong. |
+| `on-delete`         | (none)      | Forwarded to the FK clause; only valid with `foreign-key => True`.  |
+| `on-update`         | (none)      | Same.                                                               |
+| `fk-name`           | (auto)      | Override the generated FK constraint name.                          |
+
+```perl6
+self.add-reference: 'comments', 'commentable', polymorphic => True;
+self.add-reference: 'orders',   'customer',
+  foreign-key => True, on-delete => 'cascade';
+```
+
+`add-reference` `index => True` (the default) names the index
+`<table>_<name>_id_idx` for a regular reference and
+`<table>_<name>_type_<name>_id_idx` for a polymorphic one.
+
+## Foreign keys
+
+`add-foreign-key` and `remove-foreign-key` mutate the FK constraint without
+touching the column. Use them when the column already exists (e.g. on a
+legacy table) or when you want a constraint between two tables that don't
+follow the `<name>s` plural inference.
+
+```perl6
+class WireOrdersToCustomers is Migration {
+  method change {
+    self.add-foreign-key: 'orders', 'customers',
+      column    => 'customer_id',
+      on-delete => 'cascade',
+      on-update => 'restrict';
+  }
+}
+```
+
+Options for `add-foreign-key(from, to, ...)`:
+
+| Option         | Default                              | Effect                                                       |
+| -------------- | ------------------------------------ | ------------------------------------------------------------ |
+| `column`       | `<singular_to_table>_id`             | Source column on `from`.                                     |
+| `primary-key`  | `id`                                 | Target column on `to`.                                       |
+| `name`         | `fk_<from_table>_<column>`           | Override the constraint name.                                |
+| `on-delete`    | (none)                               | `cascade`, `nullify` / `set-null`, `set-default`, `restrict`, `no-action`. |
+| `on-update`    | (none)                               | Same vocabulary as `on-delete`.                              |
+| `validate`     | `True`                               | On PostgreSQL, `False` emits `NOT VALID` so the constraint is enforced on new rows only. Other adapters ignore this option. |
+
+`remove-foreign-key` accepts either the explicit `name:` or `to-table:` plus
+(optionally) `column:` so it can derive the same name `add-foreign-key`
+would have generated:
+
+```perl6
+self.remove-foreign-key: 'orders', name => 'orders_cust_fk';
+self.remove-foreign-key: 'orders', to-table => 'customers', column => 'customer_id';
+```
+
+`validate-foreign-key(table, name)` runs `ALTER TABLE ... VALIDATE
+CONSTRAINT` on PostgreSQL (for the deferred `NOT VALID` workflow). On MySQL
+it is a no-op because MySQL validates every constraint on creation.
+
+### Reversibility
+
+`add-reference` and `add-foreign-key` are reversible inside `change` —
+`down` calls `remove-reference` / `remove-foreign-key` with the same
+options. The standalone `remove-reference` and `remove-foreign-key`
+operations are irreversible inside `change` (no way to derive the original
+options); supply explicit `up` / `down` pairs.
+
+### Adapter differences
+
+| Operation                       | PostgreSQL | MySQL                       | SQLite                                                |
+| ------------------------------- | ---------- | --------------------------- | ----------------------------------------------------- |
+| `add-reference` (column + idx)  | Yes        | Yes                         | Yes                                                   |
+| `add-reference :foreign-key`    | `ALTER TABLE ... ADD CONSTRAINT` | `ALTER TABLE ... ADD CONSTRAINT` | Raises — declare the FK in `create-table` instead   |
+| `add-foreign-key` direct        | Yes        | Yes                         | Raises — declare the FK in `create-table` instead     |
+| `remove-foreign-key`            | `ALTER TABLE ... DROP CONSTRAINT` | `ALTER TABLE ... DROP FOREIGN KEY` | Raises                                       |
+| `validate :False` (`NOT VALID`) | Yes        | No-op (always validates)    | n/a                                                   |
+
 ## Timestamps
 
 Most tables benefit from `created_at` and `updated_at` columns. ORM::ActiveRecord

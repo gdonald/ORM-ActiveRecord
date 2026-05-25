@@ -1,0 +1,236 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Errors::X;
+use ORM::ActiveRecord::Support::TestSkip;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+skip-on(:adapter<sqlite>,
+        :reason('SQLite cannot add/drop FK constraints via ALTER TABLE; declare FKs in create-table instead'));
+
+sub adapter-kind(--> Str) {
+  given $adapter.^name {
+    when /Pg/    { 'pg' }
+    when /MySql/ { 'mysql' }
+    default      { 'unknown' }
+  }
+}
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub fk-exists(Str:D $table, Str:D $name) {
+  my $rows = do given adapter-kind() {
+    when 'pg' {
+      $adapter.exec("SELECT 1 FROM pg_constraint WHERE conname = '$name' AND contype = 'f'");
+    }
+    when 'mysql' {
+      $adapter.exec(qq:to/SQL/);
+        SELECT 1
+          FROM information_schema.table_constraints
+         WHERE table_schema = DATABASE()
+           AND table_name = '$table'
+           AND constraint_name = '$name'
+           AND constraint_type = 'FOREIGN KEY'
+        SQL
+    }
+  };
+  ?$rows.elems;
+}
+
+sub fk-action(Str:D $table, Str:D $name, Str:D $kind) {
+  given adapter-kind() {
+    when 'pg' {
+      my $col = $kind eq 'delete' ?? 'confdeltype' !! 'confupdtype';
+      my @r = $adapter.exec("SELECT $col FROM pg_constraint WHERE conname = '$name'");
+      return Nil unless @r.elems;
+      my $code = @r[0][0].Str;
+      given $code {
+        when 'a' { 'NO ACTION' }
+        when 'r' { 'RESTRICT' }
+        when 'c' { 'CASCADE' }
+        when 'n' { 'SET NULL' }
+        when 'd' { 'SET DEFAULT' }
+        default  { $code }
+      }
+    }
+    when 'mysql' {
+      my $col = $kind eq 'delete' ?? 'delete_rule' !! 'update_rule';
+      my @r = $adapter.exec(qq:to/SQL/);
+        SELECT $col
+          FROM information_schema.referential_constraints
+         WHERE constraint_schema = DATABASE()
+           AND constraint_name = '$name'
+        SQL
+      @r.elems ?? @r[0][0].Str.uc !! Nil;
+    }
+  }
+}
+
+my @test-tables = <_fk_orders _fk_customers _ref_users _ref_posts>;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+cleanup-tables;
+
+class CreateUsers is Migration {
+  method change {
+    self.create-table: '_ref_users', [ name => { :string, limit => 32 } ];
+  }
+}
+
+class CreatePosts is Migration {
+  method change {
+    self.create-table: '_ref_posts', [ title => { :string, limit => 32 } ];
+  }
+}
+
+CreateUsers.new.up;
+CreatePosts.new.up;
+
+# foreign-key shorthand on add-reference
+class AddUserRefFk is Migration {
+  method change {
+    self.add-reference: '_ref_posts', 'user', foreign-key => True, to-table => '_ref_users';
+  }
+}
+
+AddUserRefFk.new.up;
+my $fk-name-default = "fk__ref_posts_user_id";
+ok fk-exists('_ref_posts', $fk-name-default),
+  "add-reference foreign-key => True creates FK ($fk-name-default)";
+
+AddUserRefFk.new.down;
+nok fk-exists('_ref_posts', $fk-name-default),
+  'add-reference down removes the FK constraint too';
+
+# add-foreign-key direct DSL with on-delete / on-update
+class CreateFkTables is Migration {
+  method change {
+    self.create-table: '_fk_customers', [ name => { :string, limit => 32 } ];
+    self.create-table: '_fk_orders',    [ amount => { :integer } ];
+    self.add-column:   '_fk_orders', :customer_id => { :integer };
+  }
+}
+
+CreateFkTables.new.up;
+
+class AddOrderCustomerFk is Migration {
+  method change {
+    self.add-foreign-key: '_fk_orders', '_fk_customers',
+      column    => 'customer_id',
+      on-delete => 'cascade',
+      on-update => 'restrict';
+  }
+}
+
+AddOrderCustomerFk.new.up;
+ok fk-exists('_fk_orders', 'fk__fk_orders_customer_id'),
+  'add-foreign-key creates FK with derived name';
+
+is fk-action('_fk_orders', 'fk__fk_orders_customer_id', 'delete'), 'CASCADE',
+  'add-foreign-key :on-delete => cascade emits ON DELETE CASCADE';
+
+is fk-action('_fk_orders', 'fk__fk_orders_customer_id', 'update'), 'RESTRICT',
+  'add-foreign-key :on-update => restrict emits ON UPDATE RESTRICT';
+
+AddOrderCustomerFk.new.down;
+nok fk-exists('_fk_orders', 'fk__fk_orders_customer_id'),
+  'add-foreign-key down auto-inverts to remove-foreign-key';
+
+# explicit :name
+class AddNamedFk is Migration {
+  method change {
+    self.add-foreign-key: '_fk_orders', '_fk_customers',
+      column => 'customer_id',
+      name   => 'orders_cust_fk';
+  }
+}
+
+AddNamedFk.new.up;
+ok fk-exists('_fk_orders', 'orders_cust_fk'),
+  'add-foreign-key honors :name override';
+
+AddNamedFk.new.down;
+nok fk-exists('_fk_orders', 'orders_cust_fk'),
+  'add-foreign-key down removes the named FK';
+
+# remove-foreign-key by :to-table derives the name
+class AddPlainFk is Migration {
+  method up {
+    self.add-foreign-key: '_fk_orders', '_fk_customers', column => 'customer_id';
+  }
+  method down {
+    self.remove-foreign-key: '_fk_orders', to-table => '_fk_customers', column => 'customer_id';
+  }
+}
+
+AddPlainFk.new.up;
+ok fk-exists('_fk_orders', 'fk__fk_orders_customer_id'),
+  'plain add-foreign-key created';
+
+AddPlainFk.new.down;
+nok fk-exists('_fk_orders', 'fk__fk_orders_customer_id'),
+  'remove-foreign-key by :to-table drops the derived-name FK';
+
+# remove-foreign-key by :name
+class AddRemoveByName is Migration {
+  method up {
+    self.add-foreign-key: '_fk_orders', '_fk_customers',
+      column => 'customer_id', name => 'fk_keep_me';
+  }
+  method down {
+    self.remove-foreign-key: '_fk_orders', name => 'fk_keep_me';
+  }
+}
+
+AddRemoveByName.new.up;
+ok fk-exists('_fk_orders', 'fk_keep_me'),
+  'add-foreign-key created the named FK';
+AddRemoveByName.new.down;
+nok fk-exists('_fk_orders', 'fk_keep_me'),
+  'remove-foreign-key by :name drops it';
+
+# add-foreign-key with validate => False creates the constraint;
+# validate-foreign-key marks it valid (PG) or no-ops (MySQL).
+class AddPendingFk is Migration {
+  method up {
+    self.add-foreign-key: '_fk_orders', '_fk_customers',
+      column   => 'customer_id',
+      name     => 'pending_fk',
+      validate => False;
+  }
+  method down {
+    self.remove-foreign-key: '_fk_orders', name => 'pending_fk';
+  }
+}
+
+AddPendingFk.new.up;
+ok fk-exists('_fk_orders', 'pending_fk'),
+  'add-foreign-key with validate => False creates the FK';
+
+lives-ok { Migration.new.validate-foreign-key('_fk_orders', 'pending_fk') },
+  'validate-foreign-key runs without error';
+
+AddPendingFk.new.down;
+
+cleanup-tables;
+
+done-testing;

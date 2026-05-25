@@ -1,0 +1,180 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub adapter-kind(--> Str) {
+  given $adapter.^name {
+    when /Pg/     { 'pg' }
+    when /MySql/  { 'mysql' }
+    when /Sqlite/ { 'sqlite' }
+    default       { 'unknown' }
+  }
+}
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub column-names($table) {
+  $adapter.get-fields(table => $table).map({ $_[0] }).list;
+}
+
+sub index-exists($name) {
+  my $rows = do given adapter-kind() {
+    when 'pg'     { $adapter.exec("SELECT 1 FROM pg_indexes WHERE indexname = '$name'") }
+    when 'mysql'  { $adapter.exec("SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND index_name = '$name'") }
+    when 'sqlite' { $adapter.exec("SELECT 1 FROM sqlite_master WHERE type='index' AND name='$name'") }
+  };
+  ?$rows.elems;
+}
+
+my @test-tables = <_ref_posts _ref_users>;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+cleanup-tables;
+
+class CreateUsers is Migration {
+  method change {
+    self.create-table: '_ref_users', [ name => { :string, limit => 32 } ];
+  }
+}
+
+class CreatePosts is Migration {
+  method change {
+    self.create-table: '_ref_posts', [ title => { :string, limit => 32 } ];
+  }
+}
+
+CreateUsers.new.up;
+CreatePosts.new.up;
+
+# add-reference adds <name>_id column + index
+class AddUserRef is Migration {
+  method change {
+    self.add-reference: '_ref_posts', 'user';
+  }
+}
+
+AddUserRef.new.up;
+
+ok 'user_id' (elem) column-names('_ref_posts'),
+  'add-reference adds <name>_id column';
+
+ok index-exists('_ref_posts_user_id_idx'),
+  'add-reference adds <table>_<name>_id_idx by default';
+
+# add-reference down auto-inverts to remove column + index
+AddUserRef.new.down;
+
+nok 'user_id' (elem) column-names('_ref_posts'),
+  'add-reference down auto-inverts (removes column)';
+
+nok index-exists('_ref_posts_user_id_idx'),
+  'add-reference down removes the index';
+
+# add-belongs-to is an alias for add-reference
+class AddOwnerBelongsTo is Migration {
+  method change {
+    self.add-belongs-to: '_ref_posts', 'owner';
+  }
+}
+
+AddOwnerBelongsTo.new.up;
+
+ok 'owner_id' (elem) column-names('_ref_posts'),
+  'add-belongs-to is an alias and adds <name>_id column';
+
+AddOwnerBelongsTo.new.down;
+
+# polymorphic adds <name>_id + <name>_type and a composite index
+class AddCommentablePoly is Migration {
+  method change {
+    self.add-reference: '_ref_posts', 'commentable', polymorphic => True;
+  }
+}
+
+AddCommentablePoly.new.up;
+
+my @cols-poly = column-names('_ref_posts');
+ok 'commentable_id'   (elem) @cols-poly, 'polymorphic add-reference adds <name>_id';
+ok 'commentable_type' (elem) @cols-poly, 'polymorphic add-reference adds <name>_type';
+ok index-exists('_ref_posts_commentable_type_commentable_id_idx'),
+  'polymorphic add-reference adds composite (type, id) index';
+
+AddCommentablePoly.new.down;
+my @cols-after-poly = column-names('_ref_posts');
+nok 'commentable_id'   (elem) @cols-after-poly,
+  'polymorphic add-reference down removes <name>_id';
+nok 'commentable_type' (elem) @cols-after-poly,
+  'polymorphic add-reference down removes <name>_type';
+
+# index => False skips the index
+class AddRefNoIndex is Migration {
+  method change {
+    self.add-reference: '_ref_posts', 'author', index => False;
+  }
+}
+
+AddRefNoIndex.new.up;
+ok 'author_id' (elem) column-names('_ref_posts'),
+  'add-reference with index => False still adds the column';
+nok index-exists('_ref_posts_author_id_idx'),
+  'add-reference with index => False skips the index';
+AddRefNoIndex.new.down;
+
+# unique => True on the reference index
+class AddUniqueRef is Migration {
+  method change {
+    self.add-reference: '_ref_posts', 'slug', unique => True;
+  }
+}
+
+AddUniqueRef.new.up;
+ok index-exists('_ref_posts_slug_id_idx'),
+  'add-reference :unique creates the index';
+
+# unique constraint enforced — second insert with same slug_id fails
+$adapter.exec("INSERT INTO _ref_posts (title, slug_id) VALUES ('a', 1)");
+throws-like { $adapter.exec("INSERT INTO _ref_posts (title, slug_id) VALUES ('b', 1)") },
+  Exception,
+  'add-reference :unique enforces uniqueness on <name>_id';
+
+AddUniqueRef.new.down;
+
+# null => False enforces NOT NULL
+class AddNotNullRef is Migration {
+  method change {
+    self.add-reference: '_ref_posts', 'tag', null => False, index => False;
+  }
+}
+
+# need to delete prior rows so the NOT NULL backfill is clean
+$adapter.exec("DELETE FROM _ref_posts");
+AddNotNullRef.new.up;
+throws-like { $adapter.exec("INSERT INTO _ref_posts (title) VALUES ('x')") },
+  Exception,
+  'add-reference :null => False makes <name>_id NOT NULL';
+AddNotNullRef.new.down;
+
+cleanup-tables;
+
+done-testing;

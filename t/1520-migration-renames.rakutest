@@ -1,0 +1,127 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub column-names($name) {
+  $adapter.get-fields(table => $name).map({ $_[0] }).list;
+}
+
+sub index-exists($name) {
+  my $rows = do given $adapter.^name {
+    when /Pg/      { $adapter.exec("SELECT 1 FROM pg_indexes WHERE indexname = '$name'") }
+    when /MySql/   { $adapter.exec("SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND index_name = '$name'") }
+    when /Sqlite/  { $adapter.exec("SELECT 1 FROM sqlite_master WHERE type='index' AND name='$name'") }
+  };
+  ?$rows.elems;
+}
+
+my @test-tables = <_rn_old _rn_new _rn_cols _rn_idx>;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+cleanup-tables;
+
+class CreateRnOld is Migration {
+  method change {
+    self.create-table: '_rn_old', [
+      name => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateRnOld.new.up;
+ok table-exists('_rn_old'), 'rename-table setup: source table created';
+
+class DoRenameTable is Migration {
+  method change {
+    self.rename-table: '_rn_old', '_rn_new';
+  }
+}
+
+DoRenameTable.new.up;
+ok table-exists('_rn_new'),  'rename-table moves source to new name';
+nok table-exists('_rn_old'), 'rename-table removes the old name';
+
+DoRenameTable.new.down;
+ok table-exists('_rn_old'),  'rename-table down auto-inverts (new -> old)';
+nok table-exists('_rn_new'), 'rename-table down removes the new name';
+
+CreateRnOld.new.down;
+
+class CreateRnCols is Migration {
+  method change {
+    self.create-table: '_rn_cols', [
+      handle => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateRnCols.new.up;
+ok 'handle' (elem) column-names('_rn_cols'), 'rename-column setup: source column exists';
+
+class DoRenameCol is Migration {
+  method change {
+    self.rename-column: '_rn_cols', 'handle', 'username';
+  }
+}
+
+DoRenameCol.new.up;
+ok  'username' (elem) column-names('_rn_cols'), 'rename-column adds new column name';
+nok 'handle'   (elem) column-names('_rn_cols'), 'rename-column removes old column name';
+
+DoRenameCol.new.down;
+ok  'handle'   (elem) column-names('_rn_cols'), 'rename-column down auto-inverts (new -> old)';
+nok 'username' (elem) column-names('_rn_cols'), 'rename-column down removes the new name';
+
+# rename-index — works on all three adapters
+class CreateRnIdx is Migration {
+  method change {
+    self.create-table: '_rn_idx', [
+      label => { :string, limit => 32 },
+    ];
+    self.add-index: '_rn_idx', :label;
+  }
+}
+
+CreateRnIdx.new.up;
+ok index-exists('_rn_idx_label_idx'), 'rename-index setup: source index exists';
+
+class DoRenameIdx is Migration {
+  method change {
+    self.rename-index: '_rn_idx', '_rn_idx_label_idx', '_rn_idx_label_new_idx';
+  }
+}
+
+DoRenameIdx.new.up;
+ok  index-exists('_rn_idx_label_new_idx'), 'rename-index creates new index name';
+nok index-exists('_rn_idx_label_idx'),     'rename-index removes the old index name';
+
+DoRenameIdx.new.down;
+ok  index-exists('_rn_idx_label_idx'),     'rename-index down auto-inverts (new -> old)';
+nok index-exists('_rn_idx_label_new_idx'), 'rename-index down removes the new index name';
+
+cleanup-tables;
+
+done-testing;

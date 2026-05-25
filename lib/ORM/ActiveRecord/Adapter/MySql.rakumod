@@ -477,6 +477,22 @@ class MySqlAdapter is SqlAdapter is export {
       SQL
         }
 
+        method ddl-rename-index(Str:D $table, Str:D $from, Str:D $to) {
+          self.exec("ALTER TABLE $table RENAME INDEX $from TO $to");
+        }
+
+        method ddl-remove-foreign-key(Str:D $from-table,
+                                      Str  :$to-table,
+                                      Str  :$column,
+                                      Str  :$name) {
+          my $fkname = $name // do {
+            die 'remove-foreign-key: pass :name or :to-table' unless $to-table.defined;
+            my $col = $column // self.ref-default-column($to-table);
+            self.ref-default-fk-name($from-table, $col);
+          };
+          self.exec("ALTER TABLE $from-table DROP FOREIGN KEY $fkname");
+        }
+
         method !build-fields(@params, :@fk-clauses) {
           my @fields;
 
