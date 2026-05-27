@@ -266,8 +266,8 @@ sub run-once(Str:D :$name, Str:D :$url --> Int) {
                     'raku', '-Ilib', 'bin/ar';
   return $migrate.exitcode unless $migrate.exitcode == 0;
 
-  # my $prove = run 'prove6', '-Ilib', 't';
-  # return $prove.exitcode unless $prove.exitcode == 0;
+  my $prove = run 'prove6', '-Ilib', 't';
+  return $prove.exitcode unless $prove.exitcode == 0;
 
   # behave runs every spec file in its own process (one EVAL'd compunit per
   # invocation), matching prove6's per-test isolation model.
