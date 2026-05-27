@@ -65,12 +65,13 @@ $ prove6 -Ilib t
 ## Running a single test file
 
 ```shell
-$ raku -Ilib t/0040-basic.rakutest
+$ raku -Ilib t/model/basic.rakutest
 ```
 
-Test files live under `t/` and use the `.rakutest` extension. They follow the
-naming pattern `NNNN-name.rakutest` where `NNNN` is a sort key, not a stable
-identifier — feel free to renumber when reorganising.
+Test files live under `t/` and use the `.rakutest` extension, grouped into
+feature-area subfolders: `meta/`, `migration/`, `validation/`, `callbacks/`,
+`associations/`, `query/`, `model/`, `adapter/`, `transactions/`, `infra/`.
+`prove6` recurses into subdirectories automatically.
 
 ## Adapter-aware test skipping
 

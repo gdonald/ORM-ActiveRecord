@@ -8,7 +8,7 @@
   "auth": "zef:gdonald",
   "depends": ["DBIish", "JSON::Tiny", "Log::Async"],
   "build-depends": [],
-  "test-depends": ["Test", "Test::META"],
+  "test-depends": ["Test", "Test::META", "BDD::Behave"],
   "provides": {
     "ORM::ActiveRecord::Adapter": "lib/ORM/ActiveRecord/Adapter.rakumod",
     "ORM::ActiveRecord::Adapter::Pg": "lib/ORM/ActiveRecord/Adapter/Pg.rakumod",

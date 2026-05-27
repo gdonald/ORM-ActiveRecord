@@ -11,8 +11,6 @@ $*OUT.out-buffer = False;
 
 %*ENV<AUTHOR_TESTING> = 1;
 
-my $jobs = 1;
-
 unless %*ENV<DBIISH_MYSQL_LIB> {
   my @candidates = $*KERNEL.name eq 'darwin'
   ?? <
@@ -268,8 +266,39 @@ sub run-once(Str:D :$name, Str:D :$url --> Int) {
                     'raku', '-Ilib', 'bin/ar';
   return $migrate.exitcode unless $migrate.exitcode == 0;
 
-  my $proc = run 'prove6', "-j$jobs", '-Ilib', 't';
-  $proc.exitcode;
+  # my $prove = run 'prove6', '-Ilib', 't';
+  # return $prove.exitcode unless $prove.exitcode == 0;
+
+  # behave runs every spec file in its own process (one EVAL'd compunit per
+  # invocation), matching prove6's per-test isolation model.
+  my @specs = find-spec-files('specs'.IO).map(*.absolute).sort;
+
+  my $any-behave-fail = 0;
+  for @specs -> $f {
+    my $proc = run 'behave', $f;
+    $any-behave-fail = $proc.exitcode if $proc.exitcode != 0;
+  }
+
+  # Some specs leave DB.shared in non-canonical state (e.g. reset-spec wipes
+  # all tables; round-trip-spec re-migrates a swapped sqlite). Restore the
+  # canonical schema so the next test.raku run starts clean.
+  run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+      'raku', '-Ilib', 'bin/ar';
+
+  $any-behave-fail;
+}
+
+sub find-spec-files(IO::Path $dir) {
+  my @out;
+  for $dir.dir -> $entry {
+    next if $entry.basename.starts-with('.');
+    if $entry.d {
+      @out.append: find-spec-files($entry);
+    } elsif $entry.basename ~~ /spec '.' raku $/ {
+      @out.push: $entry;
+    }
+  }
+  @out;
 }
 
 sub parse-adapter-args(--> List) {
