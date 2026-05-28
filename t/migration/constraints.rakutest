@@ -1,0 +1,238 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Errors::X;
+use ORM::ActiveRecord::Support::TestSkip;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+skip-on(:adapter<sqlite>,
+        :reason('SQLite cannot add/drop check / unique constraints via ALTER TABLE; declare them in create-table instead'));
+
+sub adapter-kind(--> Str) {
+  given $adapter.^name {
+    when /Pg/    { 'pg' }
+    when /MySql/ { 'mysql' }
+    default      { 'unknown' }
+  }
+}
+
+my $is-pg = adapter-kind() eq 'pg';
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub check-exists(Str:D $table, Str:D $name) {
+  my $rows = do given adapter-kind() {
+    when 'pg' {
+      $adapter.exec("SELECT 1 FROM pg_constraint WHERE conname = '$name' AND contype = 'c'");
+    }
+    when 'mysql' {
+      $adapter.exec(qq:to/SQL/);
+        SELECT 1
+          FROM information_schema.table_constraints
+         WHERE table_schema = DATABASE()
+           AND table_name = '$table'
+           AND constraint_name = '$name'
+           AND constraint_type = 'CHECK'
+        SQL
+    }
+  };
+  ?$rows.elems;
+}
+
+sub unique-exists(Str:D $table, Str:D $name) {
+  my $rows = do given adapter-kind() {
+    when 'pg' {
+      $adapter.exec("SELECT 1 FROM pg_constraint WHERE conname = '$name' AND contype = 'u'");
+    }
+    when 'mysql' {
+      $adapter.exec(qq:to/SQL/);
+        SELECT 1
+          FROM information_schema.table_constraints
+         WHERE table_schema = DATABASE()
+           AND table_name = '$table'
+           AND constraint_name = '$name'
+           AND constraint_type = 'UNIQUE'
+        SQL
+    }
+  };
+  ?$rows.elems;
+}
+
+sub exclusion-exists(Str:D $table, Str:D $name) {
+  return False unless $is-pg;
+  my $rows = $adapter.exec("SELECT 1 FROM pg_constraint WHERE conname = '$name' AND contype = 'x'");
+  ?$rows.elems;
+}
+
+my @test-tables = <_chk_products _uq_products _excl_reservations>;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+cleanup-tables;
+
+class CreateChkProducts is Migration {
+  method change {
+    self.create-table: '_chk_products', [
+      name  => { :string, limit => 32 },
+      price => { :integer },
+    ];
+  }
+}
+
+CreateChkProducts.new.up;
+
+# add-check-constraint with explicit :name reversible
+class AddPriceCheck is Migration {
+  method change {
+    self.add-check-constraint: '_chk_products', 'price > 0',
+      name => 'chk_products_price_positive';
+  }
+}
+
+AddPriceCheck.new.up;
+ok check-exists('_chk_products', 'chk_products_price_positive'),
+  'add-check-constraint creates the CHECK constraint';
+
+AddPriceCheck.new.down;
+nok check-exists('_chk_products', 'chk_products_price_positive'),
+  'add-check-constraint down auto-inverts to remove-check-constraint';
+
+# add-check-constraint with derived name (no :name)
+class AddPriceCheckDerivedName is Migration {
+  method change {
+    self.add-check-constraint: '_chk_products', 'price >= 0';
+  }
+}
+
+AddPriceCheckDerivedName.new.up;
+my $derived = $adapter.ref-default-check-name('_chk_products', 'price >= 0');
+ok check-exists('_chk_products', $derived),
+  "add-check-constraint creates CHECK with derived name $derived";
+
+AddPriceCheckDerivedName.new.down;
+nok check-exists('_chk_products', $derived),
+  'add-check-constraint down removes the derived-name CHECK';
+
+# add-check-constraint with validate => False; validate-check-constraint
+class AddPendingCheck is Migration {
+  method up {
+    self.add-check-constraint: '_chk_products', 'price < 1000000',
+      name     => 'chk_products_price_max',
+      validate => False;
+  }
+  method down {
+    self.remove-check-constraint: '_chk_products', name => 'chk_products_price_max';
+  }
+}
+
+AddPendingCheck.new.up;
+ok check-exists('_chk_products', 'chk_products_price_max'),
+  'add-check-constraint with validate => False creates the CHECK';
+
+lives-ok { Migration.new.validate-check-constraint('_chk_products', 'chk_products_price_max') },
+  'validate-check-constraint runs without error';
+
+AddPendingCheck.new.down;
+
+# add-unique-constraint with explicit :name reversible
+class CreateUqProducts is Migration {
+  method change {
+    self.create-table: '_uq_products', [
+      tenant_id => { :integer },
+      sku       => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateUqProducts.new.up;
+
+class AddSkuUnique is Migration {
+  method change {
+    self.add-unique-constraint: '_uq_products',
+      columns => <tenant_id sku>,
+      name    => 'uq_products_tenant_sku';
+  }
+}
+
+AddSkuUnique.new.up;
+ok unique-exists('_uq_products', 'uq_products_tenant_sku'),
+  'add-unique-constraint creates the UNIQUE constraint';
+
+AddSkuUnique.new.down;
+nok unique-exists('_uq_products', 'uq_products_tenant_sku'),
+  'add-unique-constraint down auto-inverts to remove-unique-constraint';
+
+# add-unique-constraint with derived name
+class AddSkuUniqueDerivedName is Migration {
+  method change {
+    self.add-unique-constraint: '_uq_products', columns => <sku>;
+  }
+}
+
+AddSkuUniqueDerivedName.new.up;
+ok unique-exists('_uq_products', 'uq__uq_products_sku'),
+  'add-unique-constraint creates UNIQUE with derived name';
+
+AddSkuUniqueDerivedName.new.down;
+nok unique-exists('_uq_products', 'uq__uq_products_sku'),
+  'add-unique-constraint down removes the derived-name UNIQUE';
+
+# exclusion constraint (PG only)
+if $is-pg {
+  class CreateExclReservations is Migration {
+    method change {
+      self.create-table: '_excl_reservations', [
+        room_id => { :integer },
+        starts  => { :integer },
+        ends    => { :integer },
+      ];
+    }
+  }
+
+  CreateExclReservations.new.up;
+
+  class AddRoomExclusion is Migration {
+    method up {
+      self.add-exclusion-constraint: '_excl_reservations',
+        'room_id WITH =',
+        using => 'btree',
+        name  => 'excl_reservations_room';
+    }
+    method down {
+      self.remove-exclusion-constraint: '_excl_reservations', name => 'excl_reservations_room';
+    }
+  }
+
+  AddRoomExclusion.new.up;
+  ok exclusion-exists('_excl_reservations', 'excl_reservations_room'),
+    'add-exclusion-constraint creates the EXCLUDE constraint';
+
+  AddRoomExclusion.new.down;
+  nok exclusion-exists('_excl_reservations', 'excl_reservations_room'),
+    'remove-exclusion-constraint drops the EXCLUDE';
+} else {
+  pass 'exclusion constraints are PostgreSQL-only — skipped on this adapter';
+  pass 'exclusion constraints are PostgreSQL-only — skipped on this adapter';
+}
+
+cleanup-tables;
+
+done-testing;

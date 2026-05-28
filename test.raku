@@ -274,7 +274,10 @@ sub run-once(Str:D :$name, Str:D :$url --> Int) {
   my @specs = find-spec-files('specs'.IO).map(*.absolute).sort;
 
   my $any-behave-fail = 0;
+  my $cwd = $*CWD.Str;
   for @specs -> $f {
+    my $rel = $f.starts-with($cwd ~ '/') ?? $f.substr($cwd.chars + 1) !! $f;
+    say $rel;
     my $proc = run 'behave', $f;
     $any-behave-fail = $proc.exitcode if $proc.exitcode != 0;
   }

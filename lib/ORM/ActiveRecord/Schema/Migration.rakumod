@@ -163,6 +163,46 @@ class CommandRecorder {
       when 'remove-foreign-key' {
         die X::IrreversibleMigration.new;
       }
+      when 'add-check-constraint' {
+        my @args = %cmd<args>.list;
+        my %kw   = %cmd<kw>.hash;
+        my %rm-kw;
+        %rm-kw<name> = %kw<name> if %kw<name>:exists;
+        %rm-kw<expression> = @args[1] unless %kw<name>:exists;
+        %( name => 'remove-check-constraint',
+           args => [ @args[0] ],
+           kw   => %rm-kw );
+      }
+      when 'remove-check-constraint' {
+        die X::IrreversibleMigration.new;
+      }
+      when 'validate-check-constraint' {
+        die X::IrreversibleMigration.new;
+      }
+      when 'add-unique-constraint' {
+        my @args = %cmd<args>.list;
+        my %kw   = %cmd<kw>.hash;
+        my %rm-kw;
+        %rm-kw<name>    = %kw<name>    if %kw<name>:exists;
+        %rm-kw<columns> = %kw<columns> if %kw<columns>:exists;
+        %( name => 'remove-unique-constraint',
+           args => [ @args[0] ],
+           kw   => %rm-kw );
+      }
+      when 'remove-unique-constraint' {
+        die X::IrreversibleMigration.new;
+      }
+      when 'add-exclusion-constraint' {
+        my @args = %cmd<args>.list;
+        my %kw   = %cmd<kw>.hash;
+        die X::IrreversibleMigration.new unless %kw<name>:exists;
+        %( name => 'remove-exclusion-constraint',
+           args => [ @args[0] ],
+           kw   => { :name(%kw<name>) } );
+      }
+      when 'remove-exclusion-constraint' {
+        die X::IrreversibleMigration.new;
+      }
       default {
         die X::IrreversibleMigration.new;
       }
@@ -386,6 +426,48 @@ class Migration is export {
     if $!recorder { $!recorder.record('validate-foreign-key', $table, $name); return }
 
     $!db.ddl-validate-foreign-key($table, $name);
+  }
+
+  method add-check-constraint(Str:D $table, Str:D $expression, *%opts) {
+    if $!recorder { $!recorder.record('add-check-constraint', $table, $expression, |%opts); return }
+
+    $!db.ddl-add-check-constraint($table, $expression, |%opts);
+  }
+
+  method remove-check-constraint(Str:D $table, *%opts) {
+    if $!recorder { $!recorder.record('remove-check-constraint', $table, |%opts); return }
+
+    $!db.ddl-remove-check-constraint($table, |%opts);
+  }
+
+  method validate-check-constraint(Str:D $table, Str:D $name) {
+    if $!recorder { $!recorder.record('validate-check-constraint', $table, $name); return }
+
+    $!db.ddl-validate-check-constraint($table, $name);
+  }
+
+  method add-unique-constraint(Str:D $table, *%opts) {
+    if $!recorder { $!recorder.record('add-unique-constraint', $table, |%opts); return }
+
+    $!db.ddl-add-unique-constraint($table, |%opts);
+  }
+
+  method remove-unique-constraint(Str:D $table, *%opts) {
+    if $!recorder { $!recorder.record('remove-unique-constraint', $table, |%opts); return }
+
+    $!db.ddl-remove-unique-constraint($table, |%opts);
+  }
+
+  method add-exclusion-constraint(Str:D $table, Str:D $expression, *%opts) {
+    if $!recorder { $!recorder.record('add-exclusion-constraint', $table, $expression, |%opts); return }
+
+    $!db.ddl-add-exclusion-constraint($table, $expression, |%opts);
+  }
+
+  method remove-exclusion-constraint(Str:D $table, *%opts) {
+    if $!recorder { $!recorder.record('remove-exclusion-constraint', $table, |%opts); return }
+
+    $!db.ddl-remove-exclusion-constraint($table, |%opts);
   }
 
   method execute(Str:D $sql) {

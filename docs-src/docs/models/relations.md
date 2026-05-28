@@ -186,6 +186,11 @@ User.includes(:profile).where(profiles => { is_active => True });
 User.includes(:profile).all;                       # plain preload — no JOIN
 ```
 
+`references` takes the colon-pair form `references(:profile)` or the
+arrow-pair form `references(profile => True)`; a falsy value
+(`references(profile => False)`) is ignored, so it adds nothing and does not
+promote `includes`.
+
 `preload(:assoc)` and `eager-load(:assoc)` are explicit and never get
 re-routed: a chain like `preload(:profile).references(:profile)` stays a
 preload, and `eager-load(:profile)` stays a JOIN even with no `references`.

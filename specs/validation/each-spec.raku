@@ -2,9 +2,15 @@ use lib 'lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::Errors::Error;
+use ORM::ActiveRecord::Errors::X;
 use ORM::ActiveRecord::Schema::Field;
 
 %*ENV<DISABLE-SQL-LOG> = True;
+
+sub flag-name($rec, $attr, $value) {
+  my $f = Field.new(:name($attr), :type('string'));
+  $rec.errors.push(Error.new(:field($f), :message('name flagged')));
+}
 
 class PhEach is Model {
   method table-name { 'phevents' }
@@ -29,6 +35,43 @@ class PhEachMulti is Model {
         $rec.errors.push(Error.new(:field($f), :message('must not be negative')));
       }
     }
+  }
+}
+
+class PhEachIf is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validates-each: <name>, &flag-name, { :if => { self.score > 0 } };
+  }
+}
+
+class PhEachUnless is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validates-each: <name>, &flag-name, { :unless => { self.score > 0 } };
+  }
+}
+
+class PhEachOn is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validates-each: <name>, &flag-name, { on => { :review } };
+  }
+}
+
+class PhEachStrict is Model {
+  method table-name { 'phevents' }
+
+  submethod BUILD {
+    self.validates-each: <name>, -> $rec, $attr, $value {
+      if $value && $value ~~ /^ <:Ll> / {
+        my $f = Field.new(:name($attr), :type('string'));
+        $rec.errors.push(Error.new(:field($f), :message('must start with capital letter')));
+      }
+    }, { :strict };
   }
 }
 
@@ -75,6 +118,58 @@ describe 'validates-each block validator', {
     it 'is valid when both scores are non-negative', {
       my $m = PhEachMulti.build({name => 'A', score => 1, max_score => 2});
       expect($m.is-valid).to.be-truthy;
+    }
+  }
+}
+
+describe 'validates-each options', {
+  context ':if guard', {
+    it 'runs the block when :if is true', {
+      my $e = PhEachIf.build({name => 'x', score => 5, max_score => 0});
+      expect($e.is-invalid).to.be-truthy;
+    }
+
+    it 'skips the block when :if is false', {
+      my $e = PhEachIf.build({name => 'x', score => 0, max_score => 0});
+      expect($e.is-valid).to.be-truthy;
+    }
+  }
+
+  context ':unless guard', {
+    it 'skips the block when :unless is true', {
+      my $e = PhEachUnless.build({name => 'x', score => 5, max_score => 0});
+      expect($e.is-valid).to.be-truthy;
+    }
+
+    it 'runs the block when :unless is false', {
+      my $e = PhEachUnless.build({name => 'x', score => 0, max_score => 0});
+      expect($e.is-invalid).to.be-truthy;
+    }
+  }
+
+  context 'on: context', {
+    it 'runs the block under the named context', {
+      my $e = PhEachOn.build({name => 'x', score => 0, max_score => 0});
+      expect($e.is-invalid(:context<review>)).to.be-truthy;
+    }
+
+    it 'skips the block in the default context', {
+      my $e = PhEachOn.build({name => 'x', score => 0, max_score => 0});
+      expect($e.is-valid).to.be-truthy;
+    }
+  }
+
+  context 'strict', {
+    it 'raises X::StrictValidationFailed when the block records an error', {
+      my $e = PhEachStrict.build({name => 'lowercase', score => 0, max_score => 0});
+      my $caught;
+      try { $e.is-valid; CATCH { default { $caught = $_ } } }
+      expect($caught).to.be-a(X::StrictValidationFailed);
+    }
+
+    it 'does not raise when the block records nothing', {
+      my $e = PhEachStrict.build({name => 'Capital', score => 0, max_score => 0});
+      expect($e.is-valid).to.be-truthy;
     }
   }
 }

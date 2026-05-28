@@ -81,6 +81,18 @@ describe 'eager loading references', {
     }
   }
 
+  context 'Pair form references(assoc => Bool)', {
+    it 'promotes includes when the Pair value is true', {
+      my $q = ElrUser.where({}).includes(:elrprofile).references(elrprofile => True);
+      expect($q.to-sql.contains('LEFT OUTER JOIN profiles')).to.be-truthy;
+    }
+
+    it 'does not promote when the Pair value is false', {
+      my $q = ElrUser.where({}).includes(:elrprofile).references(elrprofile => False);
+      expect($q.to-sql.contains('LEFT OUTER JOIN profiles')).to.be-falsy;
+    }
+  }
+
   it 'includes alone (no references) stays as preload', {
     my $sql = ElrUser.where({}).includes(:elrprofile).to-sql;
     expect($sql.contains('LEFT OUTER JOIN profiles')).to.be-falsy;

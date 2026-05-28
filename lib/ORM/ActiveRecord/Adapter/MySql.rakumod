@@ -493,6 +493,33 @@ class MySqlAdapter is SqlAdapter is export {
           self.exec("ALTER TABLE $from-table DROP FOREIGN KEY $fkname");
         }
 
+        method ref-check-not-valid-suffix(--> Str) { ' NOT ENFORCED' }
+
+        method ddl-remove-check-constraint(Str:D $table,
+                                           Str :$expression,
+                                           Str :$name) {
+          my $cname = $name // do {
+            die 'remove-check-constraint: pass :name or :expression' unless $expression.defined;
+            self.ref-default-check-name($table, $expression);
+          };
+          self.exec("ALTER TABLE $table DROP CHECK $cname");
+        }
+
+        method ddl-validate-check-constraint(Str:D $table, Str:D $name) {
+          self.exec("ALTER TABLE $table ALTER CHECK $name ENFORCED");
+        }
+
+        method ddl-remove-unique-constraint(Str:D $table,
+                                            :$columns,
+                                            Str :$name) {
+          my @cols = self.ref-columns-list($columns);
+          my $cname = $name // do {
+            die 'remove-unique-constraint: pass :name or :columns' unless @cols.elems;
+            self.ref-default-unique-name($table, @cols);
+          };
+          self.exec("ALTER TABLE $table DROP INDEX $cname");
+        }
+
         method !build-fields(@params, :@fk-clauses) {
           my @fields;
 

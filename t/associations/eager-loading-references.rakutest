@@ -26,7 +26,7 @@ class Profile is Model {
   }
 }
 
-plan 14;
+plan 16;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -44,7 +44,7 @@ Page.create({user => $bob,   name => 'B1'});
 Profile.create({user => $alice, bio => 'alice bio'});
 Profile.create({user => $bob,   bio => 'bob bio'});
 
-# --- 7.3.1: references after includes promotes to eager-load ---
+# references after includes promotes to eager-load
 {
   my $q = User.where({}).includes(:profile).references(:profile);
   my $sql = $q.to-sql;
@@ -55,7 +55,7 @@ Profile.create({user => $bob,   bio => 'bob bio'});
     'includes(:assoc).references(:assoc) → cache populated';
 }
 
-# --- 7.3.1: order does not matter (references before includes still works) ---
+# order does not matter (references before includes still works)
 {
   my $q = User.where({}).references(:profile).includes(:profile);
   my $sql = $q.to-sql;
@@ -66,21 +66,31 @@ Profile.create({user => $bob,   bio => 'bob bio'});
     'references(:assoc).includes(:assoc) → cache populated';
 }
 
-# --- 7.3.1: includes alone (no references) stays as preload ---
+# Pair form: references(assoc => Bool)
+{
+  my $on = User.where({}).includes(:profile).references(profile => True).to-sql;
+  ok $on.contains('LEFT OUTER JOIN profiles'),
+    'references(assoc => True) → JOIN appears in SQL';
+  my $off = User.where({}).includes(:profile).references(profile => False).to-sql;
+  ok ! $off.contains('LEFT OUTER JOIN profiles'),
+    'references(assoc => False) → no JOIN';
+}
+
+# includes alone (no references) stays as preload
 {
   my $sql = User.where({}).includes(:profile).to-sql;
   ok ! $sql.contains('LEFT OUTER JOIN profiles'),
     'includes(:assoc) alone → no JOIN (preload path)';
 }
 
-# --- 7.3.1: explicit preload is not promoted by references ---
+# explicit preload is not promoted by references
 {
   my $sql = User.where({}).preload(:profile).references(:profile).to-sql;
   ok ! $sql.contains('LEFT OUTER JOIN profiles'),
     'preload(:assoc).references(:assoc) → still no JOIN (preload is explicit)';
 }
 
-# --- 7.3.2: auto-references via dotted where key ---
+# auto-references via dotted where key
 {
   my $q = User.where({}).includes(:profile).where({'profiles.bio' => 'alice bio'});
   my $sql = $q.to-sql;
@@ -94,7 +104,7 @@ Profile.create({user => $bob,   bio => 'bob bio'});
     'auto-references still caches the association';
 }
 
-# --- 7.3.2: auto-references via nested-hash where form ---
+# auto-references via nested-hash where form
 {
   my $q = User.where({}).includes(:profile).where({profiles => {bio => 'bob bio'}});
   my $sql = $q.to-sql;
@@ -105,14 +115,14 @@ Profile.create({user => $bob,   bio => 'bob bio'});
     'nested-hash auto-references filters correctly';
 }
 
-# --- 7.3.2: auto-references via order on joined table ---
+# auto-references via order on joined table
 {
   my $sql = User.where({}).includes(:profile).order('profiles.bio DESC').to-sql;
   ok $sql.contains('LEFT OUTER JOIN profiles'),
     'auto-references: order("profiles.bio") promotes includes';
 }
 
-# --- 7.3.2: where filtering on the base table does NOT promote ---
+# where filtering on the base table does NOT promote
 {
   my $sql = User.where({fname => 'Alice'}).includes(:profile).to-sql;
   ok ! $sql.contains('LEFT OUTER JOIN profiles'),

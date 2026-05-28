@@ -1371,20 +1371,19 @@ class Model
     $!validators.with-validators.push($wv);
   }
 
-  multi method validates-each(@names, Block:D $block, *%opts) {
+  multi method validates-each(@names, Block:D $block, %params = {}) {
     my $klass = self.WHAT;
     my @fields = @names.map(*.Str);
-    my %params = %opts.Hash;
     my $ev = EachValidator.new(:$klass, :@fields, :$block, params => %params);
     $!validators.each-validators.push($ev);
   }
 
-  multi method validates-each(Str:D $name, Block:D $block, *%opts) {
-    self.validates-each([$name], $block, |%opts);
+  multi method validates-each(Str:D $name, Block:D $block, %params = {}) {
+    self.validates-each([$name], $block, %params);
   }
 
   multi method validates-each(*@names, :&block!, *%opts) {
-    self.validates-each(@names.list, &block, |%opts);
+    self.validates-each(@names.list, &block, %opts.Hash);
   }
 
   multi method validates-associated(Str:D $name, Hash:D $params = {}) {

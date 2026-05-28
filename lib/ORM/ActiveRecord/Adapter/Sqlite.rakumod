@@ -318,6 +318,22 @@ class SqliteAdapter is SqlAdapter is export {
     die 'SqliteAdapter: remove-foreign-key on an existing table is not supported (SQLite needs a table rebuild)';
   }
 
+  method ddl-add-check-constraint(Str:D $table, Str:D $expression, *%opts) {
+    die 'SqliteAdapter: add-check-constraint on an existing table is not supported (SQLite needs a table rebuild; declare the CHECK in create-table instead)';
+  }
+
+  method ddl-remove-check-constraint(Str:D $table, *%opts) {
+    die 'SqliteAdapter: remove-check-constraint on an existing table is not supported (SQLite needs a table rebuild)';
+  }
+
+  method ddl-add-unique-constraint(Str:D $table, *%opts) {
+    die 'SqliteAdapter: add-unique-constraint via ALTER TABLE is not supported (use add-index :unique => True instead)';
+  }
+
+  method ddl-remove-unique-constraint(Str:D $table, *%opts) {
+    die 'SqliteAdapter: remove-unique-constraint via ALTER TABLE is not supported (use remove-index instead)';
+  }
+
   method ddl-remove-timestamps(Str:D $table) {
     self.exec("ALTER TABLE $table DROP COLUMN created_at");
     self.exec("ALTER TABLE $table DROP COLUMN updated_at");

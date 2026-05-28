@@ -337,8 +337,33 @@ class PgAdapter is SqlAdapter is export {
 
   method ref-fk-not-valid-suffix(--> Str) { ' NOT VALID' }
 
+  method ref-check-not-valid-suffix(--> Str) { ' NOT VALID' }
+
   method ddl-validate-foreign-key(Str:D $table, Str:D $name) {
     self.exec("ALTER TABLE $table VALIDATE CONSTRAINT $name");
+  }
+
+  method ddl-validate-check-constraint(Str:D $table, Str:D $name) {
+    self.exec("ALTER TABLE $table VALIDATE CONSTRAINT $name");
+  }
+
+  method ddl-add-exclusion-constraint(Str:D $table, Str:D $expression,
+                                      Str  :$using = 'gist',
+                                      Str  :$name,
+                                      Str  :$where,
+                                      Bool :$deferrable = False,
+                                      Bool :$initially-deferred = False) {
+    my $cname  = $name // "excl_{$table}_" ~ self.ref-expr-hash($expression);
+    my $where-clause = $where.defined && $where.chars ?? " WHERE ($where)" !! '';
+    my $deferr = self.ref-unique-deferrable-suffix(:$deferrable, :$initially-deferred);
+
+    self.exec("ALTER TABLE $table ADD CONSTRAINT $cname EXCLUDE USING $using ($expression)$where-clause$deferr");
+  }
+
+  method ddl-remove-exclusion-constraint(Str:D $table,
+                                         Str :$name) {
+    die 'remove-exclusion-constraint: :name is required' unless $name.defined;
+    self.exec("ALTER TABLE $table DROP CONSTRAINT $name");
   }
 
   method !build-fields(@params, :@foreign-keys) {

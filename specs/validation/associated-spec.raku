@@ -2,6 +2,7 @@ use lib 'lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -35,9 +36,55 @@ class Phlibrary2 is Model {
   }
 }
 
+class PhlibIf is Model {
+  method table-name { 'phlibraries' }
+
+  submethod BUILD {
+    self.has-many: phbooks => %(class => Phbook, foreign-key => 'phlibrary_id');
+    self.validate: 'name', { :presence }
+    self.validates-associated: 'phbooks', { :if => { self.name eq 'Guarded' } };
+  }
+}
+
+class PhlibUnless is Model {
+  method table-name { 'phlibraries' }
+
+  submethod BUILD {
+    self.has-many: phbooks => %(class => Phbook, foreign-key => 'phlibrary_id');
+    self.validate: 'name', { :presence }
+    self.validates-associated: 'phbooks', { :unless => { self.name eq 'Skip' } };
+  }
+}
+
+class PhlibOn is Model {
+  method table-name { 'phlibraries' }
+
+  submethod BUILD {
+    self.has-many: phbooks => %(class => Phbook, foreign-key => 'phlibrary_id');
+    self.validate: 'name', { :presence }
+    self.validates-associated: 'phbooks', { on => { :audit } };
+  }
+}
+
+class PhlibStrict is Model {
+  method table-name { 'phlibraries' }
+
+  submethod BUILD {
+    self.has-many: phbooks => %(class => Phbook, foreign-key => 'phlibrary_id');
+    self.validate: 'name', { :presence }
+    self.validates-associated: 'phbooks', { :strict };
+  }
+}
+
 sub clean {
   DB.shared.delete-records(:table('phbooks'),     :where({}));
   DB.shared.delete-records(:table('phlibraries'), :where({}));
+}
+
+sub seed-bad-child($class, Str:D $name) {
+  my $lib = $class.create({name => $name});
+  Phbook.new(:id(0), :record({attrs => {title => '', phlibrary_id => $lib.id}})).save(:!validate);
+  $class.find($lib.id);
 }
 
 describe 'validates-associated', {
@@ -93,6 +140,55 @@ describe 'validates-associated', {
       my $lib2 = Phlibrary2.find($orig.id);
       $lib2.is-valid;
       expect($lib2.errors.phbooks[0]).to.eq('has bad children');
+    }
+  }
+}
+
+describe 'validates-associated options', {
+  before-each { clean }
+  after-each  { clean }
+
+  context ':if guard', {
+    it 'rolls up the child when :if is true', {
+      expect(seed-bad-child(PhlibIf, 'Guarded').is-invalid).to.be-truthy;
+    }
+
+    it 'skips the child when :if is false', {
+      expect(seed-bad-child(PhlibIf, 'Open').is-valid).to.be-truthy;
+    }
+  }
+
+  context ':unless guard', {
+    it 'skips the child when :unless is true', {
+      expect(seed-bad-child(PhlibUnless, 'Skip').is-valid).to.be-truthy;
+    }
+
+    it 'rolls up the child when :unless is false', {
+      expect(seed-bad-child(PhlibUnless, 'Run').is-invalid).to.be-truthy;
+    }
+  }
+
+  context 'on: context', {
+    it 'rolls up the child under the named context', {
+      expect(seed-bad-child(PhlibOn, 'Main').is-invalid(:context<audit>)).to.be-truthy;
+    }
+
+    it 'skips the child in the default context', {
+      expect(seed-bad-child(PhlibOn, 'Main').is-valid).to.be-truthy;
+    }
+  }
+
+  context 'strict', {
+    it 'raises X::StrictValidationFailed for an invalid child', {
+      my $lib = seed-bad-child(PhlibStrict, 'Main');
+      my $caught;
+      try { $lib.is-valid; CATCH { default { $caught = $_ } } }
+      expect($caught).to.be-a(X::StrictValidationFailed);
+    }
+
+    it 'does not raise when every child is valid', {
+      my $lib = PhlibStrict.create({name => 'Clean'});
+      expect(PhlibStrict.find($lib.id).is-valid).to.be-truthy;
     }
   }
 }

@@ -154,6 +154,100 @@ role SqlDdl is export {
     # on add, so this is a no-op there.
   }
 
+  method ddl-add-check-constraint(Str:D $table, Str:D $expression,
+                                  Str  :$name,
+                                  Bool :$validate = True) {
+    my $cname    = $name // self.ref-default-check-name($table, $expression);
+    my $not-valid = $validate ?? '' !! self.ref-check-not-valid-suffix;
+
+    self.exec("ALTER TABLE $table ADD CONSTRAINT $cname CHECK ($expression)$not-valid");
+  }
+
+  method ddl-remove-check-constraint(Str:D $table,
+                                     Str :$expression,
+                                     Str :$name) {
+    my $cname = $name // do {
+      die 'remove-check-constraint: pass :name or :expression' unless $expression.defined;
+      self.ref-default-check-name($table, $expression);
+    };
+    self.exec("ALTER TABLE $table DROP CONSTRAINT $cname");
+  }
+
+  method ddl-validate-check-constraint(Str:D $table, Str:D $name) {
+    # Only PG distinguishes pending validation; other adapters always validate
+    # on add, so this is a no-op there.
+  }
+
+  method ddl-add-unique-constraint(Str:D $table,
+                                   :$columns,
+                                   Str :$name,
+                                   Bool :$deferrable = False,
+                                   Bool :$initially-deferred = False) {
+    my @cols = self.ref-columns-list($columns);
+    die 'add-unique-constraint: :columns must be non-empty' unless @cols.elems;
+
+    my $cname     = $name // self.ref-default-unique-name($table, @cols);
+    my $col-list  = @cols.join(', ');
+    my $deferr    = self.ref-unique-deferrable-suffix(:$deferrable, :$initially-deferred);
+
+    self.exec("ALTER TABLE $table ADD CONSTRAINT $cname UNIQUE ($col-list)$deferr");
+  }
+
+  method ddl-remove-unique-constraint(Str:D $table,
+                                      :$columns,
+                                      Str :$name) {
+    my @cols = self.ref-columns-list($columns);
+    my $cname = $name // do {
+      die 'remove-unique-constraint: pass :name or :columns' unless @cols.elems;
+      self.ref-default-unique-name($table, @cols);
+    };
+    self.exec("ALTER TABLE $table DROP CONSTRAINT $cname");
+  }
+
+  method ref-columns-list($columns --> List) {
+    return ()              without $columns;
+    return ($columns,)     if $columns ~~ Str;
+    $columns.list;
+  }
+
+  method ddl-add-exclusion-constraint(Str:D $table, Str:D $expression,
+                                      Str  :$using = 'gist',
+                                      Str  :$name,
+                                      Str  :$where,
+                                      Bool :$deferrable = False,
+                                      Bool :$initially-deferred = False) {
+    die "add-exclusion-constraint: not supported on this adapter ({self.^name})";
+  }
+
+  method ddl-remove-exclusion-constraint(Str:D $table,
+                                         Str :$name) {
+    die "remove-exclusion-constraint: not supported on this adapter ({self.^name})";
+  }
+
+  method ref-default-check-name(Str:D $table, Str:D $expression --> Str) {
+    "chk_{$table}_" ~ self.ref-expr-hash($expression);
+  }
+
+  method ref-default-unique-name(Str:D $table, @columns --> Str) {
+    "uq_{$table}_" ~ @columns.join('_');
+  }
+
+  method ref-expr-hash(Str:D $expr --> Str) {
+    my Int $hash = 0;
+    for $expr.comb -> $c {
+      $hash = ($hash * 31 + $c.ord) % (2 ** 32);
+    }
+    $hash.fmt('%08x');
+  }
+
+  method ref-check-not-valid-suffix(--> Str) { '' }
+
+  method ref-unique-deferrable-suffix(Bool :$deferrable = False, Bool :$initially-deferred = False --> Str) {
+    return ''  unless $deferrable;
+    return ' DEFERRABLE INITIALLY DEFERRED' if $initially-deferred;
+    ' DEFERRABLE';
+  }
+
   method ref-sql-type(Str:D $type --> Str) {
     given $type {
       when 'integer' { 'INTEGER' }

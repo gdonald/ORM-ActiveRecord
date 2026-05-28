@@ -69,18 +69,47 @@ class Validators is export {
 
     for @!each-validators -> $ev {
       next unless $obj.^name eq $ev.klass.raku;
-      my $if = -> { True };
+
+      my $if     = -> { True };
       my $unless = -> { False };
+      my $ons    = {};
+      my Bool $strict = False;
+
       for $ev.params.pairs -> $param {
         given $param.keys.first {
-          when /if/ { $if = $param{"if\tTrue"} }
+          when 'on'     { $ons = $param<on> }
+          when 'strict' { $strict = so $param.value }
+          when /if/     { $if = $param{"if\tTrue"} }
           when /unless/ { $unless = $param{"unless\tTrue"} }
         }
       }
+
       next unless $if() && !$unless();
+      next unless self.validate-on(:$obj, :$ons);
+
       for $ev.fields -> $name {
         my $value = $obj."$name"();
+
+        unless $strict {
+          $ev.block.($obj, $name, $value);
+          next;
+        }
+
+        my @snapshot = $obj.errors.objects;
         $ev.block.($obj, $name, $value);
+
+        next unless $obj.errors.objects.elems > @snapshot.elems;
+
+        my $added = $obj.errors.objects[@snapshot.elems];
+
+        $obj.errors.clear;
+        $obj.errors.push($_) for @snapshot;
+
+        die X::StrictValidationFailed.new(
+          :model($obj.^name),
+          :attribute($added.attribute),
+          :message-text($added.message),
+        );
       }
     }
 

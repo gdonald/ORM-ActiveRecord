@@ -475,6 +475,18 @@ class User is Model {
 }
 ```
 
+`validates-each` also accepts the `:if`, `:unless`, `on:`, and `strict`
+options (see [Conditionals](conditionals.md)). The guard is evaluated once for
+the whole validator — when it skips, the block runs for none of the named
+fields. With `strict => True`, a block that records an error instead raises
+`X::StrictValidationFailed`.
+
+```perl6
+self.validates-each: <fname lname>, &capitalized, { :if => { self.is-active } };
+self.validates-each: <fname lname>, &capitalized, { on => { :signup } };
+self.validates-each: <fname lname>, &capitalized, { :strict };
+```
+
 ## Validates associated
 
 When a model owns other records (`has_many`, `has_one`, `has_and_belongs_to_many`, or `belongs_to`), `validates-associated` rolls up each child's `is-valid` into the parent. A failed child contributes a single `is invalid` error on the named association.
@@ -496,6 +508,17 @@ A custom error message is available through the aggregated `validates` form:
 
 ```perl6
 self.validates: <books>, { :associated, message => 'has bad children' }
+```
+
+`validates-associated` accepts the `:if`, `:unless`, `on:`, and `strict`
+options (see [Conditionals](conditionals.md)). With `strict => True`, an
+invalid child raises `X::StrictValidationFailed` instead of recording the
+`is invalid` error on the association.
+
+```perl6
+self.validates-associated: 'books', { :if => { self.name eq 'Audit' } };
+self.validates-associated: 'books', { on => { :audit } };
+self.validates-associated: 'books', { :strict };
 ```
 
 ## Presence

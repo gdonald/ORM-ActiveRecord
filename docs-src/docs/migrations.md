@@ -55,14 +55,14 @@ canonical name (the adjective on the right-hand side) is what you pass; the
 DDL produced is adapter-aware (see [Adapters](adapters.md) for the per-engine
 differences).
 
-| Type         | Notes                                                                  |
-| ------------ | ---------------------------------------------------------------------- |
-| `:string`    | Variable-length text. Accepts `limit => N` (defaults to 255).          |
-| `:text`      | Unbounded text. No `limit`.                                            |
-| `:integer`   | Whole-number column.                                                   |
-| `:boolean`   | True/False. Storage varies by adapter (`BOOLEAN`, `TINYINT(1)`, `INTEGER 0/1`). |
-| `:datetime`  | Timestamp without explicit timezone semantics.                         |
-| `:timestamp` | Synonym for `:datetime`.                                               |
+| Type         | Notes                                                                                                                                                          |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `:string`    | Variable-length text. Accepts `limit => N` (defaults to 255).                                                                                                  |
+| `:text`      | Unbounded text. No `limit`.                                                                                                                                    |
+| `:integer`   | Whole-number column.                                                                                                                                           |
+| `:boolean`   | True/False. Storage varies by adapter (`BOOLEAN`, `TINYINT(1)`, `INTEGER 0/1`).                                                                                |
+| `:datetime`  | Timestamp without explicit timezone semantics.                                                                                                                 |
+| `:timestamp` | Synonym for `:datetime`.                                                                                                                                       |
 | `:reference` | Foreign-key column. The column declared as `user => { :reference }` becomes `user_id INTEGER` plus an index. See the `pages` / `subscriptions` examples above. |
 
 Every column type accepts a `default => $value` option to set a column-level
@@ -112,12 +112,12 @@ class AddGamesYear is Migration {
 
 After a table exists, four methods alter the shape of a column in place:
 
-| Method                   | Effect                                            |
-| ------------------------ | ------------------------------------------------- |
-| `change-column`          | Replace the column's type (and optionally its default / null / comment) |
-| `change-column-default`  | Set or drop the column's default value            |
-| `change-column-null`     | Toggle the `NOT NULL` constraint                  |
-| `change-column-comment`  | Set or clear the column comment                   |
+| Method                  | Effect                                                                  |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `change-column`         | Replace the column's type (and optionally its default / null / comment) |
+| `change-column-default` | Set or drop the column's default value                                  |
+| `change-column-null`    | Toggle the `NOT NULL` constraint                                        |
+| `change-column-comment` | Set or clear the column comment                                         |
 
 ```perl6
 self.change-column:         'users', 'name', 'text';
@@ -138,16 +138,16 @@ self.change-column-comment: 'users', 'email', 'primary contact address';
 Inside `change`, the auto-revert behavior is conservative — only operations
 whose inverse is unambiguous run on `down`:
 
-| Operation                                | Reversible in `change`?                           |
-| ---------------------------------------- | ------------------------------------------------- |
-| `change-column-null(t, c, $bool)`        | Yes — the bool is toggled on `down`               |
+| Operation                                 | Reversible in `change`?                           |
+| ----------------------------------------- | ------------------------------------------------- |
+| `change-column-null(t, c, $bool)`         | Yes — the bool is toggled on `down`               |
 | `change-column-default(t, c, :from, :to)` | Yes — `from`/`to` are swapped on `down`           |
 | `change-column-comment(t, c, :from, :to)` | Yes — `from`/`to` are swapped on `down`           |
 | `change-table-comment(t, :from, :to)`     | Yes — `from`/`to` are swapped on `down`           |
-| `change-column`                          | No — raises `X::IrreversibleMigration` on `down`  |
-| `change-column-default(t, c, $value)`    | No — raises unless the `from:`/`to:` form is used |
-| `change-column-comment(t, c, $value)`    | No — raises unless the `from:`/`to:` form is used |
-| `change-table-comment(t, $value)`        | No — raises unless the `from:`/`to:` form is used |
+| `change-column`                           | No — raises `X::IrreversibleMigration` on `down`  |
+| `change-column-default(t, c, $value)`     | No — raises unless the `from:`/`to:` form is used |
+| `change-column-comment(t, c, $value)`     | No — raises unless the `from:`/`to:` form is used |
+| `change-table-comment(t, $value)`         | No — raises unless the `from:`/`to:` form is used |
 
 For the irreversible cases, provide explicit `up` / `down` pairs or wrap the
 call in `reversible`. The `from:` / `to:` shorthand is the easiest way to keep
@@ -173,13 +173,13 @@ self.change-table-comment: 'orders', :from('old text'), :to('new text');
 
 ### Adapter differences
 
-| Operation                  | PostgreSQL | MySQL                 | SQLite                                |
-| -------------------------- | ---------- | --------------------- | ------------------------------------- |
-| `change-column`            | `ALTER ... TYPE` | `MODIFY COLUMN` (re-emits the column definition with introspected null / default / comment merged) | Not supported — raises |
-| `change-column-default`    | `ALTER ... SET/DROP DEFAULT` | `ALTER ... SET/DROP DEFAULT` | Not supported — raises |
-| `change-column-null`       | `ALTER ... SET/DROP NOT NULL` | `MODIFY COLUMN` with introspected type | Not supported — raises |
-| `change-column-comment`    | `COMMENT ON COLUMN ...` | `MODIFY COLUMN ... COMMENT '...'` | Silent no-op (SQLite has no column comments) |
-| `change-table-comment`     | `COMMENT ON TABLE ...` | `ALTER TABLE ... COMMENT = '...'` | Silent no-op (SQLite has no table comments) |
+| Operation               | PostgreSQL                    | MySQL                                                                                              | SQLite                                       |
+| ----------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `change-column`         | `ALTER ... TYPE`              | `MODIFY COLUMN` (re-emits the column definition with introspected null / default / comment merged) | Not supported — raises                       |
+| `change-column-default` | `ALTER ... SET/DROP DEFAULT`  | `ALTER ... SET/DROP DEFAULT`                                                                       | Not supported — raises                       |
+| `change-column-null`    | `ALTER ... SET/DROP NOT NULL` | `MODIFY COLUMN` with introspected type                                                             | Not supported — raises                       |
+| `change-column-comment` | `COMMENT ON COLUMN ...`       | `MODIFY COLUMN ... COMMENT '...'`                                                                  | Silent no-op (SQLite has no column comments) |
+| `change-table-comment`  | `COMMENT ON TABLE ...`        | `ALTER TABLE ... COMMENT = '...'`                                                                  | Silent no-op (SQLite has no table comments)  |
 
 SQLite has no `ALTER COLUMN` and would need a table rebuild for type / default
 / null changes. Those methods raise rather than silently doing the wrong thing
@@ -257,18 +257,18 @@ class AddUserToPosts is Migration {
 `add-belongs-to` is an alias for `add-reference`; `remove-belongs-to` is the
 inverse alias. Options accepted by both:
 
-| Option              | Default     | Effect                                                              |
-| ------------------- | ----------- | ------------------------------------------------------------------- |
-| `null`              | `True`      | Set to `False` to make `<name>_id` (and `<name>_type`) NOT NULL.    |
-| `index`             | `True`      | Set to `False` to skip the index.                                   |
-| `unique`            | `False`     | Make the index unique.                                              |
-| `polymorphic`       | `False`     | Add both `<name>_id` and `<name>_type`; the index becomes composite (`<name>_type`, `<name>_id`). |
-| `type`              | `'integer'` | Override the integer type (e.g. `bigint`).                          |
-| `foreign-key`       | `False`     | Also add an `ALTER TABLE ... ADD CONSTRAINT FOREIGN KEY` — see below.|
-| `to-table`          | `<name>s`   | The referenced table when `foreign-key` is set and the inferred plural is wrong. |
-| `on-delete`         | (none)      | Forwarded to the FK clause; only valid with `foreign-key => True`.  |
-| `on-update`         | (none)      | Same.                                                               |
-| `fk-name`           | (auto)      | Override the generated FK constraint name.                          |
+| Option        | Default     | Effect                                                                                            |
+| ------------- | ----------- | ------------------------------------------------------------------------------------------------- |
+| `null`        | `True`      | Set to `False` to make `<name>_id` (and `<name>_type`) NOT NULL.                                  |
+| `index`       | `True`      | Set to `False` to skip the index.                                                                 |
+| `unique`      | `False`     | Make the index unique.                                                                            |
+| `polymorphic` | `False`     | Add both `<name>_id` and `<name>_type`; the index becomes composite (`<name>_type`, `<name>_id`). |
+| `type`        | `'integer'` | Override the integer type (e.g. `bigint`).                                                        |
+| `foreign-key` | `False`     | Also add an `ALTER TABLE ... ADD CONSTRAINT FOREIGN KEY` — see below.                             |
+| `to-table`    | `<name>s`   | The referenced table when `foreign-key` is set and the inferred plural is wrong.                  |
+| `on-delete`   | (none)      | Forwarded to the FK clause; only valid with `foreign-key => True`.                                |
+| `on-update`   | (none)      | Same.                                                                                             |
+| `fk-name`     | (auto)      | Override the generated FK constraint name.                                                        |
 
 ```perl6
 self.add-reference: 'comments', 'commentable', polymorphic => True;
@@ -300,14 +300,14 @@ class WireOrdersToCustomers is Migration {
 
 Options for `add-foreign-key(from, to, ...)`:
 
-| Option         | Default                              | Effect                                                       |
-| -------------- | ------------------------------------ | ------------------------------------------------------------ |
-| `column`       | `<singular_to_table>_id`             | Source column on `from`.                                     |
-| `primary-key`  | `id`                                 | Target column on `to`.                                       |
-| `name`         | `fk_<from_table>_<column>`           | Override the constraint name.                                |
-| `on-delete`    | (none)                               | `cascade`, `nullify` / `set-null`, `set-default`, `restrict`, `no-action`. |
-| `on-update`    | (none)                               | Same vocabulary as `on-delete`.                              |
-| `validate`     | `True`                               | On PostgreSQL, `False` emits `NOT VALID` so the constraint is enforced on new rows only. Other adapters ignore this option. |
+| Option        | Default                    | Effect                                                                                                                      |
+| ------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `column`      | `<singular_to_table>_id`   | Source column on `from`.                                                                                                    |
+| `primary-key` | `id`                       | Target column on `to`.                                                                                                      |
+| `name`        | `fk_<from_table>_<column>` | Override the constraint name.                                                                                               |
+| `on-delete`   | (none)                     | `cascade`, `nullify` / `set-null`, `set-default`, `restrict`, `no-action`.                                                  |
+| `on-update`   | (none)                     | Same vocabulary as `on-delete`.                                                                                             |
+| `validate`    | `True`                     | On PostgreSQL, `False` emits `NOT VALID` so the constraint is enforced on new rows only. Other adapters ignore this option. |
 
 `remove-foreign-key` accepts either the explicit `name:` or `to-table:` plus
 (optionally) `column:` so it can derive the same name `add-foreign-key`
@@ -332,13 +332,114 @@ options); supply explicit `up` / `down` pairs.
 
 ### Adapter differences
 
-| Operation                       | PostgreSQL | MySQL                       | SQLite                                                |
-| ------------------------------- | ---------- | --------------------------- | ----------------------------------------------------- |
-| `add-reference` (column + idx)  | Yes        | Yes                         | Yes                                                   |
-| `add-reference :foreign-key`    | `ALTER TABLE ... ADD CONSTRAINT` | `ALTER TABLE ... ADD CONSTRAINT` | Raises — declare the FK in `create-table` instead   |
-| `add-foreign-key` direct        | Yes        | Yes                         | Raises — declare the FK in `create-table` instead     |
-| `remove-foreign-key`            | `ALTER TABLE ... DROP CONSTRAINT` | `ALTER TABLE ... DROP FOREIGN KEY` | Raises                                       |
-| `validate :False` (`NOT VALID`) | Yes        | No-op (always validates)    | n/a                                                   |
+| Operation                       | PostgreSQL                        | MySQL                              | SQLite                                            |
+| ------------------------------- | --------------------------------- | ---------------------------------- | ------------------------------------------------- |
+| `add-reference` (column + idx)  | Yes                               | Yes                                | Yes                                               |
+| `add-reference :foreign-key`    | `ALTER TABLE ... ADD CONSTRAINT`  | `ALTER TABLE ... ADD CONSTRAINT`   | Raises — declare the FK in `create-table` instead |
+| `add-foreign-key` direct        | Yes                               | Yes                                | Raises — declare the FK in `create-table` instead |
+| `remove-foreign-key`            | `ALTER TABLE ... DROP CONSTRAINT` | `ALTER TABLE ... DROP FOREIGN KEY` | Raises                                            |
+| `validate :False` (`NOT VALID`) | Yes                               | No-op (always validates)           | n/a                                               |
+
+## Check, unique, and exclusion constraints
+
+These DSL methods emit `ALTER TABLE ... ADD CONSTRAINT` / `DROP CONSTRAINT`
+statements for table-level constraints beyond foreign keys.
+
+```perl6
+class TightenProducts is Migration {
+  method change {
+    self.add-check-constraint:  'products', 'price > 0',
+      name => 'chk_products_price_positive';
+
+    self.add-unique-constraint: 'products',
+      columns => <tenant_id sku>,
+      name    => 'uq_products_tenant_sku';
+  }
+}
+```
+
+### `add-check-constraint(table, expression, ...)`
+
+| Option     | Default                   | Effect                                                                                                                       |
+| ---------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `name`     | `chk_<table>_<expr-hash>` | Override the constraint name.                                                                                                |
+| `validate` | `True`                    | On PostgreSQL, `False` emits `NOT VALID` so the constraint only applies to new rows. On MySQL, `False` emits `NOT ENFORCED`. |
+
+`remove-check-constraint(table, ...)` accepts `name:` *or* `expression:` —
+when only the expression is given it re-derives the same name
+`add-check-constraint` would have generated:
+
+```perl6
+self.remove-check-constraint: 'products', name => 'chk_products_price_positive';
+self.remove-check-constraint: 'products', expression => 'price > 0';
+```
+
+`validate-check-constraint(table, name)` runs `ALTER TABLE ... VALIDATE
+CONSTRAINT` on PostgreSQL (for the deferred `NOT VALID` workflow) and
+`ALTER TABLE ... ALTER CHECK name ENFORCED` on MySQL. It is irreversible
+inside `change` — supply explicit `up` / `down` if needed.
+
+### `add-unique-constraint(table, ...)`
+
+| Option               | Default                       | Effect                                                          |
+| -------------------- | ----------------------------- | --------------------------------------------------------------- |
+| `columns`            | (required)                    | List of column names covered by the constraint.                 |
+| `name`               | `uq_<table>_<col1>_<col2>...` | Override the constraint name.                                   |
+| `deferrable`         | `False`                       | PostgreSQL `DEFERRABLE` — defer checking to end of transaction. |
+| `initially-deferred` | `False`                       | Implies `deferrable`; emits `DEFERRABLE INITIALLY DEFERRED`.    |
+
+`remove-unique-constraint(table, ...)` accepts `name:` or `columns:` —
+when only `columns:` is given it re-derives the same name:
+
+```perl6
+self.remove-unique-constraint: 'products', name => 'uq_products_tenant_sku';
+self.remove-unique-constraint: 'products', columns => <tenant_id sku>;
+```
+
+### `add-exclusion-constraint(table, expression, ...)` (PostgreSQL only)
+
+| Option               | Default                    | Effect                                                               |
+| -------------------- | -------------------------- | -------------------------------------------------------------------- |
+| `using`              | `gist`                     | Access method (`gist`, `btree`, `spgist`, etc.).                     |
+| `name`               | `excl_<table>_<expr-hash>` | Constraint name.                                                     |
+| `where`              | (none)                     | Optional `WHERE (...)` predicate for a partial exclusion constraint. |
+| `deferrable`         | `False`                    | Same as for unique constraints.                                      |
+| `initially-deferred` | `False`                    | Same as for unique constraints.                                      |
+
+```perl6
+self.add-exclusion-constraint: 'reservations',
+  'room_id WITH =, during WITH &&',
+  using => 'gist',
+  name  => 'excl_reservations_room_during';
+```
+
+`remove-exclusion-constraint` requires the explicit `name:` (the
+expression cannot always be normalised back to the auto-name).
+
+### Reversibility
+
+| Operation                     | Inside `change`                                            |
+| ----------------------------- | ---------------------------------------------------------- |
+| `add-check-constraint`        | Reversed by `remove-check-constraint` with the same name.  |
+| `remove-check-constraint`     | Irreversible — supply explicit `up` / `down`.              |
+| `validate-check-constraint`   | Irreversible.                                              |
+| `add-unique-constraint`       | Reversed by `remove-unique-constraint` with the same name. |
+| `remove-unique-constraint`    | Irreversible.                                              |
+| `add-exclusion-constraint`    | Reversed when `name:` is supplied; otherwise irreversible. |
+| `remove-exclusion-constraint` | Irreversible.                                              |
+
+### Adapter differences
+
+| Operation                      | PostgreSQL                        | MySQL                            | SQLite                                               |
+| ------------------------------ | --------------------------------- | -------------------------------- | ---------------------------------------------------- |
+| `add-check-constraint`         | `ALTER TABLE ... ADD CONSTRAINT`  | `ALTER TABLE ... ADD CONSTRAINT` | Raises — declare the CHECK in `create-table` instead |
+| `remove-check-constraint`      | `ALTER TABLE ... DROP CONSTRAINT` | `ALTER TABLE ... DROP CHECK`     | Raises                                               |
+| `validate-check-constraint`    | `VALIDATE CONSTRAINT`             | `ALTER CHECK name ENFORCED`      | No-op                                                |
+| `add-check :validate => False` | `NOT VALID`                       | `NOT ENFORCED`                   | n/a                                                  |
+| `add-unique-constraint`        | `ALTER TABLE ... ADD CONSTRAINT`  | `ALTER TABLE ... ADD CONSTRAINT` | Raises — use `add-index :unique => True` instead     |
+| `remove-unique-constraint`     | `ALTER TABLE ... DROP CONSTRAINT` | `ALTER TABLE ... DROP INDEX`     | Raises                                               |
+| `add-exclusion-constraint`     | `ALTER TABLE ... ADD CONSTRAINT`  | Raises                           | Raises                                               |
+| `remove-exclusion-constraint`  | `ALTER TABLE ... DROP CONSTRAINT` | Raises                           | Raises                                               |
 
 ## Timestamps
 
@@ -348,11 +449,11 @@ set on insert, `updated_at` is set on every save.
 
 The exact column type is adapter-aware:
 
-| Adapter    | Generated DDL                                                                |
-| ---------- | ---------------------------------------------------------------------------- |
-| PostgreSQL | `TIMESTAMPTZ NOT NULL DEFAULT now()`                                         |
-| MySQL      | `DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)` (microsecond precision)  |
-| SQLite     | `DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`                                |
+| Adapter    | Generated DDL                                                               |
+| ---------- | --------------------------------------------------------------------------- |
+| PostgreSQL | `TIMESTAMPTZ NOT NULL DEFAULT now()`                                        |
+| MySQL      | `DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)` (microsecond precision) |
+| SQLite     | `DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`                               |
 
 ```perl6
 use ORM::ActiveRecord::Schema::Migration;
@@ -523,12 +624,12 @@ Proceed? [Y/n]
 Pressing `Y` or `Enter` proceeds (the default is yes). Anything else
 aborts immediately:
 
-| Reply            | Outcome      |
-| ---------------- | ------------ |
-| `Y` / `y`        | Drop tables  |
-| `<enter>` (empty)| Drop tables  |
-| `n`              | Abort        |
-| anything else    | Abort        |
+| Reply             | Outcome     |
+| ----------------- | ----------- |
+| `Y` / `y`         | Drop tables |
+| `<enter>` (empty) | Drop tables |
+| `n`               | Abort       |
+| anything else     | Abort       |
 
 To bypass the prompt in scripts, pass `--yes` (or set `AR_ASSUME_YES=1`):
 
