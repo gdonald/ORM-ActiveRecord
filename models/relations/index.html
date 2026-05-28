@@ -529,6 +529,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#preload-eager-load-includes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        preload, eager-load, includes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="preload, eager-load, includes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#polymorphic-associations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Polymorphic associations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#has_many-has_one-through" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        has_many / has_one :through
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -928,6 +967,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validations/options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1130,6 +1197,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#preload-eager-load-includes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        preload, eager-load, includes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="preload, eager-load, includes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#polymorphic-associations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Polymorphic associations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#has_many-has_one-through" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        has_many / has_one :through
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1311,6 +1417,169 @@ row matches.</p>
 <span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="nb">count</span>;
 <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">exists</span>;
 </code></pre></div></td></tr></table></div>
+
+<h2 id="preload-eager-load-includes">preload, eager-load, includes</h2>
+<p>These three modifiers eliminate the N+1 query problem by loading associations
+up front and caching them on each parent record.</p>
+<p><code>preload(...)</code> runs one extra query per named association after fetching the
+parent rows. It is the right default when you only need to read the children
+back through the accessor.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@users</span> = <span class="n">User</span>.<span class="n">where</span>({}).<span class="n">preload</span>(:<span class="n">pages</span>).<span class="nb">all</span>;
+<span class="k">for</span> <span class="nv">@users</span> -&gt; <span class="nv">$u</span> {
+  <span class="nb">say</span> <span class="nv">$u</span>.<span class="n">pages</span>.<span class="nb">elems</span>;     <span class="c1"># no extra DB query — pages came from the cache</span>
+}
+</code></pre></div></td></tr></table></div>
+
+<p><code>eager-load(...)</code> does the same caching but also adds a LEFT OUTER JOIN to the
+parent query. Use this when you need to filter on a joined column:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({}).<span class="n">eager-load</span>(:<span class="n">profile</span>).<span class="n">where</span>({<span class="s">&#39;profiles.is_active&#39;</span> =&gt; <span class="nb">True</span>}).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p><code>includes(...)</code> behaves like <code>preload</code> by default. It promotes itself to
+<code>eager-load</code> when something later in the chain proves a JOIN is required:</p>
+<ul>
+<li>An explicit <code>references(:assoc)</code> — order of the two calls doesn't matter.</li>
+<li>A <code>where</code>/<code>order</code>/<code>having</code> fragment that mentions a column on the joined
+  table, in any of the supported forms.</li>
+</ul>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># all four chains end up doing the same SELECT … LEFT OUTER JOIN profiles …</span>
+<span class="n">User</span>.<span class="n">includes</span>(:<span class="n">profile</span>).<span class="n">references</span>(:<span class="n">profile</span>);
+<span class="n">User</span>.<span class="n">references</span>(:<span class="n">profile</span>).<span class="n">includes</span>(:<span class="n">profile</span>);
+<span class="n">User</span>.<span class="n">includes</span>(:<span class="n">profile</span>).<span class="n">where</span>({<span class="s">&#39;profiles.is_active&#39;</span> =&gt; <span class="nb">True</span>});
+<span class="n">User</span>.<span class="n">includes</span>(:<span class="n">profile</span>).<span class="n">where</span>(<span class="n">profiles</span> =&gt; { <span class="n">is_active</span> =&gt; <span class="nb">True</span> });
+<span class="n">User</span>.<span class="n">includes</span>(:<span class="n">profile</span>).<span class="nb">all</span>;                       <span class="c1"># plain preload — no JOIN</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>references</code> takes the colon-pair form <code>references(:profile)</code> or the
+arrow-pair form <code>references(profile =&gt; True)</code>; a falsy value
+(<code>references(profile =&gt; False)</code>) is ignored, so it adds nothing and does not
+promote <code>includes</code>.</p>
+<p><code>preload(:assoc)</code> and <code>eager-load(:assoc)</code> are explicit and never get
+re-routed: a chain like <code>preload(:profile).references(:profile)</code> stays a
+preload, and <code>eager-load(:profile)</code> stays a JOIN even with no <code>references</code>.</p>
+<p>Both forms Rails uses for nested includes are supported, and the three
+loaders (<code>preload</code>, <code>eager-load</code>, <code>includes</code>) accept the same shapes.</p>
+<p>Array form — multiple top-level associations:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({}).<span class="n">preload</span>(:<span class="n">pages</span>, :<span class="n">profile</span>).<span class="nb">all</span>;
+<span class="n">User</span>.<span class="n">where</span>({}).<span class="n">includes</span>(:<span class="n">pages</span>, :<span class="n">profile</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>Hash form (Raku <code>Pair</code>) — load a child association on top of its parent:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({}).<span class="n">preload</span>(<span class="n">articles</span> =&gt; :<span class="n">scribe</span>).<span class="nb">all</span>;
+<span class="n">User</span>.<span class="n">where</span>({}).<span class="n">includes</span>(<span class="n">articles</span> =&gt; :<span class="n">scribe</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>The two forms compose, including for arbitrary depth. The value side of a
+<code>Pair</code> can itself be another <code>Pair</code>, a <code>Hash</code>, or a list:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># users → articles → scribe → pages</span>
+<span class="n">User</span>.<span class="n">where</span>({}).<span class="n">preload</span>(<span class="n">articles</span> =&gt; { <span class="n">scribe</span> =&gt; :<span class="n">pages</span> }).<span class="nb">all</span>;
+
+<span class="c1"># users → pages (no nested) AND users → articles → scribe</span>
+<span class="n">User</span>.<span class="n">where</span>({}).<span class="n">preload</span>(:<span class="n">pages</span>, <span class="n">articles</span> =&gt; :<span class="n">scribe</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>Each loaded record exposes its cache as <code>record.assoc-cache&lt;name&gt;</code>, so tests
+and instrumentation can verify what was preloaded without re-querying.</p>
+<h3 id="polymorphic-associations">Polymorphic associations</h3>
+<p><code>preload</code> and <code>includes</code> both batch polymorphic associations by type:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Attachment</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">attachable</span> =&gt; %(:<span class="n">polymorphic</span>, :<span class="n">optional</span>);
+  }
+}
+
+<span class="c1"># One query for attachments, plus one query per distinct attachable_type.</span>
+<span class="k">my</span> <span class="nv">@atts</span> = <span class="n">Attachment</span>.<span class="n">where</span>({}).<span class="n">preload</span>(:<span class="n">attachable</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p><code>eager-load(:polymorphic-assoc)</code> raises an error — the target table varies
+per row, so a single LEFT OUTER JOIN cannot resolve it. Use <code>preload</code> (or
+<code>includes</code> without a JOIN-forcing chain) instead.</p>
+<p>The polymorphic <em>inverse</em> (<code>has_many :as</code>) is loaded with a single query
+scoped by <code>&lt;as&gt;_id</code> and <code>&lt;as&gt;_type</code>:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">pictures</span> =&gt; %(<span class="k">class</span> =&gt; <span class="n">Picture</span>, <span class="n">as</span> =&gt; <span class="s">&#39;imageable&#39;</span>);
+  }
+}
+
+<span class="c1"># One query for users, one query for matching pictures.</span>
+<span class="k">my</span> <span class="nv">@users</span> = <span class="n">User</span>.<span class="n">where</span>({}).<span class="n">preload</span>(:<span class="n">pictures</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>Nested preloads from a polymorphic <code>belongs-to</code> work even though the parents
+returned have different classes. The preloader partitions the cached parents
+by class before recursing, and silently skips classes that do not declare the
+named child association:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Attachment</span>.<span class="n">where</span>({}).<span class="n">preload</span>(<span class="n">attachable</span> =&gt; :<span class="n">pictures</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<h3 id="has_many-has_one-through">has_many / has_one :through</h3>
+<p>Through-associations are loaded in two batched steps: first the intermediate
+collection on the parents, then the source association on the intermediates.
+The final cache on each parent is the flattened (<code>has_many</code>) or singular
+(<code>has_one</code>) source value.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">subscriptions</span> =&gt; <span class="k">class</span> =&gt; <span class="n">Subscription</span>;
+    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">magazines</span> =&gt; <span class="n">through</span> =&gt; :<span class="n">subscriptions</span>;
+    <span class="nb">self</span>.<span class="n">has-one:</span>  <span class="n">profile</span>  =&gt; <span class="k">class</span> =&gt; <span class="n">Profile</span>;
+    <span class="nb">self</span>.<span class="n">has-one:</span>  <span class="n">account</span>  =&gt; <span class="n">through</span> =&gt; :<span class="n">profile</span>;
+  }
+}
+
+<span class="c1"># Two queries: one for subscriptions, one for the magazines they point at.</span>
+<span class="n">User</span>.<span class="n">where</span>({}).<span class="n">preload</span>(:<span class="n">magazines</span>).<span class="nb">all</span>;
+
+<span class="c1"># Same shape for has_one :through.</span>
+<span class="n">User</span>.<span class="n">where</span>({}).<span class="n">preload</span>(:<span class="n">account</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p><code>eager-load(:through-assoc)</code> joins through the intermediate table to the
+source. With <code>has_many :through</code>, the JOIN inflates the result set with one
+row per join row — pair it with <code>distinct</code> (or fall back to <code>preload</code>) when
+you only need the parents.</p>
 
 
 

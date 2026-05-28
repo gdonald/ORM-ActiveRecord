@@ -781,6 +781,105 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#around-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Around Callbacks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-initialize-find-touch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation, Initialize, Find, Touch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#method-name-handlers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method-name Handlers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multiple-callbacks-per-event" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple Callbacks per Event
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prepend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        :prepend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conditional-callbacks-if-unless" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional Callbacks (:if / :unless)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#halting-the-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Halting the Chain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introspection-set-callback-skip-callback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introspection: set-callback / skip-callback
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-chain-terminator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Chain Terminator
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -915,6 +1014,34 @@
     
   
     Conditionals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validations/options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options
   
 
     
@@ -1130,6 +1257,105 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#around-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Around Callbacks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-initialize-find-touch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation, Initialize, Find, Touch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#method-name-handlers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method-name Handlers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multiple-callbacks-per-event" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple Callbacks per Event
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prepend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        :prepend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conditional-callbacks-if-unless" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional Callbacks (:if / :unless)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#halting-the-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Halting the Chain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introspection-set-callback-skip-callback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introspection: set-callback / skip-callback
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-chain-terminator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Chain Terminator
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1149,7 +1375,17 @@
 
 <h1 id="model-callbacks">Model Callbacks</h1>
 <p>ORM::ActiveRecord supports callbacks that can be performed during various life cycle events.</p>
-<p>These callbacks currently include <code>after-create</code>, <code>after-save</code>, <code>after-update</code>, <code>after-destroy</code>, <code>before-create</code>, <code>before-save</code>, <code>before-update</code>, and <code>before-destroy</code>.</p>
+<p>The available events are:</p>
+<ul>
+<li>Save: <code>before-save</code> / <code>around-save</code> / <code>after-save</code></li>
+<li>Create: <code>before-create</code> / <code>around-create</code> / <code>after-create</code></li>
+<li>Update: <code>before-update</code> / <code>around-update</code> / <code>after-update</code></li>
+<li>Destroy: <code>before-destroy</code> / <code>around-destroy</code> / <code>after-destroy</code></li>
+<li>Validation: <code>before-validation</code> / <code>after-validation</code></li>
+<li>Initialize: <code>after-initialize</code></li>
+<li>Find: <code>after-find</code> (fires only when a record is loaded from the database)</li>
+<li>Touch: <code>after-touch</code></li>
+</ul>
 <p>For callbacks that wait until the surrounding transaction's outcome is
 decided — <code>after-commit</code>, <code>after-rollback</code>, and the per-action variants
 (<code>after-create-commit</code>, <code>after-update-commit</code>, <code>after-destroy-commit</code>,
@@ -1571,6 +1807,226 @@ skips the <code>before-destroy</code> and <code>after-destroy</code> callbacks.<
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>True
 True
+</code></pre></div></td></tr></table></div>
+
+<h2 id="around-callbacks">Around Callbacks</h2>
+<p><code>around-save</code>, <code>around-create</code>, <code>around-update</code>, and <code>around-destroy</code> wrap
+the corresponding write operation. The block receives a <code>&amp;yield</code> argument;
+calling it runs the wrapped operation (along with its <code>before-*</code>/<code>after-*</code>
+callbacks), so code before and after the call to <code>&amp;yield</code> becomes the
+"before" and "after" halves of the wrapper. Forgetting to call <code>&amp;yield</code>
+halts the operation (<code>save</code> / <code>destroy</code> returns <code>False</code>).</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Client</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">around-save:</span> -&gt; <span class="nv">&amp;yield</span> {
+      <span class="k">my</span> <span class="nv">$started</span> = <span class="nb">now</span>;
+      <span class="nv">&amp;yield</span>();
+      <span class="k">my</span> <span class="nv">$elapsed</span> = <span class="nb">now</span> - <span class="nv">$started</span>;
+      <span class="nb">say</span> <span class="s">&quot;save took {$elapsed.fmt(&#39;%.4f&#39;)}s&quot;</span>;
+    };
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<h2 id="validation-initialize-find-touch">Validation, Initialize, Find, Touch</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Client</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="o">before-</span><span class="n">validation:</span> -&gt; { <span class="nb">self</span>.<span class="n">email</span> .= <span class="nb">trim</span> };
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">validation:</span>  -&gt; { <span class="nb">say</span> <span class="s">&#39;errors so far: &#39;</span> ~ <span class="nb">self</span>.<span class="n">errors</span>.<span class="nb">count</span> };
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">initialize:</span>  -&gt; { <span class="nb">self</span>.<span class="k">role</span> //= <span class="s">&#39;guest&#39;</span> };
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">find:</span>        -&gt; { <span class="nb">say</span> <span class="s">&#39;loaded &#39;</span> ~ <span class="nb">self</span>.<span class="nb">id</span> };
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">touch:</span>       -&gt; { <span class="nb">self</span>.<span class="n">bump-cache</span> };
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<ul>
+<li><code>after-initialize</code> fires for every freshly constructed instance (both
+  records loaded from the database and ones built in memory).</li>
+<li><code>after-find</code> fires only when the instance was hydrated from the database.</li>
+<li><code>after-touch</code> fires after a successful call to <code>.touch(...)</code>.</li>
+</ul>
+<h2 id="method-name-handlers">Method-name Handlers</h2>
+<p>Any callback registration accepts a method name (<code>Str</code>) instead of a block.
+The method is dispatched on <code>self</code>.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Client</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="o">before-</span><span class="n">save:</span> <span class="s">&#39;lowercase-email&#39;</span>;
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">create:</span> <span class="s">&#39;send-welcome-email&#39;</span>;
+  }
+
+  <span class="k">method</span> <span class="n">lowercase-email</span> { <span class="nb">self</span>.<span class="n">email</span> .= <span class="nb">lc</span> }
+  <span class="k">method</span> <span class="n">send-welcome-email</span> { ... }
+}
+</code></pre></div></td></tr></table></div>
+
+<h2 id="multiple-callbacks-per-event">Multiple Callbacks per Event</h2>
+<p>Multiple callbacks registered for the same event fire in declaration order.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Client</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">save:</span> -&gt; { <span class="nb">say</span> <span class="s">&#39;first&#39;</span>  };
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">save:</span> -&gt; { <span class="nb">say</span> <span class="s">&#39;second&#39;</span> };
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">save:</span> -&gt; { <span class="nb">say</span> <span class="s">&#39;third&#39;</span>  };
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<h2 id="prepend"><code>:prepend</code></h2>
+<p>Use <code>:prepend</code> to put a callback at the front of its chain instead of
+appending it.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="o">after-</span><span class="n">save:</span> -&gt; { <span class="nb">say</span> <span class="s">&#39;runs before the rest&#39;</span> }, :<span class="n">prepend</span>;
+</code></pre></div></td></tr></table></div>
+
+<h2 id="conditional-callbacks-if-unless">Conditional Callbacks (<code>:if</code> / <code>:unless</code>)</h2>
+<p>Both <code>:if</code> and <code>:unless</code> accept a <code>Block</code>, a <code>Str</code> method name, or an
+<code>Array</code> of either. With an <code>Array</code>, every entry must be satisfied for the
+callback to run.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Client</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">save:</span> -&gt; { <span class="nb">self</span>.<span class="n">send-welcome</span> },
+      :<span class="n">if</span>(-&gt; { <span class="nb">self</span>.<span class="n">is-new-record</span> });
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">save:</span> -&gt; { <span class="nb">self</span>.<span class="n">send-billing</span> },
+      :<span class="n">if</span>(<span class="s">&#39;is-paid&#39;</span>),
+      :<span class="n">unless</span>(<span class="s">&#39;is-archived&#39;</span>);
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">save:</span> -&gt; { <span class="nb">self</span>.<span class="n">audit</span> },
+      :<span class="n">if</span>([<span class="s">&#39;is-paid&#39;</span>, -&gt; { <span class="nb">self</span>.<span class="n">email</span>.<span class="nb">chars</span> &gt; <span class="mi">0</span> }]);
+  }
+
+  <span class="k">method</span> <span class="n">is-paid</span>     { ... }
+  <span class="k">method</span> <span class="n">is-archived</span> { ... }
+}
+</code></pre></div></td></tr></table></div>
+
+<h2 id="halting-the-chain">Halting the Chain</h2>
+<p>A callback can stop the rest of its chain (and abort the surrounding
+<code>save</code> / <code>destroy</code>) by returning <code>False</code> or by throwing
+<code>X::Callback::Abort</code>.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
+
+<span class="k">class</span> <span class="n">Client</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="o">before-</span><span class="n">save:</span> -&gt; {
+      <span class="k">return</span> <span class="nb">False</span> <span class="k">unless</span> <span class="nb">self</span>.<span class="n">email</span>.<span class="nb">chars</span>;
+      <span class="nb">True</span>;
+    };
+    <span class="nb">self</span>.<span class="o">before-</span><span class="n">destroy:</span> -&gt; {
+      <span class="nb">die</span> <span class="o">X</span>::<span class="n">Callback::Abort</span>.<span class="nb">new</span> <span class="k">if</span> <span class="nb">self</span>.<span class="n">is-protected</span>;
+    };
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<h2 id="introspection-set-callback-skip-callback">Introspection: <code>set-callback</code> / <code>skip-callback</code></h2>
+<p>Callbacks can be added or removed by tag at runtime. Pass a <code>:tag</code> when
+registering so they can later be looked up or removed.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Client</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="o">before-</span><span class="n">save:</span> -&gt; { <span class="nb">self</span>.<span class="n">normalize</span> }, :<span class="n">tag</span><span class="s">&lt;normalize&gt;</span>;
+  }
+}
+
+<span class="k">my</span> <span class="nv">$c</span> = <span class="n">Client</span>.<span class="n">build</span>({ <span class="n">email</span> =&gt; <span class="s">&#39;fred@aol.com&#39;</span> });
+
+<span class="nv">$c</span>.<span class="n">has-callback</span>(:<span class="n">event</span><span class="s">&lt;save&gt;</span>, :<span class="n">timing</span><span class="s">&lt;before&gt;</span>, :<span class="n">tag</span><span class="s">&lt;normalize&gt;</span>);  <span class="c1"># True</span>
+<span class="nv">$c</span>.<span class="n">callback-tags</span>(:<span class="n">event</span><span class="s">&lt;save&gt;</span>, :<span class="n">timing</span><span class="s">&lt;before&gt;</span>);                  <span class="c1"># (&#39;normalize&#39;,)</span>
+
+<span class="c1"># Disable just this one callback for this instance</span>
+<span class="nv">$c</span>.<span class="n">skip-callback</span>(:<span class="n">event</span><span class="s">&lt;save&gt;</span>, :<span class="n">timing</span><span class="s">&lt;before&gt;</span>, :<span class="n">tag</span><span class="s">&lt;normalize&gt;</span>);
+
+<span class="c1"># Or add a new one</span>
+<span class="nv">$c</span>.<span class="n">set-callback</span>(
+  :<span class="n">event</span><span class="s">&lt;save&gt;</span>, :<span class="n">timing</span><span class="s">&lt;before&gt;</span>,
+  :<span class="n">handler</span>(-&gt; { ... }),
+  :<span class="n">tag</span><span class="s">&lt;custom&gt;</span>,
+);
+</code></pre></div></td></tr></table></div>
+
+<h2 id="custom-chain-terminator">Custom Chain Terminator</h2>
+<p>By default, a callback halts the chain when it returns the value <code>False</code>
+(or when <code>X::Callback::Abort</code> is thrown). The terminator can be customised
+per event/timing by passing a <code>Block</code> that decides whether a result aborts.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$c</span>.<span class="n">set-callback-terminator</span>(
+  :<span class="n">event</span><span class="s">&lt;save&gt;</span>, :<span class="n">timing</span><span class="s">&lt;before&gt;</span>,
+  :<span class="n">block</span>(-&gt; <span class="nv">$result</span> { <span class="nv">$result</span> === <span class="mi">0</span> || <span class="nv">$result</span> === <span class="nb">False</span> }),
+);
 </code></pre></div></td></tr></table></div>
 
 

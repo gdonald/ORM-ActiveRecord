@@ -9,7 +9,7 @@
       
       
       
-        <link rel="prev" href="../validations/conditionals/">
+        <link rel="prev" href="../validations/options/">
       
       
         <link rel="next" href="../logging/">
@@ -791,6 +791,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validations/options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -905,6 +933,100 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xstrictvalidationfailed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        X::StrictValidationFailed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-errors-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The errors collection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The errors collection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removing-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Removing errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reading-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#looking-for-specific-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Looking for specific errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#merging-errors-between-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merging errors between records
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-types-emitted-by-built-in-validators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error types emitted by built-in validators
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1040,6 +1162,100 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#xstrictvalidationfailed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        X::StrictValidationFailed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-errors-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The errors collection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The errors collection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removing-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Removing errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reading-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#looking-for-specific-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Looking for specific errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#merging-errors-between-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merging errors between records
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-types-emitted-by-built-in-validators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error types emitted by built-in validators
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1058,13 +1274,16 @@
 
 
 <h1 id="errors">Errors</h1>
-<p>ORM::ActiveRecord raises typed exceptions for the failure modes that callers
-typically want to handle (a missing row, a record that failed validation, a
-modification attempt on a <code>readonly</code> record, an irreversible migration). All
-of them live in one module:</p>
+<p>ORM::ActiveRecord exposes two complementary error surfaces:</p>
+<ul>
+<li><strong>Typed exceptions</strong> for failure modes that callers want to <code>try { … CATCH { … } }</code> around — things like a missing row, an invalid record, or an irreversible migration.</li>
+<li><strong>A per-record <code>errors</code> collection</strong> that captures validation failures without throwing, so the caller can inspect every problem on a record at once.</li>
+</ul>
+<p>The exceptions live in:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
 </code></pre></div></td></tr></table></div>
 
+<p>The collection is what <code>record.errors</code> returns. It is documented in <a href="#the-errors-collection">The errors collection</a> at the bottom of this page.</p>
 <p>Each exception is a regular Raku <code>Exception</code>, so the usual <code>try { … CATCH { when … } }</code>
 idiom applies. The table below summarises which methods raise which exception;
 the sections that follow document the attributes each one carries.</p>
@@ -1091,6 +1310,10 @@ the sections that follow document the attributes each one carries.</p>
 <tr>
 <td><code>X::IrreversibleMigration</code></td>
 <td><code>self.irreversible-migration</code> inside a migration <code>down</code></td>
+</tr>
+<tr>
+<td><code>X::StrictValidationFailed</code></td>
+<td>validator declared with <code>:strict</code> — see <a href="../validations/options/#strict">Validator Options &raquo; strict</a></td>
 </tr>
 </tbody>
 </table>
@@ -1224,6 +1447,226 @@ fired, and aborts the rollback.</p>
 <p><code>self.irreversible-migration</code> is a one-liner that constructs and throws the
 exception — it exists so the intent reads as a migration step rather than
 manual exception plumbing. See <a href="../migrations/#irreversible-migrations">Migrations &raquo; Irreversible migrations</a>.</p>
+<h2 id="xstrictvalidationfailed">X::StrictValidationFailed</h2>
+<p>Raised from <code>is-valid</code> / <code>is-invalid</code> when a validator declared with <code>:strict</code>
+fails — instead of pushing onto <code>errors</code>, the chain aborts and this exception
+carries the underlying message and the failing attribute name.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
+
+<span class="k">try</span> {
+  <span class="nv">$event</span>.<span class="n">is-valid</span>;
+
+  <span class="k">CATCH</span> {
+    <span class="k">when</span> <span class="o">X</span>::<span class="n">StrictValidationFailed</span> {
+      <span class="nb">say</span> .<span class="n">model</span>;          <span class="c1"># Event</span>
+      <span class="nb">say</span> .<span class="n">attribute</span>;      <span class="c1"># name</span>
+      <span class="nb">say</span> .<span class="n">message-text</span>;   <span class="c1"># must be present</span>
+    }
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<p>See <a href="../validations/options/#strict">Validator Options &raquo; strict</a> for the
+declaration syntax.</p>
+<h2 id="the-errors-collection">The errors collection</h2>
+<p>Every model instance carries an <code>errors</code> object — an instance of
+<code>ORM::ActiveRecord::Errors::Errors</code> — that validators populate during
+<code>is-valid</code> / <code>is-invalid</code>. The collection mirrors Rails' <code>ActiveModel::Errors</code>
+API so the same patterns (<code>add</code>, <code>delete</code>, <code>clear</code>, <code>where</code>, <code>details</code>,
+<code>full-messages</code>, <code>is-added</code>, <code>group-by-attribute</code>, <code>merge</code>, …) work without
+translation.</p>
+<p>Each entry is an <code>ORM::ActiveRecord::Errors::Error</code> carrying:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>attribute</code></td>
+<td>Attribute the error is attached to (<code>'base'</code> for record-level errors)</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>Short symbolic kind (e.g. <code>'blank'</code>, <code>'taken'</code>, <code>'greater-than'</code>)</td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td>Human-readable failure message (already interpolated)</td>
+</tr>
+<tr>
+<td><code>options</code></td>
+<td>Hash of options preserved from the <code>add</code> call (e.g. <code>count =&gt; 5</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="adding-errors">Adding errors</h3>
+<p><code>add</code> is the primary way to append an error from user code or from a custom
+validator. The second argument is the error <em>type</em>; pass <code>:message</code> to override
+the rendered text, and any extra named options interpolate into the template.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$record</span>.<span class="n">errors</span>.<span class="nb">add</span>(<span class="s">&#39;email&#39;</span>, <span class="s">&#39;blank&#39;</span>);                                 <span class="c1"># type=blank, message=&#39;must be present&#39;</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="nb">add</span>(<span class="s">&#39;email&#39;</span>, <span class="s">&#39;taken&#39;</span>, <span class="nb">message</span> =&gt; <span class="s">&#39;is already used&#39;</span>);   <span class="c1"># type=taken, overridden message</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="nb">add</span>(<span class="s">&#39;email&#39;</span>, <span class="s">&#39;must be valid&#39;</span>);                         <span class="c1"># type=invalid (any whitespace ⇒ literal message)</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="nb">add</span>(<span class="s">&#39;age&#39;</span>,   <span class="s">&#39;greater-than&#39;</span>, <span class="nb">count</span> =&gt; <span class="mi">0</span>);              <span class="c1"># interpolates {count}</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Pre-built <code>Error</code> instances (for example, when copying errors from one record
+to another) can be appended with <code>import</code>:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$record</span>.<span class="n">errors</span>.<span class="k">import</span>(<span class="n">Error</span>.<span class="nb">new</span>(:<span class="nv">$field</span>, :<span class="n">message</span><span class="s">&lt;imported&gt;</span>, :<span class="n">type</span><span class="s">&lt;custom&gt;</span>));
+</code></pre></div></td></tr></table></div>
+
+<h3 id="removing-errors">Removing errors</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">delete</span>(<span class="s">&#39;email&#39;</span>);               <span class="c1"># remove every error on :email</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">delete</span>(<span class="s">&#39;email&#39;</span>, <span class="s">&#39;taken&#39;</span>);      <span class="c1"># only the :taken kind on :email</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">clear</span>;                         <span class="c1"># wipe the collection</span>
+</code></pre></div></td></tr></table></div>
+
+<h3 id="reading-errors">Reading errors</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">size</span>;             <span class="c1"># Int — number of errors</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="nb">count</span>;            <span class="c1"># alias of size</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">is-any</span>;           <span class="c1"># Bool — any errors?</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">is-empty</span>;         <span class="c1"># Bool — no errors?</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">attribute-names</span>;  <span class="c1"># (&#39;email&#39;, &#39;age&#39;) — unique attributes with errors</span>
+
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">full-messages</span>;             <span class="c1"># (&#39;email must be present&#39;, &#39;age must be greater than 0&#39;)</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">full-messages-for</span>(<span class="s">&#39;email&#39;</span>);<span class="c1"># (&#39;email must be present&#39;)</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">messages</span>;                  <span class="c1"># { email =&gt; (&#39;must be present&#39;,) }</span>
+
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">details</span>;
+<span class="c1"># { email =&gt; ({error =&gt; &#39;blank&#39;}, ), age =&gt; ({error =&gt; &#39;greater-than&#39;, count =&gt; 0}, ) }</span>
+
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">group-by-attribute</span>;
+<span class="c1"># { email =&gt; [Error, Error], age =&gt; [Error] }</span>
+
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">objects</span>;          <span class="c1"># full sequence of Error objects</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Indexed access (<code>$record.errors[0]</code>) and FALLBACK access by attribute name
+(<code>$record.errors.email</code>) are both supported. The FALLBACK form returns a
+sequence of messages for that attribute, so it composes with <code>[0]</code> or
+stringification: <code>$record.errors.email[0] eq 'must be present'</code>.</p>
+<h3 id="looking-for-specific-errors">Looking for specific errors</h3>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">where</span>(:<span class="n">attribute</span><span class="s">&lt;email&gt;</span>);            <span class="c1"># all errors on email</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">where</span>(:<span class="n">type</span><span class="s">&lt;taken&gt;</span>);                 <span class="c1"># all &#39;taken&#39; errors</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">where</span>(:<span class="n">attribute</span><span class="s">&lt;email&gt;</span>, :<span class="n">type</span><span class="s">&lt;blank&gt;</span>);
+
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">is-of-kind</span>(<span class="s">&#39;email&#39;</span>, <span class="s">&#39;blank&#39;</span>);        <span class="c1"># Bool — any blank error on email?</span>
+<span class="nv">$record</span>.<span class="n">errors</span>.<span class="n">is-added</span>(<span class="s">&#39;age&#39;</span>, <span class="s">&#39;greater-than&#39;</span>, <span class="nb">count</span> =&gt; <span class="mi">0</span>);  <span class="c1"># Bool — exact match incl. options</span>
+</code></pre></div></td></tr></table></div>
+
+<h3 id="merging-errors-between-records">Merging errors between records</h3>
+<p><code>merge</code> appends another record's errors onto this one. Useful when bubbling
+errors up from an associated record.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$parent</span>.<span class="n">errors</span>.<span class="nb">merge</span>(<span class="nv">$child</span>.<span class="n">errors</span>);
+</code></pre></div></td></tr></table></div>
+
+<h3 id="error-types-emitted-by-built-in-validators">Error types emitted by built-in validators</h3>
+<table>
+<thead>
+<tr>
+<th>Validator</th>
+<th>Type(s) recorded</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>:presence</code></td>
+<td><code>blank</code></td>
+</tr>
+<tr>
+<td><code>length</code> (<code>max</code>)</td>
+<td><code>too-long</code> (carries <code>:count</code>)</td>
+</tr>
+<tr>
+<td><code>length</code> (<code>min</code>)</td>
+<td><code>too-short</code> (carries <code>:count</code>)</td>
+</tr>
+<tr>
+<td><code>length</code> (<code>is</code> / <code>in</code>)</td>
+<td><code>wrong-length</code> (carries <code>:count</code> when <code>is</code>)</td>
+</tr>
+<tr>
+<td><code>:acceptance</code></td>
+<td><code>accepted</code></td>
+</tr>
+<tr>
+<td><code>:confirmation</code></td>
+<td><code>confirmation</code></td>
+</tr>
+<tr>
+<td><code>inclusion</code></td>
+<td><code>inclusion</code></td>
+</tr>
+<tr>
+<td><code>exclusion</code></td>
+<td><code>exclusion</code></td>
+</tr>
+<tr>
+<td><code>format</code></td>
+<td><code>invalid</code></td>
+</tr>
+<tr>
+<td><code>numericality</code> / <code>comparison</code></td>
+<td><code>greater-than</code>, <code>greater-than-or-equal-to</code>, <code>less-than</code>, <code>less-than-or-equal-to</code>, <code>equal-to</code>, <code>other-than</code> (each carries <code>:count</code>)</td>
+</tr>
+<tr>
+<td><code>uniqueness</code></td>
+<td><code>taken</code></td>
+</tr>
+<tr>
+<td><code>validates-associated</code></td>
+<td><code>invalid</code></td>
+</tr>
+<tr>
+<td>automatic <code>belongs-to</code> presence</td>
+<td><code>blank</code></td>
+</tr>
+<tr>
+<td><code>dependent: :restrict_with_error</code></td>
+<td><code>restrict-dependent-destroy</code></td>
+</tr>
+</tbody>
+</table>
 
 
 

@@ -992,6 +992,61 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aggregated-declaration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aggregated declaration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-validator-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom validator classes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#block-validators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Block validators
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validates-associated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validates associated
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#presence" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1048,6 +1103,34 @@
     
   
     Conditionals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options
   
 
     
@@ -1360,6 +1443,61 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aggregated-declaration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aggregated declaration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-validator-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom validator classes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#block-validators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Block validators
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validates-associated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validates associated
+      
+    </span>
+  </a>
   
 </li>
       
@@ -1855,6 +1993,214 @@ more<span class="w"> </span>than<span class="w"> </span><span class="m">400</spa
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
 <span class="m">400</span><span class="w"> </span>to<span class="w"> </span><span class="m">1000</span><span class="w"> </span>required
+</code></pre></div></td></tr></table></div>
+
+<h2 id="comparison">Comparison</h2>
+<p>The <code>comparison</code> validation compares a field value against either a literal value or another attribute on the same record. Comparison works for any types Raku can <code>cmp</code> — numbers, strings, dates, datetimes.</p>
+<p>Options:</p>
+<ul>
+<li><code>gt</code>  — strictly greater than</li>
+<li><code>gte</code> — greater than or equal to</li>
+<li><code>lt</code>  — strictly less than</li>
+<li><code>lte</code> — less than or equal to</li>
+<li><code>eq</code>  — equal to</li>
+<li><code>ne</code>  — other than</li>
+</ul>
+<p>If the option value is a <code>Str</code> and names an attribute on the record, it resolves to that attribute's current value. Otherwise it is used as a literal.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Event</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;score&#39;</span>,     { <span class="n">comparison</span> =&gt; { <span class="o">gt</span> =&gt; <span class="mi">0</span> } }
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;max_score&#39;</span>, { <span class="n">comparison</span> =&gt; { <span class="n">gte</span> =&gt; <span class="s">&#39;score&#39;</span> } }
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;ends_at&#39;</span>,   { <span class="n">comparison</span> =&gt; { <span class="o">gt</span> =&gt; <span class="s">&#39;starts_at&#39;</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$e</span> = <span class="n">Event</span>.<span class="n">build</span>({<span class="n">score</span> =&gt; <span class="mi">0</span>, <span class="n">max_score</span> =&gt; <span class="mi">10</span>, <span class="n">starts_at</span> =&gt; <span class="nb">now</span>, <span class="n">ends_at</span> =&gt; <span class="nb">now</span>});
+<span class="nb">say</span> <span class="nv">$e</span>.<span class="n">is-invalid</span>;
+<span class="nb">say</span> <span class="nv">$e</span>.<span class="n">errors</span>.<span class="n">score</span>[<span class="mi">0</span>];
+<span class="nb">say</span> <span class="nv">$e</span>.<span class="n">errors</span>.<span class="n">ends_at</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>True
+must<span class="w"> </span>be<span class="w"> </span>greater<span class="w"> </span>than<span class="w"> </span><span class="m">0</span>
+must<span class="w"> </span>be<span class="w"> </span>greater<span class="w"> </span>than<span class="w"> </span>starts_at
+</code></pre></div></td></tr></table></div>
+
+<h2 id="aggregated-declaration">Aggregated declaration</h2>
+<p>The <code>validates</code> method accepts one or more field names and a hash of validators to apply to each. It is equivalent to calling <code>validate</code> once per field.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validates:</span> <span class="s">&lt;fname lname&gt;</span>, { :<span class="n">presence</span>, <span class="n">length</span> =&gt; { <span class="nb">min</span> =&gt; <span class="mi">2</span>, <span class="nb">max</span> =&gt; <span class="mi">32</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$u</span> = <span class="n">User</span>.<span class="n">build</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;&#39;</span>, <span class="n">lname</span> =&gt; <span class="s">&#39;&#39;</span>});
+<span class="nb">say</span> <span class="nv">$u</span>.<span class="n">is-invalid</span>;
+<span class="nb">say</span> <span class="nv">$u</span>.<span class="n">errors</span>.<span class="n">fname</span>[<span class="mi">0</span>];
+<span class="nb">say</span> <span class="nv">$u</span>.<span class="n">errors</span>.<span class="n">lname</span>[<span class="mi">0</span>];
+</code></pre></div></td></tr></table></div>
+
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>True
+must<span class="w"> </span>be<span class="w"> </span>present
+must<span class="w"> </span>be<span class="w"> </span>present
+</code></pre></div></td></tr></table></div>
+
+<h2 id="custom-validator-classes">Custom validator classes</h2>
+<p>Pass any class (or instance) with a <code>validate($record)</code> method to <code>validates-with</code>. Named arguments are forwarded to <code>.new()</code> when a type object is supplied.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+<span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::Error</span>;
+<span class="k">use</span> <span class="n">ORM::ActiveRecord::Schema::Field</span>;
+
+<span class="k">class</span> <span class="n">CapValidator</span> {
+  <span class="k">has</span> <span class="nb">Int</span> <span class="nv">$.max</span> = <span class="mi">100</span>;
+
+  <span class="k">method</span> <span class="n">validate</span>(<span class="nv">$record</span>) {
+    <span class="k">if</span> <span class="nv">$record</span>.<span class="n">attrs</span><span class="s">&lt;score&gt;</span> &gt; <span class="nv">$!max</span> {
+      <span class="k">my</span> <span class="nv">$field</span> = <span class="n">Field</span>.<span class="nb">new</span>(:<span class="n">name</span>(<span class="s">&#39;score&#39;</span>), :<span class="n">type</span>(<span class="s">&#39;integer&#39;</span>));
+      <span class="nv">$record</span>.<span class="n">errors</span>.<span class="nb">push</span>(<span class="n">Error</span>.<span class="nb">new</span>(:<span class="nv">$field</span>, :<span class="n">message</span>(<span class="s">&quot;exceeds $!max&quot;</span>)));
+    }
+  }
+}
+
+<span class="k">class</span> <span class="n">Game</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validates-with</span>(<span class="n">CapValidator</span>, :<span class="n">max</span>(<span class="mi">50</span>));
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<h2 id="block-validators">Block validators</h2>
+<p><code>validates-each</code> runs the same block once per named field, receiving the record, attribute name, and current value.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+<span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::Error</span>;
+<span class="k">use</span> <span class="n">ORM::ActiveRecord::Schema::Field</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validates-each:</span> <span class="s">&lt;fname lname&gt;</span>, -&gt; <span class="nv">$rec</span>, <span class="nv">$attr</span>, <span class="nv">$value</span> {
+      <span class="k">if</span> <span class="nv">$value</span> &amp;&amp; <span class="nv">$value</span> ~~<span class="sr"> /^ &lt;:Ll&gt; /</span> {
+        <span class="k">my</span> <span class="nv">$f</span> = <span class="n">Field</span>.<span class="nb">new</span>(:<span class="n">name</span>(<span class="nv">$attr</span>), :<span class="n">type</span>(<span class="s">&#39;string&#39;</span>));
+        <span class="nv">$rec</span>.<span class="n">errors</span>.<span class="nb">push</span>(<span class="n">Error</span>.<span class="nb">new</span>(:<span class="n">field</span>(<span class="nv">$f</span>), :<span class="n">message</span>(<span class="s">&#39;must start with capital letter&#39;</span>)));
+      }
+    }
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<p><code>validates-each</code> also accepts the <code>:if</code>, <code>:unless</code>, <code>on:</code>, and <code>strict</code>
+options (see <a href="../conditionals/">Conditionals</a>). The guard is evaluated once for
+the whole validator — when it skips, the block runs for none of the named
+fields. With <code>strict =&gt; True</code>, a block that records an error instead raises
+<code>X::StrictValidationFailed</code>.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="n">validates-each:</span> <span class="s">&lt;fname lname&gt;</span>, <span class="nv">&amp;capitalized</span>, { :<span class="n">if</span> =&gt; { <span class="nb">self</span>.<span class="n">is-active</span> } };
+<span class="nb">self</span>.<span class="n">validates-each:</span> <span class="s">&lt;fname lname&gt;</span>, <span class="nv">&amp;capitalized</span>, { <span class="n">on</span> =&gt; { :<span class="n">signup</span> } };
+<span class="nb">self</span>.<span class="n">validates-each:</span> <span class="s">&lt;fname lname&gt;</span>, <span class="nv">&amp;capitalized</span>, { :<span class="n">strict</span> };
+</code></pre></div></td></tr></table></div>
+
+<h2 id="validates-associated">Validates associated</h2>
+<p>When a model owns other records (<code>has_many</code>, <code>has_one</code>, <code>has_and_belongs_to_many</code>, or <code>belongs_to</code>), <code>validates-associated</code> rolls up each child's <code>is-valid</code> into the parent. A failed child contributes a single <code>is invalid</code> error on the named association.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Book</span> {...}
+
+<span class="k">class</span> <span class="n">Library</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">books</span> =&gt; %(<span class="n">class-name</span> =&gt; <span class="s">&#39;Book&#39;</span>);
+    <span class="nb">self</span>.<span class="n">validates-associated:</span> <span class="s">&#39;books&#39;</span>;
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<p>A custom error message is available through the aggregated <code>validates</code> form:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="n">validates:</span> <span class="s">&lt;books&gt;</span>, { :<span class="n">associated</span>, <span class="nb">message</span> =&gt; <span class="s">&#39;has bad children&#39;</span> }
+</code></pre></div></td></tr></table></div>
+
+<p><code>validates-associated</code> accepts the <code>:if</code>, <code>:unless</code>, <code>on:</code>, and <code>strict</code>
+options (see <a href="../conditionals/">Conditionals</a>). With <code>strict =&gt; True</code>, an
+invalid child raises <code>X::StrictValidationFailed</code> instead of recording the
+<code>is invalid</code> error on the association.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="n">validates-associated:</span> <span class="s">&#39;books&#39;</span>, { :<span class="n">if</span> =&gt; { <span class="nb">self</span>.<span class="nb">name</span> <span class="o">eq</span> <span class="s">&#39;Audit&#39;</span> } };
+<span class="nb">self</span>.<span class="n">validates-associated:</span> <span class="s">&#39;books&#39;</span>, { <span class="n">on</span> =&gt; { :<span class="n">audit</span> } };
+<span class="nb">self</span>.<span class="n">validates-associated:</span> <span class="s">&#39;books&#39;</span>, { :<span class="n">strict</span> };
 </code></pre></div></td></tr></table></div>
 
 <h2 id="presence">Presence</h2>

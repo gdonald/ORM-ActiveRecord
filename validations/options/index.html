@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../persistence/">
+        <link rel="prev" href="../conditionals/">
       
       
-        <link rel="next" href="../callbacks/">
+        <link rel="next" href="../../errors/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Serialization - ORM::ActiveRecord</title>
+        <title>Options - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#identity-and-serialization" class="md-skip">
+        <a href="#validator-options" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Serialization
+              Options
             
           </span>
         </div>
@@ -274,20 +274,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
@@ -308,7 +306,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -326,7 +324,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../../models/models/" class="md-nav__link">
         
   
   
@@ -354,7 +352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../finders/" class="md-nav__link">
+      <a href="../../models/finders/" class="md-nav__link">
         
   
   
@@ -382,7 +380,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../relations/" class="md-nav__link">
+      <a href="../../models/relations/" class="md-nav__link">
         
   
   
@@ -410,7 +408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+      <a href="../../models/queries/" class="md-nav__link">
         
   
   
@@ -438,7 +436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../joins/" class="md-nav__link">
+      <a href="../../models/joins/" class="md-nav__link">
         
   
   
@@ -466,7 +464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aggregation/" class="md-nav__link">
+      <a href="../../models/aggregation/" class="md-nav__link">
         
   
   
@@ -494,7 +492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../batching/" class="md-nav__link">
+      <a href="../../models/batching/" class="md-nav__link">
         
   
   
@@ -522,7 +520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../raw/" class="md-nav__link">
+      <a href="../../models/raw/" class="md-nav__link">
         
   
   
@@ -550,7 +548,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inspection/" class="md-nav__link">
+      <a href="../../models/inspection/" class="md-nav__link">
         
   
   
@@ -578,7 +576,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../../models/persistence/" class="md-nav__link">
         
   
   
@@ -586,6 +584,202 @@
     
   
     Persistence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/serialization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serialization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/callbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/transactions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transactions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Validations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conditionals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conditionals
   
 
     
@@ -622,7 +816,7 @@
   <span class="md-ellipsis">
     
   
-    Serialization
+    Options
   
 
     
@@ -640,7 +834,7 @@
   <span class="md-ellipsis">
     
   
-    Serialization
+    Options
   
 
     
@@ -666,10 +860,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#to-param" class="md-nav__link">
+  <a href="#allow-nil-allow_nil" class="md-nav__link">
     <span class="md-ellipsis">
       
-        to-param
+        allow-nil / allow_nil
       
     </span>
   </a>
@@ -677,10 +871,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#to-key" class="md-nav__link">
+  <a href="#allow-blank-allow_blank" class="md-nav__link">
     <span class="md-ellipsis">
       
-        to-key
+        allow-blank / allow_blank
       
     </span>
   </a>
@@ -688,10 +882,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cache-key-cache-version-cache-key-with-version" class="md-nav__link">
+  <a href="#strict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        cache-key, cache-version, cache-key-with-version
+        strict
       
     </span>
   </a>
@@ -699,10 +893,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#serializable-hash" class="md-nav__link">
+  <a href="#as" class="md-nav__link">
     <span class="md-ellipsis">
       
-        serializable-hash
+        as
       
     </span>
   </a>
@@ -710,10 +904,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#as-json" class="md-nav__link">
+  <a href="#case-sensitive-uniqueness-only" class="md-nav__link">
     <span class="md-ellipsis">
       
-        as-json
+        case-sensitive (uniqueness only)
       
     </span>
   </a>
@@ -721,43 +915,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#to-json" class="md-nav__link">
+  <a href="#conditions-uniqueness-only" class="md-nav__link">
     <span class="md-ellipsis">
       
-        to-json
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#attribute-for-inspect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        attribute-for-inspect
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inspect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        inspect
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#filter-attribute" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        filter-attribute
+        conditions (uniqueness only)
       
     </span>
   </a>
@@ -768,200 +929,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../callbacks/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Callbacks
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../transactions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Transactions
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Validations
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Validations
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../validations/data/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Data
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../validations/conditionals/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Conditionals
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../validations/options/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Options
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -1082,10 +1049,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#to-param" class="md-nav__link">
+  <a href="#allow-nil-allow_nil" class="md-nav__link">
     <span class="md-ellipsis">
       
-        to-param
+        allow-nil / allow_nil
       
     </span>
   </a>
@@ -1093,10 +1060,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#to-key" class="md-nav__link">
+  <a href="#allow-blank-allow_blank" class="md-nav__link">
     <span class="md-ellipsis">
       
-        to-key
+        allow-blank / allow_blank
       
     </span>
   </a>
@@ -1104,10 +1071,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cache-key-cache-version-cache-key-with-version" class="md-nav__link">
+  <a href="#strict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        cache-key, cache-version, cache-key-with-version
+        strict
       
     </span>
   </a>
@@ -1115,10 +1082,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#serializable-hash" class="md-nav__link">
+  <a href="#as" class="md-nav__link">
     <span class="md-ellipsis">
       
-        serializable-hash
+        as
       
     </span>
   </a>
@@ -1126,10 +1093,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#as-json" class="md-nav__link">
+  <a href="#case-sensitive-uniqueness-only" class="md-nav__link">
     <span class="md-ellipsis">
       
-        as-json
+        case-sensitive (uniqueness only)
       
     </span>
   </a>
@@ -1137,43 +1104,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#to-json" class="md-nav__link">
+  <a href="#conditions-uniqueness-only" class="md-nav__link">
     <span class="md-ellipsis">
       
-        to-json
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#attribute-for-inspect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        attribute-for-inspect
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inspect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        inspect
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#filter-attribute" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        filter-attribute
+        conditions (uniqueness only)
       
     </span>
   </a>
@@ -1197,84 +1131,10 @@
 
 
 
-<h1 id="identity-and-serialization">Identity and serialization</h1>
-<p>A small family of methods that answer "how do I identify this record?" and
-"how do I turn it into a hash/string?" — used for URL helpers, cache keys,
-JSON APIs, and human-readable inspection.</p>
-<h2 id="to-param">to-param</h2>
-<p><code>to-param</code> returns the record's primary key as a <code>Str</code>, suitable for
-embedding in URLs. New (unsaved) records return an undefined <code>Str</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
-<span class="nv">$user</span>.<span class="n">to-param</span>;          <span class="c1"># &#39;42&#39;</span>
-
-<span class="n">User</span>.<span class="nb">new</span>(:<span class="n">id</span>(<span class="mi">0</span>)).<span class="n">to-param</span>;
-<span class="c1"># undefined Str — record is not persisted yet</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="to-key">to-key</h2>
-<p><code>to-key</code> returns a list of values that identify the record — currently
-<code>[id]</code> for persisted records, <code>Nil</code> for new ones. The list shape mirrors
-Rails so future composite-key support can extend it without breaking
-callers.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">to-key</span>;            <span class="c1"># [42]</span>
-<span class="n">User</span>.<span class="nb">new</span>(:<span class="n">id</span>(<span class="mi">0</span>)).<span class="n">to-key</span>; <span class="c1"># Nil</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="cache-key-cache-version-cache-key-with-version">cache-key, cache-version, cache-key-with-version</h2>
-<p>These produce stable cache fingerprints <strong>for a single record</strong> (compare
-with the relation-level versions in <a href="../inspection/">Inspection helpers</a>).</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>cache-key                 →  &quot;users/42&quot;
-cache-version             →  &quot;2026-05-13T14:23:11Z&quot;   (record&#39;s updated_at)
-cache-key-with-version    →  &quot;users/42-2026-05-13T14:23:11Z&quot;
-</code></pre></div></td></tr></table></div>
-
-<p>For a new (unsaved) record, <code>cache-key</code> returns <code>"&lt;table&gt;/new"</code>. If the
-model has no <code>updated_at</code> column, <code>cache-version</code> is undefined and
-<code>cache-key-with-version</code> falls back to the bare <code>cache-key</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$key</span> = <span class="nv">$user</span>.<span class="n">cache-key-with-version</span>;
-
-<span class="c1"># Use it in your own cache store; the key rolls forward on every save:</span>
-<span class="nv">$cache</span>.<span class="nb">write</span>(<span class="nv">$key</span>, <span class="nv">$user</span>.<span class="n">serializable-hash</span>);
-</code></pre></div></td></tr></table></div>
-
-<p>Note that <code>Model.cache-key</code> (called on the class, not an instance) routes
-to <code>Model.all.cache-key</code> — the relation fingerprint. Instance-level keys
-require a defined record.</p>
-<h2 id="serializable-hash">serializable-hash</h2>
-<p>Returns a <code>Hash</code> of the record's attributes, ready for JSON / YAML / any
-other encoder. Options:</p>
-<table>
-<thead>
-<tr>
-<th>Option</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>:only</code></td>
-<td>Include only these attribute names</td>
-</tr>
-<tr>
-<td><code>:except</code></td>
-<td>Exclude these attribute names</td>
-</tr>
-<tr>
-<td><code>:methods</code></td>
-<td>Also call these methods and include the results</td>
-</tr>
-</tbody>
-</table>
+<h1 id="validator-options">Validator Options</h1>
+<p>Beyond the per-validator settings (<code>min:</code>, <code>max:</code>, <code>with:</code>, etc.) every validator accepts a small set of shared options that change <em>when</em> the validator runs or <em>how</em> it reports failure.</p>
+<h2 id="allow-nil-allow_nil"><code>allow-nil</code> / <code>allow_nil</code></h2>
+<p>Skips every validator on the declaration when the attribute's value is undefined (<code>Nil</code>). The validator is silently bypassed; nothing is appended to <code>errors</code>.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -1286,83 +1146,176 @@ other encoder. Options:</p>
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">serializable-hash</span>;
-<span class="c1"># { id =&gt; 42, fname =&gt; &#39;Greg&#39;, lname =&gt; &#39;Donald&#39;,</span>
-<span class="c1">#   created_at =&gt; DateTime.new(...), updated_at =&gt; DateTime.new(...) }</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
 
-<span class="nv">$user</span>.<span class="n">serializable-hash</span>(:<span class="n">only</span><span class="s">&lt;fname lname&gt;</span>);
-<span class="c1"># { fname =&gt; &#39;Greg&#39;, lname =&gt; &#39;Donald&#39; }</span>
-
-<span class="nv">$user</span>.<span class="n">serializable-hash</span>(:<span class="n">except</span><span class="s">&lt;created_at updated_at&gt;</span>);
-<span class="c1"># { id =&gt; 42, fname =&gt; &#39;Greg&#39;, lname =&gt; &#39;Donald&#39; }</span>
-
-<span class="nv">$user</span>.<span class="n">serializable-hash</span>(:<span class="n">only</span><span class="s">&lt;fname&gt;</span>, :<span class="n">methods</span><span class="s">&lt;fullname&gt;</span>);
-<span class="c1"># { fname =&gt; &#39;Greg&#39;, fullname =&gt; &#39;Greg Donald&#39; }</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>serializable-hash</code> does <strong>not</strong> apply <code>filter-attribute</code> redaction — it is
-the data-export hook and treats every attribute as visible. Use <code>:except</code>
-to drop sensitive fields when you build a payload.</p>
-<h2 id="as-json">as-json</h2>
-<p><code>as-json</code> is <code>serializable-hash</code> with one extra step: it walks the hash
-and stringifies <code>DateTime</code> / <code>Date</code> values so they survive JSON encoding.
-It accepts the same options as <code>serializable-hash</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">%payload</span> = <span class="nv">$user</span>.<span class="n">as-json</span>(:<span class="n">except</span><span class="s">&lt;password&gt;</span>);
-<span class="c1"># { id =&gt; 42, fname =&gt; &#39;Greg&#39;, updated_at =&gt; &#39;2026-05-13T14:23:11Z&#39;, ... }</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="to-json">to-json</h2>
-<p><code>to-json</code> is <code>as-json</code> piped through <code>JSON::Tiny::to-json</code>. Returns a JSON
-string.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">say</span> <span class="nv">$user</span>.<span class="n">to-json</span>(:<span class="n">only</span><span class="s">&lt;id fname lname&gt;</span>);
-<span class="c1"># &#39;{ &quot;id&quot; : 42, &quot;fname&quot; : &quot;Greg&quot;, &quot;lname&quot; : &quot;Donald&quot; }&#39;</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="attribute-for-inspect">attribute-for-inspect</h2>
-<p>Renders a single attribute the way <code>inspect</code> does — strings are quoted and
-truncated to 50 characters, dates are quoted as ISO strings, booleans as
-<code>True</code>/<code>False</code>, numbers bare. Filtered attributes show as <code>[FILTERED]</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">attribute-for-inspect</span>(<span class="s">&#39;fname&#39;</span>);     <span class="c1"># &#39;&quot;Greg&quot;&#39;</span>
-<span class="nv">$user</span>.<span class="n">attribute-for-inspect</span>(<span class="s">&#39;updated_at&#39;</span>); <span class="c1"># &#39;&quot;2026-05-13T14:23:11Z&quot;&#39;</span>
-<span class="nv">$user</span>.<span class="n">attribute-for-inspect</span>(<span class="s">&#39;password&#39;</span>);   <span class="c1"># &#39;[FILTERED]&#39;  (see below)</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="inspect">inspect</h2>
-<p><code>inspect</code> returns a single-line Rails-style summary of the record:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">inspect</span>;
-<span class="c1"># &#39;#&lt;User id: 42, fname: &quot;Greg&quot;, lname: &quot;Donald&quot;, active: True&gt;&#39;</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>gist</code> (the Raku stringification hook used by <code>say</code>) routes to <code>inspect</code>
-for defined instances, so <code>say $user;</code> prints the same shape.</p>
-<h2 id="filter-attribute">filter-attribute</h2>
-<p>Names of attributes that should be redacted in <code>inspect</code> /
-<code>attribute-for-inspect</code> output. Declare them in <code>BUILD</code>:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+<span class="k">class</span> <span class="n">Event</span> <span class="k">is</span> <span class="n">Model</span> {
   <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">filter-attribute</span>(<span class="s">&#39;password&#39;</span>, <span class="s">&#39;ssn&#39;</span>);
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;score&#39;</span>,
+      { :<span class="n">presence</span>, <span class="n">numericality</span> =&gt; { <span class="o">gt</span> =&gt; <span class="mi">0</span> }, <span class="n">allow-nil</span> =&gt; <span class="nb">True</span> }
   }
 }
 
-<span class="nv">$user</span>.<span class="n">inspect</span>;
-<span class="c1"># &#39;#&lt;User id: 42, fname: &quot;Greg&quot;, password: [FILTERED], ssn: [FILTERED], ...&gt;&#39;</span>
+<span class="k">my</span> <span class="nv">$e</span> = <span class="n">Event</span>.<span class="n">build</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;A&#39;</span>});
+<span class="nv">$e</span>.<span class="n">write-attribute</span>(<span class="s">&#39;score&#39;</span>, <span class="nb">Nil</span>);
+<span class="nb">say</span> <span class="nv">$e</span>.<span class="n">is-valid</span>;
 </code></pre></div></td></tr></table></div>
 
-<p>Filtering only affects inspection output. <code>serializable-hash</code>, <code>as-json</code>,
-and <code>to-json</code> continue to include the raw values — drop them explicitly
-with <code>:except</code> when you build a payload you do not want to leak.</p>
+<p>Output</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>True
+</code></pre></div></td></tr></table></div>
+
+<p>Both <code>allow-nil</code> and the Rails-spelled <code>allow_nil</code> are accepted.</p>
+<h2 id="allow-blank-allow_blank"><code>allow-blank</code> / <code>allow_blank</code></h2>
+<p>Skips every validator on the declaration when the attribute is undefined, the empty string, whitespace-only, an empty collection, or <code>False</code>. Use this when an attribute is optional but, when present, must meet the validators' constraints.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Event</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;name&#39;</span>,
+      { :<span class="n">presence</span>, <span class="n">length</span> =&gt; { <span class="nb">min</span> =&gt; <span class="mi">3</span> }, <span class="n">allow-blank</span> =&gt; <span class="nb">True</span> }
+  }
+}
+
+<span class="nb">say</span> <span class="n">Event</span>.<span class="n">build</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;&#39;</span>}).<span class="n">is-valid</span>;      <span class="c1"># True — blank is allowed</span>
+<span class="nb">say</span> <span class="n">Event</span>.<span class="n">build</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;   &#39;</span>}).<span class="n">is-valid</span>;   <span class="c1"># True — whitespace counts as blank</span>
+<span class="nb">say</span> <span class="n">Event</span>.<span class="n">build</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;AB&#39;</span>}).<span class="n">is-valid</span>;    <span class="c1"># False — non-blank, fails length</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="strict"><code>strict</code></h2>
+<p>Raises <a href="../../errors/"><code>X::StrictValidationFailed</code></a> instead of pushing onto <code>errors</code>. The exception carries <code>model</code>, <code>attribute</code>, and <code>message-text</code> so callers can inspect what failed.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+<span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
+
+<span class="k">class</span> <span class="n">Event</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;name&#39;</span>, { :<span class="n">presence</span>, :<span class="n">strict</span> }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$e</span> = <span class="n">Event</span>.<span class="n">build</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;&#39;</span>});
+<span class="k">try</span> {
+  <span class="nv">$e</span>.<span class="n">is-valid</span>;
+  <span class="k">CATCH</span> {
+    <span class="k">when</span> <span class="o">X</span>::<span class="n">StrictValidationFailed</span> {
+      <span class="nb">say</span> .<span class="n">attribute</span>;     <span class="c1"># name</span>
+      <span class="nb">say</span> .<span class="n">message-text</span>;  <span class="c1"># must be present</span>
+    }
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<h2 id="as"><code>as</code></h2>
+<p>Overrides the value substituted for <code>{attribute}</code> in error message templates. Useful when the column name is internal but the user-facing label needs to be friendlier.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Event</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;max_score&#39;</span>,
+      { :<span class="n">presence</span>, <span class="n">as</span> =&gt; <span class="s">&#39;Maximum Score&#39;</span>, <span class="nb">message</span> =&gt; <span class="s">&#39;{attribute} must be present&#39;</span> }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$e</span> = <span class="n">Event</span>.<span class="n">build</span>({});
+<span class="nv">$e</span>.<span class="n">is-valid</span>;
+<span class="nb">say</span> <span class="nv">$e</span>.<span class="n">errors</span>.<span class="n">max_score</span>[<span class="mi">0</span>];   <span class="c1"># Maximum Score must be present</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>as</code> does not change which key the error is stored under in <code>errors</code> — <code>errors.max_score</code> still works.</p>
+<h2 id="case-sensitive-uniqueness-only"><code>case-sensitive</code> (uniqueness only)</h2>
+<p>Controls whether the uniqueness lookup matches case-sensitively. Defaults to <code>True</code>. On MySQL the case-sensitive branch uses <code>BINARY</code> to bypass the default <code>_ci</code> collation, so the same declaration behaves identically across PostgreSQL, MySQL, and SQLite.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;username&#39;</span>, { <span class="n">uniqueness</span> =&gt; { <span class="n">case-sensitive</span> =&gt; <span class="nb">False</span> } }
+  }
+}
+
+<span class="n">User</span>.<span class="n">create</span>({<span class="n">username</span> =&gt; <span class="s">&#39;Alfred&#39;</span>});
+<span class="nb">say</span> <span class="n">User</span>.<span class="n">build</span>({<span class="n">username</span> =&gt; <span class="s">&#39;alfred&#39;</span>}).<span class="n">is-valid</span>;   <span class="c1"># False</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="conditions-uniqueness-only"><code>conditions</code> (uniqueness only)</h2>
+<p>Narrows the uniqueness lookup to records matching an extra <code>WHERE</code> clause. Combines with <code>scope</code> when both are given.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;username&#39;</span>,
+      { <span class="n">uniqueness</span> =&gt; { <span class="n">conditions</span> =&gt; { <span class="n">is_active</span> =&gt; <span class="nb">True</span> } } }
+  }
+}
+
+<span class="n">User</span>.<span class="n">create</span>({<span class="n">username</span> =&gt; <span class="s">&#39;gone&#39;</span>,   <span class="n">is_active</span> =&gt; <span class="nb">False</span>});
+<span class="nb">say</span> <span class="n">User</span>.<span class="n">build</span>({<span class="n">username</span> =&gt; <span class="s">&#39;gone&#39;</span>, <span class="n">is_active</span> =&gt; <span class="nb">True</span>}).<span class="n">is-valid</span>;
+<span class="c1"># True — the existing &#39;gone&#39; row is inactive and ignored by the conditions clause.</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Combine <code>scope</code> and <code>conditions</code> to enforce "unique-per-tenant, only among active rows":</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;username&#39;</span>,
+  { <span class="n">uniqueness</span> =&gt; { <span class="nb">scope</span> =&gt; :<span class="n">tenant_id</span>, <span class="n">conditions</span> =&gt; { <span class="n">is_active</span> =&gt; <span class="nb">True</span> } } }
+</code></pre></div></td></tr></table></div>
 
 
 

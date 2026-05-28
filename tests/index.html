@@ -789,6 +789,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validations/options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1132,12 +1160,13 @@ or <code>DATABASE_URL</code> points at — invoke <code>prove6</code> directly:<
 </code></pre></div></td></tr></table></div>
 
 <h2 id="running-a-single-test-file">Running a single test file</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>raku<span class="w"> </span>-Ilib<span class="w"> </span>t/0040-basic.rakutest
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>raku<span class="w"> </span>-Ilib<span class="w"> </span>t/model/basic.rakutest
 </code></pre></div></td></tr></table></div>
 
-<p>Test files live under <code>t/</code> and use the <code>.rakutest</code> extension. They follow the
-naming pattern <code>NNNN-name.rakutest</code> where <code>NNNN</code> is a sort key, not a stable
-identifier — feel free to renumber when reorganising.</p>
+<p>Test files live under <code>t/</code> and use the <code>.rakutest</code> extension, grouped into
+feature-area subfolders: <code>meta/</code>, <code>migration/</code>, <code>validation/</code>, <code>callbacks/</code>,
+<code>associations/</code>, <code>query/</code>, <code>model/</code>, <code>adapter/</code>, <code>transactions/</code>, <code>infra/</code>.
+<code>prove6</code> recurses into subdirectories automatically.</p>
 <h2 id="adapter-aware-test-skipping">Adapter-aware test skipping</h2>
 <p>Some tests only make sense against one adapter — a test that exercises a
 PostgreSQL <code>RETURNING</code> quirk has nothing to assert against MySQL, and a test

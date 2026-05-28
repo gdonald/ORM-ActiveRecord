@@ -12,7 +12,7 @@
         <link rel="prev" href="../data/">
       
       
-        <link rel="next" href="../../errors/">
+        <link rel="next" href="../options/">
       
       
         
@@ -887,6 +887,39 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#custom-contexts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom contexts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sticky-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sticky context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#re-running-validations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-running validations
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -896,6 +929,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1071,6 +1132,39 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#custom-contexts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom contexts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sticky-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sticky context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#re-running-validations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-running validations
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1230,6 +1324,66 @@ must<span class="w"> </span>be<span class="w"> </span>present
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>True
 False
 must<span class="w"> </span>be<span class="w"> </span>present
+</code></pre></div></td></tr></table></div>
+
+<h3 id="custom-contexts">Custom contexts</h3>
+<p><code>on:</code> accepts any context name, not just <code>:create</code> or <code>:update</code>. A validator
+tagged with a custom context only runs when the caller asks for it.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+
+<span class="k">class</span> <span class="n">Signup</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;email&#39;</span>,    { :<span class="n">presence</span> }
+    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;password&#39;</span>, { :<span class="n">presence</span>, <span class="n">on</span> =&gt; { :<span class="n">step_two</span> } }
+  }
+}
+
+<span class="k">my</span> <span class="nv">$s</span> = <span class="n">Signup</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;a@b.com&#39;</span>});
+<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-valid</span>;                            <span class="c1"># True — step_two skipped by default</span>
+<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-invalid</span>(:<span class="n">context</span><span class="s">&lt;step_two&gt;</span>);     <span class="c1"># True — step_two now fires</span>
+<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">errors</span>.<span class="n">password</span>[<span class="mi">0</span>];                  <span class="c1"># must be present</span>
+</code></pre></div></td></tr></table></div>
+
+<p>A validator tagged with <code>on:</code> that does not match the active context is silently
+skipped; validators with no <code>on:</code> always run.</p>
+<h3 id="sticky-context">Sticky context</h3>
+<p>Set <code>validation-context=</code> on the record to make subsequent <code>is-valid</code>/<code>is-invalid</code>
+calls (and <code>save</code>) use a particular context. Explicit <code>:context</code> arguments still
+win over the sticky setter.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$s</span> = <span class="n">Signup</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;a@b.com&#39;</span>});
+<span class="nv">$s</span>.<span class="n">validation-context</span> = <span class="s">&#39;step_two&#39;</span>;
+<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-invalid</span>;          <span class="c1"># True — uses sticky context</span>
+<span class="nv">$s</span>.<span class="n">validation-context</span> = <span class="nb">Str</span>; <span class="c1"># clear</span>
+<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-valid</span>;            <span class="c1"># True — back to default</span>
+</code></pre></div></td></tr></table></div>
+
+<h3 id="re-running-validations">Re-running validations</h3>
+<p>Every call to <code>is-valid</code> / <code>is-invalid</code> clears <code>errors</code> and re-runs every
+applicable validator. There is no result cache — repeated calls reflect the
+current attribute state, not a stale snapshot:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$s</span> = <span class="n">Signup</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;&#39;</span>});
+<span class="nv">$s</span>.<span class="n">is-invalid</span>;            <span class="c1"># error pushed onto $s.errors</span>
+<span class="nv">$s</span>.<span class="n">email</span> = <span class="s">&#39;a@b.com&#39;</span>;
+<span class="nv">$s</span>.<span class="n">is-valid</span>;              <span class="c1"># errors cleared, no new errors pushed</span>
 </code></pre></div></td></tr></table></div>
 
 
