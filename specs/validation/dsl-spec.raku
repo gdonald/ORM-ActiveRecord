@@ -1,17 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Validation::Dsl;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class PhMulti is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validates: <name>, { :presence, length => { min => 2, max => 8 } }
-    self.validates: <score max_score>, { :presence };
-  }
-}
 
 describe 'validates DSL with multiple attributes', {
   before-each { PhMulti.destroy-all }

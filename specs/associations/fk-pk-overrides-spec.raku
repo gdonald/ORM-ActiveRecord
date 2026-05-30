@@ -2,57 +2,13 @@ use lib 'lib';
 use lib 'specs/lib';
 use BDD::Behave;
 use SpecHelpers;
-use ORM::ActiveRecord::Model;
+use Models::User;
+use Models::Article;
+use Models::Passport;
+use Models::Region;
+use Models::Town;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class FpkArticle  {...}
-class FpkPassport {...}
-class FpkTown     {...}
-
-class FpkUser is Model {
-  method table-name { 'users' }
-  method fkey-name  { 'user_id' }
-
-  submethod BUILD {
-    self.has-many: fpkarticles => %(class => FpkArticle,  foreign-key => 'author_id');
-    self.has-one:  fpkpassport => %(class => FpkPassport, foreign-key => 'owner_id');
-  }
-}
-
-class FpkArticle is Model {
-  method table-name { 'articles' }
-  method fkey-name  { 'article_id' }
-
-  submethod BUILD {
-    self.belongs-to: author => %(class => FpkUser, foreign-key => 'author_id');
-  }
-}
-
-class FpkPassport is Model {
-  method table-name { 'passports' }
-
-  submethod BUILD {
-    self.belongs-to: owner => %(class => FpkUser, foreign-key => 'owner_id');
-  }
-}
-
-class FpkRegion is Model {
-  method table-name { 'regions' }
-  method fkey-name  { 'region_id' }
-
-  submethod BUILD {
-    self.has-many: fpktowns => %(class => FpkTown, primary-key => 'code', foreign-key => 'region_code');
-  }
-}
-
-class FpkTown is Model {
-  method table-name { 'towns' }
-
-  submethod BUILD {
-    self.belongs-to: region => %(class => FpkRegion, primary-key => 'code', foreign-key => 'region_code');
-  }
-}
 
 describe 'foreign-key and primary-key overrides', {
   before-each { clean-shared-tables }
@@ -60,142 +16,142 @@ describe 'foreign-key and primary-key overrides', {
 
   context 'belongs-to with foreign-key override', {
     it 'saves the user', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
       expect($user.is-valid).to.be-truthy;
     }
 
     it 'saves the article with author', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      my $article = FpkArticle.create({title => 'Raku ORM', body => 'A library.', author => $user});
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      my $article = Article.create({title => 'Raku ORM', body => 'A library.', author => $user});
       expect($article.is-valid).to.be-truthy;
     }
 
     it 'fills the override column', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      my $article = FpkArticle.create({title => 'Raku ORM', body => 'A library.', author => $user});
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      my $article = Article.create({title => 'Raku ORM', body => 'A library.', author => $user});
       expect($article.attrs<author_id>).to.eq($user.id);
     }
 
     it 'resolves the parent', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      my $article = FpkArticle.create({title => 'Raku ORM', body => 'A library.', author => $user});
-      expect(FpkArticle.find($article.id).author.defined).to.be-truthy;
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      my $article = Article.create({title => 'Raku ORM', body => 'A library.', author => $user});
+      expect(Article.find($article.id).author.defined).to.be-truthy;
     }
 
     it 'returns the right parent', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      my $article = FpkArticle.create({title => 'Raku ORM', body => 'A library.', author => $user});
-      expect(FpkArticle.find($article.id).author.id).to.eq($user.id);
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      my $article = Article.create({title => 'Raku ORM', body => 'A library.', author => $user});
+      expect(Article.find($article.id).author.id).to.eq($user.id);
     }
   }
 
   context 'has-many with foreign-key override', {
     it 'returns the matching row', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      FpkArticle.create({title => 'Raku ORM', body => 'A library.', author => $user});
-      expect(FpkUser.find($user.id).fpkarticles.elems).to.eq(1);
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      Article.create({title => 'Raku ORM', body => 'A library.', author => $user});
+      expect(User.find($user.id).articles.elems).to.eq(1);
     }
 
     it 'returns the right row', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      my $article = FpkArticle.create({title => 'Raku ORM', body => 'A library.', author => $user});
-      expect(FpkUser.find($user.id).fpkarticles.first.id).to.eq($article.id);
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      my $article = Article.create({title => 'Raku ORM', body => 'A library.', author => $user});
+      expect(User.find($user.id).articles.first.id).to.eq($article.id);
     }
   }
 
   context 'has-one with foreign-key override', {
     it 'saves the passport', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      my $passport = FpkPassport.create({owner => $user, number => 'AB12345'});
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      my $passport = Passport.create({owner => $user, number => 'AB12345'});
       expect($passport.is-valid).to.be-truthy;
     }
 
     it 'fills the override column', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      my $passport = FpkPassport.create({owner => $user, number => 'AB12345'});
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      my $passport = Passport.create({owner => $user, number => 'AB12345'});
       expect($passport.attrs<owner_id>).to.eq($user.id);
     }
 
     it 'returns a defined row from has-one', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      FpkPassport.create({owner => $user, number => 'AB12345'});
-      expect(FpkUser.find($user.id).fpkpassport.defined).to.be-truthy;
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      Passport.create({owner => $user, number => 'AB12345'});
+      expect(User.find($user.id).passport.defined).to.be-truthy;
     }
 
     it 'returns the right row from has-one', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      my $passport = FpkPassport.create({owner => $user, number => 'AB12345'});
-      expect(FpkUser.find($user.id).fpkpassport.id).to.eq($passport.id);
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      my $passport = Passport.create({owner => $user, number => 'AB12345'});
+      expect(User.find($user.id).passport.id).to.eq($passport.id);
     }
 
     it 'belongs-to back resolves user', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      my $passport = FpkPassport.create({owner => $user, number => 'AB12345'});
-      expect(FpkPassport.find($passport.id).owner.defined).to.be-truthy;
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      my $passport = Passport.create({owner => $user, number => 'AB12345'});
+      expect(Passport.find($passport.id).owner.defined).to.be-truthy;
     }
 
     it 'belongs-to back returns right user', {
-      my $user = FpkUser.create({fname => 'Greg', lname => 'Donald'});
-      my $passport = FpkPassport.create({owner => $user, number => 'AB12345'});
-      expect(FpkPassport.find($passport.id).owner.id).to.eq($user.id);
+      my $user = User.create({fname => 'Greg', lname => 'Donald'});
+      my $passport = Passport.create({owner => $user, number => 'AB12345'});
+      expect(Passport.find($passport.id).owner.id).to.eq($user.id);
     }
   }
 
   context 'primary-key override', {
     it 'saves the region', {
-      my $usa = FpkRegion.create({code => 'US', name => 'United States'});
+      my $usa = Region.create({code => 'US', name => 'United States'});
       expect($usa.is-valid).to.be-truthy;
     }
 
     it 'saves the towns', {
-      my $usa = FpkRegion.create({code => 'US', name => 'United States'});
-      my $dallas  = FpkTown.create({region => $usa, name => 'Dallas'});
-      my $austin  = FpkTown.create({region => $usa, name => 'Austin'});
+      my $usa = Region.create({code => 'US', name => 'United States'});
+      my $dallas  = Town.create({region => $usa, name => 'Dallas'});
+      my $austin  = Town.create({region => $usa, name => 'Austin'});
       expect($dallas.is-valid && $austin.is-valid).to.be-truthy;
     }
 
     it 'writes target pkey value into FK column', {
-      my $usa = FpkRegion.create({code => 'US', name => 'United States'});
-      my $dallas = FpkTown.create({region => $usa, name => 'Dallas'});
+      my $usa = Region.create({code => 'US', name => 'United States'});
+      my $dallas = Town.create({region => $usa, name => 'Dallas'});
       expect($dallas.attrs<region_code>).to.eq('US');
     }
 
     it 'wires every town correctly', {
-      my $usa = FpkRegion.create({code => 'US', name => 'United States'});
-      FpkTown.create({region => $usa, name => 'Dallas'});
-      my $austin = FpkTown.create({region => $usa, name => 'Austin'});
+      my $usa = Region.create({code => 'US', name => 'United States'});
+      Town.create({region => $usa, name => 'Dallas'});
+      my $austin = Town.create({region => $usa, name => 'Austin'});
       expect($austin.attrs<region_code>).to.eq('US');
     }
 
     it 'has-many resolves via override column', {
-      my $usa = FpkRegion.create({code => 'US', name => 'United States'});
-      FpkTown.create({region => $usa, name => 'Dallas'});
-      FpkTown.create({region => $usa, name => 'Austin'});
-      expect(FpkRegion.find($usa.id).fpktowns.elems).to.eq(2);
+      my $usa = Region.create({code => 'US', name => 'United States'});
+      Town.create({region => $usa, name => 'Dallas'});
+      Town.create({region => $usa, name => 'Austin'});
+      expect(Region.find($usa.id).towns.elems).to.eq(2);
     }
 
     it 'has-many returns the right rows', {
-      my $usa = FpkRegion.create({code => 'US', name => 'United States'});
-      FpkTown.create({region => $usa, name => 'Dallas'});
-      FpkTown.create({region => $usa, name => 'Austin'});
-      expect(FpkRegion.find($usa.id).fpktowns.map(*.attrs<name>).sort.join(',')).to.eq('Austin,Dallas');
+      my $usa = Region.create({code => 'US', name => 'United States'});
+      Town.create({region => $usa, name => 'Dallas'});
+      Town.create({region => $usa, name => 'Austin'});
+      expect(Region.find($usa.id).towns.map(*.attrs<name>).sort.join(',')).to.eq('Austin,Dallas');
     }
 
     it 'belongs-to resolves the parent via override columns', {
-      my $usa = FpkRegion.create({code => 'US', name => 'United States'});
-      my $dallas = FpkTown.create({region => $usa, name => 'Dallas'});
-      expect(FpkTown.find($dallas.id).region.defined).to.be-truthy;
+      my $usa = Region.create({code => 'US', name => 'United States'});
+      my $dallas = Town.create({region => $usa, name => 'Dallas'});
+      expect(Town.find($dallas.id).region.defined).to.be-truthy;
     }
 
     it 'belongs-to returns the right parent', {
-      my $usa = FpkRegion.create({code => 'US', name => 'United States'});
-      my $dallas = FpkTown.create({region => $usa, name => 'Dallas'});
-      expect(FpkTown.find($dallas.id).region.attrs<code>).to.eq('US');
+      my $usa = Region.create({code => 'US', name => 'United States'});
+      my $dallas = Town.create({region => $usa, name => 'Dallas'});
+      expect(Town.find($dallas.id).region.attrs<code>).to.eq('US');
     }
 
     it 'returns no rows when no children match', {
-      my $blank = FpkRegion.create({code => 'XX', name => 'Nowhere'});
-      expect($blank.fpktowns.elems).to.eq(0);
+      my $blank = Region.create({code => 'XX', name => 'Nowhere'});
+      expect($blank.towns.elems).to.eq(0);
     }
   }
 }

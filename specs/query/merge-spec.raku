@@ -1,74 +1,72 @@
 use lib 'lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-class MgUser is Model {
-  method table-name { 'users' }
-}
 
 describe 'merge', {
   before-each {
-    MgUser.destroy-all;
-    MgUser.create({fname => 'Alice', lname => 'Anderson'});
-    MgUser.create({fname => 'Bob',   lname => 'Brown'});
-    MgUser.create({fname => 'Carol', lname => 'Anderson'});
-    MgUser.create({fname => 'Dave',  lname => 'Davis'});
+    User.destroy-all;
+    User.create({fname => 'Alice', lname => 'Anderson'});
+    User.create({fname => 'Bob',   lname => 'Brown'});
+    User.create({fname => 'Carol', lname => 'Anderson'});
+    User.create({fname => 'Dave',  lname => 'Davis'});
   }
 
   after-each {
-    MgUser.destroy-all;
+    User.destroy-all;
   }
 
   context 'merge ANDs disjoint conditions', {
     it 'returns one row', {
-      my @both = MgUser.where({lname => 'Anderson'}).merge(MgUser.where({fname => 'Alice'})).all;
+      my @both = User.where({lname => 'Anderson'}).merge(User.where({fname => 'Alice'})).all;
 
       expect(@both.elems).to.eq(1);
     }
 
     it 'picked Alice', {
-      my @both = MgUser.where({lname => 'Anderson'}).merge(MgUser.where({fname => 'Alice'})).all;
+      my @both = User.where({lname => 'Anderson'}).merge(User.where({fname => 'Alice'})).all;
 
       expect(@both[0].fname).to.eq('Alice');
     }
   }
 
   it 'merge overrides on conflicting where', {
-    my @over = MgUser.where({fname => 'Alice'}).merge(MgUser.where({fname => 'Bob'})).all;
+    my @over = User.where({fname => 'Alice'}).merge(User.where({fname => 'Bob'})).all;
 
     expect(@over.elems == 1 && @over[0].fname eq 'Bob').to.be-truthy;
   }
 
   context 'merge with not-on-same-col flips condition', {
     it 'returns 3 rows', {
-      my @neg = MgUser.where({fname => 'Alice'}).merge(MgUser.where.not({fname => 'Alice'})).all;
+      my @neg = User.where({fname => 'Alice'}).merge(User.where.not({fname => 'Alice'})).all;
 
       expect(@neg.elems).to.eq(3);
     }
 
     it 'has no Alice in the merged result', {
-      my @neg = MgUser.where({fname => 'Alice'}).merge(MgUser.where.not({fname => 'Alice'})).all;
+      my @neg = User.where({fname => 'Alice'}).merge(User.where.not({fname => 'Alice'})).all;
 
       expect((none @neg.map: { .fname eq 'Alice' }).Bool).to.be-truthy;
     }
   }
 
   it 'merge takes other.limit when set', {
-    my @l = MgUser.limit(10).merge(MgUser.limit(2)).order('id').all;
+    my @l = User.limit(10).merge(User.limit(2)).order('id').all;
 
     expect(@l.elems).to.eq(2);
   }
 
   it 'merge appends order: Anderson then by fname picks Alice first', {
-    my @o = MgUser.order('lname').merge(MgUser.order('fname')).all;
+    my @o = User.order('lname').merge(User.order('fname')).all;
 
     expect(@o[0].lname eq 'Anderson' && @o[0].fname eq 'Alice').to.be-truthy;
   }
 
   it 'merge takes other.offset when set', {
-    my @off = MgUser.merge(MgUser.offset(2)).order('id').all;
+    my @off = User.merge(User.offset(2)).order('id').all;
 
     expect(@off.elems).to.eq(2);
   }

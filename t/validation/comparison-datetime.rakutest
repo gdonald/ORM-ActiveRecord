@@ -1,24 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::ComparisonDatetime;
 use Test;
-
-class Phdt is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'ends_at', { comparison => { gt => 'starts_at' } }
-  }
-}
-
-class PhdtLit is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'starts_at', { comparison => { gte => DateTime.new('2026-01-01T00:00:00Z') } }
-  }
-}
 
 plan 6;
 

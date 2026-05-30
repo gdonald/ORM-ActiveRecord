@@ -2,207 +2,176 @@ use lib 'lib';
 use lib 'specs/lib';
 use BDD::Behave;
 use SpecHelpers;
-use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::DB;
+use Models::User;
+use Models::Magazine;
+use Models::Article;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-class Ccbook { ... }
-
-class Ccshop is Model {
-  submethod BUILD {
-    self.has-many: ccbooks => %(class => Ccbook, foreign-key => 'ccshop_id');
-  }
+sub user-count(Int:D $id --> Int) {
+  DB.shared.exec("SELECT articles_count FROM users WHERE id = $id")[0][0].Int;
 }
 
-class Ccteam is Model {
-  submethod BUILD {
-    self.has-many: ccbooks => %(class => Ccbook, foreign-key => 'ccteam_id');
-  }
-}
-
-class Ccbook is Model {
-  submethod BUILD {
-    self.belongs-to: ccshop => %(
-      class         => Ccshop,
-      counter-cache => True,
-      optional      => True,
-    );
-    self.belongs-to: ccteam => %(
-      class         => Ccteam,
-      counter-cache => 'managed_books_ct',
-      optional      => True,
-    );
-  }
-}
-
-sub cc-clean {
-  clean-shared-tables;
-}
-
-sub shop-count(Int:D $id --> Int) {
-  DB.shared.exec("SELECT ccbooks_count FROM ccshops WHERE id = $id")[0][0].Int;
-}
-
-sub team-count(Int:D $id --> Int) {
-  DB.shared.exec("SELECT managed_books_ct FROM ccteams WHERE id = $id")[0][0].Int;
+sub magazine-count(Int:D $id --> Int) {
+  DB.shared.exec("SELECT managed_articles_ct FROM magazines WHERE id = $id")[0][0].Int;
 }
 
 describe 'counter-cache', {
-  before-each { cc-clean }
-  after-each  { cc-clean }
+  before-each { clean-shared-tables }
+  after-each  { clean-shared-tables }
 
   context 'default column name on create', {
     it 'starts at 0', {
-      my $shop = Ccshop.create({name => 'main'});
-      expect(shop-count($shop.id)).to.eq(0);
+      my $user = User.create({fname => 'main'});
+      expect(user-count($user.id)).to.eq(0);
     }
 
     it 'bumps default counter to 1', {
-      my $shop = Ccshop.create({name => 'main'});
-      Ccbook.create({title => 'A', ccshop_id => $shop.id});
-      expect(shop-count($shop.id)).to.eq(1);
+      my $user = User.create({fname => 'main'});
+      Article.create({title => 'A', author_id => $user.id});
+      expect(user-count($user.id)).to.eq(1);
     }
 
     it 'bumps to 2 on a second create', {
-      my $shop = Ccshop.create({name => 'main'});
-      Ccbook.create({title => 'A', ccshop_id => $shop.id});
-      Ccbook.create({title => 'B', ccshop_id => $shop.id});
-      expect(shop-count($shop.id)).to.eq(2);
+      my $user = User.create({fname => 'main'});
+      Article.create({title => 'A', author_id => $user.id});
+      Article.create({title => 'B', author_id => $user.id});
+      expect(user-count($user.id)).to.eq(2);
     }
   }
 
   it 'bumps counter when assigning belongs-to instance', {
-    my $shop2 = Ccshop.create({name => 'branch'});
-    Ccbook.create({title => 'C', ccshop => $shop2});
-    expect(shop-count($shop2.id)).to.eq(1);
+    my $user2 = User.create({fname => 'branch'});
+    Article.create({title => 'C', counter-author => $user2});
+    expect(user-count($user2.id)).to.eq(1);
   }
 
   context 'destroy', {
     it 'returns True', {
-      my $shop = Ccshop.create({name => 'main'});
-      my $book-d = Ccbook.create({title => 'X', ccshop_id => $shop.id});
-      expect($book-d.destroy).to.be-truthy;
+      my $user = User.create({fname => 'main'});
+      my $art-d = Article.create({title => 'X', author_id => $user.id});
+      expect($art-d.destroy).to.be-truthy;
     }
 
     it 'decrements counter', {
-      my $shop = Ccshop.create({name => 'main'});
-      Ccbook.create({title => 'A', ccshop_id => $shop.id});
-      Ccbook.create({title => 'B', ccshop_id => $shop.id});
-      my $book-d = Ccbook.create({title => 'X', ccshop_id => $shop.id});
-      $book-d.destroy;
-      expect(shop-count($shop.id)).to.eq(2);
+      my $user = User.create({fname => 'main'});
+      Article.create({title => 'A', author_id => $user.id});
+      Article.create({title => 'B', author_id => $user.id});
+      my $art-d = Article.create({title => 'X', author_id => $user.id});
+      $art-d.destroy;
+      expect(user-count($user.id)).to.eq(2);
     }
   }
 
   context 'update with FK change', {
     it 'decrements old parent', {
-      my $shop = Ccshop.create({name => 'main'});
-      my $shop2 = Ccshop.create({name => 'branch'});
-      my $book-mv = Ccbook.create({title => 'Move', ccshop_id => $shop.id});
-      $book-mv.update({ccshop_id => $shop2.id});
-      expect(shop-count($shop.id)).to.eq(0);
+      my $user = User.create({fname => 'main'});
+      my $user2 = User.create({fname => 'branch'});
+      my $art-mv = Article.create({title => 'Move', author_id => $user.id});
+      $art-mv.update({author_id => $user2.id});
+      expect(user-count($user.id)).to.eq(0);
     }
 
     it 'increments new parent', {
-      my $shop = Ccshop.create({name => 'main'});
-      my $shop2 = Ccshop.create({name => 'branch'});
-      Ccbook.create({title => 'C', ccshop_id => $shop2.id});
-      my $book-mv = Ccbook.create({title => 'Move', ccshop_id => $shop.id});
-      $book-mv.update({ccshop_id => $shop2.id});
-      expect(shop-count($shop2.id)).to.eq(2);
+      my $user = User.create({fname => 'main'});
+      my $user2 = User.create({fname => 'branch'});
+      Article.create({title => 'C', author_id => $user2.id});
+      my $art-mv = Article.create({title => 'Move', author_id => $user.id});
+      $art-mv.update({author_id => $user2.id});
+      expect(user-count($user2.id)).to.eq(2);
     }
   }
 
   it 'leaves counter alone on non-FK update', {
-    my $shop = Ccshop.create({name => 'main'});
-    Ccbook.create({title => 'A', ccshop_id => $shop.id});
-    my $book-still = Ccbook.where({ccshop_id => $shop.id}).first;
-    my $before = shop-count($shop.id);
-    $book-still.update({title => 'renamed'});
-    expect(shop-count($shop.id)).to.eq($before);
+    my $user = User.create({fname => 'main'});
+    Article.create({title => 'A', author_id => $user.id});
+    my $art-still = Article.where({author_id => $user.id}).first;
+    my $before = user-count($user.id);
+    $art-still.update({title => 'renamed'});
+    expect(user-count($user.id)).to.eq($before);
   }
 
   context 'update FK from 0 → set', {
     it 'does not bump on orphan create', {
-      my $shop = Ccshop.create({name => 'main'});
-      my $before = shop-count($shop.id);
-      Ccbook.create({title => 'Orphan'});
-      expect(shop-count($shop.id)).to.eq($before);
+      my $user = User.create({fname => 'main'});
+      my $before = user-count($user.id);
+      Article.create({title => 'Orphan'});
+      expect(user-count($user.id)).to.eq($before);
     }
 
     it 'bumps new parent on adoption', {
-      my $shop = Ccshop.create({name => 'main'});
-      my $before = shop-count($shop.id);
-      my $book-orphan = Ccbook.create({title => 'Orphan'});
-      $book-orphan.update({ccshop_id => $shop.id});
-      expect(shop-count($shop.id)).to.eq($before + 1);
+      my $user = User.create({fname => 'main'});
+      my $before = user-count($user.id);
+      my $art-orphan = Article.create({title => 'Orphan'});
+      $art-orphan.update({author_id => $user.id});
+      expect(user-count($user.id)).to.eq($before + 1);
     }
   }
 
   it 'detaching to 0 decrements old parent', {
-    my $shop = Ccshop.create({name => 'main'});
-    my $book-orphan = Ccbook.create({title => 'Orphan'});
-    $book-orphan.update({ccshop_id => $shop.id});
-    my $pre = shop-count($shop.id);
-    $book-orphan.update({ccshop_id => 0});
-    expect(shop-count($shop.id)).to.eq($pre - 1);
+    my $user = User.create({fname => 'main'});
+    my $art-orphan = Article.create({title => 'Orphan'});
+    $art-orphan.update({author_id => $user.id});
+    my $pre = user-count($user.id);
+    $art-orphan.update({author_id => 0});
+    expect(user-count($user.id)).to.eq($pre - 1);
   }
 
   context 'custom column name', {
     it 'starts at 0', {
-      my $team = Ccteam.create({name => 'team-a'});
-      expect(team-count($team.id)).to.eq(0);
+      my $mag = Magazine.create({title => 'mag-a'});
+      expect(magazine-count($mag.id)).to.eq(0);
     }
 
     it 'bumps on create', {
-      my $team = Ccteam.create({name => 'team-a'});
-      Ccbook.create({title => 'T1', ccteam_id => $team.id});
-      expect(team-count($team.id)).to.eq(1);
+      my $mag = Magazine.create({title => 'mag-a'});
+      Article.create({title => 'T1', magazine_id => $mag.id});
+      expect(magazine-count($mag.id)).to.eq(1);
     }
 
     it 'bumps a second time', {
-      my $team = Ccteam.create({name => 'team-a'});
-      Ccbook.create({title => 'T1', ccteam_id => $team.id});
-      Ccbook.create({title => 'T2', ccteam_id => $team.id});
-      expect(team-count($team.id)).to.eq(2);
+      my $mag = Magazine.create({title => 'mag-a'});
+      Article.create({title => 'T1', magazine_id => $mag.id});
+      Article.create({title => 'T2', magazine_id => $mag.id});
+      expect(magazine-count($mag.id)).to.eq(2);
     }
 
     it 'destroy returns True', {
-      my $team = Ccteam.create({name => 'team-a'});
-      my $book-t = Ccbook.create({title => 'T1', ccteam_id => $team.id});
-      expect($book-t.destroy).to.be-truthy;
+      my $mag = Magazine.create({title => 'mag-a'});
+      my $art-t = Article.create({title => 'T1', magazine_id => $mag.id});
+      expect($art-t.destroy).to.be-truthy;
     }
 
     it 'destroy decrements custom column', {
-      my $team = Ccteam.create({name => 'team-a'});
-      my $book-t = Ccbook.create({title => 'T1', ccteam_id => $team.id});
-      Ccbook.create({title => 'T2', ccteam_id => $team.id});
-      $book-t.destroy;
-      expect(team-count($team.id)).to.eq(1);
+      my $mag = Magazine.create({title => 'mag-a'});
+      my $art-t = Article.create({title => 'T1', magazine_id => $mag.id});
+      Article.create({title => 'T2', magazine_id => $mag.id});
+      $art-t.destroy;
+      expect(magazine-count($mag.id)).to.eq(1);
     }
   }
 
   context 'both counters on the same child', {
-    it 'bumps shop counter', {
-      my $shopA = Ccshop.create({name => 'A'});
-      my $teamA = Ccteam.create({name => 'TA'});
-      Ccbook.create({title => 'dual', ccshop_id => $shopA.id, ccteam_id => $teamA.id});
-      expect(shop-count($shopA.id)).to.eq(1);
+    it 'bumps user counter', {
+      my $userA = User.create({fname => 'A'});
+      my $magA  = Magazine.create({title => 'MA'});
+      Article.create({title => 'dual', author_id => $userA.id, magazine_id => $magA.id});
+      expect(user-count($userA.id)).to.eq(1);
     }
 
-    it 'bumps team counter', {
-      my $shopA = Ccshop.create({name => 'A'});
-      my $teamA = Ccteam.create({name => 'TA'});
-      Ccbook.create({title => 'dual', ccshop_id => $shopA.id, ccteam_id => $teamA.id});
-      expect(team-count($teamA.id)).to.eq(1);
+    it 'bumps magazine counter', {
+      my $userA = User.create({fname => 'A'});
+      my $magA  = Magazine.create({title => 'MA'});
+      Article.create({title => 'dual', author_id => $userA.id, magazine_id => $magA.id});
+      expect(magazine-count($magA.id)).to.eq(1);
     }
   }
 
   it 'bare delete bypasses counter-cache', {
-    my $shopD = Ccshop.create({name => 'D'});
-    my $book-bare = Ccbook.create({title => 'bare', ccshop_id => $shopD.id});
-    $book-bare.delete;
-    expect(shop-count($shopD.id)).to.eq(1);
+    my $userD = User.create({fname => 'D'});
+    my $art-bare = Article.create({title => 'bare', author_id => $userD.id});
+    $art-bare.delete;
+    expect(user-count($userD.id)).to.eq(1);
   }
 }

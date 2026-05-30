@@ -1,22 +1,9 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
+use Models::Page;
 use Test;
-
-class Page {...} # stub
-
-class User is Model {
-  submethod BUILD {
-    self.has-many: pages => class => Page;
-  }
-}
-
-class Page is Model {
-  submethod BUILD {
-    self.belongs-to: user => class => User;
-  }
-}
 
 plan 3;
 

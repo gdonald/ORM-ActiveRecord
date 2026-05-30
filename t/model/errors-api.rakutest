@@ -1,20 +1,12 @@
 
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
 use ORM::ActiveRecord::Errors::Error;
 use ORM::ActiveRecord::Errors::Errors;
 use ORM::ActiveRecord::Schema::Field;
+use Model::ErrorsApi;
 use Test;
-
-class ErrPhevent is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name',  { :presence }
-    self.validate: 'score', { numericality => { gt => 0 } }
-  }
-}
 
 plan 51;
 

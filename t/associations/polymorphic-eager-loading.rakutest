@@ -1,34 +1,11 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
+use Models::Post;
+use Models::Picture;
+use Models::Attachment;
 use Test;
-
-class Picture {...}
-
-class User is Model {
-  submethod BUILD {
-    self.has-many: pictures => %(class => Picture, as => 'imageable');
-  }
-}
-
-class Post is Model {
-  submethod BUILD {
-    self.has-many: pictures => %(class => Picture, as => 'imageable');
-  }
-}
-
-class Picture is Model {
-  submethod BUILD {
-    self.belongs-to: imageable => :polymorphic;
-  }
-}
-
-class Attachment is Model {
-  submethod BUILD {
-    self.belongs-to: attachable => %(:polymorphic, :optional);
-  }
-}
 
 plan 27;
 

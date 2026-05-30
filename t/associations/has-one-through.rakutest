@@ -1,27 +1,10 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
+use Models::Profile;
+use Models::Account;
 use Test;
-
-class Profile {...}
-class Account {...}
-
-class User is Model {
-  submethod BUILD {
-    self.has-one: profile => class => Profile;
-    self.has-one: account => through => :profile;
-  }
-}
-
-class Profile is Model {
-  submethod BUILD {
-    self.belongs-to: user => class => User;
-    self.belongs-to: account => class => Account;
-  }
-}
-
-class Account is Model {}
 
 plan 5;
 

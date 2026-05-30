@@ -1,40 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::Comparison;
 use Test;
-
-class Phevent is Model {
-  submethod BUILD {
-    self.validate: 'score', { comparison => { gt => 0 } }
-    self.validate: 'max_score', { comparison => { gte => 'score' } }
-  }
-}
-
-class PhCmp is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { comparison => { lt => 100 } }
-    self.validate: 'max_score', { comparison => { lte => 100 } }
-  }
-}
-
-class PhEq is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { comparison => { eq => 'max_score' } }
-  }
-}
-
-class PhNe is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { comparison => { ne => 'max_score' } }
-  }
-}
 
 plan 16;
 

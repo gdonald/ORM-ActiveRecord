@@ -1,32 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::AllowNilBlank;
 use Test;
-
-class AnbPhevent is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { :presence, numericality => { gt => 0 }, allow-nil => True }
-  }
-}
-
-class AnbPhevent2 is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name', { :presence, length => { min => 3 }, allow-blank => True }
-  }
-}
-
-class AnbPhevent3 is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name', { length => { min => 3 }, allow_blank => True }
-  }
-}
 
 plan 9;
 

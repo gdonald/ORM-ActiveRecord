@@ -1,32 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Validation::AllowNilBlank;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class AnbPhevent is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { :presence, numericality => { gt => 0 }, allow-nil => True }
-  }
-}
-
-class AnbPhevent2 is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name', { :presence, length => { min => 3 }, allow-blank => True }
-  }
-}
-
-class AnbPhevent3 is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name', { length => { min => 3 }, allow_blank => True }
-  }
-}
 
 describe 'allow-nil and allow-blank options', {
   before-each { AnbPhevent.destroy-all }

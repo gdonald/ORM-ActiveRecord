@@ -1,25 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::UniquenessConditions;
 use Test;
-
-class PhuserActive is Model {
-  method table-name { 'phusers' }
-
-  submethod BUILD {
-    self.validate: 'username', { uniqueness => { conditions => { is_active => True } } }
-  }
-}
-
-class PhuserScopeCond is Model {
-  method table-name { 'phusers' }
-
-  submethod BUILD {
-    self.validate: 'username',
-      { uniqueness => { scope => :tenant_id, conditions => { is_active => True } } }
-  }
-}
 
 plan 7;
 
@@ -27,7 +10,6 @@ plan 7;
 
 PhuserActive.destroy-all;
 
-# Conditions narrow uniqueness to a subset
 PhuserActive.create({username => 'inactive_dupe', is_active => False, tenant_id => 1});
 my $ok = PhuserActive.build({username => 'inactive_dupe', is_active => True, tenant_id => 1});
 ok $ok.is-valid, 'inactive duplicate is allowed because conditions limit lookup to is_active=True';
@@ -37,7 +19,6 @@ my $clash = PhuserActive.build({username => 'active_user', is_active => True, te
 ok $clash.is-invalid, 'duplicate within active scope fails uniqueness';
 ok $clash.errors.username[0] eq 'must be unique', 'reports must be unique';
 
-# Conditions combine with scope
 PhuserActive.destroy-all;
 PhuserScopeCond.create({username => 'shared', is_active => True, tenant_id => 1});
 

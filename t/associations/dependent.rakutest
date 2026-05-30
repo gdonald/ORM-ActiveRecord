@@ -1,28 +1,12 @@
-
 use v6.d;
 use lib 'lib';
+use lib 'specs/lib';
 use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
+use Models::Belonging;
+use Models::Singleton;
 use Test;
-
-# Shared child models. Tables: belongings, singletons. Destroy counters
-# are file-scoped so callback invocations are observable across the
-# freshly-loaded instances the dependent dispatcher iterates over.
-my Int $belonging-destroys = 0;
-my Int $singleton-destroys = 0;
-
-class Belonging is Model {
-  submethod BUILD {
-    self.before-destroy: -> { $belonging-destroys++ };
-  }
-}
-
-class Singleton is Model {
-  submethod BUILD {
-    self.before-destroy: -> { $singleton-destroys++ };
-  }
-}
 
 # One parent class per dependent strategy; each gets its own table.
 class DestroyOwner is Model {
@@ -142,26 +126,26 @@ clear-all;
 # Children's before-destroy callbacks fire under :destroy
 clear-all;
 {
-  $belonging-destroys = 0;
+  Belonging.reset-destroy-count;
   my $owner = DestroyOwner.create({name => 'destroy-cb'});
   Belonging.create({owner_id => $owner.id, label => 'a'});
 
   ok $owner.destroy, 'destroy with callbacks succeeds';
-  is $belonging-destroys, 1,
+  is Belonging.destroy-count, 1,
     'destroy: child before-destroy callback fired';
 }
 
 # ----- has-many, dependent: :delete-all -----
 clear-all;
 {
-  $belonging-destroys = 0;
+  Belonging.reset-destroy-count;
   my $owner = DeleteOwner.create({name => 'delete-all'});
   Belonging.create({owner_id => $owner.id, label => 'a'});
   Belonging.create({owner_id => $owner.id, label => 'b'});
 
   ok $owner.destroy, 'delete-all: parent.destroy returns True';
   is belonging-count(), 0, 'delete-all: all children removed';
-  is $belonging-destroys, 0,
+  is Belonging.destroy-count, 0,
     'delete-all: child before-destroy callback did NOT fire';
 }
 

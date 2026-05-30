@@ -1,16 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Callbacks::AfterTouch;
 use Test;
-
-class Article is Model {
-  has Int $.touch-count is rw = 0;
-
-  submethod BUILD {
-    self.after-touch: -> { self.touch-count++ };
-  }
-}
 
 plan 3;
 

@@ -1,40 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Validation::Comparison;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class Phevent is Model {
-  submethod BUILD {
-    self.validate: 'score', { comparison => { gt => 0 } }
-    self.validate: 'max_score', { comparison => { gte => 'score' } }
-  }
-}
-
-class PhCmp is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { comparison => { lt => 100 } }
-    self.validate: 'max_score', { comparison => { lte => 100 } }
-  }
-}
-
-class PhEq is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { comparison => { eq => 'max_score' } }
-  }
-}
-
-class PhNe is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { comparison => { ne => 'max_score' } }
-  }
-}
 
 describe 'comparison validator', {
   before-each { Phevent.destroy-all }

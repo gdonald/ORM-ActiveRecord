@@ -1,37 +1,35 @@
 use lib 'lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
 use ORM::ActiveRecord::Errors::X;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-class FdUser is Model {
-  method table-name { 'users' }
-}
 
 describe 'finders', {
   my ($alice, $bob, $carol);
 
   before-each {
-    FdUser.destroy-all;
-    $alice = FdUser.create({fname => 'Alice', lname => 'Anderson'});
-    $bob   = FdUser.create({fname => 'Bob',   lname => 'Brown'});
-    $carol = FdUser.create({fname => 'Carol', lname => 'Crane'});
+    User.destroy-all;
+    $alice = User.create({fname => 'Alice', lname => 'Anderson'});
+    $bob   = User.create({fname => 'Bob',   lname => 'Brown'});
+    $carol = User.create({fname => 'Carol', lname => 'Crane'});
   }
 
   after-each {
-    FdUser.destroy-all;
+    User.destroy-all;
   }
 
   context 'find by id', {
     it 'returns the matching record', {
-      my $found = FdUser.find($bob.id);
+      my $found = User.find($bob.id);
 
       expect($found.id).to.eq($bob.id);
     }
 
     it 'populates attributes', {
-      my $found = FdUser.find($bob.id);
+      my $found = User.find($bob.id);
 
       expect($found.fname).to.eq('Bob');
     }
@@ -39,13 +37,13 @@ describe 'finders', {
 
   context 'find raises on miss', {
     it 'raises X::RecordNotFound', {
-      expect({ FdUser.find(999_999) }).to.raise-error(X::RecordNotFound);
+      expect({ User.find(999_999) }).to.raise-error(X::RecordNotFound);
     }
 
     it 'carries the id on the exception', {
       my $caught;
       try {
-        FdUser.find(999_999);
+        User.find(999_999);
         CATCH { when X::RecordNotFound() { $caught = $_ } }
       }
 
@@ -55,51 +53,51 @@ describe 'finders', {
     it 'carries the model name on the exception', {
       my $caught;
       try {
-        FdUser.find(999_999);
+        User.find(999_999);
         CATCH { when X::RecordNotFound() { $caught = $_ } }
       }
 
-      expect($caught.model).to.match(/'FdUser'/);
+      expect($caught.model).to.match(/'User'/);
     }
   }
 
   it 'find-by returns first match', {
-    my $by-fname = FdUser.find-by({fname => 'Carol'});
+    my $by-fname = User.find-by({fname => 'Carol'});
 
     expect($by-fname.id).to.eq($carol.id);
   }
 
   it 'find-by returns Nil on miss', {
-    expect(FdUser.find-by({fname => 'Nobody'}).defined).to.be-falsy;
+    expect(User.find-by({fname => 'Nobody'}).defined).to.be-falsy;
   }
 
   it 'find-by-or-die raises X::RecordNotFound', {
-    expect({ FdUser.find-by-or-die({fname => 'Nobody'}) }).to.raise-error(X::RecordNotFound);
+    expect({ User.find-by-or-die({fname => 'Nobody'}) }).to.raise-error(X::RecordNotFound);
   }
 
   it 'last returns highest-id record', {
-    expect(FdUser.last.id).to.eq($carol.id);
+    expect(User.last.id).to.eq($carol.id);
   }
 
   it 'take(2) returns two records', {
-    expect(FdUser.take(2).elems).to.eq(2);
+    expect(User.take(2).elems).to.eq(2);
   }
 
   it 'take defaults to one record', {
-    expect(FdUser.take.elems).to.eq(1);
+    expect(User.take.elems).to.eq(1);
   }
 
   context 'exists', {
     it 'is True when rows present (no args)', {
-      expect(FdUser.exists).to.be-truthy;
+      expect(User.exists).to.be-truthy;
     }
 
     it 'matches with conditions', {
-      expect(FdUser.exists({fname => 'Alice'})).to.be-truthy;
+      expect(User.exists({fname => 'Alice'})).to.be-truthy;
     }
 
     it 'returns False when no match', {
-      expect(FdUser.exists({fname => 'Nobody'})).to.be-falsy;
+      expect(User.exists({fname => 'Nobody'})).to.be-falsy;
     }
   }
 }

@@ -256,6 +256,14 @@ class Migration is export {
     $!db.ddl-create-table($table, @params);
   }
 
+  method table-exists(Str:D $table --> Bool) {
+    so $!db.adapter.get-table-names.list.grep(* eq $table).elems;
+  }
+
+  method drop-table-if-exists(Str:D $table) {
+    self.drop-table($table) if self.table-exists($table);
+  }
+
   method drop-table(Str:D $table) {
     if $!recorder { $!recorder.record('drop-table', $table); return }
 

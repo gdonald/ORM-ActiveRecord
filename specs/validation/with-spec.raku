@@ -1,45 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
-use ORM::ActiveRecord::Errors::Error;
-use ORM::ActiveRecord::Schema::Field;
+use Validation::With;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class NotEvilValidator {
-  has Str $.banned = 'Evil';
-
-  method validate($record) {
-    if $record.attrs<name> eq $!banned {
-      my $field = Field.new(:name('base'), :type('association'));
-      $record.errors.push(
-        Error.new(:$field, :message("'$!banned' is not allowed"))
-      );
-    }
-  }
-}
-
-class ScoreInsanityValidator {
-  has Int $.cap = 1000;
-
-  method validate($record) {
-    if $record.attrs<score> > $!cap {
-      my $field = Field.new(:name('score'), :type('integer'));
-      $record.errors.push(
-        Error.new(:$field, :message("score exceeds cap of $!cap"))
-      );
-    }
-  }
-}
-
-class PhWith is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validates-with(NotEvilValidator.new);
-    self.validates-with(ScoreInsanityValidator, :cap(50));
-  }
-}
 
 describe 'validates-with', {
   before-each { PhWith.destroy-all }

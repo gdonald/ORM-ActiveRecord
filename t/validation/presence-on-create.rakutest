@@ -1,14 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::PresenceOnCreate;
 use Test;
-
-class User is Model {
-  submethod BUILD {
-    self.validate: 'fname', { :presence, on => { :create } }
-  }
-}
 
 plan 9;
 

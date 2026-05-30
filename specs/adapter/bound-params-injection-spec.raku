@@ -1,14 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Models::User;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class User is Model {
-  submethod BUILD {
-    self.validate: 'fname', { :presence };
-  }
-}
 
 describe 'bound-parameters guard against SQL injection', {
   before-each {

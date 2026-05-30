@@ -30,17 +30,13 @@ sub rollback-if-in-transaction is export {
 # behave spec touching shared tables can start from a clean slate without
 # tripping over a sibling spec's leftover rows.
 my @SHARED-TABLE-CLEAN-ORDER = <
+  articles_tags
   posts_tags
-  scarticles_sctags
   pictures
   attachments
   comments
-  cpcomments
-  scarticles
-  scprofiles
   articles
   subscriptions
-  thsubs
   ownerships
   belongings
   pages
@@ -50,14 +46,8 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   towns
   regions
   employees
-  qcdocs
-  scauthors
-  cpauthors
-  thmags
-  sctags
   tags
   posts
-  cpposts
   magazines
   contacts
   contracts
@@ -70,16 +60,8 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   phbooks
   phevents
   phlibraries
-  qcorgs
   slthings
   slowners
-  tnitems
-  tnshops
-  aschilds
-  asparents
-  ccbooks
-  ccshops
-  ccteams
   deleteowners
   destroyowners
   nullifyowners
@@ -89,7 +71,6 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   resterrowners
   restexcowners
   singletons
-  thusers
   phusers
   users
 >;

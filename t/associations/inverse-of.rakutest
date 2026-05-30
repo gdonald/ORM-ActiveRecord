@@ -1,55 +1,12 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
+use Models::Page;
+use Models::Profile;
+use Models::Article;
+use Models::Employee;
 use Test;
-
-class Page    {...}
-class Profile {...}
-class Article {...}
-
-class User is Model {
-  submethod BUILD {
-    self.has-many: pages    => class => Page;
-    self.has-one:  profile  => class => Profile;
-    # Explicit inverse-of with overrides; without it the FK override would
-    # disable auto-detection and the back-pointer would not be wired.
-    self.has-many: articles => %(
-      class       => Article,
-      foreign-key => 'author_id',
-      inverse-of  => :scribe,
-    );
-  }
-}
-
-class Page is Model {
-  submethod BUILD {
-    self.belongs-to: user => class => User;
-  }
-}
-
-class Profile is Model {
-  submethod BUILD {
-    self.belongs-to: user => class => User;
-  }
-}
-
-class Article is Model {
-  submethod BUILD {
-    self.belongs-to: scribe => %(
-      class       => User,
-      foreign-key => 'author_id',
-    );
-  }
-}
-
-# Self-referential, FK override, no inverse-of → auto-detect disabled
-class Employee is Model {
-  submethod BUILD {
-    self.belongs-to: manager => %(class => Employee, optional => True);
-    self.has-many: subordinates => %(class => Employee, foreign-key => 'manager_id');
-  }
-}
 
 plan 17;
 

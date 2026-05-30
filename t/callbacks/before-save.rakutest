@@ -1,19 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Callbacks::BeforeSave;
 use Test;
-
-class Client is Model {
-  submethod BUILD {
-    self.validate: 'email', { :presence };
-    self.before-save: -> { self.lowercase-email };
-  }
-
-  method lowercase-email {
-    self.email .= lc;
-  }
-}
 
 plan 2;
 

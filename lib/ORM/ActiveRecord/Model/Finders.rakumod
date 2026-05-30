@@ -9,7 +9,7 @@ role ModelFinders is export {
     my Int $id = 0;
     $id = @rest[0] if @rest.elems == 1 && @rest[0].isa(Int);
     my $obj = self.new(:$id);
-    die X::RecordNotFound.new(:model(self.WHAT.^name), :$id)
+    die X::RecordNotFound.new(:model(Utils.base-name(self.WHAT.^name)), :$id)
       unless $obj.attrs<id>;
     $obj;
   }
@@ -20,7 +20,7 @@ role ModelFinders is export {
 
   method find-by-or-die(Hash:D $params) {
     my $obj = self.find-by($params);
-    die X::RecordNotFound.new(:model(self.WHAT.^name)) without $obj;
+    die X::RecordNotFound.new(:model(Utils.base-name(self.WHAT.^name))) without $obj;
     $obj;
   }
 

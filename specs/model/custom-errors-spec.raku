@@ -1,27 +1,20 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Model::CustomErrors;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class CeUser is Model {
-  method table-name { 'users' }
-
-  submethod BUILD {
-    self.validate: 'fname', { :presence, message => 'fname is required' }
-  }
-}
 
 describe 'custom error messages', {
   my $user;
 
   before-each {
-    $user = CeUser.build;
+    $user = User.build;
     $user.is-valid;
   }
 
   after-each {
-    CeUser.destroy-all;
+    User.destroy-all;
   }
 
   it 'reports the record as invalid', {

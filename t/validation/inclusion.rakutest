@@ -1,14 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::Inclusion;
 use Test;
-
-class Image is Model {
-  submethod BUILD {
-    self.validate: 'ext', { :presence, inclusion => { in => <gif jpeg jpg png> } }
-  }
-}
 
 plan 7;
 

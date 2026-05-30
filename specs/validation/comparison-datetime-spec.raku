@@ -1,24 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Validation::ComparisonDatetime;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class Phdt is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'ends_at', { comparison => { gt => 'starts_at' } }
-  }
-}
-
-class PhdtLit is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'starts_at', { comparison => { gte => DateTime.new('2026-01-01T00:00:00Z') } }
-  }
-}
 
 my $start    = DateTime.new('2026-06-01T10:00:00Z');
 my $end-good = DateTime.new('2026-06-01T12:00:00Z');

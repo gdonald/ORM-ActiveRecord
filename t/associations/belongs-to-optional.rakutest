@@ -1,45 +1,13 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
+use Models::Page;
+use Models::Passport;
+use Models::Article;
+use Models::Attachment;
+use Models::Picture;
 use Test;
-
-class User is Model {}
-
-# Default: required (Rails 5+ default)
-class Page is Model {
-  submethod BUILD {
-    self.belongs-to: user => class => User;
-  }
-}
-
-# Explicit optional: True (passports.owner_id is plain integer, no DB FK)
-class Passport is Model {
-  submethod BUILD {
-    self.belongs-to: owner => %(class => User, foreign-key => 'owner_id', optional => True);
-  }
-}
-
-# Explicit required: False (alias for optional; articles.author_id is plain integer)
-class Article is Model {
-  submethod BUILD {
-    self.belongs-to: author => %(class => User, foreign-key => 'author_id', required => False);
-  }
-}
-
-# Polymorphic, optional
-class Attachment is Model {
-  submethod BUILD {
-    self.belongs-to: attachable => %(:polymorphic, :optional);
-  }
-}
-
-# Polymorphic, required (default)
-class Picture is Model {
-  submethod BUILD {
-    self.belongs-to: imageable => :polymorphic;
-  }
-}
 
 plan 23;
 

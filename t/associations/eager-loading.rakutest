@@ -1,45 +1,11 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
+use Models::Page;
+use Models::Profile;
+use Models::Article;
 use Test;
-
-class Page    {...}
-class Profile {...}
-class Article {...}
-
-class User is Model {
-  submethod BUILD {
-    self.has-many: pages    => class => Page;
-    self.has-one:  profile  => class => Profile;
-    self.has-many: articles => %(
-      class       => Article,
-      foreign-key => 'author_id',
-      inverse-of  => :scribe,
-    );
-  }
-}
-
-class Page is Model {
-  submethod BUILD {
-    self.belongs-to: user => class => User;
-  }
-}
-
-class Profile is Model {
-  submethod BUILD {
-    self.belongs-to: user => class => User;
-  }
-}
-
-class Article is Model {
-  submethod BUILD {
-    self.belongs-to: scribe => %(
-      class       => User,
-      foreign-key => 'author_id',
-    );
-  }
-}
 
 plan 35;
 

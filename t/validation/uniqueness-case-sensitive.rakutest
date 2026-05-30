@@ -1,32 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::UniquenessCaseSensitive;
 use Test;
-
-class PhuserCI is Model {
-  method table-name { 'phusers' }
-
-  submethod BUILD {
-    self.validate: 'username', { uniqueness => { case-sensitive => False } }
-  }
-}
-
-class PhuserCS is Model {
-  method table-name { 'phusers' }
-
-  submethod BUILD {
-    self.validate: 'username', { uniqueness => { case-sensitive => True } }
-  }
-}
-
-class PhuserDefault is Model {
-  method table-name { 'phusers' }
-
-  submethod BUILD {
-    self.validate: 'username', { :uniqueness }
-  }
-}
 
 plan 6;
 

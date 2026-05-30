@@ -1,60 +1,43 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
 use ORM::ActiveRecord::DB;
+use Models::User;
+use Models::Page;
 use Test;
-
-class Asparent is Model {
-  submethod BUILD {
-    self.validate: 'name', { :presence };
-    self.has-many: aschilds => %(class-name => 'Aschild');
-  }
-}
-
-class Aschild is Model {
-  submethod BUILD {
-    self.belongs-to: asparent => %(
-      class-name => 'Asparent',
-      autosave   => True,
-      validate   => True,
-      optional   => True,
-    );
-  }
-}
 
 plan 10;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-DB.shared.delete-records(:table('aschilds'),  :where({}));
-DB.shared.delete-records(:table('asparents'), :where({}));
+DB.shared.delete-records(:table('pages'), :where({}));
+DB.shared.delete-records(:table('users'), :where({}));
 
 # autosave: True saves a new parent before the child
-my $new-parent = Asparent.new(:id(0), :record({attrs => {name => 'Parent'}}));
+my $new-parent = User.new(:id(0), :record({attrs => {fname => 'Parent'}}));
 is $new-parent.id, 0, 'parent starts unsaved';
-my $child = Aschild.create({title => 'C', asparent => $new-parent});
+my $child = Page.create({name => 'C', autosave-user => $new-parent});
 ok $new-parent.id > 0, 'autosave: True saved the new parent';
-is $child.attrs<asparent_id>, $new-parent.id,
+is $child.attrs<user_id>, $new-parent.id,
   'foreign-key column points to the saved parent';
 
 # autosave on an existing parent re-saves it (Rails parity)
-my $loaded = Asparent.find($new-parent.id);
-$loaded.attrs<name> = 'Parent-Renamed';
-Aschild.create({title => 'C2', asparent => $loaded});
-my $reloaded = Asparent.find($new-parent.id);
-is $reloaded.attrs<name>, 'Parent-Renamed',
+my $loaded = User.find($new-parent.id);
+$loaded.attrs<fname> = 'Renamed';
+Page.create({name => 'C2', autosave-user => $loaded});
+my $reloaded = User.find($new-parent.id);
+is $reloaded.attrs<fname>, 'Renamed',
   'autosave: True on an existing parent persists changes';
 
 # Cascade validation: child rolls up parent's errors
-DB.shared.delete-records(:table('aschilds'),  :where({}));
-DB.shared.delete-records(:table('asparents'), :where({}));
+DB.shared.delete-records(:table('pages'), :where({}));
+DB.shared.delete-records(:table('users'), :where({}));
 
-my $invalid-parent = Asparent.new(:id(0), :record({attrs => {name => ''}}));
+my $invalid-parent = User.new(:id(0), :record({attrs => {fname => ''}}));
 nok $invalid-parent.is-valid, 'parent fails its own presence validation';
 
-my $cv-child = Aschild.new(:id(0), :record({
-  attrs => {title => 'X', asparent => $invalid-parent},
+my $cv-child = Page.new(:id(0), :record({
+  attrs => {name => 'X', autosave-user => $invalid-parent},
 }));
 nok $cv-child.is-valid,
   'child with validate: True fails when parent invalid';
@@ -64,13 +47,13 @@ like $cv-child.errors.errors.first.message, /'is invalid'/,
   'cascaded error reads "is invalid"';
 
 # A valid parent passes through validate: True
-my $good-parent = Asparent.create({name => 'OK'});
-my $good-child = Aschild.new(:id(0), :record({
-  attrs => {title => 'Y', asparent => $good-parent},
+my $good-parent = User.create({fname => 'OK'});
+my $good-child = Page.new(:id(0), :record({
+  attrs => {name => 'Y', autosave-user => $good-parent},
 }));
 ok $good-child.is-valid,
   'child with validate: True passes when parent is valid';
 ok $good-child.save, 'child saves under validate: True';
 
-DB.shared.delete-records(:table('aschilds'),  :where({}));
-DB.shared.delete-records(:table('asparents'), :where({}));
+DB.shared.delete-records(:table('pages'), :where({}));
+DB.shared.delete-records(:table('users'), :where({}));

@@ -1,24 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Validation::As;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class AsPhevent is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'max_score', { :presence, as => 'Maximum Score', message => '{attribute} must be present' }
-  }
-}
-
-class AsPhevent2 is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { numericality => { gte => 10 }, as => 'Player Score', message => '{attribute} must be at least {value}' }
-  }
-}
 
 describe 'as: option overrides {attribute} in messages', {
   before-each { AsPhevent.destroy-all }

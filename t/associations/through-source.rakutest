@@ -1,65 +1,28 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
 use ORM::ActiveRecord::DB;
+use Models::User;
+use Models::Magazine;
+use Models::Subscription;
 use Test;
-
-class Thsub {...}
-
-class Thuser is Model {
-  submethod BUILD {
-    self.has-many: thsubs => %(class-name => 'Thsub');
-    # source: names the belongs_to on the join model (here just demonstrates
-    # the option works for the conventional non-aliased case)
-    self.has-many: subscribed-mags => %(
-      class-name => 'Thmag',
-      through    => :thsubs,
-      source     => :thmag,
-    );
-    # disable-joins: same target, fetched via two queries
-    self.has-many: dj-mags => %(
-      class-name    => 'Thmag',
-      through       => :thsubs,
-      source        => :thmag,
-      disable-joins => True,
-    );
-  }
-}
-
-class Thmag is Model {
-  submethod BUILD {
-    self.has-many: thsubs => %(class-name => 'Thsub');
-    self.has-many: thusers => %(
-      class-name => 'Thuser',
-      through    => :thsubs,
-    );
-  }
-}
-
-class Thsub is Model {
-  submethod BUILD {
-    self.belongs-to: thuser => %(class-name => 'Thuser');
-    self.belongs-to: thmag  => %(class-name => 'Thmag');
-  }
-}
 
 plan 6;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-DB.shared.delete-records(:table('thsubs'),  :where({}));
-DB.shared.delete-records(:table('thmags'),  :where({}));
-DB.shared.delete-records(:table('thusers'), :where({}));
+DB.shared.delete-records(:table('subscriptions'), :where({}));
+DB.shared.delete-records(:table('magazines'),     :where({}));
+DB.shared.delete-records(:table('users'),         :where({}));
 
-my $user  = Thuser.create({name => 'Greg'});
-my $mag-a = Thmag.create({title => 'A'});
-my $mag-b = Thmag.create({title => 'B'});
-Thsub.create({thuser => $user, thmag => $mag-a});
-Thsub.create({thuser => $user, thmag => $mag-b});
+my $user  = User.create({fname => 'Greg'});
+my $mag-a = Magazine.create({title => 'A'});
+my $mag-b = Magazine.create({title => 'B'});
+Subscription.create({user => $user, magazine => $mag-a});
+Subscription.create({user => $user, magazine => $mag-b});
 
 # Baseline: has-many :through resolves
-my @plain = $user.thsubs.map({ $_.attrs<thmag_id> }).sort;
+my @plain = $user.subscriptions.map({ $_.attrs<magazine_id> }).sort;
 is @plain.elems, 2, 'baseline has-many through chain found two subscriptions';
 
 # source: alias resolves the same target class via the named belongs-to
@@ -77,10 +40,10 @@ is @dj.map({ $_.attrs<title> }).sort.join(','), 'A,B',
   'disable-joins: returns the right rows';
 
 # disable-joins handles the empty case
-my $lonely = Thuser.create({name => 'Lonely'});
+my $lonely = User.create({fname => 'Lonely'});
 is $lonely.dj-mags.elems, 0,
   'disable-joins: empty result when no through-rows exist';
 
-DB.shared.delete-records(:table('thsubs'),  :where({}));
-DB.shared.delete-records(:table('thmags'),  :where({}));
-DB.shared.delete-records(:table('thusers'), :where({}));
+DB.shared.delete-records(:table('subscriptions'), :where({}));
+DB.shared.delete-records(:table('magazines'),     :where({}));
+DB.shared.delete-records(:table('users'),         :where({}));

@@ -1,121 +1,86 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
+use Models::User;
+use Models::Article;
+use Models::Comment;
 use Test;
-
-class Cppost { ... }
-class Cpcomment { ... }
-
-role CpostsExtension {
-  method high-score(Int:D $n) {
-    self.records.grep({ .attrs<score> >= $n });
-  }
-  method by-title {
-    self.records.sort({ .attrs<title> });
-  }
-}
-
-class Cpauthor is Model {
-  submethod BUILD {
-    self.has-many: cpposts => %(
-      class     => Cppost,
-      extension => CpostsExtension,
-    );
-    self.has-many: cpcomments => %(
-      class => Cpcomment,
-      as    => 'commentable',
-    );
-  }
-}
-
-class Cppost is Model {
-  submethod BUILD {
-    self.belongs-to: cpauthor => class => Cpauthor;
-  }
-}
-
-class Cpcomment is Model {
-  submethod BUILD {
-    self.belongs-to: commentable => polymorphic => True;
-  }
-}
 
 plan 45;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
 sub clear-all {
-  DB.shared.delete-records(:table('cpcomments'), :where({}));
-  DB.shared.delete-records(:table('cpposts'),    :where({}));
-  DB.shared.delete-records(:table('cpauthors'),  :where({}));
+  DB.shared.delete-records(:table('comments'), :where({}));
+  DB.shared.delete-records(:table('articles'), :where({}));
+  DB.shared.delete-records(:table('users'),    :where({}));
 }
 
 clear-all;
 
 # build / create / create-or-die
 {
-  my $alice = Cpauthor.create({name => 'alice'});
+  my $alice = User.create({fname => 'alice'});
 
-  my $built = $alice.cpposts.build({title => 'draft', body => 'd'});
+  my $built = $alice.extended-articles.build({title => 'draft', body => 'd'});
   ok !$built.id, 'build returns an unsaved record';
-  is $built.attrs<cpauthor_id>, $alice.id, 'build sets the foreign key';
+  is $built.attrs<author_id>, $alice.id, 'build sets the foreign key';
 
-  my $created = $alice.cpposts.create({title => 'live', body => 'b', score => 10});
+  my $created = $alice.extended-articles.create({title => 'live', body => 'b', score => 10});
   ok $created.id > 0, 'create returns a saved record';
-  is $created.attrs<cpauthor_id>, $alice.id, 'create sets the foreign key';
+  is $created.attrs<author_id>, $alice.id, 'create sets the foreign key';
 
-  my $forced = $alice.cpposts.create-or-die({title => 'forced', body => 'b'});
+  my $forced = $alice.extended-articles.create-or-die({title => 'forced', body => 'b'});
   ok $forced.id > 0, 'create-or-die returns a saved record';
-  is $forced.attrs<cpauthor_id>, $alice.id, 'create-or-die sets the foreign key';
+  is $forced.attrs<author_id>, $alice.id, 'create-or-die sets the foreign key';
 }
 
 clear-all;
 
 # push / append
 {
-  my $alice = Cpauthor.create({name => 'alice'});
-  my $orphan = Cppost.create({title => 'orphan', body => 'o'});
-  is $orphan.attrs<cpauthor_id>, 0, 'orphan post has no author before push';
+  my $alice = User.create({fname => 'alice'});
+  my $orphan = Article.create({title => 'orphan', body => 'o'});
+  is $orphan.attrs<author_id>, 0, 'orphan article has no author before push';
 
-  $alice.cpposts.push($orphan);
-  my $reloaded = Cppost.find($orphan.id);
-  is $reloaded.attrs<cpauthor_id>, $alice.id, 'push sets the foreign key';
+  $alice.extended-articles.push($orphan);
+  my $reloaded = Article.find($orphan.id);
+  is $reloaded.attrs<author_id>, $alice.id, 'push sets the foreign key';
 
-  my $b = Cppost.create({title => 'b', body => 'b'});
-  my $c = Cppost.create({title => 'c', body => 'c'});
-  $alice.cpposts.append($b);
-  $alice.cpposts.push($c);
-  is $alice.cpposts.elems, 3, 'pushed records are visible on reload';
+  my $b = Article.create({title => 'b', body => 'b'});
+  my $c = Article.create({title => 'c', body => 'c'});
+  $alice.extended-articles.append($b);
+  $alice.extended-articles.push($c);
+  is $alice.extended-articles.elems, 3, 'pushed records are visible on reload';
 }
 
 clear-all;
 
 # delete / destroy / clear
 {
-  my $alice = Cpauthor.create({name => 'alice'});
-  my $p1 = $alice.cpposts.create({title => 'p1', body => 'b'});
-  my $p2 = $alice.cpposts.create({title => 'p2', body => 'b'});
-  my $p3 = $alice.cpposts.create({title => 'p3', body => 'b'});
+  my $alice = User.create({fname => 'alice'});
+  my $p1 = $alice.extended-articles.create({title => 'p1', body => 'b'});
+  my $p2 = $alice.extended-articles.create({title => 'p2', body => 'b'});
+  my $p3 = $alice.extended-articles.create({title => 'p3', body => 'b'});
 
-  is $alice.cpposts.elems, 3, 'three children present';
+  is $alice.extended-articles.elems, 3, 'three children present';
 
-  $alice.cpposts.delete($p1);
-  my $nullified = Cppost.find($p1.id);
-  ok !$nullified.attrs<cpauthor_id>,
+  $alice.extended-articles.delete($p1);
+  my $nullified = Article.find($p1.id);
+  ok !$nullified.attrs<author_id>,
     'delete (default nullify) nulls foreign key but keeps row';
-  is $alice.cpposts.elems, 2, 'collection no longer contains the deleted record';
+  is $alice.extended-articles.elems, 2, 'collection no longer contains the deleted record';
 
-  $alice.cpposts.destroy($p2);
-  is Cppost.where({id => $p2.id}).count, 0,
+  $alice.extended-articles.destroy($p2);
+  is Article.where({id => $p2.id}).count, 0,
     'destroy actually removes the row';
-  is $alice.cpposts.elems, 1, 'collection drops the destroyed record';
+  is $alice.extended-articles.elems, 1, 'collection drops the destroyed record';
 
-  $alice.cpposts.clear;
-  is $alice.cpposts.elems, 0, 'clear empties the collection';
-  ok Cppost.where({id => $p3.id}).first.defined,
+  $alice.extended-articles.clear;
+  is $alice.extended-articles.elems, 0, 'clear empties the collection';
+  ok Article.where({id => $p3.id}).first.defined,
     'clear (default nullify) leaves the row in place';
 }
 
@@ -123,14 +88,14 @@ clear-all;
 
 # delete uses nullify when no dependent set
 {
-  my $alice = Cpauthor.create({name => 'alice'});
-  my $p1 = $alice.cpposts.create({title => 'p1', body => 'b'});
-  my $p2 = $alice.cpposts.create({title => 'p2', body => 'b'});
-  is $alice.cpposts.elems, 2, 'two children before';
+  my $alice = User.create({fname => 'alice'});
+  my $p1 = $alice.extended-articles.create({title => 'p1', body => 'b'});
+  my $p2 = $alice.extended-articles.create({title => 'p2', body => 'b'});
+  is $alice.extended-articles.elems, 2, 'two children before';
 
-  is Cppost.count, 2, 'rows present before clear';
-  $alice.cpposts.delete($p1);
-  is Cppost.where({id => $p1.id}).count, 1,
+  is Article.count, 2, 'rows present before clear';
+  $alice.extended-articles.delete($p1);
+  is Article.where({id => $p1.id}).count, 1,
     'default delete keeps the row (nullify), row count unchanged';
 }
 
@@ -138,16 +103,16 @@ clear-all;
 
 # is-empty / size / count / length
 {
-  my $alice = Cpauthor.create({name => 'alice'});
-  ok $alice.cpposts.is-empty, 'is-empty true on fresh association';
-  is $alice.cpposts.size, 0, 'size is 0';
-  is $alice.cpposts.count, 0, 'count is 0';
-  is $alice.cpposts.length, 0, 'length is 0';
+  my $alice = User.create({fname => 'alice'});
+  ok $alice.extended-articles.is-empty, 'is-empty true on fresh association';
+  is $alice.extended-articles.size, 0, 'size is 0';
+  is $alice.extended-articles.count, 0, 'count is 0';
+  is $alice.extended-articles.length, 0, 'length is 0';
 
-  $alice.cpposts.create({title => 'a', body => 'b'});
-  $alice.cpposts.create({title => 'c', body => 'd'});
+  $alice.extended-articles.create({title => 'a', body => 'b'});
+  $alice.extended-articles.create({title => 'c', body => 'd'});
 
-  my $coll = $alice.cpposts;
+  my $coll = $alice.extended-articles;
   nok $coll.is-empty, 'is-empty false after creates';
   is $coll.size, 2, 'size matches';
   is $coll.count, 2, 'count matches';
@@ -158,11 +123,11 @@ clear-all;
 
 # exists / find
 {
-  my $alice = Cpauthor.create({name => 'alice'});
-  my $p1 = $alice.cpposts.create({title => 'a', body => 'b'});
-  my $p2 = $alice.cpposts.create({title => 'c', body => 'd'});
+  my $alice = User.create({fname => 'alice'});
+  my $p1 = $alice.extended-articles.create({title => 'a', body => 'b'});
+  my $p2 = $alice.extended-articles.create({title => 'c', body => 'd'});
 
-  my $coll = $alice.cpposts;
+  my $coll = $alice.extended-articles;
   ok $coll.exists, 'exists() returns True with members';
   ok $coll.exists($p1.id), 'exists(id) finds a member';
   nok $coll.exists(9999),  'exists(unknown-id) is False';
@@ -179,22 +144,22 @@ clear-all;
 
 # replace(@records)
 {
-  my $alice = Cpauthor.create({name => 'alice'});
-  my $keep   = $alice.cpposts.create({title => 'keep', body => 'b'});
-  my $drop1  = $alice.cpposts.create({title => 'd1',   body => 'b'});
-  my $drop2  = $alice.cpposts.create({title => 'd2',   body => 'b'});
-  my $newone = Cppost.create({title => 'new', body => 'b'});
+  my $alice = User.create({fname => 'alice'});
+  my $keep   = $alice.extended-articles.create({title => 'keep', body => 'b'});
+  my $drop1  = $alice.extended-articles.create({title => 'd1',   body => 'b'});
+  my $drop2  = $alice.extended-articles.create({title => 'd2',   body => 'b'});
+  my $newone = Article.create({title => 'new', body => 'b'});
 
-  $alice.cpposts.replace([$keep, $newone]);
+  $alice.extended-articles.replace([$keep, $newone]);
 
-  my @after = $alice.cpposts.list.sort({ .attrs<title> });
+  my @after = $alice.extended-articles.list.sort({ .attrs<title> });
   is @after.elems, 2, 'replace leaves only the new set';
   is @after.map({ .attrs<title> }).sort.join(','), 'keep,new',
     'replace contains exactly the requested rows';
 
-  ok !Cppost.find($drop1.id).attrs<cpauthor_id>,
+  ok !Article.find($drop1.id).attrs<author_id>,
     'replace nullifies dropped rows (default strategy)';
-  ok !Cppost.find($drop2.id).attrs<cpauthor_id>,
+  ok !Article.find($drop2.id).attrs<author_id>,
     'replace nullifies other dropped rows';
 }
 
@@ -202,17 +167,17 @@ clear-all;
 
 # association extension role
 {
-  my $alice = Cpauthor.create({name => 'alice'});
-  $alice.cpposts.create({title => 'low',  body => '', score => 1});
-  $alice.cpposts.create({title => 'mid',  body => '', score => 5});
-  $alice.cpposts.create({title => 'high', body => '', score => 9});
+  my $alice = User.create({fname => 'alice'});
+  $alice.extended-articles.create({title => 'low',  body => '', score => 1});
+  $alice.extended-articles.create({title => 'mid',  body => '', score => 5});
+  $alice.extended-articles.create({title => 'high', body => '', score => 9});
 
-  my @high = $alice.cpposts.high-score(5);
+  my @high = $alice.extended-articles.high-score(5);
   is @high.elems, 2, 'extension method high-score returns matches';
   is @high.map({ .attrs<title> }).sort.join(','), 'high,mid',
     'extension method picks the right rows';
 
-  my @sorted = $alice.cpposts.by-title;
+  my @sorted = $alice.extended-articles.by-title;
   is @sorted.map({ .attrs<title> }).join(','), 'high,low,mid',
     'extension method sorts via the underlying records';
 }
@@ -221,18 +186,18 @@ clear-all;
 
 # polymorphic has-many proxy
 {
-  my $alice = Cpauthor.create({name => 'alice'});
-  my $c1 = $alice.cpcomments.create({body => 'first'});
-  my $c2 = $alice.cpcomments.create({body => 'second'});
+  my $alice = User.create({fname => 'alice'});
+  my $c1 = $alice.comments.create({body => 'first'});
+  my $c2 = $alice.comments.create({body => 'second'});
 
   is $c1.attrs<commentable_id>,   $alice.id,
     'polymorphic build sets <as>_id';
-  is $c1.attrs<commentable_type>, 'Cpauthor',
+  is $c1.attrs<commentable_type>, 'User',
     'polymorphic build sets <as>_type';
 
-  is $alice.cpcomments.size, 2, 'polymorphic collection size';
-  $alice.cpcomments.delete($c1);
-  my $reloaded = Cpcomment.find($c1.id);
+  is $alice.comments.size, 2, 'polymorphic collection size';
+  $alice.comments.delete($c1);
+  my $reloaded = Comment.find($c1.id);
   ok !$reloaded.attrs<commentable_id>,
     'polymorphic delete nullifies <as>_id';
 }

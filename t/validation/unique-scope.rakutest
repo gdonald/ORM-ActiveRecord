@@ -1,35 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::UniqueScope;
 use Test;
-
-class Subscription {...}
-
-class User is Model {
-  submethod BUILD {
-    self.has-many: subscriptions => class => Subscription;
-
-    self.validate: 'fname', { :presence }
-  }
-}
-
-class Magazine is Model {
-  submethod BUILD {
-    self.has-many: subscriptions => class => Subscription;
-
-    self.validate: 'title', { :presence }
-  }
-}
-
-class Subscription is Model {
-  submethod BUILD {
-    self.belongs-to: user => class => User;
-    self.belongs-to: magazine => class => Magazine;
-
-    self.validate: 'user_id', { uniqueness => scope => :magazine_id }
-  }
-}
 
 plan 3;
 

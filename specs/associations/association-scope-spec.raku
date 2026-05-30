@@ -2,103 +2,54 @@ use lib 'lib';
 use lib 'specs/lib';
 use BDD::Behave;
 use SpecHelpers;
-use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Relation::Query;
+use Models::User;
+use Models::Article;
+use Models::Profile;
+use Models::Tag;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-class Scarticle  {...}
-class Scprofile  {...}
-class Sctag      {...}
-
-class Scauthor is Model {
-  submethod BUILD {
-    self.has-many: scarticles => %(
-      class => Scarticle,
-      scope => -> $q { $q.where({ :published }) },
-    );
-    self.has-many: top-articles => %(
-      class       => Scarticle,
-      foreign-key => 'scauthor_id',
-      scope       => -> $q { $q.where({ :published }).order('score').limit(2) },
-    );
-    self.has-many: by-score => %(
-      class       => Scarticle,
-      foreign-key => 'scauthor_id',
-      scope       => -> $q, $min { $q.where({ score => $min..* }) },
-    );
-    self.has-one: scprofile => %(
-      class => Scprofile,
-      scope => -> $q { $q.where({ :visible }) },
-    );
-  }
-}
-
-class Scarticle is Model {
-  submethod BUILD {
-    self.belongs-to: scauthor => %(
-      class => Scauthor,
-      scope => -> $q { $q.where({ is_active => True }) },
-    );
-    self.has-and-belongs-to-many: sctags => %(
-      class => Sctag,
-      scope => -> $q { $q.where({ :hot }) },
-    );
-  }
-}
-
-class Scprofile is Model {
-  submethod BUILD {
-    self.belongs-to: scauthor => %(class => Scauthor);
-  }
-}
-
-class Sctag is Model {}
-
-sub sc-clean {
-  clean-shared-tables;
-}
-
 describe 'association scope', {
-  before-each { sc-clean }
-  after-each  { sc-clean }
+  before-each { clean-shared-tables }
+  after-each  { clean-shared-tables }
 
   context 'block scope on has-many filters by where', {
     it 'returns only published rows', {
-      my $alice = Scauthor.create({name => 'Alice', is_active => True});
-      Scarticle.create({title => 'low',  score => 1, published => True,  scauthor => $alice});
-      Scarticle.create({title => 'mid',  score => 5, published => True,  scauthor => $alice});
-      Scarticle.create({title => 'high', score => 9, published => True,  scauthor => $alice});
-      Scarticle.create({title => 'wip',  score => 2, published => False, scauthor => $alice});
+      my $alice = User.create({fname => 'Alice', is_active => True});
+      Article.create({title => 'low',  score => 1, published => True,  active-author => $alice});
+      Article.create({title => 'mid',  score => 5, published => True,  active-author => $alice});
+      Article.create({title => 'high', score => 9, published => True,  active-author => $alice});
+      Article.create({title => 'wip',  score => 2, published => False, active-author => $alice});
 
-      expect($alice.scarticles.elems).to.eq(3);
+      expect($alice.published-articles.elems).to.eq(3);
     }
 
     it 'excludes drafts', {
-      my $alice = Scauthor.create({name => 'Alice', is_active => True});
-      Scarticle.create({title => 'low',  score => 1, published => True,  scauthor => $alice});
-      my $draft = Scarticle.create({title => 'wip', score => 2, published => False, scauthor => $alice});
+      my $alice = User.create({fname => 'Alice', is_active => True});
+      Article.create({title => 'low',  score => 1, published => True,  active-author => $alice});
+      my $draft = Article.create({title => 'wip', score => 2, published => False, active-author => $alice});
 
-      expect($alice.scarticles.map({ .id }).Bag{$draft.id}:!exists).to.be-truthy;
+      expect($alice.published-articles.map({ .id }).Bag{$draft.id}:!exists).to.be-truthy;
     }
   }
 
   context 'scope with limit', {
     it 'returns two records', {
-      my $alice = Scauthor.create({name => 'Alice', is_active => True});
-      Scarticle.create({title => 'low',  score => 1, published => True, scauthor => $alice});
-      Scarticle.create({title => 'mid',  score => 5, published => True, scauthor => $alice});
-      Scarticle.create({title => 'high', score => 9, published => True, scauthor => $alice});
+      my $alice = User.create({fname => 'Alice', is_active => True});
+      Article.create({title => 'low',  score => 1, published => True, active-author => $alice});
+      Article.create({title => 'mid',  score => 5, published => True, active-author => $alice});
+      Article.create({title => 'high', score => 9, published => True, active-author => $alice});
 
       expect($alice.top-articles.elems).to.eq(2);
     }
 
     it 'orders by score ASC then limits', {
-      my $alice = Scauthor.create({name => 'Alice', is_active => True});
-      Scarticle.create({title => 'low',  score => 1, published => True, scauthor => $alice});
-      Scarticle.create({title => 'mid',  score => 5, published => True, scauthor => $alice});
-      Scarticle.create({title => 'high', score => 9, published => True, scauthor => $alice});
+      my $alice = User.create({fname => 'Alice', is_active => True});
+      Article.create({title => 'low',  score => 1, published => True, active-author => $alice});
+      Article.create({title => 'mid',  score => 5, published => True, active-author => $alice});
+      Article.create({title => 'high', score => 9, published => True, active-author => $alice});
 
       expect($alice.top-articles.map({ .attrs<title> }).join(',')).to.eq('low,mid');
     }
@@ -106,69 +57,69 @@ describe 'association scope', {
 
   context 'argument-taking scope', {
     it 'filters with caller-supplied bound', {
-      my $alice = Scauthor.create({name => 'Alice', is_active => True});
-      Scarticle.create({title => 'low',  score => 1, published => True, scauthor => $alice});
-      Scarticle.create({title => 'mid',  score => 5, published => True, scauthor => $alice});
-      Scarticle.create({title => 'high', score => 9, published => True, scauthor => $alice});
+      my $alice = User.create({fname => 'Alice', is_active => True});
+      Article.create({title => 'low',  score => 1, published => True, active-author => $alice});
+      Article.create({title => 'mid',  score => 5, published => True, active-author => $alice});
+      Article.create({title => 'high', score => 9, published => True, active-author => $alice});
 
       expect($alice.by-score(5).map({ .attrs<title> }).sort.join(',')).to.eq('high,mid');
     }
 
     it 'reflects different bound', {
-      my $alice = Scauthor.create({name => 'Alice', is_active => True});
-      Scarticle.create({title => 'low',  score => 1, published => True, scauthor => $alice});
-      Scarticle.create({title => 'mid',  score => 5, published => True, scauthor => $alice});
-      Scarticle.create({title => 'high', score => 9, published => True, scauthor => $alice});
+      my $alice = User.create({fname => 'Alice', is_active => True});
+      Article.create({title => 'low',  score => 1, published => True, active-author => $alice});
+      Article.create({title => 'mid',  score => 5, published => True, active-author => $alice});
+      Article.create({title => 'high', score => 9, published => True, active-author => $alice});
 
       expect($alice.by-score(9).map({ .attrs<title> }).join(',')).to.eq('high');
     }
   }
 
   it 'has-one scope filters by visible', {
-    my $alice = Scauthor.create({name => 'Alice', is_active => True});
-    my $visible-prof = Scprofile.create({bio => 'pinned', visible => True, scauthor => $alice});
-    Scprofile.create({bio => 'hidden', visible => False, scauthor => $alice});
+    my $alice = User.create({fname => 'Alice', is_active => True});
+    my $visible-prof = Profile.create({bio => 'pinned', visible => True, user => $alice});
+    Profile.create({bio => 'hidden', visible => False, user => $alice});
 
-    expect(Scauthor.find($alice.id).scprofile.id).to.eq($visible-prof.id);
+    expect(User.find($alice.id).visible-profile.id).to.eq($visible-prof.id);
   }
 
   context 'belongs-to scope', {
     it 'hides article whose author is inactive', {
-      my $inactive = Scauthor.create({name => 'Zed',   is_active => False});
-      my $orphan = Scarticle.create({title => 'orphan', published => True, score => 0, scauthor => $inactive});
+      my $inactive = User.create({fname => 'Zed', is_active => False});
+      my $orphan = Article.create({title => 'orphan', published => True, score => 0, active-author => $inactive});
 
-      expect(Scarticle.find($orphan.id).scauthor.defined).to.be-falsy;
+      expect(Article.find($orphan.id).active-author.defined).to.be-falsy;
     }
 
     it 'still returns active author', {
-      my $alice = Scauthor.create({name => 'Alice', is_active => True});
-      my $pub-low = Scarticle.create({title => 'low', score => 1, published => True, scauthor => $alice});
+      my $alice = User.create({fname => 'Alice', is_active => True});
+      my $pub-low = Article.create({title => 'low', score => 1, published => True, active-author => $alice});
 
-      expect(Scarticle.find($pub-low.id).scauthor.defined).to.be-truthy;
+      expect(Article.find($pub-low.id).active-author.defined).to.be-truthy;
     }
   }
 
   context 'habtm scope', {
     it 'filters out non-hot rows', {
-      my $alice = Scauthor.create({name => 'Alice', is_active => True});
-      my $pub-low = Scarticle.create({title => 'low', score => 1, published => True, scauthor => $alice});
-      my $hot  = Sctag.create({name => 'raku', hot => True});
-      my $cool = Sctag.create({name => 'old',  hot => False});
-      $pub-low.add-sctag($hot);
-      $pub-low.add-sctag($cool);
+      my $alice = User.create({fname => 'Alice', is_active => True});
+      my $pub-low = Article.create({title => 'low', score => 1, published => True, active-author => $alice});
+      my $hot  = Tag.create({name => 'raku', hot => True});
+      my $cool = Tag.create({name => 'old',  hot => False});
+      $pub-low.add-hot-tag($hot);
+      $pub-low.add-hot-tag($cool);
 
-      expect(Scarticle.find($pub-low.id).sctags.elems).to.eq(1);
+      expect(Article.find($pub-low.id).hot-tags.elems).to.eq(1);
     }
 
     it 'returns matching row', {
-      my $alice = Scauthor.create({name => 'Alice', is_active => True});
-      my $pub-low = Scarticle.create({title => 'low', score => 1, published => True, scauthor => $alice});
-      my $hot  = Sctag.create({name => 'raku', hot => True});
-      my $cool = Sctag.create({name => 'old',  hot => False});
-      $pub-low.add-sctag($hot);
-      $pub-low.add-sctag($cool);
+      my $alice = User.create({fname => 'Alice', is_active => True});
+      my $pub-low = Article.create({title => 'low', score => 1, published => True, active-author => $alice});
+      my $hot  = Tag.create({name => 'raku', hot => True});
+      my $cool = Tag.create({name => 'old',  hot => False});
+      $pub-low.add-hot-tag($hot);
+      $pub-low.add-hot-tag($cool);
 
-      expect(Scarticle.find($pub-low.id).sctags.first.attrs<name>).to.eq('raku');
+      expect(Article.find($pub-low.id).hot-tags.first.attrs<name>).to.eq('raku');
     }
   }
 }

@@ -1,9 +1,10 @@
-
 use v6.d;
 use lib 'lib';
+use lib 'specs/lib';
 use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
+use Models::Slthing;
 use Test;
 
 class Slowner is Model {
@@ -11,16 +12,6 @@ class Slowner is Model {
     self.has-many: slthings => %(
       class-name      => 'Slthing',
       strict-loading  => True,
-    );
-  }
-}
-
-class Slthing is Model {
-  submethod BUILD {
-    self.belongs-to: slowner => %(
-      class-name      => 'Slthing',
-      strict-loading  => True,
-      optional        => True,
     );
   }
 }

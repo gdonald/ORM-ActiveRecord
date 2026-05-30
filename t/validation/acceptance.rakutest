@@ -1,15 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::Acceptance;
 use Test;
-
-class Contract is Model {
-  submethod BUILD {
-    self.validate: 'name', { :presence, length => { min => 8, max => 64 } }
-    self.validate: 'terms', { :acceptance }
-  }
-}
 
 plan 4;
 

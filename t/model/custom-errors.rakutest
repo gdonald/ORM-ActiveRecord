@@ -1,14 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Model::CustomErrors;
 use Test;
-
-class User is Model {
-  submethod BUILD {
-    self.validate: 'fname', { :presence, message => 'fname is required' }
-  }
-}
 
 plan 2;
 

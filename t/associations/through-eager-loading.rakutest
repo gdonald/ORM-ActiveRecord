@@ -1,43 +1,12 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
+use Models::Magazine;
+use Models::Subscription;
+use Models::Profile;
+use Models::Account;
 use Test;
-
-class Subscription {...}
-class Profile      {...}
-class Account      {...}
-
-class User is Model {
-  submethod BUILD {
-    self.has-many: subscriptions => class => Subscription;
-    self.has-many: magazines => through => :subscriptions;
-    self.has-one:  profile  => class => Profile;
-    self.has-one:  account  => through => :profile;
-  }
-}
-
-class Magazine is Model {
-  submethod BUILD {
-    self.has-many: subscriptions => class => Subscription;
-  }
-}
-
-class Subscription is Model {
-  submethod BUILD {
-    self.belongs-to: user     => class => User;
-    self.belongs-to: magazine => class => Magazine;
-  }
-}
-
-class Profile is Model {
-  submethod BUILD {
-    self.belongs-to: user    => class => User;
-    self.belongs-to: account => class => Account;
-  }
-}
-
-class Account is Model {}
 
 plan 21;
 

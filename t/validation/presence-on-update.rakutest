@@ -1,15 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::PresenceOnUpdate;
 use Test;
-
-class Game is Model {
-  submethod BUILD {
-    self.validate: 'name', { :presence, on => { :update } }
-    self.validate: 'year', { :presence, :numericality }
-  }
-}
 
 plan 22;
 

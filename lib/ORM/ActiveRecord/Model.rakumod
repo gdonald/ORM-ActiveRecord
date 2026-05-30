@@ -438,12 +438,13 @@ class Model
       return %!assoc-cache{$name}.list if %!assoc-cache{$name}:exists;
       self.check-strict-loading($name, $spec);
       my $class = self.assoc-class-from-spec($spec);
+      my $target-table = $class !=== Mu ?? Utils.table-name($class) !! $name;
       my $join-table = self.habtm-join-table($name);
       my $owner-key = Utils.base-name(self.fkey-name);
-      my @fields = self.get-fields($name);
+      my @fields = self.get-fields($target-table);
       my $scope-block = self.assoc-scope-block($spec);
       if $scope-block.defined {
-        my $target-fkey = Utils.to-foreign-key($name);
+        my $target-fkey = self.assoc-fkey-from-spec($spec, Utils.to-foreign-key($target-table));
         my $select = $!db.sanitize-sql-array([
           "SELECT $target-fkey FROM $join-table WHERE $owner-key = ?",
           $!id,
@@ -455,7 +456,7 @@ class Model
         $q = self.apply-assoc-scope($scope-block, $q, @rest);
         return $q.all;
       }
-      return $!db.get-objects(:$class, :@fields, :table($name), :$join-table, :where(($owner-key => $!id).Hash));
+      return $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where(($owner-key => $!id).Hash));
     }
 
     if any(%!belongs-tos.keys) eq $name {
@@ -677,7 +678,9 @@ class Model
     my @hits;
     for $instance.belongs-tos.kv -> $bname, $bspec {
       next if $instance.assoc-auto-inverse-disabled($bspec);
-      my $klass = $instance.assoc-class-from-spec($bspec);
+      my $klass = Mu;
+      try { $klass = $instance.assoc-class-from-spec($bspec) };
+      next if $klass === Mu || $klass === Any;
       @hits.push($bname) if $klass === $owner;
     }
     return @hits[0] if @hits.elems == 1;
@@ -839,10 +842,17 @@ class Model
     ($assoc, self.table-name).sort.join('_');
   }
 
+  method habtm-target-key(Str:D $assoc --> Str) {
+    my $spec = %!habtms{$assoc};
+    my $class = self.assoc-class-from-spec($spec);
+    my $target-table = $class !=== Mu ?? Utils.table-name($class) !! $assoc;
+    self.assoc-fkey-from-spec($spec, Utils.to-foreign-key($target-table));
+  }
+
   method habtm-add(Str:D $assoc, Mu:D $record --> Bool) {
     my $join-table = self.habtm-join-table($assoc);
     my $owner-key  = Utils.base-name(self.fkey-name);
-    my $target-key = Utils.to-foreign-key($assoc);
+    my $target-key = self.habtm-target-key($assoc);
     my $stmt = $!db.sanitize-sql-array([
       "INSERT INTO $join-table ($owner-key, $target-key) VALUES (?, ?)",
       $!id, $record.id,
@@ -854,7 +864,7 @@ class Model
   method habtm-remove(Str:D $assoc, Mu:D $record --> Bool) {
     my $join-table = self.habtm-join-table($assoc);
     my $owner-key  = Utils.base-name(self.fkey-name);
-    my $target-key = Utils.to-foreign-key($assoc);
+    my $target-key = self.habtm-target-key($assoc);
     my %where = ($owner-key => $!id, $target-key => $record.id);
     $!db.delete-records(:table($join-table), :%where);
     True;
@@ -931,12 +941,12 @@ class Model
       next if self.is-polymorphic-assoc($name);
       my $col = self.assoc-counter-cache-column($spec);
       next unless $col;
-      my $class = self.assoc-class-from-spec($spec);
-      next if $class === Mu;
       my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
-      my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
       my $fkey-val = (%!attrs{$fkey-col} // 0).Int;
       next unless $fkey-val;
+      my $class = self.assoc-class-from-spec($spec);
+      next if $class === Mu;
+      my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
       self.counter-cache-bump($fkey-val, Utils.table-name($class), $col, $pkey-col, 1);
     }
   }
@@ -946,10 +956,10 @@ class Model
       next if self.is-polymorphic-assoc($name);
       my $col = self.assoc-counter-cache-column($spec);
       next unless $col;
-      my $class = self.assoc-class-from-spec($spec);
-      next if $class === Mu;
       my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
       next unless %snapshot{$fkey-col}:exists;
+      my $class = self.assoc-class-from-spec($spec);
+      next if $class === Mu;
       my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
       my $target-table = Utils.table-name($class);
       my ($old-val, $new-val) = %snapshot{$fkey-col}.list;
@@ -963,12 +973,12 @@ class Model
       next if self.is-polymorphic-assoc($name);
       my $col = self.assoc-counter-cache-column($spec);
       next unless $col;
-      my $class = self.assoc-class-from-spec($spec);
-      next if $class === Mu;
       my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
-      my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
       my $fkey-val = (%!attrs{$fkey-col} // 0).Int;
       next unless $fkey-val;
+      my $class = self.assoc-class-from-spec($spec);
+      next if $class === Mu;
+      my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
       self.counter-cache-bump($fkey-val, Utils.table-name($class), $col, $pkey-col, -1);
     }
   }
@@ -995,12 +1005,12 @@ class Model
       next if self.is-polymorphic-assoc($name);
       my @cols = self.assoc-touch-columns($spec);
       next unless @cols.elems;
-      my $class = self.assoc-class-from-spec($spec);
-      next if $class === Mu;
       my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
-      my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
       my $fkey-val = (%!attrs{$fkey-col} // 0).Int;
       next unless $fkey-val;
+      my $class = self.assoc-class-from-spec($spec);
+      next if $class === Mu;
+      my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
       my $target-table = Utils.table-name($class);
       my @target-fields = self.get-fields($target-table).map({ .name });
       my @existing = @cols.grep({ @target-fields.first(* eq $_).defined });
@@ -1283,7 +1293,8 @@ class Model
 
       if $record && $record ~~ Model && self.assoc-validate-flag($spec) {
         unless $record.is-valid {
-          my $field = self.get-field($name);
+          my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
+          my $field = self.get-field($name) // self.get-field($fkey-col);
           if $field {
             my $message = 'is invalid';
             $!errors.push(Error.new(:$field, :$message, :type<invalid>));
@@ -1307,6 +1318,20 @@ class Model
       elsif !$present {
         my $fkey-col = self.assoc-fkey-from-spec($spec, $name ~ '_id');
         $present = True if (%!attrs{$fkey-col} // 0) != 0;
+
+        if !$present {
+          for %!belongs-tos.kv -> $sibling-name, $sibling-spec {
+            next if $sibling-name eq $name;
+            next if self.is-polymorphic-assoc($sibling-name);
+            my $sibling-fkey = self.assoc-fkey-from-spec($sibling-spec, $sibling-name ~ '_id');
+            next unless $sibling-fkey eq $fkey-col;
+            my $sibling-record = %!attrs{$sibling-name};
+            if $sibling-record && $sibling-record ~~ Model {
+              $present = True;
+              last;
+            }
+          }
+        }
       }
 
       next if $present;

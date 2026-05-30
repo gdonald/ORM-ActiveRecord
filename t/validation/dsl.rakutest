@@ -1,17 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::Dsl;
 use Test;
-
-class PhMulti is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validates: <name>, { :presence, length => { min => 2, max => 8 } }
-    self.validates: <score max_score>, { :presence };
-  }
-}
 
 plan 8;
 

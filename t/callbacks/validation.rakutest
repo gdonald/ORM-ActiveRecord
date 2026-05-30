@@ -1,18 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Callbacks::Validation;
 use Test;
-
-my @events;
-
-class Client is Model {
-  submethod BUILD {
-    self.validate: 'email', { :presence };
-    self.before-validation: -> { @events.push: 'before' };
-    self.after-validation:  -> { @events.push: 'after'  };
-  }
-}
 
 plan 5;
 
@@ -21,24 +11,24 @@ plan 5;
 Client.destroy-all;
 
 {
-  @events = ();
+  @Callbacks::Validation::events = ();
   my $c = Client.build({ email => 'fred@aol.com' });
   $c.is-valid;
-  is-deeply @events, ['before', 'after'], 'before/after-validation fire on is-valid';
+  is-deeply @Callbacks::Validation::events, ['before', 'after'], 'before/after-validation fire on is-valid';
 }
 
 {
-  @events = ();
+  @Callbacks::Validation::events = ();
   my $c = Client.build({ email => '' });
   ok $c.is-invalid, 'invalid record is invalid';
-  is-deeply @events, ['before', 'after'], 'callbacks fire even when invalid';
+  is-deeply @Callbacks::Validation::events, ['before', 'after'], 'callbacks fire even when invalid';
 }
 
 {
-  @events = ();
+  @Callbacks::Validation::events = ();
   my $c = Client.create({ email => 'wilma@aol.com' });
   ok $c.id != 0, 'record was created';
-  ok @events.grep('before').elems >= 1 && @events.grep('after').elems >= 1,
+  ok @Callbacks::Validation::events.grep('before').elems >= 1 && @Callbacks::Validation::events.grep('after').elems >= 1,
      'validation callbacks fire during save';
 }
 

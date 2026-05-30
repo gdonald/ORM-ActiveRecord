@@ -1,15 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::ContactLength;
 use Test;
-
-class Contact is Model {
-  submethod BUILD {
-    self.validate: 'fname', { length => { is => 7 } }
-    self.validate: 'lname', { length => { in => 4..32 } }
-  }
-}
 
 plan 9;
 

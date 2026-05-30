@@ -1,26 +1,10 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
+use Models::Magazine;
+use Models::Subscription;
 use Test;
-
-class Subscription {...}
-
-class User is Model {
-  submethod BUILD {
-    self.has-many: subscriptions => class => Subscription;
-    self.has-many: magazines => through => :subscriptions;
-  }
-}
-
-class Magazine is Model {}
-
-class Subscription is Model {
-  submethod BUILD {
-    self.belongs-to: user => class => User;
-    self.belongs-to: magazine => class => Magazine;
-  }
-}
 
 plan 1;
 
@@ -30,7 +14,7 @@ my $user = User.create({fname => 'Greg'});
 my $magazine = Magazine.create({title => 'Mad'});
 Subscription.create({:$user, :$magazine});
 
-ok $user.magazines.first == $magazine;
+ok $user.magazines.first.id == $magazine.id;
 
 Subscription.destroy-all;
 Magazine.destroy-all;

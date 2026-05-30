@@ -5,23 +5,10 @@ use SpecHelpers;
 use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
+use Models::Belonging;
+use Models::Singleton;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-my Int $belonging-destroys = 0;
-my Int $singleton-destroys = 0;
-
-class Belonging is Model {
-  submethod BUILD {
-    self.before-destroy: -> { $belonging-destroys++ };
-  }
-}
-
-class Singleton is Model {
-  submethod BUILD {
-    self.before-destroy: -> { $singleton-destroys++ };
-  }
-}
 
 class DestroyOwner is Model {
   submethod BUILD {
@@ -71,10 +58,6 @@ class OneRestExcOwner is Model {
   }
 }
 
-sub dep-clean {
-  clean-shared-tables;
-}
-
 sub belonging-count(--> Int) {
   DB.shared.exec('SELECT COUNT(*) FROM belongings')[0][0].Int;
 }
@@ -84,8 +67,8 @@ sub singleton-count(--> Int) {
 }
 
 describe 'dependent option', {
-  before-each { dep-clean }
-  after-each  { dep-clean }
+  before-each { clean-shared-tables }
+  after-each  { clean-shared-tables }
 
   context 'has-many destroy', {
     it 'parent.destroy returns True', {
@@ -109,11 +92,11 @@ describe 'dependent option', {
     }
 
     it 'fires child before-destroy callbacks', {
-      $belonging-destroys = 0;
+      Belonging.reset-destroy-count;
       my $owner = DestroyOwner.create({name => 'destroy-cb'});
       Belonging.create({owner_id => $owner.id, label => 'a'});
       $owner.destroy;
-      expect($belonging-destroys).to.eq(1);
+      expect(Belonging.destroy-count).to.eq(1);
     }
   }
 
@@ -133,11 +116,11 @@ describe 'dependent option', {
     }
 
     it 'does NOT fire child before-destroy callbacks', {
-      $belonging-destroys = 0;
+      Belonging.reset-destroy-count;
       my $owner = DeleteOwner.create({name => 'delete-all'});
       Belonging.create({owner_id => $owner.id, label => 'a'});
       $owner.destroy;
-      expect($belonging-destroys).to.eq(0);
+      expect(Belonging.destroy-count).to.eq(0);
     }
   }
 

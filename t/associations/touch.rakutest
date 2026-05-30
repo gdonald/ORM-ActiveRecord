@@ -1,88 +1,73 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
 use ORM::ActiveRecord::DB;
+use Models::Magazine;
+use Models::Article;
 use Test;
-
-class Tnshop is Model {
-  submethod BUILD {
-    self.has-many: tnitems => %(class-name => 'Tnitem');
-  }
-}
-
-class Tnitem is Model {
-  submethod BUILD {
-    self.belongs-to: tnshop => %(
-      class-name => 'Tnshop',
-      touch      => 'reviewed_at',
-      optional   => True,
-    );
-  }
-}
 
 plan 8;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
 sub clear-all {
-  DB.shared.delete-records(:table('tnitems'), :where({}));
-  DB.shared.delete-records(:table('tnshops'), :where({}));
+  DB.shared.delete-records(:table('articles'),  :where({}));
+  DB.shared.delete-records(:table('magazines'), :where({}));
 }
 
 clear-all;
 
 # touch with a column name: bumps both updated_at and the named column
-my $shop = Tnshop.create({name => 'main'});
-my $u-orig = DB.shared.exec("SELECT updated_at FROM tnshops WHERE id = " ~ $shop.id)[0][0];
+my $mag = Magazine.create({title => 'main'});
+my $u-orig = DB.shared.exec("SELECT updated_at FROM magazines WHERE id = " ~ $mag.id)[0][0];
 sleep 1.05;
 
-Tnitem.create({label => 'a', tnshop_id => $shop.id});
-my $row = DB.shared.exec("SELECT updated_at, reviewed_at FROM tnshops WHERE id = " ~ $shop.id);
+Article.create({title => 'a', magazine_id => $mag.id});
+my $row = DB.shared.exec("SELECT updated_at, reviewed_at FROM magazines WHERE id = " ~ $mag.id);
 my $u-after = $row[0][0];
 my $r-after = $row[0][1];
 ok $u-after.Str gt $u-orig.Str,    'child create bumps parent updated_at';
 ok $r-after.defined,      'child create populates named touch column';
 
 sleep 1.05;
-my $item = Tnitem.create({label => 'b', tnshop_id => $shop.id});
-my $u-pre-destroy = DB.shared.exec("SELECT updated_at FROM tnshops WHERE id = " ~ $shop.id)[0][0];
+my $art = Article.create({title => 'b', magazine_id => $mag.id});
+my $u-pre-destroy = DB.shared.exec("SELECT updated_at FROM magazines WHERE id = " ~ $mag.id)[0][0];
 sleep 1.05;
-$item.destroy;
-my $u-post-destroy = DB.shared.exec("SELECT updated_at FROM tnshops WHERE id = " ~ $shop.id)[0][0];
+$art.destroy;
+my $u-post-destroy = DB.shared.exec("SELECT updated_at FROM magazines WHERE id = " ~ $mag.id)[0][0];
 ok $u-post-destroy.Str gt $u-pre-destroy.Str,
   'child destroy bumps parent updated_at';
 
 # touch on update bumps again
 sleep 1.05;
-my $item-up = Tnitem.find-by({label => 'a'});
-my $u-pre-update = DB.shared.exec("SELECT updated_at, reviewed_at FROM tnshops WHERE id = " ~ $shop.id);
-$item-up.update({label => 'a2'});
-my $u-post-update = DB.shared.exec("SELECT updated_at, reviewed_at FROM tnshops WHERE id = " ~ $shop.id);
+my $art-up = Article.find-by({title => 'a'});
+my $u-pre-update = DB.shared.exec("SELECT updated_at, reviewed_at FROM magazines WHERE id = " ~ $mag.id);
+$art-up.update({title => 'a2'});
+my $u-post-update = DB.shared.exec("SELECT updated_at, reviewed_at FROM magazines WHERE id = " ~ $mag.id);
 ok $u-post-update[0][0].Str gt $u-pre-update[0][0].Str, 'child update bumps parent updated_at';
 ok $u-post-update[0][1].Str gt $u-pre-update[0][1].Str, 'child update bumps named touch column';
 
 # touch with no FK is a no-op
-my $orphan = Tnitem.create({label => 'lonely'});
+my $orphan = Article.create({title => 'lonely'});
 ok $orphan.id > 0, 'orphan saves with no parent (touch is a no-op)';
 
 # update-column bypasses touch
 sleep 1.05;
-my $u-pre = DB.shared.exec("SELECT updated_at FROM tnshops WHERE id = " ~ $shop.id)[0][0];
-$item-up.update-column('label', 'a3');
-my $u-post = DB.shared.exec("SELECT updated_at FROM tnshops WHERE id = " ~ $shop.id)[0][0];
+my $u-pre = DB.shared.exec("SELECT updated_at FROM magazines WHERE id = " ~ $mag.id)[0][0];
+$art-up.update-column('title', 'a3');
+my $u-post = DB.shared.exec("SELECT updated_at FROM magazines WHERE id = " ~ $mag.id)[0][0];
 is $u-post.Str, $u-pre.Str, 'update-column bypasses touch (no callbacks path)';
 
 # Re-parenting bumps the new parent too
 clear-all;
-my $shop-a = Tnshop.create({name => 'A'});
-my $shop-b = Tnshop.create({name => 'B'});
+my $mag-a = Magazine.create({title => 'A'});
+my $mag-b = Magazine.create({title => 'B'});
 sleep 1.05;
-my $mover = Tnitem.create({label => 'm', tnshop_id => $shop-a.id});
-my $b-before = DB.shared.exec("SELECT updated_at FROM tnshops WHERE id = " ~ $shop-b.id)[0][0];
+my $mover = Article.create({title => 'm', magazine_id => $mag-a.id});
+my $b-before = DB.shared.exec("SELECT updated_at FROM magazines WHERE id = " ~ $mag-b.id)[0][0];
 sleep 1.05;
-$mover.update({tnshop_id => $shop-b.id});
-my $b-after = DB.shared.exec("SELECT updated_at FROM tnshops WHERE id = " ~ $shop-b.id)[0][0];
+$mover.update({magazine_id => $mag-b.id});
+my $b-after = DB.shared.exec("SELECT updated_at FROM magazines WHERE id = " ~ $mag-b.id)[0][0];
 ok $b-after.Str gt $b-before.Str, 'reassigning FK bumps the new parent';
 
 clear-all;

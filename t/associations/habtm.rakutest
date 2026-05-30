@@ -1,22 +1,9 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::Post;
+use Models::Tag;
 use Test;
-
-class Tag {...}
-
-class Post is Model {
-  submethod BUILD {
-    self.has-and-belongs-to-many: tags => class => Tag;
-  }
-}
-
-class Tag is Model {
-  submethod BUILD {
-    self.has-and-belongs-to-many: posts => class => Post;
-  }
-}
 
 plan 14;
 

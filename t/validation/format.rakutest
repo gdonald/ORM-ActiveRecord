@@ -1,16 +1,10 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::Format;
 use Test;
 
 plan 7;
-
-class Contact is Model {
-  submethod BUILD {
-    self.validate: 'email', { :presence, format => { with => /:i ^<[\w]>+ '@' <[\w]>+ '.' <[\w]>+$/ } }
-  }
-}
 
 %*ENV<DISABLE-SQL-LOG> = True;
 

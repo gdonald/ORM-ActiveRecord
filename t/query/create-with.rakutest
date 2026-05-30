@@ -1,10 +1,10 @@
 
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
 use Test;
 
-class User is Model {}
 
 plan 6;
 

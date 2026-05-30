@@ -1,27 +1,24 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Models::Article;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-class TsArticle is Model {
-  method table-name { 'articles' }
-}
-
 describe 'timestamps', {
   before-each {
-    TsArticle.destroy-all;
+    Article.destroy-all;
   }
 
   after-each {
-    TsArticle.destroy-all;
+    Article.destroy-all;
   }
 
   context 'on insert', {
     my $article;
 
     before-each {
-      $article = TsArticle.create({ title => 'Hello', body => 'world' });
+      $article = Article.create({ title => 'Hello', body => 'world' });
     }
 
     it 'assigns an id', {
@@ -44,15 +41,15 @@ describe 'timestamps', {
     my $reloaded;
 
     before-all {
-      TsArticle.destroy-all;
-      $article          = TsArticle.create({ title => 'Hello', body => 'world' });
+      Article.destroy-all;
+      $article          = Article.create({ title => 'Hello', body => 'world' });
       $original-created = $article.created_at;
       $original-updated = $article.updated_at;
 
       sleep 1.1;
 
       $article.update({ title => 'Hello, World' });
-      $reloaded = TsArticle.find($article.id);
+      $reloaded = Article.find($article.id);
     }
 
     it 'preserves created_at', {

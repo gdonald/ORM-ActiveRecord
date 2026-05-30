@@ -1,72 +1,24 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Callbacks::Around;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my @events;
-
-class ArClient is Model {
-  method table-name { 'clients' }
-
-  submethod BUILD {
-    self.validate: 'email', { :presence };
-    self.around-save: -> &yield {
-      @events.push: 'around-save-before';
-      &yield();
-      @events.push: 'around-save-after';
-    };
-    self.around-create: -> &yield {
-      @events.push: 'around-create-before';
-      &yield();
-      @events.push: 'around-create-after';
-    };
-    self.around-update: -> &yield {
-      @events.push: 'around-update-before';
-      &yield();
-      @events.push: 'around-update-after';
-    };
-    self.around-destroy: -> &yield {
-      @events.push: 'around-destroy-before';
-      &yield();
-      @events.push: 'around-destroy-after';
-    };
-    self.before-save:   -> { @events.push: 'before-save' };
-    self.after-save:    -> { @events.push: 'after-save'  };
-    self.before-create: -> { @events.push: 'before-create' };
-    self.after-create:  -> { @events.push: 'after-create'  };
-    self.before-update: -> { @events.push: 'before-update' };
-    self.after-update:  -> { @events.push: 'after-update'  };
-    self.before-destroy: -> { @events.push: 'before-destroy' };
-    self.after-destroy:  -> { @events.push: 'after-destroy'  };
-  }
-}
-
-class ArHaltClient is Model {
-  method table-name { 'clients' }
-
-  submethod BUILD {
-    self.validate: 'email', { :presence };
-    self.around-save: -> &yield {
-      # never yield -> halts
-    };
-  }
-}
-
 describe 'around callbacks', {
   before-each {
-    ArClient.destroy-all;
-    @events = ();
+    Client.destroy-all;
+    @Callbacks::Around::events = ();
   }
 
   after-each {
-    ArClient.destroy-all;
+    Client.destroy-all;
   }
 
   it 'around-save and around-create wrap before/after on insert', {
-    ArClient.create({ email => 'fred@aol.com' });
+    Client.create({ email => 'fred@aol.com' });
 
-    expect(@events).to.eq([
+    expect(@Callbacks::Around::events).to.eq([
       'around-save-before',
       'before-save',
       'around-create-before',
@@ -79,14 +31,14 @@ describe 'around callbacks', {
   }
 
   it 'around-save and around-update wrap before/after on update', {
-    ArClient.create({ email => 'fred@aol.com' });
-    @events = ();
+    Client.create({ email => 'fred@aol.com' });
+    @Callbacks::Around::events = ();
 
-    my $c = ArClient.where({ email => 'fred@aol.com' }).first;
+    my $c = Client.where({ email => 'fred@aol.com' }).first;
     $c.email = 'barney@compuserve.net';
     $c.save;
 
-    expect(@events).to.eq([
+    expect(@Callbacks::Around::events).to.eq([
       'around-save-before',
       'before-save',
       'around-update-before',
@@ -99,13 +51,13 @@ describe 'around callbacks', {
   }
 
   it 'around-destroy wraps before- and after-destroy', {
-    ArClient.create({ email => 'barney@compuserve.net' });
-    @events = ();
+    Client.create({ email => 'barney@compuserve.net' });
+    @Callbacks::Around::events = ();
 
-    my $c = ArClient.where({ email => 'barney@compuserve.net' }).first;
+    my $c = Client.where({ email => 'barney@compuserve.net' }).first;
     $c.destroy;
 
-    expect(@events).to.eq([
+    expect(@Callbacks::Around::events).to.eq([
       'around-destroy-before',
       'before-destroy',
       'after-destroy',
@@ -114,7 +66,7 @@ describe 'around callbacks', {
   }
 
   it 'failing to yield in around-save halts save', {
-    my $c = ArHaltClient.new(:id(0), :record({ attrs => { email => 'never@save.com' } }));
+    my $c = HaltClient.new(:id(0), :record({ attrs => { email => 'never@save.com' } }));
 
     expect($c.save).to.be-falsy;
   }

@@ -1,68 +1,47 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::DB;
-use ORM::ActiveRecord::Model;
+use Models::User;
+use Models::Magazine;
+use Models::Subscription;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class WmSubscription {...}
-
-class WmUser is Model {
-  method table-name { 'users' }
-
-  submethod BUILD {
-    self.has-many: subscriptions => class => WmSubscription;
-    self.has-many: magazines => through => :subscriptions;
-  }
-}
-
-class WmMagazine is Model {
-  method table-name { 'magazines' }
-}
-
-class WmSubscription is Model {
-  method table-name { 'subscriptions' }
-
-  submethod BUILD {
-    self.belongs-to: user => class => WmUser;
-    self.belongs-to: magazine => class => WmMagazine;
-  }
-}
 
 describe 'where.missing / where.associated', {
   my ($alice, $bob, $carol, $mad, $time);
 
   before-each {
-    WmSubscription.destroy-all;
-    WmUser.destroy-all;
-    WmMagazine.destroy-all;
+    Subscription.destroy-all;
+    User.destroy-all;
+    Magazine.destroy-all;
 
-    $alice = WmUser.create({fname => 'Alice', lname => 'A'});
-    $bob   = WmUser.create({fname => 'Bob',   lname => 'B'});
-    $carol = WmUser.create({fname => 'Carol', lname => 'C'});
+    $alice = User.create({fname => 'Alice', lname => 'A'});
+    $bob   = User.create({fname => 'Bob',   lname => 'B'});
+    $carol = User.create({fname => 'Carol', lname => 'C'});
 
-    $mad  = WmMagazine.create({title => 'Mad'});
-    $time = WmMagazine.create({title => 'Time'});
+    $mad  = Magazine.create({title => 'Mad'});
+    $time = Magazine.create({title => 'Time'});
 
-    WmSubscription.create({user => $alice, magazine => $mad});
-    WmSubscription.create({user => $bob,   magazine => $time});
+    Subscription.create({user => $alice, magazine => $mad});
+    Subscription.create({user => $bob,   magazine => $time});
   }
 
   after-each {
-    WmSubscription.destroy-all;
-    WmUser.destroy-all;
-    WmMagazine.destroy-all;
+    Subscription.destroy-all;
+    User.destroy-all;
+    Magazine.destroy-all;
   }
 
   context 'where.missing(:has-many)', {
     it 'finds users with no rows', {
-      my @no-subs = WmUser.where.missing(:subscriptions).order('fname').all;
+      my @no-subs = User.where.missing(:subscriptions).order('fname').all;
 
       expect(@no-subs.elems).to.eq(1);
     }
 
     it 'returned the user with no subscriptions', {
-      my @no-subs = WmUser.where.missing(:subscriptions).order('fname').all;
+      my @no-subs = User.where.missing(:subscriptions).order('fname').all;
 
       expect(@no-subs[0].fname).to.eq('Carol');
     }
@@ -78,13 +57,13 @@ describe 'where.missing / where.associated', {
     }
 
     it 'finds rows with NULL FK', {
-      my @no-user = WmSubscription.where.missing(:user).all;
+      my @no-user = Subscription.where.missing(:user).all;
 
       expect(@no-user.elems).to.eq(1);
     }
 
     it 'returned the orphan subscription', {
-      my @no-user = WmSubscription.where.missing(:user).all;
+      my @no-user = Subscription.where.missing(:user).all;
 
       expect(@no-user[0].id).to.be-greater-than(0);
     }
@@ -92,39 +71,39 @@ describe 'where.missing / where.associated', {
 
   context 'where.associated(:has-many)', {
     it 'finds users with rows', {
-      my @subbed = WmUser.where.associated(:subscriptions).distinct.order('fname').all;
+      my @subbed = User.where.associated(:subscriptions).distinct.order('fname').all;
 
       expect(@subbed.elems).to.eq(2);
     }
 
     it 'returned the subscribed users', {
-      my @subbed = WmUser.where.associated(:subscriptions).distinct.order('fname').all;
+      my @subbed = User.where.associated(:subscriptions).distinct.order('fname').all;
 
       expect(@subbed.map({ .fname }).join(',')).to.eq('Alice,Bob');
     }
   }
 
   it 'where.associated narrows to FK-present rows', {
-    expect(WmSubscription.where.associated(:user).count).to.eq(2);
+    expect(Subscription.where.associated(:user).count).to.eq(2);
   }
 
   it 'count honors missing', {
-    expect(WmUser.where.missing(:subscriptions).count).to.eq(1);
+    expect(User.where.missing(:subscriptions).count).to.eq(1);
   }
 
   it 'count honors associated', {
-    expect(WmUser.where.associated(:subscriptions).distinct.count).to.eq(2);
+    expect(User.where.associated(:subscriptions).distinct.count).to.eq(2);
   }
 
   it 'missing through has_many :through finds users with no magazines', {
-    expect(WmUser.where.missing(:magazines).count).to.eq(1);
+    expect(User.where.missing(:magazines).count).to.eq(1);
   }
 
   it 'Model.missing shortcut works', {
-    expect(WmUser.missing(:subscriptions).count).to.eq(1);
+    expect(User.missing(:subscriptions).count).to.eq(1);
   }
 
   it 'Model.associated shortcut works', {
-    expect(WmUser.associated(:subscriptions).distinct.count).to.eq(2);
+    expect(User.associated(:subscriptions).distinct.count).to.eq(2);
   }
 }

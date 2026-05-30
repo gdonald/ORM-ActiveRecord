@@ -1,39 +1,28 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Callbacks::InitializeFind;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-class IfArticle is Model {
-  method table-name { 'articles' }
-
-  has Int $.init-count is rw = 0;
-  has Int $.find-count is rw = 0;
-
-  submethod BUILD {
-    self.after-initialize: -> { self.init-count++ };
-    self.after-find:       -> { self.find-count++ };
-  }
-}
-
 describe 'initialize and find callbacks', {
   before-each {
-    IfArticle.destroy-all;
+    Article.destroy-all;
   }
 
   after-each {
-    IfArticle.destroy-all;
+    Article.destroy-all;
   }
 
   context 'new()', {
     it 'fires after-initialize', {
-      my $a = IfArticle.new(:id(0));
+      my $a = Article.new(:id(0));
 
       expect($a.init-count).to.eq(1);
     }
 
     it 'does not fire after-find', {
-      my $a = IfArticle.new(:id(0));
+      my $a = Article.new(:id(0));
 
       expect($a.find-count).to.eq(0);
     }
@@ -41,13 +30,13 @@ describe 'initialize and find callbacks', {
 
   context 'build()', {
     it 'fires after-initialize', {
-      my $a = IfArticle.build({ title => 't', body => 'b' });
+      my $a = Article.build({ title => 't', body => 'b' });
 
       expect($a.init-count).to.eq(1);
     }
 
     it 'does not fire after-find', {
-      my $a = IfArticle.build({ title => 't', body => 'b' });
+      my $a = Article.build({ title => 't', body => 'b' });
 
       expect($a.find-count).to.eq(0);
     }
@@ -55,18 +44,18 @@ describe 'initialize and find callbacks', {
 
   context 'loading from DB', {
     before-each {
-      my $a = IfArticle.build({ title => 't', body => 'b' });
+      my $a = Article.build({ title => 't', body => 'b' });
       $a.save;
     }
 
     it 'fires after-initialize', {
-      my $first = IfArticle.first;
+      my $first = Article.first;
 
       expect($first.init-count).to.eq(1);
     }
 
     it 'fires after-find', {
-      my $first = IfArticle.first;
+      my $first = Article.first;
 
       expect($first.find-count).to.eq(1);
     }

@@ -1,79 +1,9 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
-use ORM::ActiveRecord::Errors::Error;
+use lib 'specs/lib';
 use ORM::ActiveRecord::Errors::X;
-use ORM::ActiveRecord::Schema::Field;
+use Validation::Each;
 use Test;
-
-sub flag-name($rec, $attr, $value) {
-  my $f = Field.new(:name($attr), :type('string'));
-  $rec.errors.push(Error.new(:field($f), :message('name flagged')));
-}
-
-class PhEach is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validates-each: <name>, -> $rec, $attr, $value {
-      if $value && $value ~~ /^ <:Ll> / {
-        my $f = Field.new(:name($attr), :type('string'));
-        $rec.errors.push(Error.new(:field($f), :message('must start with capital letter')));
-      }
-    }
-  }
-}
-
-class PhEachMulti is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validates-each: <score max_score>, -> $rec, $attr, $value {
-      if $value < 0 {
-        my $f = Field.new(:name($attr), :type('integer'));
-        $rec.errors.push(Error.new(:field($f), :message('must not be negative')));
-      }
-    }
-  }
-}
-
-class PhEachIf is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validates-each: <name>, &flag-name, { :if => { self.score > 0 } };
-  }
-}
-
-class PhEachUnless is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validates-each: <name>, &flag-name, { :unless => { self.score > 0 } };
-  }
-}
-
-class PhEachOn is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validates-each: <name>, &flag-name, { on => { :review } };
-  }
-}
-
-class PhEachStrict is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validates-each: <name>, -> $rec, $attr, $value {
-      if $value && $value ~~ /^ <:Ll> / {
-        my $f = Field.new(:name($attr), :type('string'));
-        $rec.errors.push(Error.new(:field($f), :message('must start with capital letter')));
-      }
-    }, { :strict };
-  }
-}
 
 plan 15;
 
@@ -96,25 +26,21 @@ ok $m.errors.max_score[0] eq 'must not be negative', 'block applies to max_score
 $m = PhEachMulti.build({name => 'A', score => 1, max_score => 2});
 ok $m.is-valid, 'no negative scores -> valid';
 
-# :if guard
 ok PhEachIf.build({name => 'x', score => 5, max_score => 0}).is-invalid,
   'validates-each :if true runs the block';
 ok PhEachIf.build({name => 'x', score => 0, max_score => 0}).is-valid,
   'validates-each :if false skips the block';
 
-# :unless guard
 ok PhEachUnless.build({name => 'x', score => 5, max_score => 0}).is-valid,
   'validates-each :unless true skips the block';
 ok PhEachUnless.build({name => 'x', score => 0, max_score => 0}).is-invalid,
   'validates-each :unless false runs the block';
 
-# on: context
 ok PhEachOn.build({name => 'x', score => 0, max_score => 0}).is-invalid(:context<review>),
   'validates-each on: runs the block under the named context';
 ok PhEachOn.build({name => 'x', score => 0, max_score => 0}).is-valid,
   'validates-each on: skips the block in the default context';
 
-# strict
 {
   my $caught;
   try { PhEachStrict.build({name => 'lowercase', score => 0, max_score => 0}).is-valid; CATCH { default { $caught = $_ } } }

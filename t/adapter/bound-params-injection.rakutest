@@ -1,14 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
 use Test;
-
-class User is Model {
-  submethod BUILD {
-    self.validate: 'fname', { :presence };
-  }
-}
 
 plan 4;
 
@@ -21,15 +15,10 @@ my $bob   = User.create({fname => 'Bob',   lname => 'Brown'});
 
 ok User.count == 2, 'two users created';
 
-# A value that would have been catastrophic under string interpolation:
-# the old build-where would produce  WHERE fname = 'foo' OR '1'='1'
-# which would match every row. With bound parameters it must be treated
-# as a literal string and match nothing.
 my $payload = q{foo' OR '1'='1};
 my @rows = User.where({fname => $payload}).all;
 ok @rows.elems == 0, 'injection-style WHERE payload matched zero rows';
 
-# Lookup with a literal apostrophe must still round-trip safely
 my $oneill = User.create({fname => q{O'Neill}, lname => 'Sam'});
 ok User.where({fname => q{O'Neill}}).count == 1, 'apostrophe in WHERE binds correctly';
 

@@ -1,32 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Validation::UniquenessCaseSensitive;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class PhuserCI is Model {
-  method table-name { 'phusers' }
-
-  submethod BUILD {
-    self.validate: 'username', { uniqueness => { case-sensitive => False } }
-  }
-}
-
-class PhuserCS is Model {
-  method table-name { 'phusers' }
-
-  submethod BUILD {
-    self.validate: 'username', { uniqueness => { case-sensitive => True } }
-  }
-}
-
-class PhuserDefault is Model {
-  method table-name { 'phusers' }
-
-  submethod BUILD {
-    self.validate: 'username', { :uniqueness }
-  }
-}
 
 describe 'uniqueness with case-sensitive option', {
   before-each { PhuserCI.destroy-all }

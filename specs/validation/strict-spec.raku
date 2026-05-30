@@ -1,25 +1,10 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::Errors::X;
+use Validation::Strict;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class StPhevent is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name', { :presence, strict => True }
-  }
-}
-
-class StPhevent2 is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { numericality => { gt => 5 }, :strict, message => 'is too low' }
-  }
-}
 
 describe 'strict validation raises X::StrictValidationFailed', {
   before-each { StPhevent.destroy-all }

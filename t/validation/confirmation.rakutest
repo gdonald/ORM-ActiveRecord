@@ -1,14 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::Confirmation;
 use Test;
-
-class Client is Model {
-  submethod BUILD {
-    self.validate: 'email', { :presence, :confirmation }
-  }
-}
 
 plan 7;
 

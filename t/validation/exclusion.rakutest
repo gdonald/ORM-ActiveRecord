@@ -1,14 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::Exclusion;
 use Test;
-
-class Person is Model {
-  submethod BUILD {
-    self.validate: 'username', { :presence, exclusion => { in => <admin superuser> } }
-  }
-}
 
 plan 9;
 

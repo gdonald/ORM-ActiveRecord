@@ -1,17 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Validation::Rerun;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class RerunPhevent is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name',  { :presence }
-    self.validate: 'score', { numericality => { gt => 0 } }
-  }
-}
 
 describe 'is-valid / is-invalid can be called repeatedly without leaking state', {
   before-each { RerunPhevent.destroy-all }

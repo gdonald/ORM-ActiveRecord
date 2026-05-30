@@ -1,28 +1,20 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Model::DynamicErrors;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class DeUser is Model {
-  method table-name { 'users' }
-
-  submethod BUILD {
-    self.validate: 'fname', { :presence, length => { min => 4 },
-      message => '{model} {attribute} needs at least {value} characters' }
-  }
-}
 
 describe 'dynamic error message interpolation', {
   my $user;
 
   before-each {
-    $user = DeUser.build({fname => 'Foo'});
+    $user = User.build({fname => 'Foo'});
     $user.is-valid;
   }
 
   after-each {
-    DeUser.destroy-all;
+    User.destroy-all;
   }
 
   it 'reports the record as invalid', {
@@ -30,6 +22,6 @@ describe 'dynamic error message interpolation', {
   }
 
   it 'interpolates {model}, {attribute}, and {value}', {
-    expect($user.errors.fname[0]).to.match(/'DeUser fname needs at least 4 characters'/);
+    expect($user.errors.fname[0]).to.match(/'User fname needs at least 4 characters'/);
   }
 }

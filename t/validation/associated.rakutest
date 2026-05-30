@@ -1,67 +1,10 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
+use Validation::Associated;
 use Test;
-
-class Phbook is Model {
-  submethod BUILD {
-    self.belongs-to: phlibrary => %(class-name => 'Phlibrary', optional => True);
-    self.validate: 'title', { :presence }
-  }
-}
-
-class Phlibrary is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook');
-    self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks';
-  }
-}
-
-class PhlibIf is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
-    self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { :if => { self.name eq 'Guarded' } };
-  }
-}
-
-class PhlibUnless is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
-    self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { :unless => { self.name eq 'Skip' } };
-  }
-}
-
-class PhlibOn is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
-    self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { on => { :audit } };
-  }
-}
-
-class PhlibStrict is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
-    self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { :strict };
-  }
-}
 
 sub seed-bad-child($class, Str:D $name) {
   my $lib = $class.create({name => $name});
@@ -88,17 +31,6 @@ Phbook.new(:id(0), :record({attrs => {title => '', phlibrary_id => $lib.id}})).s
 my $bad = Phlibrary.find($lib.id);
 nok $bad.is-valid, 'library invalid when a child book is invalid';
 ok $bad.errors.phbooks[0] eq 'is invalid', 'parent records "is invalid" from validates-associated';
-
-# Custom message via hash form
-class Phlibrary2 is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
-    self.validate: 'name', { :presence }
-    self.validates: <phbooks>, { :associated, message => 'has bad children' }
-  }
-}
 
 my $lib2 = Phlibrary2.find($lib.id);
 nok $lib2.is-valid, 'custom-message variant still detects invalid children';

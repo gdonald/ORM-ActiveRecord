@@ -1,14 +1,14 @@
 
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
 use Test;
 
 # `references` is a metadata-only slot at this stage; it stores association
 # names so they can be honoured later when eager-loading lands. The wiring
 # we test here is the chainability and merge / unscope semantics.
 
-class User is Model {}
 
 plan 7;
 

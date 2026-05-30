@@ -1,50 +1,34 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Callbacks::AfterSave;
+use Models::Log;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-class AsLog is Model {
-  method table-name { 'logs' }
-};
-
-class AsClient is Model {
-  method table-name { 'clients' }
-
-  submethod BUILD {
-    self.validate: 'email', { :presence };
-    self.after-save: -> { self.log };
-  }
-
-  method log {
-    my $log = self.email ~ ' was saved';
-    AsLog.create({:$log});
-  }
-}
-
 describe 'after-save callback', {
   before-each {
-    AsClient.destroy-all;
-    AsLog.destroy-all;
+    Client.destroy-all;
+    Log.destroy-all;
   }
 
   after-each {
-    AsClient.destroy-all;
-    AsLog.destroy-all;
+    Client.destroy-all;
+    Log.destroy-all;
   }
 
   it 'fires once on create', {
-    AsClient.create({ email => 'fred@aol.com' });
+    Client.create({ email => 'fred@aol.com' });
 
-    expect(AsLog.count).to.eq(1);
+    expect(Log.count).to.eq(1);
   }
 
   it 'fires again on update', {
-    my $client = AsClient.create({ email => 'fred@aol.com' });
+    my $client = Client.create({ email => 'fred@aol.com' });
 
     $client.email = 'barney@compuserve.net';
     $client.save;
 
-    expect(AsLog.count).to.eq(2);
+    expect(Log.count).to.eq(2);
   }
 }

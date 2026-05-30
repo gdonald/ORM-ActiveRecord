@@ -1,41 +1,12 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
+use Models::Article;
+use Models::Passport;
+use Models::Region;
+use Models::Town;
 use Test;
-
-class User is Model {
-  submethod BUILD {
-    self.has-many: articles => %(class-name => 'Article', foreign-key => 'author_id');
-    self.has-one:  passport => %(class-name => 'Passport', foreign-key => 'owner_id');
-  }
-}
-
-class Article is Model {
-  submethod BUILD {
-    self.belongs-to: author => %(class-name => 'User', foreign-key => 'author_id');
-  }
-}
-
-class Passport is Model {
-  submethod BUILD {
-    self.belongs-to: owner => %(class-name => 'User', foreign-key => 'owner_id');
-  }
-}
-
-class Town {...}
-
-class Region is Model {
-  submethod BUILD {
-    self.has-many: towns => %(class-name => 'Town', primary-key => 'code', foreign-key => 'region_code');
-  }
-}
-
-class Town is Model {
-  submethod BUILD {
-    self.belongs-to: region => %(class-name => 'Region', primary-key => 'code', foreign-key => 'region_code');
-  }
-}
 
 plan 22;
 

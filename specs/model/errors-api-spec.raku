@@ -1,20 +1,12 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::Errors::Error;
 use ORM::ActiveRecord::Errors::Errors;
 use ORM::ActiveRecord::Schema::Field;
+use Model::ErrorsApi;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class ErrPhevent is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name',  { :presence }
-    self.validate: 'score', { numericality => { gt => 0 } }
-  }
-}
 
 describe 'errors API', {
   before-each {

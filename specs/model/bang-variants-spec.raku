@@ -1,32 +1,25 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::Errors::X;
+use Models::User;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-class BvUser is Model {
-  method table-name { 'users' }
-
-  submethod BUILD {
-    self.validate: 'fname', { :presence };
-  }
-}
-
 describe '-or-die variants', {
   before-each {
-    BvUser.destroy-all;
+    User.destroy-all;
   }
 
   after-each {
-    BvUser.destroy-all;
+    User.destroy-all;
   }
 
   context 'create-or-die on the happy path', {
     my $alice;
 
     before-each {
-      $alice = BvUser.create-or-die({fname => 'Alice'});
+      $alice = User.create-or-die({fname => 'Alice'});
     }
 
     it 'returns a persisted record', {
@@ -40,14 +33,14 @@ describe '-or-die variants', {
 
   context 'create-or-die on the failure path', {
     it 'raises X::RecordInvalid', {
-      expect({ BvUser.create-or-die({fname => ''}) }).to.raise-error(X::RecordInvalid);
+      expect({ User.create-or-die({fname => ''}) }).to.raise-error(X::RecordInvalid);
     }
 
     it 'carries at least one message on the exception', {
       my $caught;
 
       try {
-        BvUser.create-or-die({fname => ''});
+        User.create-or-die({fname => ''});
         CATCH { when X::RecordInvalid() { $caught = $_ } }
       }
 
@@ -58,7 +51,7 @@ describe '-or-die variants', {
       my $caught;
 
       try {
-        BvUser.create-or-die({fname => ''});
+        User.create-or-die({fname => ''});
         CATCH { when X::RecordInvalid() { $caught = $_ } }
       }
 
@@ -68,7 +61,7 @@ describe '-or-die variants', {
 
   context 'save-or-die on the happy path', {
     it 'returns self', {
-      my $alice = BvUser.create-or-die({fname => 'Alice'});
+      my $alice = User.create-or-die({fname => 'Alice'});
 
       expect($alice.save-or-die).to.eq($alice);
     }
@@ -76,7 +69,7 @@ describe '-or-die variants', {
 
   context 'update-or-die on the failure path', {
     it 'raises X::RecordInvalid', {
-      my $alice = BvUser.create-or-die({fname => 'Alice'});
+      my $alice = User.create-or-die({fname => 'Alice'});
 
       expect({ $alice.update-or-die({fname => ''}) }).to.raise-error(X::RecordInvalid);
     }
@@ -84,22 +77,22 @@ describe '-or-die variants', {
 
   context 'update-or-die on the happy path', {
     it 'persists the change', {
-      my $bob = BvUser.create({fname => 'Bob'});
+      my $bob = User.create({fname => 'Bob'});
       $bob.update-or-die({fname => 'Robert'});
 
-      expect(BvUser.where({fname => 'Robert'}).count).to.eq(1);
+      expect(User.where({fname => 'Robert'}).count).to.eq(1);
     }
   }
 
   context 'failure paths', {
     it 'leak no rows', {
-      my $alice = BvUser.create-or-die({fname => 'Alice'});
-      try { BvUser.create-or-die({fname => ''}) };
+      my $alice = User.create-or-die({fname => 'Alice'});
+      try { User.create-or-die({fname => ''}) };
 
-      my $bob = BvUser.create({fname => 'Bob'});
+      my $bob = User.create({fname => 'Bob'});
       try { $bob.update-or-die({fname => ''}) };
 
-      expect(BvUser.count).to.eq(2);
+      expect(User.count).to.eq(2);
     }
   }
 }

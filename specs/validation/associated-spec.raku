@@ -1,80 +1,11 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
+use Validation::Associated;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class Phlibrary  {...}
-class Phlibrary2 {...}
-
-class Phbook is Model {
-  submethod BUILD {
-    self.belongs-to: phlibrary => %(class => Phlibrary, optional => True);
-    self.validate: 'title', { :presence }
-  }
-}
-
-class Phlibrary is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class => Phbook);
-    self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks';
-  }
-}
-
-class Phlibrary2 is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class => Phbook, foreign-key => 'phlibrary_id');
-    self.validate: 'name', { :presence }
-    self.validates: <phbooks>, { :associated, message => 'has bad children' }
-  }
-}
-
-class PhlibIf is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class => Phbook, foreign-key => 'phlibrary_id');
-    self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { :if => { self.name eq 'Guarded' } };
-  }
-}
-
-class PhlibUnless is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class => Phbook, foreign-key => 'phlibrary_id');
-    self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { :unless => { self.name eq 'Skip' } };
-  }
-}
-
-class PhlibOn is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class => Phbook, foreign-key => 'phlibrary_id');
-    self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { on => { :audit } };
-  }
-}
-
-class PhlibStrict is Model {
-  method table-name { 'phlibraries' }
-
-  submethod BUILD {
-    self.has-many: phbooks => %(class => Phbook, foreign-key => 'phlibrary_id');
-    self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { :strict };
-  }
-}
 
 sub clean {
   DB.shared.delete-records(:table('phbooks'),     :where({}));

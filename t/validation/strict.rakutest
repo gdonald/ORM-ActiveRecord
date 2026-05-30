@@ -1,25 +1,9 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
 use ORM::ActiveRecord::Errors::X;
+use Validation::Strict;
 use Test;
-
-class StPhevent is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name', { :presence, strict => True }
-  }
-}
-
-class StPhevent2 is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'score', { numericality => { gt => 5 }, :strict, message => 'is too low' }
-  }
-}
 
 plan 7;
 

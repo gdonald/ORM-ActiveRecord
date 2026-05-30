@@ -1,20 +1,9 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
 use ORM::ActiveRecord::Errors::X;
+use Callbacks::SkipSetTerminator;
 use Test;
-
-my @events;
-
-class Client is Model {
-  submethod BUILD {
-    self.validate: 'email', { :presence };
-    self.before-save: -> { @events.push: 'b1' }, :tag<b1>;
-    self.before-save: -> { @events.push: 'b2' }, :tag<b2>;
-    self.before-save: -> { @events.push: 'b3' }, :tag<b3>;
-  }
-}
 
 plan 8;
 
@@ -37,29 +26,29 @@ Client.destroy-all;
 
 # skip-callback removes by tag
 {
-  @events = ();
+  @Callbacks::SkipSetTerminator::events = ();
   my $c = Client.build({ email => 'wilma@aol.com' });
   $c.skip-callback(:event<save>, :timing<before>, :tag<b2>);
   $c.save;
-  is-deeply @events, ['b1', 'b3'], 'skip-callback removes the b2 entry';
+  is-deeply @Callbacks::SkipSetTerminator::events, ['b1', 'b3'], 'skip-callback removes the b2 entry';
 }
 
 # set-callback adds a new callback at runtime
 {
-  @events = ();
+  @Callbacks::SkipSetTerminator::events = ();
   my $c = Client.build({ email => 'pebbles@aol.com' });
   $c.set-callback(
     :event<save>, :timing<before>,
-    :handler(-> { @events.push: 'b4' }),
+    :handler(-> { @Callbacks::SkipSetTerminator::events.push: 'b4' }),
     :tag<b4>,
   );
   $c.save;
-  ok @events.tail eq 'b4', 'set-callback appended the new entry';
+  ok @Callbacks::SkipSetTerminator::events.tail eq 'b4', 'set-callback appended the new entry';
 }
 
 # Throwing X::Callback::Abort halts the chain
 {
-  @events = ();
+  @Callbacks::SkipSetTerminator::events = ();
   my $c = Client.build({ email => 'bambam@aol.com' });
   $c.set-callback(
     :event<save>, :timing<before>,
@@ -67,12 +56,12 @@ Client.destroy-all;
     :prepend,
   );
   ok !$c.save, 'throwing X::Callback::Abort halts save';
-  is @events.elems, 0, 'no further before-save callbacks ran after abort';
+  is @Callbacks::SkipSetTerminator::events.elems, 0, 'no further before-save callbacks ran after abort';
 }
 
 # Custom terminator: treat 0 as an abort signal
 {
-  @events = ();
+  @Callbacks::SkipSetTerminator::events = ();
   my $c = Client.build({ email => 'dino@aol.com' });
   $c.set-callback-terminator(
     :event<save>, :timing<before>,
@@ -87,10 +76,10 @@ Client.destroy-all;
   );
   $c.set-callback(
     :event<save>, :timing<before>,
-    :handler(-> { @events.push: 'after-zero' }),
+    :handler(-> { @Callbacks::SkipSetTerminator::events.push: 'after-zero' }),
   );
   $c.save;
-  is @events.elems, 0, 'custom terminator halts the chain on a 0 return';
+  is @Callbacks::SkipSetTerminator::events.elems, 0, 'custom terminator halts the chain on a 0 return';
 }
 
 Client.destroy-all;

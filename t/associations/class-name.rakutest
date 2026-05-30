@@ -1,56 +1,14 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
+use Models::Page;
+use Models::Profile;
+use Models::Magazine;
+use Models::Subscription;
+use Models::Post;
+use Models::Tag;
 use Test;
-
-class Page  {...}
-class Tag   {...}
-class Magazine {...}
-class Subscription {...}
-class Profile {...}
-
-class User is Model {
-  submethod BUILD {
-    self.has-many: pages => class-name => 'Page';
-    self.has-many: subscriptions => class-name => 'Subscription';
-    self.has-many: magazines => %(through => :subscriptions, class-name => 'Magazine');
-    self.has-one:  profile  => class-name => 'Profile';
-  }
-}
-
-class Page is Model {
-  submethod BUILD {
-    self.belongs-to: user => class-name => 'User';
-  }
-}
-
-class Profile is Model {
-  submethod BUILD {
-    self.belongs-to: user => class-name => 'User';
-  }
-}
-
-class Magazine is Model {}
-
-class Subscription is Model {
-  submethod BUILD {
-    self.belongs-to: user     => class-name => 'User';
-    self.belongs-to: magazine => class-name => 'Magazine';
-  }
-}
-
-class Post is Model {
-  submethod BUILD {
-    self.has-and-belongs-to-many: tags => class-name => 'Tag';
-  }
-}
-
-class Tag is Model {
-  submethod BUILD {
-    self.has-and-belongs-to-many: posts => %(class-name => 'Post');
-  }
-}
 
 plan 18;
 

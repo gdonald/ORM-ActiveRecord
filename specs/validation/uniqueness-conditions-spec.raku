@@ -1,25 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Validation::UniquenessConditions;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class PhuserActive is Model {
-  method table-name { 'phusers' }
-
-  submethod BUILD {
-    self.validate: 'username', { uniqueness => { conditions => { is_active => True } } }
-  }
-}
-
-class PhuserScopeCond is Model {
-  method table-name { 'phusers' }
-
-  submethod BUILD {
-    self.validate: 'username',
-      { uniqueness => { scope => :tenant_id, conditions => { is_active => True } } }
-  }
-}
 
 describe 'uniqueness with conditions', {
   before-each { PhuserActive.destroy-all }

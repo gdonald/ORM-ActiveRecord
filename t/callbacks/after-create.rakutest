@@ -1,22 +1,9 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Callbacks::AfterCreate;
+use Models::Log;
 use Test;
-
-class Log is Model {};
-
-class Client is Model {
-  submethod BUILD {
-    self.validate: 'email', { :presence };
-    self.after-create: -> { self.log };
-  }
-
-  method log {
-    my $log = self.email ~ ' was created';
-    Log.create({:$log});
-  }
-}
 
 plan 2;
 

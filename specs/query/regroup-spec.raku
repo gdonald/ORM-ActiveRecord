@@ -1,51 +1,49 @@
 use lib 'lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Models::User;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-class RgUser is Model {
-  method table-name { 'users' }
-}
 
 describe 'regroup', {
   before-each {
-    RgUser.destroy-all;
-    RgUser.create({fname => 'Alice', lname => 'Anderson'});
-    RgUser.create({fname => 'Adam',  lname => 'Anderson'});
-    RgUser.create({fname => 'Bob',   lname => 'Brown'});
-    RgUser.create({fname => 'Carol', lname => 'Carter'});
+    User.destroy-all;
+    User.create({fname => 'Alice', lname => 'Anderson'});
+    User.create({fname => 'Adam',  lname => 'Anderson'});
+    User.create({fname => 'Bob',   lname => 'Brown'});
+    User.create({fname => 'Carol', lname => 'Carter'});
   }
 
   after-each {
-    RgUser.destroy-all;
+    User.destroy-all;
   }
 
   context 'regroup replaces an existing group', {
     it 'collapses to 3 lname groups', {
-      my @lnames = RgUser.group('fname').regroup('lname').pluck('lname').sort;
+      my @lnames = User.group('fname').regroup('lname').pluck('lname').sort;
 
       expect(@lnames.elems).to.eq(3);
     }
 
     it 'picked the right column', {
-      my @lnames = RgUser.group('fname').regroup('lname').pluck('lname').sort;
+      my @lnames = User.group('fname').regroup('lname').pluck('lname').sort;
 
       expect(@lnames.join(',')).to.eq('Anderson,Brown,Carter');
     }
   }
 
   it 'acts as group when no prior group', {
-    expect(RgUser.regroup('lname').count.elems).to.eq(3);
+    expect(User.regroup('lname').count.elems).to.eq(3);
   }
 
   it 'with multiple columns replaces in full', {
-    my @rows = RgUser.group('lname').regroup('lname', 'fname').pluck('lname', 'fname');
+    my @rows = User.group('lname').regroup('lname', 'fname').pluck('lname', 'fname');
 
     expect(@rows.elems).to.eq(4);
   }
 
   it 'group-values reflects the replacement', {
-    expect(RgUser.group('fname').regroup('lname').group-values.join(',')).to.eq('lname');
+    expect(User.group('fname').regroup('lname').group-values.join(',')).to.eq('lname');
   }
 }

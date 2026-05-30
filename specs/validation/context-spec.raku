@@ -1,28 +1,9 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
-use ORM::ActiveRecord::Model;
+use Validation::Context;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class CtxPhevent is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name',      { :presence }
-    self.validate: 'score',     { :presence, on => { :step_one } }
-    self.validate: 'max_score', { :presence, on => { :step_two } }
-  }
-}
-
-class CtxPhevent2 is Model {
-  method table-name { 'phevents' }
-
-  submethod BUILD {
-    self.validate: 'name',      { :presence }
-    self.validate: 'score',     { :presence, on => { :create } }
-    self.validate: 'max_score', { :presence, on => { :step_two } }
-  }
-}
 
 describe 'validation context (on:)', {
   before-each { CtxPhevent.destroy-all }

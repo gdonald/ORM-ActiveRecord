@@ -5,20 +5,13 @@ use SpecHelpers;
 use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
+use Models::Slthing;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-
-class Slthing { ... }
 
 class Slowner is Model {
   submethod BUILD {
     self.has-many: slthings => %(class => Slthing, strict-loading => True);
-  }
-}
-
-class Slthing is Model {
-  submethod BUILD {
-    self.belongs-to: slowner => %(class => Slthing, strict-loading => True, optional => True);
   }
 }
 
@@ -39,13 +32,9 @@ class Slowner3 is Model {
   }
 }
 
-sub sl-clean {
-  clean-shared-tables;
-}
-
 describe 'strict-loading', {
-  before-each { sl-clean }
-  after-each  { sl-clean }
+  before-each { clean-shared-tables }
+  after-each  { clean-shared-tables }
 
   context 'per-relation strict-loading', {
     it 'raises on access', {

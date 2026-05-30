@@ -1,14 +1,8 @@
-
 use v6.d;
 use lib 'lib';
-use ORM::ActiveRecord::Model;
+use lib 'specs/lib';
+use Validation::Uniqueness;
 use Test;
-
-class Person is Model {
-  submethod BUILD {
-    self.validate: 'username', { :uniqueness }
-  }
-}
 
 plan 4;
 
