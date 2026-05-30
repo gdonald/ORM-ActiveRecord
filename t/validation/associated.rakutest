@@ -8,7 +8,7 @@ use Test;
 
 sub seed-bad-child($class, Str:D $name) {
   my $lib = $class.create({name => $name});
-  Phbook.new(:id(0), :record({attrs => {title => '', phlibrary_id => $lib.id}})).save(:!validate);
+  Manual.new(:id(0), :record({attrs => {title => '', archive_id => $lib.id}})).save(:!validate);
   $class.find($lib.id);
 }
 
@@ -16,69 +16,69 @@ plan 15;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-DB.shared.delete-records(:table('phbooks'),     :where({}));
-DB.shared.delete-records(:table('phlibraries'), :where({}));
+DB.shared.delete-records(:table('manuals'),     :where({}));
+DB.shared.delete-records(:table('archives'), :where({}));
 
-my $lib = Phlibrary.create({name => 'Main'});
+my $lib = Archive.create({name => 'Main'});
 ok $lib.is-valid, 'library with no books is valid';
 ok $lib.id > 0, 'library saved';
 
-Phbook.create({title => 'Good Book', phlibrary_id => $lib.id});
-my $loaded = Phlibrary.find($lib.id);
+Manual.create({title => 'Good Book', archive_id => $lib.id});
+my $loaded = Archive.find($lib.id);
 ok $loaded.is-valid, 'library with all-valid books is valid';
 
-Phbook.new(:id(0), :record({attrs => {title => '', phlibrary_id => $lib.id}})).save(:!validate);
-my $bad = Phlibrary.find($lib.id);
+Manual.new(:id(0), :record({attrs => {title => '', archive_id => $lib.id}})).save(:!validate);
+my $bad = Archive.find($lib.id);
 nok $bad.is-valid, 'library invalid when a child book is invalid';
-ok $bad.errors.phbooks[0] eq 'is invalid', 'parent records "is invalid" from validates-associated';
+ok $bad.errors.manuals[0] eq 'is invalid', 'parent records "is invalid" from validates-associated';
 
-my $lib2 = Phlibrary2.find($lib.id);
+my $lib2 = Repository.find($lib.id);
 nok $lib2.is-valid, 'custom-message variant still detects invalid children';
-ok $lib2.errors.phbooks[0] eq 'has bad children', 'custom message via validates DSL';
+ok $lib2.errors.manuals[0] eq 'has bad children', 'custom message via validates DSL';
 
-DB.shared.delete-records(:table('phbooks'),     :where({}));
-DB.shared.delete-records(:table('phlibraries'), :where({}));
+DB.shared.delete-records(:table('manuals'),     :where({}));
+DB.shared.delete-records(:table('archives'), :where({}));
 
 # :if guard
-nok seed-bad-child(PhlibIf, 'Guarded').is-valid,
+nok seed-bad-child(Vault, 'Guarded').is-valid,
   'validates-associated :if true rolls up the invalid child';
-ok seed-bad-child(PhlibIf, 'Open').is-valid,
+ok seed-bad-child(Vault, 'Open').is-valid,
   'validates-associated :if false skips the child';
 
-DB.shared.delete-records(:table('phbooks'),     :where({}));
-DB.shared.delete-records(:table('phlibraries'), :where({}));
+DB.shared.delete-records(:table('manuals'),     :where({}));
+DB.shared.delete-records(:table('archives'), :where({}));
 
 # :unless guard
-ok seed-bad-child(PhlibUnless, 'Skip').is-valid,
+ok seed-bad-child(Depot, 'Skip').is-valid,
   'validates-associated :unless true skips the child';
-nok seed-bad-child(PhlibUnless, 'Run').is-valid,
+nok seed-bad-child(Depot, 'Run').is-valid,
   'validates-associated :unless false rolls up the child';
 
-DB.shared.delete-records(:table('phbooks'),     :where({}));
-DB.shared.delete-records(:table('phlibraries'), :where({}));
+DB.shared.delete-records(:table('manuals'),     :where({}));
+DB.shared.delete-records(:table('archives'), :where({}));
 
 # on: context
-ok seed-bad-child(PhlibOn, 'Main').is-invalid(:context<audit>),
+ok seed-bad-child(Registry, 'Main').is-invalid(:context<audit>),
   'validates-associated on: rolls up the child under the named context';
-ok seed-bad-child(PhlibOn, 'Main').is-valid,
+ok seed-bad-child(Registry, 'Main').is-valid,
   'validates-associated on: skips the child in the default context';
 
-DB.shared.delete-records(:table('phbooks'),     :where({}));
-DB.shared.delete-records(:table('phlibraries'), :where({}));
+DB.shared.delete-records(:table('manuals'),     :where({}));
+DB.shared.delete-records(:table('archives'), :where({}));
 
 # strict
 {
-  my $lib3 = seed-bad-child(PhlibStrict, 'Main');
+  my $lib3 = seed-bad-child(Catalog, 'Main');
   my $caught;
   try { $lib3.is-valid; CATCH { default { $caught = $_ } } }
   ok $caught ~~ X::StrictValidationFailed,
     'validates-associated strict raises X::StrictValidationFailed for an invalid child';
 }
 {
-  my $clean = PhlibStrict.create({name => 'Clean'});
-  ok PhlibStrict.find($clean.id).is-valid,
+  my $clean = Catalog.create({name => 'Clean'});
+  ok Catalog.find($clean.id).is-valid,
     'validates-associated strict does not raise when every child is valid';
 }
 
-DB.shared.delete-records(:table('phbooks'),     :where({}));
-DB.shared.delete-records(:table('phlibraries'), :where({}));
+DB.shared.delete-records(:table('manuals'),     :where({}));
+DB.shared.delete-records(:table('archives'), :where({}));

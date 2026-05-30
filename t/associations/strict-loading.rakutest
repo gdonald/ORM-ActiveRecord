@@ -4,39 +4,39 @@ use lib 'specs/lib';
 use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
-use Models::Slthing;
+use Models::Track;
 use Test;
 
-class Slowner is Model {
+class Studio is Model {
   submethod BUILD {
-    self.has-many: slthings => %(
-      class-name      => 'Slthing',
+    self.has-many: tracks => %(
+      class-name      => 'Track',
       strict-loading  => True,
     );
   }
 }
 
-class Slowner2 is Model {
-  method table-name { 'slowners' }
+class Garage is Model {
+  method table-name { 'studios' }
 
   submethod BUILD {
-    self.has-many: slthings => %(
-      class       => Slthing,
-      class-name  => 'Slthing',
-      foreign-key => 'slowner_id',
+    self.has-many: tracks => %(
+      class       => Track,
+      class-name  => 'Track',
+      foreign-key => 'studio_id',
     );
   }
 }
 
-class Slowner3 is Model {
-  method table-name { 'slowners' }
+class Atelier is Model {
+  method table-name { 'studios' }
 
   submethod BUILD {
     self.strict-loading-by-default;
-    self.has-many: slthings => %(
-      class       => Slthing,
-      class-name  => 'Slthing',
-      foreign-key => 'slowner_id',
+    self.has-many: tracks => %(
+      class       => Track,
+      class-name  => 'Track',
+      foreign-key => 'studio_id',
     );
   }
 }
@@ -45,74 +45,74 @@ plan 17;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-DB.shared.delete-records(:table('slthings'), :where({}));
-DB.shared.delete-records(:table('slowners'), :where({}));
+DB.shared.delete-records(:table('tracks'), :where({}));
+DB.shared.delete-records(:table('studios'), :where({}));
 
-my $owner = Slowner.create({name => 'strict'});
-Slthing.create({label => 'x', slowner_id => $owner.id});
+my $owner = Studio.create({name => 'strict'});
+Track.create({label => 'x', studio_id => $owner.id});
 
 # per-relation strict-loading raises X::StrictLoadingViolationError
-dies-ok { $owner.slthings },
+dies-ok { $owner.tracks },
   'has-many flagged strict-loading raises on access';
 
 my $err;
-try { $owner.slthings; CATCH { default { $err = $_ } } }
+try { $owner.tracks; CATCH { default { $err = $_ } } }
 isa-ok $err, X::StrictLoadingViolationError,
   'raises X::StrictLoadingViolationError';
 like $err.message, /'strict-loading'/,
   'error message mentions strict-loading';
-is $err.association, 'slthings',
+is $err.association, 'tracks',
   'error names the association';
-is $err.model, 'Slowner',
+is $err.model, 'Studio',
   'error names the model';
 
-my $child = Slthing.find-by({label => 'x'});
-dies-ok { $child.slowner },
+my $child = Track.find-by({label => 'x'});
+dies-ok { $child.studio },
   'belongs-to flagged strict-loading raises on access';
 
 # per-instance make-strict-loading
-my $owner2 = Slowner2.find($owner.id);
+my $owner2 = Garage.find($owner.id);
 ok !$owner2.is-strict-loading,
   'is-strict-loading defaults to False';
-lives-ok { $owner2.slthings },
+lives-ok { $owner2.tracks },
   'untouched association loads lazily by default';
 
-my $owner2b = Slowner2.find($owner.id);
+my $owner2b = Garage.find($owner.id);
 $owner2b.make-strict-loading;
 ok $owner2b.is-strict-loading,
   'make-strict-loading sets the instance flag';
-dies-ok { $owner2b.slthings },
+dies-ok { $owner2b.tracks },
   'per-instance strict-loading raises on lazy access';
 
 my $err2;
-try { $owner2b.slthings; CATCH { default { $err2 = $_ } } }
+try { $owner2b.tracks; CATCH { default { $err2 = $_ } } }
 isa-ok $err2, X::StrictLoadingViolationError,
   'per-instance raises X::StrictLoadingViolationError';
 
 # class-level strict-loading-by-default
-my $owner3 = Slowner3.find($owner.id);
+my $owner3 = Atelier.find($owner.id);
 ok $owner3.is-strict-loading-by-default,
   'class flag visible via predicate';
-dies-ok { $owner3.slthings },
+dies-ok { $owner3.tracks },
   'class-level strict-loading-by-default raises on lazy access';
 
 my $err3;
-try { $owner3.slthings; CATCH { default { $err3 = $_ } } }
+try { $owner3.tracks; CATCH { default { $err3 = $_ } } }
 isa-ok $err3, X::StrictLoadingViolationError,
   'class-level raises X::StrictLoadingViolationError';
 
 # strict-loading does not fire when the association was preloaded
-my @preloaded = Slowner.where({}).preload(:slthings).all;
+my @preloaded = Studio.where({}).preload(:tracks).all;
 my $preloaded-owner = @preloaded.first;
-ok $preloaded-owner.assoc-cache<slthings>:exists,
+ok $preloaded-owner.assoc-cache<tracks>:exists,
   'preload populates the assoc-cache';
-lives-ok { $preloaded-owner.slthings },
+lives-ok { $preloaded-owner.tracks },
   'per-relation strict-loading allows preloaded access';
 
 # class-level strict-loading-by-default also permits preloaded access
-my @preloaded3 = Slowner3.where({}).preload(:slthings).all;
-lives-ok { @preloaded3.first.slthings },
+my @preloaded3 = Atelier.where({}).preload(:tracks).all;
+lives-ok { @preloaded3.first.tracks },
   'class-level strict-loading-by-default allows preloaded access';
 
-DB.shared.delete-records(:table('slthings'), :where({}));
-DB.shared.delete-records(:table('slowners'), :where({}));
+DB.shared.delete-records(:table('tracks'), :where({}));
+DB.shared.delete-records(:table('studios'), :where({}));

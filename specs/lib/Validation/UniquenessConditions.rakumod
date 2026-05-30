@@ -2,16 +2,16 @@ use ORM::ActiveRecord::Model;
 
 unit module Validation::UniquenessConditions;
 
-class PhuserActive is Model is export {
-  method table-name { 'phusers' }
+class Voter is Model is export {
+  method table-name { 'members' }
 
   submethod BUILD {
     self.validate: 'username', { uniqueness => { conditions => { is_active => True } } }
   }
 }
 
-class PhuserScopeCond is Model is export {
-  method table-name { 'phusers' }
+class Donor is Model is export {
+  method table-name { 'members' }
 
   submethod BUILD {
     self.validate: 'username',
@@ -19,5 +19,5 @@ class PhuserScopeCond is Model is export {
   }
 }
 
-GLOBAL::<PhuserActive>    := PhuserActive;
-GLOBAL::<PhuserScopeCond> := PhuserScopeCond;
+GLOBAL::<Voter> := Voter;
+GLOBAL::<Donor> := Donor;

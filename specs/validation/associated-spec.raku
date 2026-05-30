@@ -8,13 +8,13 @@ use Validation::Associated;
 %*ENV<DISABLE-SQL-LOG> = True;
 
 sub clean {
-  DB.shared.delete-records(:table('phbooks'),     :where({}));
-  DB.shared.delete-records(:table('phlibraries'), :where({}));
+  DB.shared.delete-records(:table('manuals'),     :where({}));
+  DB.shared.delete-records(:table('archives'), :where({}));
 }
 
 sub seed-bad-child($class, Str:D $name) {
   my $lib = $class.create({name => $name});
-  Phbook.new(:id(0), :record({attrs => {title => '', phlibrary_id => $lib.id}})).save(:!validate);
+  Manual.new(:id(0), :record({attrs => {title => '', archive_id => $lib.id}})).save(:!validate);
   $class.find($lib.id);
 }
 
@@ -24,53 +24,53 @@ describe 'validates-associated', {
 
   context 'a library with no books', {
     it 'is valid', {
-      my $lib = Phlibrary.create({name => 'Main'});
+      my $lib = Archive.create({name => 'Main'});
       expect($lib.is-valid).to.be-truthy;
     }
 
     it 'is saved with an id', {
-      my $lib = Phlibrary.create({name => 'Main'});
+      my $lib = Archive.create({name => 'Main'});
       expect($lib.id).to.be-greater-than(0);
     }
   }
 
   context 'a library with all-valid books', {
     it 'is valid', {
-      my $lib = Phlibrary.create({name => 'Main'});
-      Phbook.create({title => 'Good Book', phlibrary_id => $lib.id});
-      my $loaded = Phlibrary.find($lib.id);
+      my $lib = Archive.create({name => 'Main'});
+      Manual.create({title => 'Good Book', archive_id => $lib.id});
+      my $loaded = Archive.find($lib.id);
       expect($loaded.is-valid).to.be-truthy;
     }
   }
 
   context 'a library with an invalid child book', {
     before-each {
-      my $lib = Phlibrary.create({name => 'Main'});
-      Phbook.new(:id(0), :record({attrs => {title => '', phlibrary_id => $lib.id}})).save(:!validate);
+      my $lib = Archive.create({name => 'Main'});
+      Manual.new(:id(0), :record({attrs => {title => '', archive_id => $lib.id}})).save(:!validate);
     }
 
     it 'is invalid', {
-      my $lib = Phlibrary.first;
+      my $lib = Archive.first;
       expect($lib.is-valid).to.be-falsy;
     }
 
-    it 'records "is invalid" on phbooks', {
-      my $lib = Phlibrary.first;
+    it 'records "is invalid" on manuals', {
+      my $lib = Archive.first;
       $lib.is-valid;
-      expect($lib.errors.phbooks[0]).to.eq('is invalid');
+      expect($lib.errors.manuals[0]).to.eq('is invalid');
     }
 
     it 'supports a custom message via the validates DSL', {
-      my $orig = Phlibrary.first;
-      my $lib2 = Phlibrary2.find($orig.id);
+      my $orig = Archive.first;
+      my $lib2 = Repository.find($orig.id);
       expect($lib2.is-valid).to.be-falsy;
     }
 
     it 'uses the custom message text', {
-      my $orig = Phlibrary.first;
-      my $lib2 = Phlibrary2.find($orig.id);
+      my $orig = Archive.first;
+      my $lib2 = Repository.find($orig.id);
       $lib2.is-valid;
-      expect($lib2.errors.phbooks[0]).to.eq('has bad children');
+      expect($lib2.errors.manuals[0]).to.eq('has bad children');
     }
   }
 }
@@ -81,45 +81,45 @@ describe 'validates-associated options', {
 
   context ':if guard', {
     it 'rolls up the child when :if is true', {
-      expect(seed-bad-child(PhlibIf, 'Guarded').is-invalid).to.be-truthy;
+      expect(seed-bad-child(Vault, 'Guarded').is-invalid).to.be-truthy;
     }
 
     it 'skips the child when :if is false', {
-      expect(seed-bad-child(PhlibIf, 'Open').is-valid).to.be-truthy;
+      expect(seed-bad-child(Vault, 'Open').is-valid).to.be-truthy;
     }
   }
 
   context ':unless guard', {
     it 'skips the child when :unless is true', {
-      expect(seed-bad-child(PhlibUnless, 'Skip').is-valid).to.be-truthy;
+      expect(seed-bad-child(Depot, 'Skip').is-valid).to.be-truthy;
     }
 
     it 'rolls up the child when :unless is false', {
-      expect(seed-bad-child(PhlibUnless, 'Run').is-invalid).to.be-truthy;
+      expect(seed-bad-child(Depot, 'Run').is-invalid).to.be-truthy;
     }
   }
 
   context 'on: context', {
     it 'rolls up the child under the named context', {
-      expect(seed-bad-child(PhlibOn, 'Main').is-invalid(:context<audit>)).to.be-truthy;
+      expect(seed-bad-child(Registry, 'Main').is-invalid(:context<audit>)).to.be-truthy;
     }
 
     it 'skips the child in the default context', {
-      expect(seed-bad-child(PhlibOn, 'Main').is-valid).to.be-truthy;
+      expect(seed-bad-child(Registry, 'Main').is-valid).to.be-truthy;
     }
   }
 
   context 'strict', {
     it 'raises X::StrictValidationFailed for an invalid child', {
-      my $lib = seed-bad-child(PhlibStrict, 'Main');
+      my $lib = seed-bad-child(Catalog, 'Main');
       my $caught;
       try { $lib.is-valid; CATCH { default { $caught = $_ } } }
       expect($caught).to.be-a(X::StrictValidationFailed);
     }
 
     it 'does not raise when every child is valid', {
-      my $lib = PhlibStrict.create({name => 'Clean'});
-      expect(PhlibStrict.find($lib.id).is-valid).to.be-truthy;
+      my $lib = Catalog.create({name => 'Clean'});
+      expect(Catalog.find($lib.id).is-valid).to.be-truthy;
     }
   }
 }

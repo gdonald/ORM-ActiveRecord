@@ -3,19 +3,18 @@ use ORM::ActiveRecord::Schema::Migration;
 
 class CreateAssocOptions is Migration {
   method up {
-    # strict-loading: parent + child
-    self.create-table: 'slowners', [
+    self.create-table: 'studios', [
       name => { :string, limit => 64 },
     ];
-    self.create-table: 'slthings', [
-      label      => { :string, limit => 64 },
-      slowner_id => { :integer },
+    self.create-table: 'tracks', [
+      label     => { :string, limit => 64 },
+      studio_id => { :integer },
     ];
 
   }
 
   method down {
-    self.drop-table: 'slthings';
-    self.drop-table: 'slowners';
+    self.drop-table: 'tracks';
+    self.drop-table: 'studios';
   }
 }

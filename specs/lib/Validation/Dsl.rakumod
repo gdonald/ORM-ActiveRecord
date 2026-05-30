@@ -2,8 +2,8 @@ use ORM::ActiveRecord::Model;
 
 unit module Validation::Dsl;
 
-class PhMulti is Model is export {
-  method table-name { 'phevents' }
+class Carnival is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validates: <name>, { :presence, length => { min => 2, max => 8 } }
@@ -11,4 +11,4 @@ class PhMulti is Model is export {
   }
 }
 
-GLOBAL::<PhMulti> := PhMulti;
+GLOBAL::<Carnival> := Carnival;

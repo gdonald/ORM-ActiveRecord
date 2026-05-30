@@ -12,11 +12,11 @@ plan 51;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-ErrPhevent.destroy-all;
+Banquet.destroy-all;
 
 # errors.add with a type symbol
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name', 'blank');
 
   ok $e.errors.is-any,             'add type populates errors';
@@ -27,7 +27,7 @@ ErrPhevent.destroy-all;
 
 # errors.add with explicit :message override
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name', 'taken', message => 'is already taken by friend');
 
   is $e.errors[0].type,    'taken',                    'type kept when :message overrides';
@@ -36,7 +36,7 @@ ErrPhevent.destroy-all;
 
 # errors.add with bare-string message
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name', 'must be cool');
 
   is $e.errors[0].type,    'invalid',     'whitespace-bearing arg becomes message; type defaults to invalid';
@@ -45,7 +45,7 @@ ErrPhevent.destroy-all;
 
 # errors.add option interpolation
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('score', 'greater-than', count => 0);
 
   is $e.errors[0].message,        'must be greater than 0', '{count} interpolated from options';
@@ -54,7 +54,7 @@ ErrPhevent.destroy-all;
 
 # errors.import accepts a prebuilt Error
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   my $field = Field.new(:name<name>, :type<attribute>);
   $e.errors.import(Error.new(:$field, :message<imported>, :type<custom>));
 
@@ -64,7 +64,7 @@ ErrPhevent.destroy-all;
 
 # errors.delete by attribute
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name',  'blank');
   $e.errors.add('score', 'greater-than', count => 0);
 
@@ -77,7 +77,7 @@ ErrPhevent.destroy-all;
 
 # errors.delete by attribute + type
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name', 'blank');
   $e.errors.add('name', 'taken');
 
@@ -89,7 +89,7 @@ ErrPhevent.destroy-all;
 
 # errors.clear
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name', 'blank');
   $e.errors.add('score', 'greater-than', count => 0);
 
@@ -100,7 +100,7 @@ ErrPhevent.destroy-all;
 
 # full-messages prepends attribute
 {
-  my $e = ErrPhevent.build({name => '', score => 5});
+  my $e = Banquet.build({name => '', score => 5});
   $e.is-invalid;
 
   my @msgs = $e.errors.full-messages;
@@ -110,7 +110,7 @@ ErrPhevent.destroy-all;
 
 # base errors are not prefixed
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('base', 'something broke');
 
   is $e.errors.full-messages[0], 'something broke', 'base attribute not prepended';
@@ -118,7 +118,7 @@ ErrPhevent.destroy-all;
 
 # full-messages-for filters by attribute
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name',  'blank');
   $e.errors.add('score', 'greater-than', count => 0);
 
@@ -128,7 +128,7 @@ ErrPhevent.destroy-all;
 
 # errors.details
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name', 'blank');
   $e.errors.add('score', 'greater-than', count => 0);
 
@@ -141,7 +141,7 @@ ErrPhevent.destroy-all;
 
 # errors.where filters by attribute and type
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name', 'blank');
   $e.errors.add('name', 'taken');
   $e.errors.add('score', 'greater-than', count => 0);
@@ -153,7 +153,7 @@ ErrPhevent.destroy-all;
 
 # errors.is-of-kind
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name', 'blank');
 
   ok  $e.errors.is-of-kind('name',  'blank'),   'matches recorded kind';
@@ -163,7 +163,7 @@ ErrPhevent.destroy-all;
 
 # errors.is-added with options
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('score', 'greater-than', count => 0);
 
   ok  $e.errors.is-added('score', 'greater-than', count => 0), 'matches with options';
@@ -173,7 +173,7 @@ ErrPhevent.destroy-all;
 
 # size / count / is-any / is-empty
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
 
   ok  $e.errors.is-empty,    'fresh errors object is empty';
   nok $e.errors.is-any,      'is-any False when empty';
@@ -188,7 +188,7 @@ ErrPhevent.destroy-all;
 
 # group-by-attribute
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('name',  'blank');
   $e.errors.add('name',  'taken');
   $e.errors.add('score', 'greater-than', count => 0);
@@ -202,7 +202,7 @@ ErrPhevent.destroy-all;
 
 # objects iteration exposes message / type / options
 {
-  my $e = ErrPhevent.build({name => 'A', score => 5});
+  my $e = Banquet.build({name => 'A', score => 5});
   $e.errors.add('score', 'greater-than', count => 0);
 
   my @objs = $e.errors.objects;
@@ -214,8 +214,8 @@ ErrPhevent.destroy-all;
 
 # merge between records
 {
-  my $a = ErrPhevent.build({name => 'A', score => 5});
-  my $b = ErrPhevent.build({name => 'B', score => 5});
+  my $a = Banquet.build({name => 'A', score => 5});
+  my $b = Banquet.build({name => 'B', score => 5});
 
   $a.errors.add('name',  'blank');
   $b.errors.add('score', 'greater-than', count => 0);
@@ -228,10 +228,10 @@ ErrPhevent.destroy-all;
 
 # backward compatible FALLBACK access still works
 {
-  my $e = ErrPhevent.build({name => '', score => 5});
+  my $e = Banquet.build({name => '', score => 5});
   $e.is-invalid;
 
   ok $e.errors.name[0] eq 'must be present', 'FALLBACK access by attribute name unchanged';
 }
 
-ErrPhevent.destroy-all;
+Banquet.destroy-all;

@@ -8,23 +8,23 @@ plan 8;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-PhMulti.destroy-all;
+Carnival.destroy-all;
 
-my $m = PhMulti.build({name => '', score => 0, max_score => 0});
+my $m = Carnival.build({name => '', score => 0, max_score => 0});
 ok $m.is-invalid, 'all three fail validation';
 ok $m.errors.name.elems == 2, 'aggregated declaration produces presence+length errors for name';
 ok $m.errors.score[0] eq 'must be present', 'shared params apply per field (score)';
 ok $m.errors.max_score[0] eq 'must be present', 'shared params apply per field (max_score)';
 
-$m = PhMulti.build({name => 'OK', score => 10, max_score => 20});
+$m = Carnival.build({name => 'OK', score => 10, max_score => 20});
 ok $m.is-valid, 'all fields present and within length';
 
-$m = PhMulti.build({name => 'Z', score => 1, max_score => 1});
+$m = Carnival.build({name => 'Z', score => 1, max_score => 1});
 ok $m.is-invalid, 'short name fails length';
 ok $m.errors.name[0] eq 'at least 2 characters required', 'length min message';
 
-$m = PhMulti.build({name => 'WAY-TOO-LONG', score => 1, max_score => 1});
+$m = Carnival.build({name => 'WAY-TOO-LONG', score => 1, max_score => 1});
 $m.is-invalid;
 ok $m.errors.name[0] eq 'only 8 characters allowed', 'length max message';
 
-PhMulti.destroy-all;
+Carnival.destroy-all;

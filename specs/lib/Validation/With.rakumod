@@ -30,8 +30,8 @@ class ScoreInsanityValidator is export {
   }
 }
 
-class PhWith is Model is export {
-  method table-name { 'phevents' }
+class Cabaret is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validates-with(NotEvilValidator.new);
@@ -39,6 +39,6 @@ class PhWith is Model is export {
   }
 }
 
-GLOBAL::<PhWith> := PhWith;
+GLOBAL::<Cabaret> := Cabaret;
 GLOBAL::<NotEvilValidator> := NotEvilValidator;
 GLOBAL::<ScoreInsanityValidator> := ScoreInsanityValidator;

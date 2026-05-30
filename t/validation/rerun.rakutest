@@ -8,9 +8,9 @@ plan 8;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-RerunPhevent.destroy-all;
+Replay.destroy-all;
 
-my $e = RerunPhevent.build({name => '', score => 5});
+my $e = Replay.build({name => '', score => 5});
 ok $e.is-invalid, 'first call reports invalid';
 ok $e.errors.name[0] eq 'must be present', 'error captured on first call';
 
@@ -26,4 +26,4 @@ is $e.errors.errors.elems, 1, 'no duplicate errors from previous run';
 $e.is-invalid for ^5;
 is $e.errors.errors.elems, 1, 'five back-to-back calls still produce a single error';
 
-RerunPhevent.destroy-all;
+Replay.destroy-all;

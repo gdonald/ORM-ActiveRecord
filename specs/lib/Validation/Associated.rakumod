@@ -2,77 +2,77 @@ use ORM::ActiveRecord::Model;
 
 unit module Validation::Associated;
 
-class Phbook is Model is export {
+class Manual is Model is export {
   submethod BUILD {
-    self.belongs-to: phlibrary => %(class-name => 'Phlibrary', optional => True);
+    self.belongs-to: archive => %(class-name => 'Archive', optional => True);
     self.validate: 'title', { :presence }
   }
 }
 
-class Phlibrary is Model is export {
-  method table-name { 'phlibraries' }
+class Archive is Model is export {
+  method table-name { 'archives' }
 
   submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook');
+    self.has-many: manuals => %(class-name => 'Manual');
     self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks';
+    self.validates-associated: 'manuals';
   }
 }
 
-class Phlibrary2 is Model is export {
-  method table-name { 'phlibraries' }
+class Repository is Model is export {
+  method table-name { 'archives' }
 
   submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
+    self.has-many: manuals => %(class-name => 'Manual', foreign-key => 'archive_id');
     self.validate: 'name', { :presence }
-    self.validates: <phbooks>, { :associated, message => 'has bad children' }
+    self.validates: <manuals>, { :associated, message => 'has bad children' }
   }
 }
 
-class PhlibIf is Model is export {
-  method table-name { 'phlibraries' }
+class Vault is Model is export {
+  method table-name { 'archives' }
 
   submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
+    self.has-many: manuals => %(class-name => 'Manual', foreign-key => 'archive_id');
     self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { :if => { self.name eq 'Guarded' } };
+    self.validates-associated: 'manuals', { :if => { self.name eq 'Guarded' } };
   }
 }
 
-class PhlibUnless is Model is export {
-  method table-name { 'phlibraries' }
+class Depot is Model is export {
+  method table-name { 'archives' }
 
   submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
+    self.has-many: manuals => %(class-name => 'Manual', foreign-key => 'archive_id');
     self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { :unless => { self.name eq 'Skip' } };
+    self.validates-associated: 'manuals', { :unless => { self.name eq 'Skip' } };
   }
 }
 
-class PhlibOn is Model is export {
-  method table-name { 'phlibraries' }
+class Registry is Model is export {
+  method table-name { 'archives' }
 
   submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
+    self.has-many: manuals => %(class-name => 'Manual', foreign-key => 'archive_id');
     self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { on => { :audit } };
+    self.validates-associated: 'manuals', { on => { :audit } };
   }
 }
 
-class PhlibStrict is Model is export {
-  method table-name { 'phlibraries' }
+class Catalog is Model is export {
+  method table-name { 'archives' }
 
   submethod BUILD {
-    self.has-many: phbooks => %(class-name => 'Phbook', foreign-key => 'phlibrary_id');
+    self.has-many: manuals => %(class-name => 'Manual', foreign-key => 'archive_id');
     self.validate: 'name', { :presence }
-    self.validates-associated: 'phbooks', { :strict };
+    self.validates-associated: 'manuals', { :strict };
   }
 }
 
-GLOBAL::<Phbook>       := Phbook;
-GLOBAL::<Phlibrary>    := Phlibrary;
-GLOBAL::<Phlibrary2>   := Phlibrary2;
-GLOBAL::<PhlibIf>      := PhlibIf;
-GLOBAL::<PhlibUnless>  := PhlibUnless;
-GLOBAL::<PhlibOn>      := PhlibOn;
-GLOBAL::<PhlibStrict>  := PhlibStrict;
+GLOBAL::<Manual>     := Manual;
+GLOBAL::<Archive>    := Archive;
+GLOBAL::<Repository> := Repository;
+GLOBAL::<Vault>      := Vault;
+GLOBAL::<Depot>      := Depot;
+GLOBAL::<Registry>   := Registry;
+GLOBAL::<Catalog>    := Catalog;

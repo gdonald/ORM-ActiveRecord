@@ -2,8 +2,8 @@ use ORM::ActiveRecord::Model;
 
 unit module Model::ErrorsApi;
 
-class ErrPhevent is Model is export {
-  method table-name { 'phevents' }
+class Banquet is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validate: 'name',  { :presence }
@@ -11,4 +11,4 @@ class ErrPhevent is Model is export {
   }
 }
 
-GLOBAL::<ErrPhevent> := ErrPhevent;
+GLOBAL::<Banquet> := Banquet;

@@ -8,26 +8,26 @@ plan 6;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-Phdt.destroy-all;
+Showtime.destroy-all;
 
 my $start = DateTime.new('2026-06-01T10:00:00Z');
 my $end-good = DateTime.new('2026-06-01T12:00:00Z');
 my $end-bad  = DateTime.new('2026-06-01T08:00:00Z');
 
-my $d = Phdt.build({name => 'E', starts_at => $start, ends_at => $end-good});
+my $d = Showtime.build({name => 'E', starts_at => $start, ends_at => $end-good});
 ok $d.is-valid, 'ends_at after starts_at is valid';
 
-$d = Phdt.build({name => 'E', starts_at => $start, ends_at => $end-bad});
+$d = Showtime.build({name => 'E', starts_at => $start, ends_at => $end-bad});
 ok $d.is-invalid, 'ends_at before starts_at fails';
 ok $d.errors.ends_at[0] eq 'must be greater than starts_at', 'datetime gt message names other attr';
 
-$d = Phdt.build({name => 'E', starts_at => $start, ends_at => $start});
+$d = Showtime.build({name => 'E', starts_at => $start, ends_at => $start});
 ok $d.is-invalid, 'equal datetimes fail strict gt';
 
-my $lit = PhdtLit.build({name => 'L', starts_at => DateTime.new('2026-02-01T00:00:00Z'), ends_at => $end-good});
+my $lit = Curtain.build({name => 'L', starts_at => DateTime.new('2026-02-01T00:00:00Z'), ends_at => $end-good});
 ok $lit.is-valid, 'datetime >= literal cutoff is valid';
 
-$lit = PhdtLit.build({name => 'L', starts_at => DateTime.new('2025-12-31T23:59:59Z'), ends_at => $end-good});
+$lit = Curtain.build({name => 'L', starts_at => DateTime.new('2025-12-31T23:59:59Z'), ends_at => $end-good});
 ok $lit.is-invalid, 'datetime before literal cutoff fails gte';
 
-Phdt.destroy-all;
+Showtime.destroy-all;

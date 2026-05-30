@@ -10,18 +10,18 @@ use Model::ErrorsApi;
 
 describe 'errors API', {
   before-each {
-    ErrPhevent.destroy-all;
+    Banquet.destroy-all;
   }
 
   after-each {
-    ErrPhevent.destroy-all;
+    Banquet.destroy-all;
   }
 
   context 'add with a type symbol', {
     my $e;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'blank');
     }
 
@@ -46,7 +46,7 @@ describe 'errors API', {
     my $e;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'taken', message => 'is already taken by friend');
     }
 
@@ -63,7 +63,7 @@ describe 'errors API', {
     my $e;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'must be cool');
     }
 
@@ -80,7 +80,7 @@ describe 'errors API', {
     my $e;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('score', 'greater-than', count => 0);
     }
 
@@ -97,7 +97,7 @@ describe 'errors API', {
     my $e;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       my $field = Field.new(:name<name>, :type<attribute>);
       $e.errors.import(Error.new(:$field, :message<imported>, :type<custom>));
     }
@@ -116,7 +116,7 @@ describe 'errors API', {
     my @removed;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name',  'blank');
       $e.errors.add('score', 'greater-than', count => 0);
 
@@ -140,7 +140,7 @@ describe 'errors API', {
     my $e;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'blank');
       $e.errors.add('name', 'taken');
 
@@ -158,7 +158,7 @@ describe 'errors API', {
 
   context 'clear', {
     it 'empties all errors', {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'blank');
       $e.errors.add('score', 'greater-than', count => 0);
 
@@ -173,7 +173,7 @@ describe 'errors API', {
     my @msgs;
 
     before-each {
-      $e = ErrPhevent.build({name => '', score => 5});
+      $e = Banquet.build({name => '', score => 5});
       $e.is-invalid;
       @msgs = $e.errors.full-messages;
     }
@@ -189,7 +189,7 @@ describe 'errors API', {
 
   context 'base errors are not prefixed', {
     it 'leaves the base message untouched', {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('base', 'something broke');
 
       expect($e.errors.full-messages[0]).to.eq('something broke');
@@ -200,7 +200,7 @@ describe 'errors API', {
     my $e;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name',  'blank');
       $e.errors.add('score', 'greater-than', count => 0);
     }
@@ -218,7 +218,7 @@ describe 'errors API', {
     my %d;
 
     before-each {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'blank');
       $e.errors.add('score', 'greater-than', count => 0);
 
@@ -242,7 +242,7 @@ describe 'errors API', {
     my $e;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'blank');
       $e.errors.add('name', 'taken');
       $e.errors.add('score', 'greater-than', count => 0);
@@ -265,7 +265,7 @@ describe 'errors API', {
     my $e;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'blank');
     }
 
@@ -286,7 +286,7 @@ describe 'errors API', {
     my $e;
 
     before-each {
-      $e = ErrPhevent.build({name => 'A', score => 5});
+      $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('score', 'greater-than', count => 0);
     }
 
@@ -305,40 +305,40 @@ describe 'errors API', {
 
   context 'size / count / is-any / is-empty', {
     it 'is empty by default', {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
 
       expect($e.errors.is-empty).to.be-truthy;
     }
 
     it 'is-any is False when empty', {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
 
       expect($e.errors.is-any).to.be-falsy;
     }
 
     it 'size reflects one error', {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'blank');
 
       expect($e.errors.size).to.eq(1);
     }
 
     it 'count is an alias of size', {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'blank');
 
       expect($e.errors.count).to.eq(1);
     }
 
     it 'is-any is True after add', {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'blank');
 
       expect($e.errors.is-any).to.be-truthy;
     }
 
     it 'is-empty is False after add', {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name', 'blank');
 
       expect($e.errors.is-empty).to.be-falsy;
@@ -349,7 +349,7 @@ describe 'errors API', {
     my %g;
 
     before-each {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('name',  'blank');
       $e.errors.add('name',  'taken');
       $e.errors.add('score', 'greater-than', count => 0);
@@ -374,7 +374,7 @@ describe 'errors API', {
     my @objs;
 
     before-each {
-      my $e = ErrPhevent.build({name => 'A', score => 5});
+      my $e = Banquet.build({name => 'A', score => 5});
       $e.errors.add('score', 'greater-than', count => 0);
 
       @objs = $e.errors.objects;
@@ -401,8 +401,8 @@ describe 'errors API', {
     my $a;
 
     before-each {
-      $a = ErrPhevent.build({name => 'A', score => 5});
-      my $b = ErrPhevent.build({name => 'B', score => 5});
+      $a = Banquet.build({name => 'A', score => 5});
+      my $b = Banquet.build({name => 'B', score => 5});
 
       $a.errors.add('name',  'blank');
       $b.errors.add('score', 'greater-than', count => 0);
@@ -421,7 +421,7 @@ describe 'errors API', {
 
   context 'FALLBACK access by attribute name', {
     it 'still works for backward compatibility', {
-      my $e = ErrPhevent.build({name => '', score => 5});
+      my $e = Banquet.build({name => '', score => 5});
       $e.is-invalid;
 
       expect($e.errors.name[0]).to.eq('must be present');

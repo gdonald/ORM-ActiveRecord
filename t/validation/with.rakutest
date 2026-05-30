@@ -8,18 +8,18 @@ plan 6;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-PhWith.destroy-all;
+Cabaret.destroy-all;
 
-my $w = PhWith.build({name => 'Evil', score => 5, max_score => 10});
+my $w = Cabaret.build({name => 'Evil', score => 5, max_score => 10});
 ok $w.is-invalid, 'banned name fails';
 ok $w.errors.base[0] eq "'Evil' is not allowed", 'instance validator runs';
 
-$w = PhWith.build({name => 'OK', score => 500, max_score => 1000});
+$w = Cabaret.build({name => 'OK', score => 500, max_score => 1000});
 ok $w.is-invalid, 'class+options validator triggers';
 ok $w.errors.score[0] eq 'score exceeds cap of 50', 'options pass through to new()';
 
-$w = PhWith.build({name => 'OK', score => 5, max_score => 10});
+$w = Cabaret.build({name => 'OK', score => 5, max_score => 10});
 ok $w.is-valid, 'clean record passes';
 nok $w.errors.base, 'no base error when clean';
 
-PhWith.destroy-all;
+Cabaret.destroy-all;

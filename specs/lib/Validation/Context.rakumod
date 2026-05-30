@@ -2,8 +2,8 @@ use ORM::ActiveRecord::Model;
 
 unit module Validation::Context;
 
-class CtxPhevent is Model is export {
-  method table-name { 'phevents' }
+class Pageant is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validate: 'name',      { :presence }
@@ -12,8 +12,8 @@ class CtxPhevent is Model is export {
   }
 }
 
-class CtxPhevent2 is Model is export {
-  method table-name { 'phevents' }
+class Parade is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validate: 'name',      { :presence }
@@ -22,5 +22,5 @@ class CtxPhevent2 is Model is export {
   }
 }
 
-GLOBAL::<CtxPhevent>  := CtxPhevent;
-GLOBAL::<CtxPhevent2> := CtxPhevent2;
+GLOBAL::<Pageant> := Pageant;
+GLOBAL::<Parade>  := Parade;

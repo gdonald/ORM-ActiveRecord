@@ -8,22 +8,22 @@ plan 6;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-PhuserCI.destroy-all;
+Patron.destroy-all;
 
-my $u = PhuserCI.create({username => 'Alfred'});
+my $u = Patron.create({username => 'Alfred'});
 ok $u.is-valid, 'first user created';
 
-my $clash = PhuserCI.build({username => 'alfred'});
+my $clash = Patron.build({username => 'alfred'});
 ok $clash.is-invalid, 'case-sensitive => False catches different-case dup';
 ok $clash.errors.username[0] eq 'must be unique', 'reports must be unique';
 
-my $cs-clash = PhuserCS.build({username => 'alfred'});
+my $cs-clash = Subscriber.build({username => 'alfred'});
 ok $cs-clash.is-valid, 'case-sensitive => True allows different-case value';
 
-my $default-clash = PhuserDefault.build({username => 'alfred'});
+my $default-clash = Visitor.build({username => 'alfred'});
 ok $default-clash.is-valid, 'default uniqueness is case-sensitive';
 
-my $exact-clash = PhuserDefault.build({username => 'Alfred'});
+my $exact-clash = Visitor.build({username => 'Alfred'});
 ok $exact-clash.is-invalid, 'exact match still fails default uniqueness';
 
-PhuserCI.destroy-all;
+Patron.destroy-all;

@@ -9,8 +9,8 @@ sub flag-name($rec, $attr, $value) is export {
   $rec.errors.push(Error.new(:field($f), :message('name flagged')));
 }
 
-class PhEach is Model is export {
-  method table-name { 'phevents' }
+class Symphony is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validates-each: <name>, -> $rec, $attr, $value {
@@ -22,8 +22,8 @@ class PhEach is Model is export {
   }
 }
 
-class PhEachMulti is Model is export {
-  method table-name { 'phevents' }
+class Fanfare is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validates-each: <score max_score>, -> $rec, $attr, $value {
@@ -35,32 +35,32 @@ class PhEachMulti is Model is export {
   }
 }
 
-class PhEachIf is Model is export {
-  method table-name { 'phevents' }
+class Overture is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validates-each: <name>, &flag-name, { :if => { self.score > 0 } };
   }
 }
 
-class PhEachUnless is Model is export {
-  method table-name { 'phevents' }
+class Interlude is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validates-each: <name>, &flag-name, { :unless => { self.score > 0 } };
   }
 }
 
-class PhEachOn is Model is export {
-  method table-name { 'phevents' }
+class Prelude is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validates-each: <name>, &flag-name, { on => { :review } };
   }
 }
 
-class PhEachStrict is Model is export {
-  method table-name { 'phevents' }
+class Aria is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validates-each: <name>, -> $rec, $attr, $value {
@@ -72,9 +72,9 @@ class PhEachStrict is Model is export {
   }
 }
 
-GLOBAL::<PhEach>        := PhEach;
-GLOBAL::<PhEachMulti>   := PhEachMulti;
-GLOBAL::<PhEachIf>      := PhEachIf;
-GLOBAL::<PhEachUnless>  := PhEachUnless;
-GLOBAL::<PhEachOn>      := PhEachOn;
-GLOBAL::<PhEachStrict>  := PhEachStrict;
+GLOBAL::<Symphony>  := Symphony;
+GLOBAL::<Fanfare>   := Fanfare;
+GLOBAL::<Overture>  := Overture;
+GLOBAL::<Interlude> := Interlude;
+GLOBAL::<Prelude>   := Prelude;
+GLOBAL::<Aria>      := Aria;

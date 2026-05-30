@@ -6,17 +6,17 @@ use Validation::With;
 %*ENV<DISABLE-SQL-LOG> = True;
 
 describe 'validates-with', {
-  before-each { PhWith.destroy-all }
-  after-each  { PhWith.destroy-all }
+  before-each { Cabaret.destroy-all }
+  after-each  { Cabaret.destroy-all }
 
   context 'banned name', {
     it 'is invalid', {
-      my $w = PhWith.build({name => 'Evil', score => 5, max_score => 10});
+      my $w = Cabaret.build({name => 'Evil', score => 5, max_score => 10});
       expect($w.is-invalid).to.be-truthy;
     }
 
     it 'runs the instance validator', {
-      my $w = PhWith.build({name => 'Evil', score => 5, max_score => 10});
+      my $w = Cabaret.build({name => 'Evil', score => 5, max_score => 10});
       $w.is-invalid;
       expect($w.errors.base[0]).to.eq("'Evil' is not allowed");
     }
@@ -24,12 +24,12 @@ describe 'validates-with', {
 
   context 'class + options validator', {
     it 'triggers when score exceeds cap', {
-      my $w = PhWith.build({name => 'OK', score => 500, max_score => 1000});
+      my $w = Cabaret.build({name => 'OK', score => 500, max_score => 1000});
       expect($w.is-invalid).to.be-truthy;
     }
 
     it 'forwards options to new()', {
-      my $w = PhWith.build({name => 'OK', score => 500, max_score => 1000});
+      my $w = Cabaret.build({name => 'OK', score => 500, max_score => 1000});
       $w.is-invalid;
       expect($w.errors.score[0]).to.eq('score exceeds cap of 50');
     }
@@ -37,12 +37,12 @@ describe 'validates-with', {
 
   context 'clean record', {
     it 'is valid', {
-      my $w = PhWith.build({name => 'OK', score => 5, max_score => 10});
+      my $w = Cabaret.build({name => 'OK', score => 5, max_score => 10});
       expect($w.is-valid).to.be-truthy;
     }
 
     it 'has no base error', {
-      my $w = PhWith.build({name => 'OK', score => 5, max_score => 10});
+      my $w = Cabaret.build({name => 'OK', score => 5, max_score => 10});
       $w.is-valid;
       expect($w.errors.base).to.be-falsy;
     }

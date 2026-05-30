@@ -57,11 +57,11 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   books
   games
   logs
-  phbooks
-  phevents
-  phlibraries
-  slthings
-  slowners
+  manuals
+  concerts
+  archives
+  tracks
+  studios
   deleteowners
   destroyowners
   nullifyowners
@@ -71,7 +71,7 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   resterrowners
   restexcowners
   singletons
-  phusers
+  members
   users
 >;
 

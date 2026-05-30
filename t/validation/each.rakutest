@@ -9,45 +9,45 @@ plan 15;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-PhEach.destroy-all;
+Symphony.destroy-all;
 
-my $e = PhEach.build({name => 'lowercase', score => 1, max_score => 1});
+my $e = Symphony.build({name => 'lowercase', score => 1, max_score => 1});
 ok $e.is-invalid, 'lowercase name triggers block';
 ok $e.errors.name[0] eq 'must start with capital letter', 'block message added';
 
-$e = PhEach.build({name => 'Capital', score => 1, max_score => 1});
+$e = Symphony.build({name => 'Capital', score => 1, max_score => 1});
 ok $e.is-valid, 'capital name passes';
 
-my $m = PhEachMulti.build({name => 'A', score => -1, max_score => -2});
+my $m = Fanfare.build({name => 'A', score => -1, max_score => -2});
 ok $m.is-invalid, 'multi-field block validation triggers';
 ok $m.errors.score[0] eq 'must not be negative', 'block applies to score';
 ok $m.errors.max_score[0] eq 'must not be negative', 'block applies to max_score';
 
-$m = PhEachMulti.build({name => 'A', score => 1, max_score => 2});
+$m = Fanfare.build({name => 'A', score => 1, max_score => 2});
 ok $m.is-valid, 'no negative scores -> valid';
 
-ok PhEachIf.build({name => 'x', score => 5, max_score => 0}).is-invalid,
+ok Overture.build({name => 'x', score => 5, max_score => 0}).is-invalid,
   'validates-each :if true runs the block';
-ok PhEachIf.build({name => 'x', score => 0, max_score => 0}).is-valid,
+ok Overture.build({name => 'x', score => 0, max_score => 0}).is-valid,
   'validates-each :if false skips the block';
 
-ok PhEachUnless.build({name => 'x', score => 5, max_score => 0}).is-valid,
+ok Interlude.build({name => 'x', score => 5, max_score => 0}).is-valid,
   'validates-each :unless true skips the block';
-ok PhEachUnless.build({name => 'x', score => 0, max_score => 0}).is-invalid,
+ok Interlude.build({name => 'x', score => 0, max_score => 0}).is-invalid,
   'validates-each :unless false runs the block';
 
-ok PhEachOn.build({name => 'x', score => 0, max_score => 0}).is-invalid(:context<review>),
+ok Prelude.build({name => 'x', score => 0, max_score => 0}).is-invalid(:context<review>),
   'validates-each on: runs the block under the named context';
-ok PhEachOn.build({name => 'x', score => 0, max_score => 0}).is-valid,
+ok Prelude.build({name => 'x', score => 0, max_score => 0}).is-valid,
   'validates-each on: skips the block in the default context';
 
 {
   my $caught;
-  try { PhEachStrict.build({name => 'lowercase', score => 0, max_score => 0}).is-valid; CATCH { default { $caught = $_ } } }
+  try { Aria.build({name => 'lowercase', score => 0, max_score => 0}).is-valid; CATCH { default { $caught = $_ } } }
   ok $caught ~~ X::StrictValidationFailed,
     'validates-each strict raises X::StrictValidationFailed when the block records an error';
 }
-ok PhEachStrict.build({name => 'Capital', score => 0, max_score => 0}).is-valid,
+ok Aria.build({name => 'Capital', score => 0, max_score => 0}).is-valid,
   'validates-each strict does not raise when the block records nothing';
 
-PhEach.destroy-all;
+Symphony.destroy-all;

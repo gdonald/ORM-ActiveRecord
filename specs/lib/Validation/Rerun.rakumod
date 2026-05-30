@@ -2,8 +2,8 @@ use ORM::ActiveRecord::Model;
 
 unit module Validation::Rerun;
 
-class RerunPhevent is Model is export {
-  method table-name { 'phevents' }
+class Replay is Model is export {
+  method table-name { 'concerts' }
 
   submethod BUILD {
     self.validate: 'name',  { :presence }
@@ -11,4 +11,4 @@ class RerunPhevent is Model is export {
   }
 }
 
-GLOBAL::<RerunPhevent> := RerunPhevent;
+GLOBAL::<Replay> := Replay;

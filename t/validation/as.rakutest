@@ -8,20 +8,20 @@ plan 6;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-AsPhevent.destroy-all;
+Premiere.destroy-all;
 
-my $ev = AsPhevent.build({name => 'A', score => 5, max_score => 0});
+my $ev = Premiere.build({name => 'A', score => 5, max_score => 0});
 ok $ev.is-invalid, 'fails when max_score is missing';
 ok $ev.errors.max_score[0] eq 'Maximum Score must be present',
   'as: overrides {attribute} in template';
 
-$ev = AsPhevent2.build({name => 'A', score => 1, max_score => 1});
+$ev = Encore.build({name => 'A', score => 1, max_score => 1});
 ok $ev.is-invalid, 'fails when score < gte threshold';
 ok $ev.errors.score[0] eq 'Player Score must be at least 10',
   'as: overrides {attribute} in numericality message';
 
-$ev = AsPhevent.build({name => 'A', score => 5, max_score => 99});
+$ev = Premiere.build({name => 'A', score => 5, max_score => 99});
 ok $ev.is-valid, 'no error when valid';
 nok $ev.errors.max_score, 'no error on errors object when valid';
 
-AsPhevent.destroy-all;
+Premiere.destroy-all;
