@@ -804,7 +804,7 @@ class Page is Model {
 my $u = User.find($id);
 my @pages = $u.pages;
 
-@pages.first.user.WHERE == $u.WHERE;     # True — same instance
+@pages.first.user === $u;                # True — same instance
 ```
 
 ### Automatic inverse detection
@@ -840,7 +840,7 @@ class Article is Model {
 }
 
 my $u = User.find($id);
-$u.articles.first.scribe.WHERE == $u.WHERE;   # True
+$u.articles.first.scribe === $u;              # True
 ```
 
 `inverse-of:` accepts either a `:pair` form (`inverse-of => :scribe`) or a string (`inverse-of => 'scribe'`). It applies to `has-many` and `has-one`; the back-pointer is populated on every record returned from the collection or singular accessor. If no inverse is declared and auto-detection cannot run, the back-pointer is not wired and each `child.parent` access reloads from the database.

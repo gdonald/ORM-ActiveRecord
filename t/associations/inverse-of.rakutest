@@ -26,13 +26,13 @@ Page.create({user => $u-seed, name => 'About'});
 my $owner  = User.find($u-seed.id);
 my @pages  = $owner.pages;
 is @pages.elems, 2, 'has-many returns both pages';
-ok @pages.first.user.WHERE == $owner.WHERE,
+ok @pages.first.user === $owner,
   'auto-detected inverse-of populates back-pointer on the first child';
-ok @pages[1].user.WHERE == $owner.WHERE,
+ok @pages[1].user === $owner,
   'auto-detected inverse-of populates back-pointer on every child';
 
 my @pages-again = $owner.pages;
-ok @pages-again.first.user.WHERE == $owner.WHERE,
+ok @pages-again.first.user === $owner,
   'auto-detected inverse-of re-applies on re-access';
 
 # === Auto-detected has-one → belongs-to (no overrides) ===
@@ -40,7 +40,7 @@ Profile.create({user => $u-seed, bio => 'inverse-of test'});
 my $owner2 = User.find($u-seed.id);
 my $prof   = $owner2.profile;
 ok $prof.defined, 'has-one returns a profile';
-ok $prof.user.WHERE == $owner2.WHERE,
+ok $prof.user === $owner2,
   'auto-detected inverse-of populates back-pointer on has-one';
 
 # === Explicit inverse-of with foreign-key override (has-many → belongs-to) ===
@@ -53,9 +53,9 @@ $a2.save;
 my $writer = User.find($author.id);
 my @articles = $writer.articles;
 is @articles.elems, 2, 'explicit inverse-of: has-many returns rows';
-ok @articles.first.scribe.WHERE == $writer.WHERE,
+ok @articles.first.scribe === $writer,
   'explicit inverse-of populates the back-pointer on the first child';
-ok @articles[1].scribe.WHERE == $writer.WHERE,
+ok @articles[1].scribe === $writer,
   'explicit inverse-of populates the back-pointer on every child';
 
 # Without an explicit inverse-of, the FK override would block auto-detection.
@@ -72,7 +72,7 @@ Employee.create({name => 'Min', manager => $boss});
 my $boss-loaded = Employee.find($boss.id);
 my @subs = $boss-loaded.subordinates;
 is @subs.elems, 1, 'no-inverse has-many still returns the row';
-ok @subs.first.manager.WHERE != $boss-loaded.WHERE,
+ok !(@subs.first.manager === $boss-loaded),
   'foreign-key override + no inverse-of: back-pointer is a fresh load';
 
 # === Direct method coverage ===

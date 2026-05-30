@@ -30,7 +30,7 @@ describe 'inverse-of', {
       my $owner = User.find($u-seed.id);
       my @pages = $owner.pages;
 
-      expect(@pages.first.user.WHERE).to.eq($owner.WHERE);
+      expect(@pages.first.user === $owner).to.be-truthy;
     }
 
     it 'populates back-pointer on every child', {
@@ -40,7 +40,7 @@ describe 'inverse-of', {
       my $owner = User.find($u-seed.id);
       my @pages = $owner.pages;
 
-      expect(@pages[1].user.WHERE).to.eq($owner.WHERE);
+      expect(@pages[1].user === $owner).to.be-truthy;
     }
 
     it 're-applies on re-access', {
@@ -50,7 +50,7 @@ describe 'inverse-of', {
       $owner.pages;
       my @pages-again = $owner.pages;
 
-      expect(@pages-again.first.user.WHERE).to.eq($owner.WHERE);
+      expect(@pages-again.first.user === $owner).to.be-truthy;
     }
   }
 
@@ -69,7 +69,7 @@ describe 'inverse-of', {
       my $owner2 = User.find($u-seed.id);
       my $prof = $owner2.profile;
 
-      expect($prof.user.WHERE).to.eq($owner2.WHERE);
+      expect($prof.user === $owner2).to.be-truthy;
     }
   }
 
@@ -90,7 +90,7 @@ describe 'inverse-of', {
       my $writer = User.find($author.id);
       my @articles = $writer.articles;
 
-      expect(@articles.first.scribe.WHERE).to.eq($writer.WHERE);
+      expect(@articles.first.scribe === $writer).to.be-truthy;
     }
 
     it 'populates back-pointer on every child', {
@@ -100,7 +100,7 @@ describe 'inverse-of', {
       my $writer = User.find($author.id);
       my @articles = $writer.articles;
 
-      expect(@articles[1].scribe.WHERE).to.eq($writer.WHERE);
+      expect(@articles[1].scribe === $writer).to.be-truthy;
     }
   }
 
@@ -132,7 +132,7 @@ describe 'inverse-of', {
       my $boss-loaded = Employee.find($boss.id);
       my @subs = $boss-loaded.subordinates;
 
-      expect(@subs.first.manager.WHERE != $boss-loaded.WHERE).to.be-truthy;
+      expect(@subs.first.manager === $boss-loaded).to.be-falsy;
     }
   }
 
