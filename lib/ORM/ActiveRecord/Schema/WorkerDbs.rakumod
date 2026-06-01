@@ -112,47 +112,51 @@ sub migrate-one(Str $conn, %base, Int $i, Int $count --> Bool) {
   True;
 }
 
-sub each-target(&body, Bool :$parallel, Str :$path, Str :$env) {
+sub each-target(&body, Bool :$parallel, Str :$path, Str :$env, Int :$count) {
   # Clear any inherited worker overlay so base configs read cleanly.
   temp %*ENV;
   %*ENV<BEHAVE_WORKER_INDEX>:delete;
   %*ENV<BEHAVE_WORKER_COUNT>:delete;
 
-  # The parallel worker count comes from config (the env's `parallel` key).
-  my $count   = $parallel ?? DB.env-parallel(:$path, :$env) !! 1;
-  my @indices = $parallel ?? (^$count).list !! (Int,);
+  # The parallel worker count is the explicit override when given, else the
+  # env's `parallel` key from config.
+  my $n       = $parallel ?? ($count // DB.env-parallel(:$path, :$env)) !! 1;
+  my @indices = $parallel ?? (^$n).list !! (Int,);
 
   for DB.connection-names(:$path, :$env) -> $conn {
     my %base = DB.read-config(:$path, name => $conn, :$env);
     next unless %base.elems;
 
-    body($conn, %base, $_, $count) for @indices;
+    body($conn, %base, $_, $n) for @indices;
   }
 }
 
 sub create-test-databases(Bool :$parallel = False,
+                          Int  :$count,
                           Str  :$path = 'config/application.json',
                           Str  :$env  = $parallel ?? 'test' !! current-env('development')) is export {
-  each-target(-> $conn, %base, $i, $count { create-one($conn, %base, $i) },
-              :$parallel, :$path, :$env);
+  each-target(-> $conn, %base, $i, $n { create-one($conn, %base, $i) },
+              :$parallel, :$path, :$env, :$count);
 }
 
 sub migrate-test-databases(Bool :$parallel = False,
+                           Int  :$count,
                            Str  :$path = 'config/application.json',
                            Str  :$env  = $parallel ?? 'test' !! current-env('development')) is export {
-  each-target(-> $conn, %base, $i, $count { migrate-one($conn, %base, $i, $count) },
-              :$parallel, :$path, :$env);
+  each-target(-> $conn, %base, $i, $n { migrate-one($conn, %base, $i, $n) },
+              :$parallel, :$path, :$env, :$count);
 }
 
 # Pre-flight readiness for every expected database (each configured connection,
 # times the worker count when :parallel). Returns one problem line per database
 # that is missing or has unrun migrations; an empty list means all are ready.
 sub check-test-databases(Bool :$parallel = False,
+                         Int  :$count,
                          Str  :$path = 'config/application.json',
                          Str  :$env  = $parallel ?? 'test' !! current-env('development') --> List) is export {
   my @problems;
 
-  each-target(-> $conn, %base, $i, $count {
+  each-target(-> $conn, %base, $i, $n {
     my %cfg   = $i.defined ?? apply-worker-suffix(%base, $i) !! %base;
     my $label = db-name(%cfg) || sqlite-name(%cfg);
 
@@ -160,7 +164,7 @@ sub check-test-databases(Bool :$parallel = False,
       when 'missing' { @problems.push: "missing database: $label" }
       when 'pending' { @problems.push: "unrun migrations: $label" }
     }
-  }, :$parallel, :$path, :$env);
+  }, :$parallel, :$path, :$env, :$count);
 
   @problems.List;
 }

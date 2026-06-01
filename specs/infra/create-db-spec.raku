@@ -210,4 +210,20 @@ group 'check-test-databases', :tag<destructive>, {
 
     expect(check-test-databases(:parallel, path => $cfg, env => 'test').elems).to.eq(0);
   }
+
+  it 'honors an explicit count over the config parallel key', {
+    my $base = $*TMPDIR.add("chk-cnt-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+    my $cfg  = $*TMPDIR.add("chk-cnt-cfg-{$*PID}-{(now * 1e6).Int}.json").Str;
+    @paths.push: $cfg;
+    # config says 4, but the explicit count of 2 must win: only 2 databases are
+    # expected, so a fresh base yields 2 problems, not 4.
+    $cfg.IO.spurt: to-json({
+      test => { parallel => 4, primary => { adapter => 'sqlite', name => $base } },
+    });
+
+    temp %*ENV<DATABASE_URL>;
+    %*ENV<DATABASE_URL>:delete;
+
+    expect(check-test-databases(:parallel, count => 2, path => $cfg, env => 'test').elems).to.eq(2);
+  }
 }

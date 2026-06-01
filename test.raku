@@ -319,23 +319,23 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
   my $any-behave-fail = 0;
 
   if $run-behave && $parallel > 1 {
-    # Create + migrate the N worker databases (count from config), then run
-    # behave in its default isolated mode — one process per spec file (so
-    # top-level class/role symbols can't collide across files) with a recycled
-    # 0..N-1 slot. behave sets BEHAVE_WORKER_INDEX/BEHAVE_WORKER_COUNT, which is
-    # all the ORM needs to give each concurrent file its own suffixed DB.
+    # Create + migrate the N worker databases, then run behave in its default
+    # isolated mode — one process per spec file (so top-level class/role symbols
+    # can't collide across files) with a recycled 0..N-1 slot. The worker count
+    # is passed to `ar` explicitly (`--parallel=N`) so it matches behave's
+    # `--parallel=N` even when there is no config file to read it from.
     my $created = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-    'raku', '-Ilib', 'bin/ar', 'createdb', '--parallel';
+    'raku', '-Ilib', 'bin/ar', 'createdb', "--parallel=$parallel";
     return $created.exitcode unless $created.exitcode == 0;
 
     my $migrated = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-    'raku', '-Ilib', 'bin/ar', 'migrate', '--parallel';
+    'raku', '-Ilib', 'bin/ar', 'migrate', "--parallel=$parallel";
     return $migrated.exitcode unless $migrated.exitcode == 0;
 
     # Pre-flight: confirm every expected worker database exists and is migrated
     # before launching any specs (one clean failure beats per-worker errors).
     my $checked = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-    'raku', '-Ilib', 'bin/ar', 'check', '--parallel';
+    'raku', '-Ilib', 'bin/ar', 'check', "--parallel=$parallel";
     return $checked.exitcode unless $checked.exitcode == 0;
 
     my $proc = run 'behave', "--parallel=$parallel", |@specs;

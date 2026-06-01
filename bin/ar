@@ -15,7 +15,8 @@ use ORM::ActiveRecord::Support::Version;
 #   up[:N] down[:N]  migrate up / down (optionally N steps).
 #   reset [--yes]    drop every table.
 # Add --parallel to createdb/migrate/check to target the test environment's
-# parallel databases; the worker count comes from config (the env's `parallel`).
+# parallel databases. The worker count comes from config (the env's `parallel`
+# key) unless `--parallel=N` gives it explicitly.
 sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
   if $version {
     say "ar (ORM::ActiveRecord) {ORM::ActiveRecord::Support::Version::version()}";
@@ -23,22 +24,29 @@ sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
   }
 
   # Raku binds `--parallel` to the named arg only when it precedes the
-  # subcommand; accept it in either position by stripping it from @args.
-  my $par  = $parallel || ('--parallel' ∈ @args);
-  my @cmd  = @args.grep(* ne '--parallel');
+  # subcommand; accept it (and the `--parallel=N` count form) in either
+  # position by parsing @args directly.
+  my $par = $parallel;
+  my Int $count;
+  my @cmd;
+  for @args -> $a {
+    if    $a eq '--parallel'              { $par = True }
+    elsif $a ~~ /^ '--parallel=' (\d+) $/ { $par = True; $count = +$0 }
+    else                                  { @cmd.push: $a }
+  }
 
   given @cmd[0] // 'migrate' {
-    when 'createdb' { create-test-databases(parallel => $par) }
-    when 'migrate'  { migrate-test-databases(parallel => $par) }
-    when 'check'    { exit check-command(parallel => $par) }
+    when 'createdb' { create-test-databases(parallel => $par, :$count) }
+    when 'migrate'  { migrate-test-databases(parallel => $par, :$count) }
+    when 'check'    { exit check-command(parallel => $par, :$count) }
     default         { Migrate.new(args => @cmd).run }
   }
 }
 
 # Pre-flight: print one line per problem and exit 1 if any database is missing
 # or un-migrated, else confirm readiness and exit 0.
-sub check-command(Bool :$parallel --> Int) {
-  my @problems = check-test-databases(:$parallel);
+sub check-command(Bool :$parallel, Int :$count --> Int) {
+  my @problems = check-test-databases(:$parallel, :$count);
   return 0 unless @problems;
 
   $*ERR.say: "Databases not ready:";

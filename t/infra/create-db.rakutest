@@ -62,7 +62,7 @@ my @cleanup;
 
 unless $has-sqlite {
   .IO.unlink for @cleanup.grep(*.IO.e);
-  skip 'no sqlite driver available', 6;
+  skip 'no sqlite driver available', 7;
   done-testing;
   exit 0;
 }
@@ -142,6 +142,21 @@ unless $has-sqlite {
   migrate-test-databases(:parallel, path => $cfg, env => 'test');
   is check-test-databases(:parallel, path => $cfg, env => 'test').elems, 0,
     'check-test-databases reports no problems once created and migrated';
+}
+
+{
+  my $base = $*TMPDIR.add("chk-cnt-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+  my $cfg  = $*TMPDIR.add("chk-cnt-cfg-{$*PID}-{(now * 1e6).Int}.json").Str;
+  @cleanup.push: $cfg;
+  # config says 4, but the explicit count of 2 must win.
+  $cfg.IO.spurt: to-json({
+    test => { parallel => 4, primary => { adapter => 'sqlite', name => $base } },
+  });
+
+  temp %*ENV<DATABASE_URL>;
+  %*ENV<DATABASE_URL>:delete;
+  is check-test-databases(:parallel, count => 2, path => $cfg, env => 'test').elems, 2,
+    'check-test-databases honors an explicit count over the config parallel key';
 }
 
 .IO.unlink for @cleanup.grep(*.IO.e);
