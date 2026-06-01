@@ -222,9 +222,18 @@ class PgAdapter is SqlAdapter is export {
 
   # ---- DDL emission ----
 
-  method ddl-create-table(Str:D $table, @params, :@foreign-keys is copy) {
+  method ddl-create-table(Str:D $table, @params, :@foreign-keys is copy,
+                          :$force, Bool :$temporary = False, Bool :$if-not-exists = False) {
+    self.ddl-force-drop($table, $force);
+
+    # The primary key is a separate ALTER, so IF NOT EXISTS can't make the whole
+    # operation atomic — skip entirely when the table is already present.
+    return if $if-not-exists && self.get-table-names.list.grep(* eq $table).elems;
+
     my $fields = self!build-fields(@params, :@foreign-keys);
-    self.exec("CREATE TABLE $table ( id SERIAL, $fields )");
+    my $prefix = self.ref-create-table-prefix(:$temporary, :$if-not-exists);
+
+    self.exec("{$prefix}$table ( id SERIAL, $fields )");
     self.exec("ALTER TABLE $table ADD CONSTRAINT {$table}_pkey PRIMARY KEY (id)");
     for @foreign-keys -> $fk {
       self.exec(qq:to/SQL/);
@@ -236,13 +245,22 @@ class PgAdapter is SqlAdapter is export {
     }
   }
 
-  method ddl-add-column(Str:D $table, Pair:D $param) {
-    my @fk;
-    my $fields = self!build-fields([$param], foreign-keys => @fk);
-    for $fields.split(', ') -> $col {
-      self.exec("ALTER TABLE $table ADD COLUMN $col");
+  method ddl-add-column(Str:D $table, Pair:D $param, Bool :$if-not-exists = False) {
+    my $clause = $if-not-exists ?? self.ref-column-if-not-exists-clause !! '';
+    for self.ddl-column-defs($param) -> $col {
+      self.exec("ALTER TABLE $table ADD COLUMN {$clause}$col");
     }
   }
+
+  method ddl-column-defs(Pair:D $param --> List) {
+    my @fk;
+    self!build-fields([$param], foreign-keys => @fk).split(', ').list;
+  }
+
+  method ref-drop-cascade-suffix(--> Str) { ' CASCADE' }
+
+  method ref-column-if-not-exists-clause(--> Str) { 'IF NOT EXISTS ' }
+  method ref-column-if-exists-clause(--> Str)     { 'IF EXISTS ' }
 
   method ddl-change-column(Str:D $table, Str:D $name, Str:D $type, *%opts) {
     my $sql-type = self!sql-type-for($type, limit => %opts<limit>);

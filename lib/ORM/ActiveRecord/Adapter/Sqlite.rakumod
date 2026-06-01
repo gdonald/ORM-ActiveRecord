@@ -247,20 +247,34 @@ class SqliteAdapter is SqlAdapter is export {
 
   # ---- DDL emission ----
 
-  method ddl-create-table(Str:D $table, @params) {
+  method ddl-create-table(Str:D $table, @params,
+                          :$force, Bool :$temporary = False, Bool :$if-not-exists = False) {
+    self.ddl-force-drop($table, $force);
+
     my @fk-clauses;
     my $fields = self!build-fields(@params, :@fk-clauses);
     my $fk-sql = @fk-clauses.elems ?? ', ' ~ @fk-clauses.join(', ') !! '';
-    self.exec("CREATE TABLE $table ( id INTEGER PRIMARY KEY AUTOINCREMENT, $fields$fk-sql )");
+    my $prefix = self.ref-create-table-prefix(:$temporary, :$if-not-exists);
+    self.exec("{$prefix}$table ( id INTEGER PRIMARY KEY AUTOINCREMENT, $fields$fk-sql )");
   }
 
-  method ddl-add-column(Str:D $table, Pair:D $param) {
-    my @fk-clauses;
-    my $fields = self!build-fields([$param], :@fk-clauses);
+  method ddl-add-column(Str:D $table, Pair:D $param, Bool :$if-not-exists = False) {
+    my $clause = $if-not-exists ?? self.ref-column-if-not-exists-clause !! '';
     # SQLite ALTER TABLE can't add FK constraints — use create-table for enforced FKs.
-    for $fields.split(', ') -> $col {
-      self.exec("ALTER TABLE $table ADD COLUMN $col");
+    for self.ddl-column-defs($param) -> $col {
+      self.exec("ALTER TABLE $table ADD COLUMN {$clause}$col");
     }
+  }
+
+  method ddl-column-defs(Pair:D $param --> List) {
+    my @fk-clauses;
+    self!build-fields([$param], :@fk-clauses).split(', ').list;
+  }
+
+  # SQLite's ALTER TABLE allows only one column operation per statement, so a
+  # bulk change-table can't be coalesced — run each clause on its own.
+  method ddl-alter-table-bulk(Str:D $table, @clauses) {
+    self.exec("ALTER TABLE $table $_") for @clauses;
   }
 
   method ddl-change-column(Str:D $table, Str:D $name, Str:D $type, *%opts) {

@@ -108,6 +108,147 @@ class AddGamesYear is Migration {
 }
 ```
 
+## Table options
+
+`create-table` and `drop-table` accept options that control how the statement
+is emitted.
+
+### `force`
+
+`force => True` drops the table first (with `DROP TABLE IF EXISTS`) so the
+`create-table` always starts from a clean slate:
+
+```perl6
+self.create-table: 'users', [ name => { :string, limit => 32 } ],
+  force => True;
+```
+
+`force => 'cascade'` adds `CASCADE` to the drop so dependent objects (views,
+foreign keys) go with it. `CASCADE` is PostgreSQL-only; MySQL and SQLite treat
+`'cascade'` the same as `True` (a plain `DROP TABLE IF EXISTS`).
+
+```perl6
+# PostgreSQL: drops the table and anything depending on it, then recreates
+self.create-table: 'users', [ name => { :string, limit => 32 } ],
+  force => 'cascade';
+```
+
+### `temporary`
+
+`temporary => True` emits `CREATE TEMPORARY TABLE`. The table lives only for the
+session that created it and is invisible to other connections:
+
+```perl6
+self.create-table: 'scratch', [ payload => { :text } ],
+  temporary => True;
+```
+
+### `if-not-exists` / `if-exists`
+
+`create-table` takes `if-not-exists => True` (skips the create when the table is
+already there) and `drop-table` takes `if-exists => True` (skips the drop when it
+is already gone). Both are supported on every adapter:
+
+```perl6
+self.create-table: 'users', [ name => { :string } ], if-not-exists => True;
+self.drop-table:    'users', :if-exists;
+```
+
+`drop-table` also accepts `:cascade` (PostgreSQL) to drop dependents alongside
+the table.
+
+## Join tables
+
+`create-join-table` builds the two-column table that backs a many-to-many
+association. The table name is the two arguments sorted and joined with `_`, and
+each column is `<singular>_id NOT NULL`. There is no `id` primary key:
+
+```perl6
+class JoinPostsAndTags is Migration {
+  method change {
+    self.create-join-table: 'posts', 'tags';   # → posts_tags (post_id, tag_id)
+  }
+}
+```
+
+`drop-join-table` is the inverse and derives the same name. Inside `change`,
+`create-join-table` auto-inverts to `drop-join-table`; a standalone
+`drop-join-table` is irreversible (supply explicit `up` / `down`).
+
+| Option       | Default                   | Effect                                                   |
+| ------------ | ------------------------- | -------------------------------------------------------- |
+| `table-name` | sorted `<a>_<b>`          | Override the generated join-table name.                  |
+| `null`       | `False`                   | Set to `True` to allow NULL in the two id columns.       |
+| `type`       | `'integer'`               | Override the id column type (e.g. `bigint`).             |
+
+```perl6
+self.create-join-table: 'posts', 'tags', table-name => 'taggings';
+self.drop-join-table:   'posts', 'tags', table-name => 'taggings';
+```
+
+## Bulk table changes
+
+`change-table` yields a block-scoped builder so several alterations to one table
+read together. With `bulk => True` the column additions and removals are
+coalesced into a single `ALTER TABLE` statement (one table rewrite instead of
+several); other operations (indexes, renames, timestamps) run as their own
+statements afterward:
+
+```perl6
+class WidenUsers is Migration {
+  method change {
+    self.change-table: 'users', -> $t {
+      $t.add-column: :age  => { :integer };
+      $t.add-column: :city => { :string, limit => 64 };
+      $t.remove-column: 'legacy_flag';
+      $t.add-index: :age;
+    }, bulk => True;
+  }
+}
+```
+
+The builder exposes `add-column` (alias `column`), `remove-column` (alias
+`remove`), `add-index`, `remove-index`, `add-timestamps`, `remove-timestamps`,
+`rename-column`, and `add-reference` (alias `add-belongs-to`) — each mirrors the
+matching migration method without the leading table argument. Because the
+operations are replayed through the normal DSL, a `change-table` built from
+reversible operations is itself reversible inside `change`.
+
+SQLite's `ALTER TABLE` permits only one column operation per statement, so
+`bulk` there runs each column change on its own; the result is identical, just
+not coalesced.
+
+## Column options
+
+`add-column` accepts `if-not-exists => True` and `remove-column` accepts
+`if-exists => True`. These are PostgreSQL-only — MySQL and SQLite raise rather
+than emit SQL that would not run:
+
+```perl6
+self.add-column:    'users', :nickname => { :string }, if-not-exists => True;
+self.remove-column: 'users', :nickname, if-exists => True;
+```
+
+`add-index` (`if-not-exists`) and `remove-index` (`if-exists`) work on
+PostgreSQL and SQLite; MySQL raises:
+
+```perl6
+self.add-index:    'users', :email, if-not-exists => True;
+self.remove-index: 'users', :email, if-exists => True;
+```
+
+### Adapter support
+
+| Operation                       | PostgreSQL | SQLite | MySQL |
+| ------------------------------- | :--------: | :----: | :---: |
+| `create-table force`            |    yes     |  yes   |  yes  |
+| `create-table force: cascade`   |  cascade   | plain  | plain |
+| `create-table temporary`        |    yes     |  yes   |  yes  |
+| `create-table if-not-exists`    |    yes     |  yes   |  yes  |
+| `drop-table if-exists`          |    yes     |  yes   |  yes  |
+| `add/remove-column if-[not-]exists` | yes    |   —    |   —   |
+| `add/remove-index if-[not-]exists`  | yes    |  yes   |   —   |
+
 ## Changing columns
 
 After a table exists, four methods alter the shape of a column in place:
@@ -561,8 +702,8 @@ self.remove-timestamps: 'articles';
 ## Reversible migrations
 
 Most schema operations have an obvious inverse: `create-table` ↔ `drop-table`,
-`add-column` ↔ `remove-column`, `add-index` ↔ `remove-index`,
-`add-timestamps` ↔ `remove-timestamps`. Instead of writing both `up` and `down`,
+`create-join-table` ↔ `drop-join-table`, `add-column` ↔ `remove-column`,
+`add-index` ↔ `remove-index`, `add-timestamps` ↔ `remove-timestamps`. Instead of writing both `up` and `down`,
 define a single `change` method and let the runner derive the rollback:
 
 ```perl6

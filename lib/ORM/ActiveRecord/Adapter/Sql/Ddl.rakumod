@@ -1,7 +1,9 @@
 
 role SqlDdl is export {
-  method ddl-drop-table(Str:D $table) {
-    self.exec("DROP TABLE $table");
+  method ddl-drop-table(Str:D $table, Bool :$if-exists = False, Bool :$cascade = False) {
+    my $ie = $if-exists ?? 'IF EXISTS ' !! '';
+    my $cc = $cascade   ?? self.ref-drop-cascade-suffix !! '';
+    self.exec("DROP TABLE {$ie}{$table}{$cc}");
   }
 
   # Drop every table the adapter can see. Adapters override to disable FK
@@ -12,8 +14,62 @@ role SqlDdl is export {
     @tables;
   }
 
-  method ddl-remove-column(Str:D $table, $field) {
-    self.exec("ALTER TABLE $table DROP COLUMN $field");
+  # `force: True` drops the table first; `force: 'cascade'` adds CASCADE where
+  # the adapter supports it. The drop is IF EXISTS so a fresh table is fine.
+  method ddl-force-drop(Str:D $table, $force) {
+    return without $force;
+    return if $force ~~ Bool && !$force;
+
+    my Bool $cascade = $force ~~ Str && $force.lc eq 'cascade';
+    self.ddl-drop-table($table, :if-exists, :$cascade);
+  }
+
+  method ref-drop-cascade-suffix(--> Str) { '' }
+
+  # CREATE [TEMPORARY] TABLE [IF NOT EXISTS] — TEMPORARY and IF NOT EXISTS are
+  # accepted by all three engines, so the prefix lives in the shared role and
+  # each adapter only fills in the body (id column, engine, etc.).
+  method ref-create-table-prefix(Bool :$temporary = False, Bool :$if-not-exists = False --> Str) {
+    my $temp = $temporary    ?? self.ref-temporary-keyword !! '';
+    my $ine  = $if-not-exists ?? 'IF NOT EXISTS '          !! '';
+    "CREATE {$temp}TABLE {$ine}";
+  }
+
+  method ref-temporary-keyword(--> Str) { 'TEMPORARY ' }
+
+  # A join table is just two NOT NULL foreign-key columns and no primary key.
+  # Name and column names are derived in the migration layer.
+  method ddl-create-join-table(Str:D $table, Str:D $col1, Str:D $col2,
+                               Bool :$null = False,
+                               Str  :$type = 'integer') {
+    my $sql-type    = self.ref-sql-type($type);
+    my $null-clause = $null ?? '' !! ' NOT NULL';
+
+    self.exec("CREATE TABLE $table ( $col1 $sql-type$null-clause, $col2 $sql-type$null-clause )");
+  }
+
+  method ddl-drop-join-table(Str:D $table, Bool :$if-exists = False) {
+    self.ddl-drop-table($table, :$if-exists);
+  }
+
+  # Coalesced ALTER TABLE for change-table(:bulk). Clauses are pre-built
+  # ADD COLUMN / DROP COLUMN fragments joined into one statement.
+  method ddl-alter-table-bulk(Str:D $table, @clauses) {
+    self.exec("ALTER TABLE $table " ~ @clauses.join(', '));
+  }
+
+  method ddl-remove-column(Str:D $table, $field, Bool :$if-exists = False) {
+    my $clause = $if-exists ?? self.ref-column-if-exists-clause !! '';
+    self.exec("ALTER TABLE $table DROP COLUMN {$clause}$field");
+  }
+
+  # Column-level IF [NOT] EXISTS is PostgreSQL-only; the generic role raises so
+  # MySQL / SQLite fail loudly rather than emit broken SQL.
+  method ref-column-if-not-exists-clause(--> Str) {
+    die "add-column: if-not-exists is not supported on this adapter ({self.^name})";
+  }
+  method ref-column-if-exists-clause(--> Str) {
+    die "remove-column: if-exists is not supported on this adapter ({self.^name})";
   }
 
   method ddl-remove-timestamps(Str:D $table) {
@@ -25,10 +81,12 @@ role SqlDdl is export {
                        :$columns,
                        Bool:D :$unique = False,
                        :$expression,
-                       :$where, :$using, :$include, :$algorithm) {
+                       :$where, :$using, :$include, :$algorithm,
+                       Bool :$if-not-exists = False) {
 
     my $u    = $unique ?? 'UNIQUE ' !! '';
     my $conc = self.ref-index-algorithm-keyword($algorithm);
+    my $ine  = $if-not-exists ?? self.ref-index-if-not-exists-clause !! '';
 
     my $use-pre  = $using.defined ?? self.ref-index-using-prefix($using) !! '';
     my $use-post = $using.defined ?? self.ref-index-using-suffix($using) !! '';
@@ -40,13 +98,19 @@ role SqlDdl is export {
     my $incl = $include.defined ?? self.ref-index-include-clause($include) !! '';
     my $wh   = $where.defined   ?? self.ref-index-where-clause($where)     !! '';
 
-    self.exec("CREATE {$u}INDEX {$conc}{$name} ON {$table}{$use-pre} ({$body}){$incl}{$use-post}{$wh}");
+    self.exec("CREATE {$u}INDEX {$conc}{$ine}{$name} ON {$table}{$use-pre} ({$body}){$incl}{$use-post}{$wh}");
   }
 
-  method ddl-remove-index(Str:D :$name, Str :$table, :$algorithm) {
+  method ddl-remove-index(Str:D :$name, Str :$table, :$algorithm, Bool :$if-exists = False) {
     my $conc = self.ref-index-algorithm-keyword($algorithm);
-    self.exec("DROP INDEX {$conc}$name");
+    my $ife  = $if-exists ?? self.ref-index-if-exists-clause !! '';
+    self.exec("DROP INDEX {$conc}{$ife}$name");
   }
+
+  # CREATE / DROP INDEX IF [NOT] EXISTS works on PostgreSQL and SQLite; MySQL
+  # overrides these to raise.
+  method ref-index-if-not-exists-clause(--> Str) { 'IF NOT EXISTS ' }
+  method ref-index-if-exists-clause(--> Str)     { 'IF EXISTS ' }
 
   # Per-adapter index capability hooks. Base shape is PostgreSQL; SQLite and
   # MySQL override the clauses they do not support to raise a clear error.

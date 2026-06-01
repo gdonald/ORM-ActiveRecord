@@ -35,6 +35,14 @@ class CommandRecorder {
       when 'drop-table' {
         die X::IrreversibleMigration.new;
       }
+      when 'create-join-table' {
+        %( name => 'drop-join-table',
+           args => %cmd<args>,
+           kw   => %cmd<kw> );
+      }
+      when 'drop-join-table' {
+        die X::IrreversibleMigration.new;
+      }
       when 'add-column' {
         my $table = %cmd<args>[0];
         my $pair  = %cmd<args>[1];
@@ -210,6 +218,43 @@ class CommandRecorder {
   }
 }
 
+# Block-scoped builder yielded by `change-table`. Each call records an
+# operation; the migration replays them (or coalesces the column ones into a
+# single ALTER TABLE when :bulk is set).
+class ChangeTableContext is export {
+  has @.ops;
+
+  method add-column(Pair:D $pair, *%opts) {
+    @!ops.push: %( method => 'add-column', args => ($pair,), kw => %opts, coalesce => 'add', :$pair );
+  }
+  method column(Pair:D $pair, *%opts) { self.add-column($pair, |%opts) }
+
+  method remove-column(Str:D $col, *%opts) {
+    @!ops.push: %( method => 'remove-column', args => ($col,), kw => %opts, coalesce => 'drop', :$col );
+  }
+  method remove(Str:D $col, *%opts) { self.remove-column($col, |%opts) }
+
+  method add-index(|c) {
+    @!ops.push: %( method => 'add-index', args => c.list.cache, kw => c.hash, coalesce => Str );
+  }
+  method remove-index(|c) {
+    @!ops.push: %( method => 'remove-index', args => c.list.cache, kw => c.hash, coalesce => Str );
+  }
+  method add-timestamps(*%opts) {
+    @!ops.push: %( method => 'add-timestamps', args => (), kw => %opts, coalesce => Str );
+  }
+  method remove-timestamps(*%opts) {
+    @!ops.push: %( method => 'remove-timestamps', args => (), kw => %opts, coalesce => Str );
+  }
+  method rename-column(Str:D $from, Str:D $to) {
+    @!ops.push: %( method => 'rename-column', args => ($from, $to), kw => {}, coalesce => Str );
+  }
+  method add-reference(Str:D $name, *%opts) {
+    @!ops.push: %( method => 'add-reference', args => ($name,), kw => %opts, coalesce => Str );
+  }
+  method add-belongs-to(Str:D $name, *%opts) { self.add-reference($name, |%opts) }
+}
+
 class Migration is export {
   has DB $!db;
   has Str $.direction is rw = 'up';
@@ -250,10 +295,39 @@ class Migration is export {
     die X::IrreversibleMigration.new;
   }
 
-  method create-table(Str:D $table, @params) {
+  method create-table(Str:D $table, @params, :$force, Bool :$temporary = False, Bool :$if-not-exists = False) {
     if $!recorder { $!recorder.record('create-table', $table, @params); return }
 
-    $!db.ddl-create-table($table, @params);
+    $!db.ddl-create-table($table, @params, :$force, :$temporary, :$if-not-exists);
+  }
+
+  method create-join-table(Str:D $table1, Str:D $table2, :$table-name, *%opts) {
+    if $!recorder { $!recorder.record('create-join-table', $table1, $table2, :$table-name, |%opts); return }
+
+    my $name = $table-name // self!join-table-name($table1, $table2);
+    my ($col1, $col2) = self!join-columns($table1, $table2);
+
+    $!db.ddl-create-join-table($name, $col1, $col2,
+      |(null => %opts<null> with %opts<null>),
+      |(type => %opts<type> with %opts<type>),
+    );
+  }
+
+  method drop-join-table(Str:D $table1, Str:D $table2, :$table-name, *%opts) {
+    if $!recorder { $!recorder.record('drop-join-table', $table1, $table2, :$table-name, |%opts); return }
+
+    my $name = $table-name // self!join-table-name($table1, $table2);
+    $!db.ddl-drop-join-table($name);
+  }
+
+  # Rails-style join-table name: the two table names sorted and joined with '_'.
+  method !join-table-name(Str:D $t1, Str:D $t2 --> Str) {
+    ($t1, $t2).sort.join('_');
+  }
+
+  # Foreign-key column names, in the order the tables were given.
+  method !join-columns(Str:D $t1, Str:D $t2 --> List) {
+    ($!db.ref-default-column($t1), $!db.ref-default-column($t2));
   }
 
   method table-exists(Str:D $table --> Bool) {
@@ -264,23 +338,60 @@ class Migration is export {
     self.drop-table($table) if self.table-exists($table);
   }
 
-  method drop-table(Str:D $table) {
+  method drop-table(Str:D $table, Bool :$if-exists = False, Bool :$cascade = False) {
     if $!recorder { $!recorder.record('drop-table', $table); return }
 
-    $!db.ddl-drop-table($table);
+    $!db.ddl-drop-table($table, :$if-exists, :$cascade);
   }
 
-  method add-column(Str:D $table, Pair:D $params) {
+  method change-table(Str:D $table, &block, Bool :$bulk = False) {
+    my $ctx = ChangeTableContext.new;
+    block($ctx);
+
+    # While recording a rollback, or when not coalescing, replay each op through
+    # the public DSL so the recorder can invert them individually.
+    if $!recorder || !$bulk {
+      for $ctx.ops -> %op {
+        self."{%op<method>}"($table, |%op<args>, |%op<kw>);
+      }
+      return;
+    }
+
+    # Bulk: fold ADD / DROP COLUMN into one ALTER TABLE; everything else
+    # (indexes, renames, timestamps) runs as its own statement afterward.
+    my @clauses;
+    my @rest;
+
+    for $ctx.ops -> %op {
+      given %op<coalesce> {
+        when 'add'  { @clauses.push("ADD COLUMN $_")  for $!db.ddl-column-defs(%op<pair>) }
+        when 'drop' { @clauses.push("DROP COLUMN {%op<col>}") }
+        default     { @rest.push(%op) }
+      }
+    }
+
+    $!db.ddl-alter-table-bulk($table, @clauses) if @clauses;
+
+    for @rest -> %op {
+      self."{%op<method>}"($table, |%op<args>, |%op<kw>);
+    }
+  }
+
+  method add-column(Str:D $table, Pair:D $params, *%opts) {
     if $!recorder { $!recorder.record('add-column', $table, $params); return }
 
-    $!db.ddl-add-column($table, $params);
+    my Bool $if-not-exists = ?(%opts<if-not-exists>);
+    $!db.ddl-add-column($table, $params, :$if-not-exists);
   }
 
   method remove-column(Str:D $table, |params) {
     if $!recorder { $!recorder.record('remove-column', $table, |params); return }
 
-    my $field = params.keys.first;
-    $!db.ddl-remove-column($table, $field);
+    my %named = params.hash;
+    my Bool $if-exists = ?(%named<if-exists>:delete);
+    my $field = params.list.first // %named.keys.first;
+
+    $!db.ddl-remove-column($table, $field, :$if-exists);
   }
 
   method add-timestamps(Str:D $table) {
@@ -310,6 +421,7 @@ class Migration is export {
       |(using      => %spec<using>      with %spec<using>),
       |(include    => %spec<include>    with %spec<include>),
       |(algorithm  => %spec<algorithm>  with %spec<algorithm>),
+      |(if-not-exists => %spec<if-not-exists> with %spec<if-not-exists>),
     );
   }
 
@@ -322,6 +434,7 @@ class Migration is export {
       name => %spec<name>,
       :$table,
       |(algorithm => %spec<algorithm> with %spec<algorithm>),
+      |(if-exists => %spec<if-exists> with %spec<if-exists>),
     );
   }
 
@@ -338,7 +451,7 @@ class Migration is export {
   # as a named pair whose key is the column and whose value is True or an
   # options hash. Recognized option keys are pulled out by name.
   method !index-spec(Str:D $table, $captured) {
-    my @optkeys = <unique name where using include algorithm opclass order expression>;
+    my @optkeys = <unique name where using include algorithm opclass order expression if-not-exists if-exists>;
 
     my %named = $captured.hash;
     my %opts;
@@ -407,6 +520,8 @@ class Migration is export {
       using      => %opts<using>,
       include    => %opts<include>,
       algorithm  => %opts<algorithm>,
+      if-not-exists => %opts<if-not-exists>,
+      if-exists     => %opts<if-exists>,
     );
   }
 

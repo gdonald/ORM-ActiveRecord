@@ -1,0 +1,284 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub adapter-kind(--> Str) {
+  given $adapter.^name {
+    when /Pg/     { 'pg' }
+    when /MySql/  { 'mysql' }
+    when /Sqlite/ { 'sqlite' }
+    default       { 'unknown' }
+  }
+}
+
+my $kind      = adapter-kind();
+my $is-pg     = $kind eq 'pg';
+my $is-sqlite = $kind eq 'sqlite';
+my $is-mysql  = $kind eq 'mysql';
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub column-names($table) {
+  $adapter.get-fields(table => $table).map({ $_[0] }).list;
+}
+
+sub index-exists($name) {
+  my $rows = do given $kind {
+    when 'pg'     { $adapter.exec("SELECT 1 FROM pg_indexes WHERE indexname = '$name'") }
+    when 'mysql'  { $adapter.exec("SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND index_name = '$name'") }
+    when 'sqlite' { $adapter.exec("SELECT 1 FROM sqlite_master WHERE type='index' AND name='$name'") }
+    default       { [] }
+  };
+  ?$rows.elems;
+}
+
+my @test-tables = <
+  _jt_posts__jt_users _jt_custom _jt_posts _jt_users
+  _tbl_main _tbl_force _tbl_fc _tbl_temporary _tbl_ine
+>;
+
+sub cleanup-tables {
+  $adapter.exec('DROP VIEW IF EXISTS _tbl_fc_view') if $is-pg;
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+cleanup-tables;
+
+class CreateMain is Migration {
+  method change {
+    self.create-table: '_tbl_main', [
+      name  => { :string, limit => 32 },
+      label => { :string, limit => 32 },
+    ];
+  }
+}
+
+CreateMain.new.up;
+
+# create-join-table / drop-join-table
+class CreateJoin is Migration {
+  method change {
+    self.create-join-table: '_jt_posts', '_jt_users';
+  }
+}
+
+CreateJoin.new.up;
+
+ok table-exists('_jt_posts__jt_users'),
+  'create-join-table creates the sorted <a>_<b> join table';
+ok '_jt_post_id' (elem) column-names('_jt_posts__jt_users'),
+  'create-join-table adds the first foreign-key column';
+ok '_jt_user_id' (elem) column-names('_jt_posts__jt_users'),
+  'create-join-table adds the second foreign-key column';
+nok 'id' (elem) column-names('_jt_posts__jt_users'),
+  'create-join-table creates no id primary-key column';
+
+CreateJoin.new.down;
+nok table-exists('_jt_posts__jt_users'),
+  'create-join-table down auto-inverts to drop-join-table';
+
+class CreateJoinNamed is Migration {
+  method change {
+    self.create-join-table: '_jt_posts', '_jt_users', table-name => '_jt_custom';
+  }
+}
+
+CreateJoinNamed.new.up;
+ok table-exists('_jt_custom'), 'create-join-table honours an explicit table-name';
+CreateJoinNamed.new.down;
+
+# change-table with a coalesced bulk ALTER
+class BulkAddColumns is Migration {
+  method change {
+    self.change-table: '_tbl_main', -> $t {
+      $t.add-column: :age => { :integer };
+      $t.add-column: :city => { :string, limit => 32 };
+      $t.add-index: :age;
+    }, bulk => True;
+  }
+}
+
+BulkAddColumns.new.up;
+ok 'age'  (elem) column-names('_tbl_main'),
+  'change-table bulk adds the first column';
+ok 'city' (elem) column-names('_tbl_main'),
+  'change-table bulk adds the second column';
+ok index-exists('_tbl_main_age_idx'),
+  'change-table bulk runs the index op too';
+
+BulkAddColumns.new.down;
+nok 'age'  (elem) column-names('_tbl_main'),
+  'change-table down removes the first column';
+nok 'city' (elem) column-names('_tbl_main'),
+  'change-table down removes the second column';
+
+# force => True drops and recreates
+class CreateForce is Migration {
+  method change {
+    self.create-table: '_tbl_force', [ old_col => { :string, limit => 16 } ];
+  }
+}
+
+class RecreateForce is Migration {
+  method up {
+    self.create-table: '_tbl_force', [ new_col => { :string, limit => 16 } ],
+      force => True;
+  }
+  method down { self.drop-table: '_tbl_force' }
+}
+
+CreateForce.new.up;
+RecreateForce.new.up;
+ok 'new_col'  (elem) column-names('_tbl_force'),
+  'create-table force recreates with the new shape';
+nok 'old_col' (elem) column-names('_tbl_force'),
+  'create-table force leaves no trace of the old shape';
+try { $adapter.ddl-drop-table('_tbl_force') };
+
+# temporary => True
+class CreateTemp is Migration {
+  method change {
+    self.create-table: '_tbl_temporary', [ note => { :string, limit => 16 } ],
+      temporary => True;
+  }
+}
+
+CreateTemp.new.up;
+$adapter.exec("INSERT INTO _tbl_temporary (note) VALUES ('x')");
+is $adapter.exec('SELECT COUNT(*) FROM _tbl_temporary')[0][0].Int, 1,
+  'create-table temporary creates a usable session table';
+try { $adapter.ddl-drop-table('_tbl_temporary') };
+
+# if-exists / if-not-exists on table ops
+class CreateIne is Migration {
+  method change {
+    self.create-table: '_tbl_ine', [ name => { :string, limit => 16 } ];
+  }
+}
+
+class CreateIneAgain is Migration {
+  method up {
+    self.create-table: '_tbl_ine', [ name => { :string, limit => 16 } ],
+      if-not-exists => True;
+  }
+  method down { }
+}
+
+CreateIne.new.up;
+lives-ok { CreateIneAgain.new.up },
+  'create-table if-not-exists is a no-op when the table exists';
+lives-ok { $adapter.ddl-drop-table('_tbl_absent', :if-exists) },
+  'drop-table if-exists is a no-op when the table is absent';
+try { $adapter.ddl-drop-table('_tbl_ine') };
+
+# index IF [NOT] EXISTS — PostgreSQL and SQLite
+if $is-pg || $is-sqlite {
+  class AddIdxIne is Migration {
+    method up {
+      self.add-index: '_tbl_main', :label, if-not-exists => True;
+      self.add-index: '_tbl_main', :label, if-not-exists => True;
+    }
+    method down {
+      self.remove-index: '_tbl_main', :label, if-exists => True;
+      self.remove-index: '_tbl_main', :label, if-exists => True;
+    }
+  }
+
+  lives-ok { AddIdxIne.new.up },
+    'add-index if-not-exists tolerates a repeat';
+  ok index-exists('_tbl_main_label_idx'),
+    'add-index if-not-exists creates the index';
+  lives-ok { AddIdxIne.new.down },
+    'remove-index if-exists tolerates a missing index';
+}
+else {
+  class AddIdxIneMysql is Migration {
+    method change {
+      self.add-index: '_tbl_main', :label, if-not-exists => True;
+    }
+  }
+
+  throws-like { AddIdxIneMysql.new.up }, Exception,
+    'MySQL raises for add-index if-not-exists';
+}
+
+# column IF [NOT] EXISTS — PostgreSQL only
+if $is-pg {
+  class AddColIne is Migration {
+    method up {
+      self.add-column: '_tbl_main', :nickname => { :string, limit => 16 },
+        if-not-exists => True;
+      self.add-column: '_tbl_main', :nickname => { :string, limit => 16 },
+        if-not-exists => True;
+    }
+    method down {
+      self.remove-column: '_tbl_main', :nickname, if-exists => True;
+      self.remove-column: '_tbl_main', :nickname, if-exists => True;
+    }
+  }
+
+  lives-ok { AddColIne.new.up },
+    'add-column if-not-exists tolerates a repeat';
+  ok 'nickname' (elem) column-names('_tbl_main'),
+    'add-column if-not-exists adds the column';
+  lives-ok { AddColIne.new.down },
+    'remove-column if-exists tolerates a missing column';
+}
+else {
+  class AddColIneOther is Migration {
+    method change {
+      self.add-column: '_tbl_main', :nickname => { :string, limit => 16 },
+        if-not-exists => True;
+    }
+  }
+
+  throws-like { AddColIneOther.new.up }, Exception,
+    'non-PostgreSQL raises for add-column if-not-exists';
+}
+
+# force => 'cascade' — PostgreSQL drops dependents the plain drop cannot
+if $is-pg {
+  class CreateFc is Migration {
+    method change {
+      self.create-table: '_tbl_fc', [ name => { :string, limit => 16 } ];
+    }
+  }
+
+  class RecreateFcCascade is Migration {
+    method up {
+      self.create-table: '_tbl_fc', [ name => { :string, limit => 16 } ],
+        force => 'cascade';
+    }
+    method down { self.drop-table: '_tbl_fc', :cascade }
+  }
+
+  CreateFc.new.up;
+  $adapter.exec('CREATE VIEW _tbl_fc_view AS SELECT id FROM _tbl_fc');
+  RecreateFcCascade.new.up;
+  ok table-exists('_tbl_fc'),
+    'create-table force cascade recreates despite a dependent view';
+  $adapter.exec('DROP VIEW IF EXISTS _tbl_fc_view');
+  try { $adapter.ddl-drop-table('_tbl_fc') };
+}
+
+cleanup-tables;
+
+done-testing;
