@@ -2100,7 +2100,7 @@ True
 
 <p>When no associated record exists, <code>has-one</code> returns <code>Nil</code>.</p>
 <h3 id="singular-proxy-methods">Singular proxy methods</h3>
-<p>For each <code>has-one</code> declaration, the owner gets <code>build-&lt;assoc&gt;</code>, <code>create-&lt;assoc&gt;</code>, and <code>create-&lt;assoc&gt;-or-die</code> methods. They construct the associated record with the foreign key already set to the owner's primary key. <code>build-</code> returns an unsaved record; <code>create-</code> saves and returns the record (with errors if invalid); <code>create-...-or-die</code> saves and raises <code>X::RecordInvalid</code> when the target fails validation.</p>
+<p>For each <code>has-one</code> declaration, the owner gets <code>build-&lt;assoc&gt;</code>, <code>create-&lt;assoc&gt;</code>, and <code>create-&lt;assoc&gt;-bang</code> methods. They construct the associated record with the foreign key already set to the owner's primary key. <code>build-</code> returns an unsaved record; <code>create-</code> saves and returns the record (with errors if invalid); <code>create-...-bang</code> saves and raises <code>X::RecordInvalid</code> when the target fails validation.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
@@ -2109,7 +2109,7 @@ True
 
 <span class="k">my</span> <span class="nv">$draft</span> = <span class="nv">$user</span>.<span class="n">build-profile</span>({<span class="n">bio</span> =&gt; <span class="s">&#39;unsaved&#39;</span>});
 <span class="k">my</span> <span class="nv">$saved</span> = <span class="nv">$user</span>.<span class="n">create-profile</span>({<span class="n">bio</span> =&gt; <span class="s">&#39;persisted&#39;</span>});
-<span class="k">my</span> <span class="nv">$forced</span> = <span class="nv">$user</span>.<span class="n">create-profile-or-die</span>({<span class="n">bio</span> =&gt; <span class="s">&#39;forced&#39;</span>});
+<span class="k">my</span> <span class="nv">$forced</span> = <span class="nv">$user</span>.<span class="n">create-profile-bang</span>({<span class="n">bio</span> =&gt; <span class="s">&#39;forced&#39;</span>});
 </code></pre></div></td></tr></table></div>
 
 <p>These methods are not available on <code>has-one :through</code> declarations.</p>
@@ -2340,7 +2340,7 @@ First
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$draft</span>   = <span class="nv">$alice</span>.<span class="n">posts</span>.<span class="n">build</span>({<span class="n">title</span> =&gt; <span class="s">&#39;wip&#39;</span>});       <span class="c1"># unsaved, fkey set</span>
 <span class="k">my</span> <span class="nv">$live</span>    = <span class="nv">$alice</span>.<span class="n">posts</span>.<span class="n">create</span>({<span class="n">title</span> =&gt; <span class="s">&#39;live&#39;</span>});     <span class="c1"># saved</span>
-<span class="k">my</span> <span class="nv">$forced</span>  = <span class="nv">$alice</span>.<span class="n">posts</span>.<span class="n">create-or-die</span>({<span class="n">title</span> =&gt; <span class="s">&#39;pinned&#39;</span>});
+<span class="k">my</span> <span class="nv">$forced</span>  = <span class="nv">$alice</span>.<span class="n">posts</span>.<span class="n">create-bang</span>({<span class="n">title</span> =&gt; <span class="s">&#39;pinned&#39;</span>});
 </code></pre></div></td></tr></table></div>
 
 <p><strong>Push</strong> moves an existing record into the collection (sets its fkey and saves). Raku reserves <code>&lt;&lt;</code> for hyperops, so the proxy uses <code>.push</code> and <code>.append</code>:</p>
@@ -2968,7 +2968,7 @@ Bob,<span class="w"> </span>Carol
 <span class="k">my</span> <span class="nv">$u</span> = <span class="n">User</span>.<span class="n">find</span>(<span class="nv">$id</span>);
 <span class="k">my</span> <span class="nv">@pages</span> = <span class="nv">$u</span>.<span class="n">pages</span>;
 
-<span class="nv">@pages</span>.<span class="nb">first</span>.<span class="n">user</span>.<span class="nb">WHERE</span> == <span class="nv">$u</span>.<span class="nb">WHERE</span>;     <span class="c1"># True — same instance</span>
+<span class="nv">@pages</span>.<span class="nb">first</span>.<span class="n">user</span> === <span class="nv">$u</span>;                <span class="c1"># True — same instance</span>
 </code></pre></div></td></tr></table></div>
 
 <h3 id="automatic-inverse-detection">Automatic inverse detection</h3>
@@ -3020,7 +3020,7 @@ Bob,<span class="w"> </span>Carol
 }
 
 <span class="k">my</span> <span class="nv">$u</span> = <span class="n">User</span>.<span class="n">find</span>(<span class="nv">$id</span>);
-<span class="nv">$u</span>.<span class="n">articles</span>.<span class="nb">first</span>.<span class="n">scribe</span>.<span class="nb">WHERE</span> == <span class="nv">$u</span>.<span class="nb">WHERE</span>;   <span class="c1"># True</span>
+<span class="nv">$u</span>.<span class="n">articles</span>.<span class="nb">first</span>.<span class="n">scribe</span> === <span class="nv">$u</span>;              <span class="c1"># True</span>
 </code></pre></div></td></tr></table></div>
 
 <p><code>inverse-of:</code> accepts either a <code>:pair</code> form (<code>inverse-of =&gt; :scribe</code>) or a string (<code>inverse-of =&gt; 'scribe'</code>). It applies to <code>has-many</code> and <code>has-one</code>; the back-pointer is populated on every record returned from the collection or singular accessor. If no inverse is declared and auto-detection cannot run, the back-pointer is not wired and each <code>child.parent</code> access reloads from the database.</p>

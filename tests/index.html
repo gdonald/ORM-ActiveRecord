@@ -945,10 +945,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#database-configuration" class="md-nav__link">
+  <a href="#pointing-the-tests-at-a-database" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Database configuration
+        Pointing the tests at a database
       
     </span>
   </a>
@@ -956,10 +956,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-the-suite" class="md-nav__link">
+  <a href="#running-the-prove6-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Running the suite
+        Running the prove6 tests
       
     </span>
   </a>
@@ -967,10 +967,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-with-prove6" class="md-nav__link">
+  <a href="#running-the-behave-specs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Running with prove6
+        Running the behave specs
       
     </span>
   </a>
@@ -978,10 +978,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-a-single-test-file" class="md-nav__link">
+  <a href="#running-the-specs-in-parallel" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Running a single test file
+        Running the specs in parallel
       
     </span>
   </a>
@@ -1034,10 +1034,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#database-configuration" class="md-nav__link">
+  <a href="#pointing-the-tests-at-a-database" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Database configuration
+        Pointing the tests at a database
       
     </span>
   </a>
@@ -1045,10 +1045,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-the-suite" class="md-nav__link">
+  <a href="#running-the-prove6-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Running the suite
+        Running the prove6 tests
       
     </span>
   </a>
@@ -1056,10 +1056,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-with-prove6" class="md-nav__link">
+  <a href="#running-the-behave-specs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Running with prove6
+        Running the behave specs
       
     </span>
   </a>
@@ -1067,10 +1067,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-a-single-test-file" class="md-nav__link">
+  <a href="#running-the-specs-in-parallel" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Running a single test file
+        Running the specs in parallel
       
     </span>
   </a>
@@ -1106,12 +1106,13 @@
 
 
 <h1 id="tests">Tests</h1>
-<p>ORM::ActiveRecord includes a full test suite. It runs against PostgreSQL, MySQL,
-and SQLite. <code>./test.raku</code> cycles through all three; any adapter that isn't
-reachable is skipped with a message describing how to enable it.</p>
-<h2 id="database-configuration">Database configuration</h2>
-<p>There are two ways to point the suite at a database:</p>
-<p><strong>1. <code>DATABASE_URL</code> env var</strong> (preferred — what <code>./test.raku</code> and CI use):</p>
+<p>The suite has two halves: the <code>prove6</code> tests under <code>t/</code> and the <code>behave</code> specs
+under <code>specs/</code>. Both run against PostgreSQL, MySQL, and SQLite.</p>
+<h2 id="pointing-the-tests-at-a-database">Pointing the tests at a database</h2>
+<p>The tests connect the same way the rest of the ORM does — <code>DATABASE_URL</code>, or
+<code>config/application.json</code> when it is unset (see <a href="../adapters/">Adapters</a> for the
+full configuration reference). The adapter you point at is the adapter the
+tests exercise:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">DATABASE_URL</span><span class="o">=</span><span class="n">postgres</span><span class="o">:</span><span class="c1">//user:pass@localhost:5432/ar_test?schema=public</span>
@@ -1119,54 +1120,87 @@ reachable is skipped with a message describing how to enable it.</p>
 <span class="n">DATABASE_URL</span><span class="o">=</span><span class="n">sqlite</span><span class="o">:</span><span class="n">db</span><span class="o">/</span><span class="n">test</span><span class="p">.</span><span class="n">sqlite3</span>
 </code></pre></div></td></tr></table></div>
 
-<p>For local multi-adapter runs, <code>./test.raku</code> reads per-adapter overrides from
-<code>AR_PG_URL</code>, <code>AR_MYSQL_URL</code>, and <code>AR_SQLITE_URL</code>. The PostgreSQL default is
-built from <code>config/application.json</code> if present.</p>
-<p><strong>2. <code>config/application.json</code></strong> (single-adapter; what <code>bin/ar</code> reads when
-<code>DATABASE_URL</code> is unset). Pick the example matching your adapter:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>cp config/application.json-pg-example     config/application.json
-cp config/application.json-mysql-example  config/application.json
-cp config/application.json-sqlite-example config/application.json
-</code></pre></div></td></tr></table></div>
-
-<p>Then edit credentials as needed.</p>
-<h2 id="running-the-suite">Running the suite</h2>
-<p><code>./test.raku</code> is the canonical entry point. With no <code>DATABASE_URL</code> set, it
-cycles through PostgreSQL, MySQL, and SQLite — probing each first and skipping
-unreachable adapters with a message describing how to enable them. With
-<code>DATABASE_URL</code> set, it runs once against that adapter (this is what CI does
-per matrix entry).</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>./test.raku
-</code></pre></div></td></tr></table></div>
-
-<p>When all three adapters are reachable you get a runtimes summary at the end:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="o">==</span>&gt;<span class="w"> </span>Runtimes
-<span class="w">  </span>postgres<span class="w">    </span><span class="m">26</span>.60s
-<span class="w">  </span>mysql<span class="w">       </span><span class="m">26</span>.37s
-<span class="w">  </span>sqlite<span class="w">      </span><span class="m">22</span>.59s
-<span class="w">  </span>total<span class="w">       </span><span class="m">75</span>.65s
-</code></pre></div></td></tr></table></div>
-
-<h2 id="running-with-prove6">Running with prove6</h2>
-<p>To run the suite once against your default adapter — what <code>config/application.json</code>
-or <code>DATABASE_URL</code> points at — invoke <code>prove6</code> directly:</p>
+<p>To exercise all three, run the suite once per <code>DATABASE_URL</code>.</p>
+<h2 id="running-the-prove6-tests">Running the prove6 tests</h2>
+<p>The <code>t/</code> tests use the standard Raku test harness. Run them all with <code>prove6</code>:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>prove6<span class="w"> </span>-Ilib<span class="w"> </span>t
 </code></pre></div></td></tr></table></div>
 
-<h2 id="running-a-single-test-file">Running a single test file</h2>
+<p>Test files use the <code>.rakutest</code> extension, grouped into feature-area subfolders:
+<code>meta/</code>, <code>migration/</code>, <code>validation/</code>, <code>callbacks/</code>, <code>associations/</code>, <code>query/</code>,
+<code>model/</code>, <code>adapter/</code>, <code>transactions/</code>, <code>infra/</code>. <code>prove6</code> recurses into
+subdirectories automatically.</p>
+<p>Run a single file directly:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>raku<span class="w"> </span>-Ilib<span class="w"> </span>t/model/basic.rakutest
 </code></pre></div></td></tr></table></div>
 
-<p>Test files live under <code>t/</code> and use the <code>.rakutest</code> extension, grouped into
-feature-area subfolders: <code>meta/</code>, <code>migration/</code>, <code>validation/</code>, <code>callbacks/</code>,
-<code>associations/</code>, <code>query/</code>, <code>model/</code>, <code>adapter/</code>, <code>transactions/</code>, <code>infra/</code>.
-<code>prove6</code> recurses into subdirectories automatically.</p>
+<h2 id="running-the-behave-specs">Running the behave specs</h2>
+<p>The <code>specs/</code> specs use <a href="https://github.com/gdonald/BDD-Behave">BDD::Behave</a>.
+Run them all, or a single spec file:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>behave<span class="w"> </span>specs<span class="w">                              </span><span class="c1"># the whole specs/ tree</span>
+$<span class="w"> </span>behave<span class="w"> </span>specs/model/basic-spec.raku<span class="w">        </span><span class="c1"># one spec file</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="running-the-specs-in-parallel">Running the specs in parallel</h2>
+<p><code>behave</code> can run spec files concurrently, each against its own database copy so
+they never trample each other's schema and data. First provision the per-worker
+databases — set the test environment's <code>parallel</code> key to the worker count and
+use <code>ar … --parallel</code> (see <a href="../migrations/#parallel-test-databases">Migrations » Parallel test databases</a>):</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"> </span><span class="nt">&quot;test&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;parallel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;primary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ar_test&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>createdb<span class="w"> </span>--parallel<span class="w">    </span><span class="c1"># create the N per-worker copies</span>
+$<span class="w"> </span>ar<span class="w"> </span>migrate<span class="w">  </span>--parallel<span class="w">    </span><span class="c1"># migrate them</span>
+$<span class="w"> </span>ar<span class="w"> </span>check<span class="w">    </span>--parallel<span class="w">    </span><span class="c1"># verify all N exist and are migrated</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Then run behave with a matching worker count:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>behave<span class="w"> </span>--parallel<span class="o">=</span><span class="m">4</span><span class="w"> </span>specs
+</code></pre></div></td></tr></table></div>
+
+<p>Each worker connects to its own copy, named by suffixing the configured
+database with <code>_&lt;worker-index&gt;</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Configured</th>
+<th>Worker 0</th>
+<th>Worker 1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pg/mysql <code>ar_test</code></td>
+<td><code>ar_test_0</code></td>
+<td><code>ar_test_1</code></td>
+</tr>
+<tr>
+<td>sqlite <code>db/test.sqlite3</code></td>
+<td><code>db/test_0.sqlite3</code></td>
+<td><code>db/test_1.sqlite3</code></td>
+</tr>
+<tr>
+<td>sqlite <code>:memory:</code></td>
+<td>per-process (unchanged)</td>
+<td>…</td>
+</tr>
+</tbody>
+</table>
+<p>behave runs in its default isolated mode — one subprocess per spec file —
+recycling a fixed set of N worker slots; each slot reuses its own database
+across every spec file dispatched to it. The ORM derives the suffix from
+behave's own <code>BEHAVE_WORKER_INDEX</code> / <code>BEHAVE_WORKER_COUNT</code>, so there is nothing
+else to keep in sync. Creating and migrating N copies costs N × a full
+<code>db/migrate/</code> pass up front.</p>
+<blockquote>
+<p>Run <code>ar check --parallel</code> first. Launching specs against missing or
+un-migrated worker databases otherwise produces confusing "no such table"
+errors deep in the run; <code>ar check</code> reports them up front and changes nothing
+(<code>behave</code> itself is database-agnostic and cannot verify your schema).</p>
+</blockquote>
 <h2 id="adapter-aware-test-skipping">Adapter-aware test skipping</h2>
 <p>Some tests only make sense against one adapter — a test that exercises a
 PostgreSQL <code>RETURNING</code> quirk has nothing to assert against MySQL, and a test

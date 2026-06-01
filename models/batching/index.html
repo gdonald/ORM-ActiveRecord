@@ -1120,9 +1120,8 @@ hood; the caller sees a flat stream of model instances.</p>
 raises an exception.</p>
 <h2 id="find-in-batches">find-in-batches</h2>
 <p><code>find-in-batches(:batch-size = 1000)</code> yields arrays of records, one array per
-batch. Use it when a step works naturally on a slice — bulk emailing, batched
-API calls, anything that benefits from amortising fixed overhead across a
-group.</p>
+batch. Use it when a step operates on a slice — bulk emailing, batched API
+calls, or any work that amortises fixed overhead across a group.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">for</span> <span class="n">User</span>.<span class="n">find-in-batches</span>(:<span class="n">batch-size</span>(<span class="mi">1000</span>)) -&gt; <span class="nv">@batch</span> {
@@ -1157,8 +1156,8 @@ so you can chain further operations on it.</p>
 }
 </code></pre></div></td></tr></table></div>
 
-<p><code>:load</code> is the same shape as <code>find-in-batches</code> — convenient when you already
-know you want the records and not the relation.</p>
+<p><code>:load</code> is the same shape as <code>find-in-batches</code>; use it when you want the
+records rather than the relation.</p>
 <h2 id="how-batching-iterates">How batching iterates</h2>
 <p>All three methods order by <code>id ASC</code> and walk forward using <code>id &gt; cursor</code>,
 where <code>cursor</code> is the id of the last row in the previous batch. This is a

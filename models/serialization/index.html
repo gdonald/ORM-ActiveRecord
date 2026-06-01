@@ -1247,9 +1247,9 @@ model has no <code>updated_at</code> column, <code>cache-version</code> is undef
 <span class="nv">$cache</span>.<span class="nb">write</span>(<span class="nv">$key</span>, <span class="nv">$user</span>.<span class="n">serializable-hash</span>);
 </code></pre></div></td></tr></table></div>
 
-<p>Note that <code>Model.cache-key</code> (called on the class, not an instance) routes
-to <code>Model.all.cache-key</code> — the relation fingerprint. Instance-level keys
-require a defined record.</p>
+<p><code>Model.cache-key</code> (called on the class, not an instance) routes to
+<code>Model.all.cache-key</code> — the relation fingerprint. Instance-level keys require
+a defined record.</p>
 <h2 id="serializable-hash">serializable-hash</h2>
 <p>Returns a <code>Hash</code> of the record's attributes, ready for JSON / YAML / any
 other encoder. Options:</p>

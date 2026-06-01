@@ -1590,7 +1590,7 @@ Inspect <code>errors</code> to see what went wrong.</p>
 }
 </code></pre></div></td></tr></table></div>
 
-<p><code>save-or-die</code> and <code>update-or-die</code> raise <code>X::RecordInvalid</code> instead. The
+<p><code>save-bang</code> and <code>update-bang</code> raise <code>X::RecordInvalid</code> instead. The
 exception carries the failing record and a list of human-readable messages.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>
@@ -1607,7 +1607,7 @@ exception carries the failing record and a list of human-readable messages.</p>
 <span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
 
 <span class="k">try</span> {
-  <span class="n">User</span>.<span class="n">create-or-die</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;&#39;</span>});
+  <span class="n">User</span>.<span class="n">create-bang</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;&#39;</span>});
 
   <span class="k">CATCH</span> {
     <span class="k">when</span> <span class="o">X</span>::<span class="n">RecordInvalid</span> {
@@ -1619,7 +1619,7 @@ exception carries the failing record and a list of human-readable messages.</p>
 }
 </code></pre></div></td></tr></table></div>
 
-<p><code>create-or-die</code> is a class-level convenience that builds the record, runs
+<p><code>create-bang</code> is a class-level convenience that builds the record, runs
 validations, and raises if it could not be saved.</p>
 <h2 id="build">Build</h2>
 <p><code>build</code> constructs an in-memory record without touching the database. It's
@@ -1697,12 +1697,12 @@ subclass-specific behavior applies.</p>
 <span class="k">my</span> <span class="nv">$car</span> = <span class="nv">$v</span>.<span class="n">becomes</span>(<span class="n">Car</span>);   <span class="c1"># same id, same attrs, Car methods now in scope</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>becomes-or-die(Klass)</code> does the same and additionally writes the new
+<p><code>becomes-bang(Klass)</code> does the same and additionally writes the new
 class name into the <code>type</code> column when the table has one, mirroring
 Rails' <code>becomes!</code> for STI.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$car</span> = <span class="nv">$v</span>.<span class="n">becomes-or-die</span>(<span class="n">Car</span>);
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$car</span> = <span class="nv">$v</span>.<span class="n">becomes-bang</span>(<span class="n">Car</span>);
 <span class="nv">$car</span>.<span class="n">read-attribute</span>(<span class="s">&#39;type&#39;</span>);   <span class="c1"># &#39;Car&#39;</span>
 <span class="nv">$car</span>.<span class="n">save</span>;                     <span class="c1"># persists the type change</span>
 </code></pre></div></td></tr></table></div>
@@ -2057,7 +2057,7 @@ helpers give you finer control over which steps run.</p>
 <td>no</td>
 </tr>
 <tr>
-<td><code>increment-or-die(name, n=1)</code></td>
+<td><code>increment-bang(name, n=1)</code></td>
 <td>no</td>
 <td>yes</td>
 <td>yes</td>
@@ -2071,7 +2071,7 @@ helpers give you finer control over which steps run.</p>
 <td>no</td>
 </tr>
 <tr>
-<td><code>decrement-or-die(name, n=1)</code></td>
+<td><code>decrement-bang(name, n=1)</code></td>
 <td>no</td>
 <td>yes</td>
 <td>yes</td>
@@ -2085,7 +2085,7 @@ helpers give you finer control over which steps run.</p>
 <td>no</td>
 </tr>
 <tr>
-<td><code>toggle-or-die(name)</code></td>
+<td><code>toggle-bang(name)</code></td>
 <td>no</td>
 <td>yes</td>
 <td>yes</td>
@@ -2123,7 +2123,7 @@ modifying anything else.</p>
 
 <h3 id="increment-decrement-toggle">increment / decrement / toggle</h3>
 <p>The unsuffixed forms mutate the in-memory value and leave persistence to
-you. The <code>-or-die</code> variants persist via <code>update-attribute</code> (so callbacks and
+you. The <code>-bang</code> variants persist via <code>update-attribute</code> (so callbacks and
 timestamps run, validations do not) and raise <code>X::RecordInvalid</code> on failure.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
@@ -2131,11 +2131,11 @@ timestamps run, validations do not) and raise <code>X::RecordInvalid</code> on f
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$post</span>.<span class="n">increment</span>(<span class="s">&#39;views&#39;</span>);           <span class="c1"># in memory</span>
-<span class="nv">$post</span>.<span class="n">increment-or-die</span>(<span class="s">&#39;views&#39;</span>);    <span class="c1"># persisted, +1</span>
+<span class="nv">$post</span>.<span class="n">increment-bang</span>(<span class="s">&#39;views&#39;</span>);    <span class="c1"># persisted, +1</span>
 
 <span class="nv">$cart</span>.<span class="n">decrement</span>(<span class="s">&#39;item_count&#39;</span>, <span class="mi">2</span>);
 <span class="nv">$user</span>.<span class="nb">toggle</span>(<span class="s">&#39;active&#39;</span>);
-<span class="nv">$user</span>.<span class="n">toggle-or-die</span>(<span class="s">&#39;active&#39;</span>);
+<span class="nv">$user</span>.<span class="n">toggle-bang</span>(<span class="s">&#39;active&#39;</span>);
 </code></pre></div></td></tr></table></div>
 
 <h2 id="bulk-operations">Bulk Operations</h2>
@@ -2199,16 +2199,16 @@ statement. Callbacks do not fire and timestamps are not bumped.</p>
 <h3 id="insert-insert-all">insert / insert-all</h3>
 <p><code>insert</code> writes a single row, skipping validations and callbacks. If a
 unique constraint would be violated, the row is silently skipped (returns
-<code>0</code>). <code>insert-or-die</code> lets the database error propagate.</p>
+<code>0</code>). <code>insert-bang</code> lets the database error propagate.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$id</span> = <span class="n">User</span>.<span class="n">insert</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>, <span class="n">lname</span> =&gt; <span class="s">&#39;Donald&#39;</span>});
 
-<span class="n">User</span>.<span class="n">insert-or-die</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});      <span class="c1"># raises on duplicate</span>
+<span class="n">User</span>.<span class="n">insert-bang</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});      <span class="c1"># raises on duplicate</span>
 </code></pre></div></td></tr></table></div>
 
 <p><code>insert-all(@rows)</code> writes many rows in a single statement. It returns
-the list of inserted ids. The <code>-or-die</code> variant raises on any conflict.</p>
+the list of inserted ids. The <code>-bang</code> variant raises on any conflict.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>

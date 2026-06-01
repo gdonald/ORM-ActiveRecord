@@ -1297,11 +1297,11 @@ the sections that follow document the attributes each one carries.</p>
 <tbody>
 <tr>
 <td><code>X::RecordNotFound</code></td>
-<td><code>find</code>, <code>find-by-or-die</code></td>
+<td><code>find</code>, <code>find-by-bang</code></td>
 </tr>
 <tr>
 <td><code>X::RecordInvalid</code></td>
-<td><code>save-or-die</code>, <code>update-or-die</code>, <code>create-or-die</code></td>
+<td><code>save-bang</code>, <code>update-bang</code>, <code>create-bang</code></td>
 </tr>
 <tr>
 <td><code>X::ReadOnlyRecord</code></td>
@@ -1347,9 +1347,9 @@ the sections that follow document the attributes each one carries.</p>
 </code></pre></div></td></tr></table></div>
 
 <p><code>find($id)</code> always raises on a miss. <code>find-by(%conditions)</code> returns <code>Nil</code>
-instead — use <code>find-by-or-die(%conditions)</code> if you want the loud variant.</p>
+instead — use <code>find-by-bang(%conditions)</code> if you want the loud variant.</p>
 <h2 id="xrecordinvalid">X::RecordInvalid</h2>
-<p>Raised by the <code>-or-die</code> persistence methods when validations fail. The
+<p>Raised by the <code>-bang</code> persistence methods when validations fail. The
 exception carries both the failing record and a list of human-readable
 messages built from the model's <code>errors</code>.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
@@ -1367,7 +1367,7 @@ messages built from the model's <code>errors</code>.</p>
 <span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Errors::X</span>;
 
 <span class="k">try</span> {
-  <span class="n">User</span>.<span class="n">create-or-die</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;&#39;</span>});
+  <span class="n">User</span>.<span class="n">create-bang</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;&#39;</span>});
 
   <span class="k">CATCH</span> {
     <span class="k">when</span> <span class="o">X</span>::<span class="n">RecordInvalid</span> {
@@ -1379,7 +1379,7 @@ messages built from the model's <code>errors</code>.</p>
 }
 </code></pre></div></td></tr></table></div>
 
-<p><code>save</code> / <code>update</code> / <code>create</code> (without <code>-or-die</code>) return <code>False</code> on validation
+<p><code>save</code> / <code>update</code> / <code>create</code> (without <code>-bang</code>) return <code>False</code> on validation
 failure instead of raising — inspect <code>.errors</code> on the record to see what went
 wrong. See <a href="../models/persistence/">Persistence</a> for the full quiet-vs-loud
 breakdown.</p>

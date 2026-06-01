@@ -1065,7 +1065,7 @@
 <p>The latest version of this documentation lives at <a href="https://gdonald.github.io/ORM-ActiveRecord/">https://gdonald.github.io/ORM-ActiveRecord/</a>.</p>
 <p>The homepage for ORM::ActiveRecord is <a href="https://github.com/gdonald/ORM-ActiveRecord">https://github.com/gdonald/ORM-ActiveRecord</a>.</p>
 <h2 id="synopsis">Synopsis</h2>
-<p>ORM::ActiveRecord is an <a href="https://en.wikipedia.org/wiki/Object-relational_mapping">object-relational mapping</a> module for Raku that <em>mostly</em> follows the <a href="https://en.wikipedia.org/wiki/Active_record_pattern">Active Record Pattern</a>.</p>
+<p>ORM::ActiveRecord is an <a href="https://en.wikipedia.org/wiki/Object-relational_mapping">object-relational mapping</a> module for Raku that mostly follows the <a href="https://en.wikipedia.org/wiki/Active_record_pattern">Active Record Pattern</a>.</p>
 <p>It supports <strong>PostgreSQL</strong>, <strong>MySQL</strong>, and <strong>SQLite</strong> through a common adapter
 layer. Application code is the same regardless of the backend; pick one with
 <code>DATABASE_URL</code> or <code>config/application.json</code>. See <a href="adapters/">Adapters</a>.</p>
@@ -1110,8 +1110,8 @@ Alfred
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>zef install --/test ORM::ActiveRecord
 </code></pre></div></td></tr></table></div>
 
-<p><code>--/test</code> is suggested because you probably don't have a test database setup.
-You can of course <a href="tests/#database-configuration">setup a test database</a>.</p>
+<p><code>--/test</code> skips the test suite, which requires a configured test database. To
+run the tests, <a href="tests/#pointing-the-tests-at-a-database">set up a test database</a>.</p>
 
 
 

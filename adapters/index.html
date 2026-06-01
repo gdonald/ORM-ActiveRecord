@@ -316,6 +316,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#multiple-databases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple databases
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1192,6 +1203,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#multiple-databases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple databases
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1354,10 +1376,9 @@
 
 
 <h1 id="adapters">Adapters</h1>
-<p>ORM::ActiveRecord supports three database backends out of the box: PostgreSQL,
-MySQL, and SQLite. Tests run against all three on every CI build, and the
-adapter API is designed so application code is the same regardless of the
-backend.</p>
+<p>ORM::ActiveRecord supports three database backends: PostgreSQL, MySQL, and
+SQLite. Tests run against all three on every CI build. Application code is the
+same regardless of the backend.</p>
 <h2 id="selecting-an-adapter">Selecting an adapter</h2>
 <p>Two mechanisms drive adapter selection. They're checked in this order:</p>
 <ol>
@@ -1404,12 +1425,13 @@ backend.</p>
 Three example templates live in <code>config/</code>:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>cp<span class="w"> </span>config/application.json-pg-example<span class="w">     </span>config/application.json
-cp<span class="w"> </span>config/application.json-mysql-example<span class="w">  </span>config/application.json
-cp<span class="w"> </span>config/application.json-sqlite-example<span class="w"> </span>config/application.json
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>cp<span class="w"> </span>config/application.json-postgresql-example<span class="w"> </span>config/application.json
+cp<span class="w"> </span>config/application.json-mysql-example<span class="w">      </span>config/application.json
+cp<span class="w"> </span>config/application.json-sqlite-example<span class="w">     </span>config/application.json
 </code></pre></div></td></tr></table></div>
 
-<p>The shape:</p>
+<p>The shape is per-environment, with one or more named connections per
+environment (<code>primary</code> is the default connection):</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -1420,15 +1442,35 @@ cp<span class="w"> </span>config/application.json-sqlite-example<span class="w">
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
 <span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;db&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;port&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5432</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ar_test&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;postgres&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;public&quot;</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;test&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;parallel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;primary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;port&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5432</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ar_test&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;postgres&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;public&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;development&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;primary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ar_development&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;postgres&quot;</span>
+<span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -1437,6 +1479,45 @@ cp<span class="w"> </span>config/application.json-sqlite-example<span class="w">
 <code>DATABASE_URL</code> schemes are accepted). MySQL has no separate schema concept —
 the <code>name</code> field IS the schema. SQLite only needs <code>name</code> (the file path) or
 <code>":memory:"</code>.</p>
+<p>The active environment is chosen by <code>AR_ENV</code> (<code>bin/ar</code> defaults to
+<code>development</code>; the test suite uses <code>test</code>). When <code>DATABASE_URL</code> is set it
+overrides the active environment's <code>primary</code> connection; any other named
+connection is still resolved from <code>config/application.json</code>.</p>
+<blockquote>
+<p><strong>Legacy flat config.</strong> The older single-database shape — <code>{ "db": { … } }</code>
+— is still accepted and auto-promoted to the active environment's <code>primary</code>
+connection (with a deprecation warning). Migrate to the per-environment shape.</p>
+</blockquote>
+<h3 id="multiple-databases">Multiple databases</h3>
+<p>An environment may declare more than one named connection:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;production&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;primary&quot;</span><span class="p">:</span><span class="w">   </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;app&quot;</span><span class="p">,</span><span class="w">        </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;app&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;analytics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;app_events&quot;</span><span class="p">,</span><span class="w">  </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;app&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>DB.shared(:name&lt;analytics&gt;)</code> returns a connection by name; <code>DB.shared</code> (no
+name) is <code>primary</code>. Bind a model to a non-primary connection with the
+<code>connects-to</code> class method:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Event</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="n">Event</span>.<span class="n">connects-to</span>(<span class="s">&#39;analytics&#39;</span>);
+}
+</code></pre></div></td></tr></table></div>
+
+<p>Every query a bound model runs — class finders, relations, and its instances'
+saves — routes to that connection. Unbound models use <code>primary</code>.</p>
+<p>The <code>parallel</code> key (test environment only) sets how many per-worker database
+copies <code>ar createdb --parallel</code> / <code>test.raku --parallel</code> create; see
+<a href="../tests/">Tests</a>.</p>
 <h2 id="adapter-specific-notes">Adapter-specific notes</h2>
 <h3 id="postgresql">PostgreSQL</h3>
 <p>The default adapter. Uses <code>$N</code> bind placeholders and emits

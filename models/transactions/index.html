@@ -1626,7 +1626,7 @@ forced to wait. ORM::ActiveRecord exposes three entry points:</p>
 <ul>
 <li><code>Model.lock</code> / <code>relation.lock</code> — chainable; appends <code>FOR UPDATE</code> to the
   next SELECT</li>
-<li><code>record.lock-or-die</code> — re-fetches the receiver with <code>FOR UPDATE</code></li>
+<li><code>record.lock-bang</code> — re-fetches the receiver with <code>FOR UPDATE</code></li>
 <li><code>record.with-lock { ... }</code> — opens a transaction, locks the receiver,
   yields the freshly-locked record to the block</li>
 </ul>
@@ -1639,7 +1639,7 @@ forced to wait. ORM::ActiveRecord exposes three entry points:</p>
 });
 </code></pre></div></td></tr></table></div>
 
-<p><code>lock-or-die</code> is the per-record reload form. It reads the row again with a
+<p><code>lock-bang</code> is the per-record reload form. It reads the row again with a
 lock, copies the row's current attrs onto the receiver, and raises
 <code>X::RecordNotFound</code> if the row is gone. It must be called inside a
 transaction — without one the lock is released the moment the SELECT
@@ -1648,7 +1648,7 @@ returns.</p>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Account</span>.<span class="n">transaction</span>({
-  <span class="nv">$account</span>.<span class="n">lock-or-die</span>;
+  <span class="nv">$account</span>.<span class="n">lock-bang</span>;
   <span class="nv">$account</span>.<span class="n">update</span>({ <span class="n">balance</span> =&gt; <span class="nv">$account</span>.<span class="n">balance</span> - <span class="mi">100</span> });
 });
 </code></pre></div></td></tr></table></div>

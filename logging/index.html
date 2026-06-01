@@ -1042,10 +1042,10 @@
 
 
 <h1 id="logging">Logging</h1>
-<p>ORM::ActiveRecord uses <a href="https://raku.land/zef:tony-o/Log::Async">Log::Async</a>
-under the hood. Loading the library configures the <code>INFO</code>-level handler to
-write to <code>$*OUT</code> (stdout). That's the only log destination set up by default
-— loading the library does not touch the filesystem.</p>
+<p>ORM::ActiveRecord uses <a href="https://raku.land/zef:tony-o/Log::Async">Log::Async</a>.
+Loading the library configures the <code>INFO</code>-level handler to write to <code>$*OUT</code>
+(stdout). That is the only log destination set up by default — loading the
+library does not touch the filesystem.</p>
 <h2 id="file-logging">File logging</h2>
 <p>Set <code>ORM_LOG_FILE</code> in the process environment to an absolute or relative path,
 and <code>ERROR</code>-level messages will be appended to that file:</p>

@@ -1254,9 +1254,9 @@ no match.</p>
 }
 </code></pre></div></td></tr></table></div>
 
-<p><code>find-by-or-die(%conditions)</code> raises <code>X::RecordNotFound</code> instead of returning
+<p><code>find-by-bang(%conditions)</code> raises <code>X::RecordNotFound</code> instead of returning
 <code>Nil</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">find-by-or-die</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">find-by-bang</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
 </code></pre></div></td></tr></table></div>
 
 <h2 id="first-last-take">first / last / take</h2>
@@ -1322,7 +1322,7 @@ be invalid if creation failed validation — <code>is-invalid</code> is <code>Tr
 }
 </code></pre></div></td></tr></table></div>
 
-<p><code>find-or-create-by-or-die(%attrs)</code> raises <code>X::RecordInvalid</code> instead of
+<p><code>find-or-create-by-bang(%attrs)</code> raises <code>X::RecordInvalid</code> instead of
 returning an invalid record.</p>
 <p><code>find-or-initialize-by(%attrs)</code> is the no-save variant: returns the existing
 record if found, or builds an unsaved record otherwise.</p>
