@@ -298,38 +298,139 @@ class Migration is export {
   method add-index(Str:D $table, |params) {
     if $!recorder { $!recorder.record('add-index', $table, |params); return }
 
-    my $params = params;
-    my $field = params.keys.first;
-    my $name = $table ~ '_' ~ $field ~ '_idx';
-    my Bool $unique = False;
+    my %spec = self!index-spec($table, params);
 
-    if !params{$field} {
-      my ($keys, $values) = params[0].kv;
-
-      if $keys ~~ List {
-        $params = $values;
-        $name = $table ~ '_' ~ $keys.join('_') ~ '_idx';
-        $field = $keys.join(', ');
-      }
-    }
-
-    for $params -> $param {
-      given $param {
-        when /:i unique/ { $unique = True }
-        when .so {}
-        default { say 'Unknown index param: ' ~ $param; die }
-      }
-    }
-
-    $!db.ddl-add-index($table, :$name, columns => $field, :$unique);
+    $!db.ddl-add-index(
+      $table,
+      name       => %spec<name>,
+      |(columns    => %spec<columns>    with %spec<columns>),
+      unique     => %spec<unique>,
+      |(expression => %spec<expression> with %spec<expression>),
+      |(where      => %spec<where>      with %spec<where>),
+      |(using      => %spec<using>      with %spec<using>),
+      |(include    => %spec<include>    with %spec<include>),
+      |(algorithm  => %spec<algorithm>  with %spec<algorithm>),
+    );
   }
 
   method remove-index(Str:D $table, |params) {
     if $!recorder { $!recorder.record('remove-index', $table, |params); return }
 
-    my $field = params.keys.first;
-    my $name = $table ~ '_' ~ $field ~ '_idx';
-    $!db.ddl-remove-index(:$name);
+    my %spec = self!index-spec($table, params);
+
+    $!db.ddl-remove-index(
+      name => %spec<name>,
+      :$table,
+      |(algorithm => %spec<algorithm> with %spec<algorithm>),
+    );
+  }
+
+  # Normalize the many add-index / remove-index call shapes into one spec.
+  #
+  #   self.add-index: 'games', :year;
+  #   self.add-index: 'clients', email => { :unique };
+  #   self.add-index: 'subs', <user_id magazine_id> => { :unique };
+  #   self.add-index: 'people', 'lower(email)', unique => True;
+  #   self.add-index: 'logs', :level, where => 'level > 0', using => 'btree';
+  #
+  # Columns may arrive positionally (Str / List / Array, optionally as a
+  # Pair carrying a per-column options hash) or, in the legacy adverb form,
+  # as a named pair whose key is the column and whose value is True or an
+  # options hash. Recognized option keys are pulled out by name.
+  method !index-spec(Str:D $table, $captured) {
+    my @optkeys = <unique name where using include algorithm opclass order expression>;
+
+    my %named = $captured.hash;
+    my %opts;
+
+    for @optkeys -> $k {
+      %opts{$k} = %named{$k}:delete if %named{$k}:exists;
+    }
+
+    my $cols;
+
+    if %named.elems {
+      my $ck  = %named.keys.first;
+      my $val = %named{$ck};
+      $cols = $ck;
+
+      if $val ~~ Associative {
+        for $val.kv -> $ok, $ov { %opts{$ok} //= $ov }
+      }
+    }
+
+    my @pos = $captured.list;
+
+    if @pos.elems {
+      my $first = @pos[0];
+
+      if $first ~~ Pair {
+        $cols = $first.key;
+        my $val = $first.value;
+
+        if $val ~~ Associative {
+          for $val.kv -> $ok, $ov { %opts{$ok} //= $ov }
+        }
+      }
+      else {
+        $cols = $first;
+      }
+    }
+
+    my @columns = do given $cols {
+      when List | Array { .list }
+      when .defined     { ($cols,) }
+      default           { () }
+    };
+
+    my $expression = %opts<expression>;
+    my Bool $unique = ?%opts<unique>;
+
+    my $name = %opts<name> // do {
+      my $stem = $expression.defined
+        ?? $!db.ref-expr-hash($expression)
+        !! @columns.join('_');
+
+      "{$table}_{$stem}_idx";
+    };
+
+    my $columns-body = @columns
+      ?? @columns.map({ self!index-column-sql($_, %opts<opclass>, %opts<order>) }).join(', ')
+      !! Str;
+
+    %(
+      :$name,
+      columns    => $columns-body,
+      :$unique,
+      expression => $expression,
+      where      => %opts<where>,
+      using      => %opts<using>,
+      include    => %opts<include>,
+      algorithm  => %opts<algorithm>,
+    );
+  }
+
+  method !index-column-sql(Str:D $col, $opclass, $order --> Str) {
+    my $oc  = self!index-col-opt($opclass, $col);
+    my $ord = self!index-col-opt($order, $col);
+
+    if $oc.defined {
+      die "add-index: per-column opclass is not supported on this adapter"
+        unless $!db.ref-index-supports-opclass;
+    }
+
+    my $sql = $col;
+    $sql ~= " $oc"              if $oc.defined;
+    $sql ~= ' ' ~ $ord.Str.uc  if $ord.defined;
+
+    $sql;
+  }
+
+  method !index-col-opt($opt, Str:D $col) {
+    return Nil without $opt;
+    return $opt{$col} if $opt ~~ Associative;
+
+    $opt;
   }
 
   method change-column(Str:D $table, Str:D $name, Str:D $type, *%opts) {

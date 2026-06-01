@@ -310,6 +310,23 @@ class SqliteAdapter is SqlAdapter is export {
     self.exec($new-sql);
   }
 
+  # SQLite supports partial (WHERE) and expression indexes, but not access
+  # methods (USING), covering INCLUDE, CONCURRENTLY, or operator classes.
+  method ref-index-algorithm-keyword($algorithm --> Str) {
+    return '' without $algorithm;
+    die 'SqliteAdapter: index algorithm (e.g. CONCURRENTLY) is not supported';
+  }
+
+  method ref-index-using-prefix(Str:D $using --> Str) {
+    die 'SqliteAdapter: index USING method is not supported';
+  }
+
+  method ref-index-include-clause($include --> Str) {
+    die 'SqliteAdapter: covering index INCLUDE is not supported';
+  }
+
+  method ref-index-supports-opclass(--> Bool) { False }
+
   method ddl-add-foreign-key(Str:D $from-table, Str:D $to-table, *%opts) {
     die 'SqliteAdapter: add-foreign-key on an existing table is not supported (SQLite needs a table rebuild; declare the FK in create-table instead)';
   }

@@ -216,6 +216,79 @@ internally:
 self.remove-index: 'games', :year;
 ```
 
+### Index options
+
+Both the single-column adverb form (`:email`) and a composite list accept the
+same set of named options. Pass `unique` and a custom `name` to control the
+flags and the generated identifier:
+
+```perl6
+self.add-index: 'users', :email, unique => True, name => 'uniq_user_email';
+```
+
+A `where:` predicate produces a partial (conditional) index, and an
+`expression:` builds a functional index. Because an expression has no column
+to derive a name from, give partial / expression indexes an explicit `name`:
+
+```perl6
+self.add-index: 'users', :score,
+  where => 'score > 0',
+  name  => 'idx_users_positive_score';
+
+self.add-index: 'users',
+  expression => 'lower(email)',
+  name       => 'idx_users_lower_email';
+```
+
+`using:` selects the access method (`btree`, `hash`, `gin`, `gist`, …),
+`include:` adds non-key covering columns, `order:` sets the sort direction,
+and `opclass:` attaches an operator class. `order:` and `opclass:` accept
+either a single value (applied to every column) or a hash keyed by column
+name:
+
+```perl6
+self.add-index: 'users', :label, using => 'btree';
+
+self.add-index: 'users', :tenant_id,
+  include => <email>,
+  name    => 'idx_users_tenant_covering';
+
+self.add-index: 'events', <happened_at kind>, order => { happened_at => 'desc' };
+
+self.add-index: 'users', :email,
+  opclass => 'text_pattern_ops',
+  name    => 'idx_users_email_pattern';
+```
+
+On PostgreSQL, `algorithm => 'concurrently'` builds (or drops) the index
+without holding a write lock:
+
+```perl6
+# PostgreSQL only — raises on SQLite and MySQL
+self.add-index: 'users', :active, algorithm => 'concurrently', name => 'idx_users_active';
+```
+
+An adapter that does not support a clause raises rather than silently
+ignoring it, so this migration throws on SQLite or MySQL instead of creating
+a plain index. Drop the `algorithm:` option (or gate the migration on the
+adapter) when you need it to run everywhere. The same applies to the other
+gated options below.
+
+### Adapter support
+
+Not every clause exists on every database. The simple, composite, unique,
+and named forms work everywhere. The rest are gated, and an unsupported
+clause raises a clear error rather than emitting broken SQL:
+
+| Option                    | PostgreSQL | SQLite | MySQL |
+| ------------------------- | :--------: | :----: | :---: |
+| `where:` (partial)        |    yes     |  yes   |   —   |
+| `expression:`             |    yes     |  yes   |  yes  |
+| `using:` (access method)  |    yes     |   —    |  yes  |
+| `include:` (covering)     |    yes     |   —    |   —   |
+| `algorithm: concurrently` |    yes     |   —    |   —   |
+| `opclass:`                |    yes     |   —    |   —   |
+
 ## Renaming tables, columns, indexes
 
 `rename-table` moves a table, `rename-column` renames a column in place, and
@@ -588,17 +661,17 @@ hits this. See [Errors &raquo; X::IrreversibleMigration](errors.md#xirreversible
 database(s). It reads the same configuration as the rest of the ORM
 (`DATABASE_URL`, or `config/application.json` — see [Adapters](adapters.md)).
 
-| Command            | What it does                                                                 |
-| ------------------ | ---------------------------------------------------------------------------- |
-| `ar`               | Run all outstanding `up` migrations (same as `ar migrate`).                  |
-| `ar migrate`       | Run all outstanding `up` migrations against the configured database(s).      |
-| `ar createdb`      | Create the configured database(s); does **not** migrate.                    |
+| Command            | What it does                                                                                        |
+| ------------------ | --------------------------------------------------------------------------------------------------- |
+| `ar`               | Run all outstanding `up` migrations (same as `ar migrate`).                                         |
+| `ar migrate`       | Run all outstanding `up` migrations against the configured database(s).                             |
+| `ar createdb`      | Create the configured database(s); does **not** migrate.                                            |
 | `ar check`         | Report whether the database(s) exist and are fully migrated; exit non-zero if not. Changes nothing. |
-| `ar up[:N]`        | Run all pending migrations, or just `N` of them.                             |
-| `ar down[:N]`      | Roll back all migrations, or just `N` of them.                               |
-| `ar reset [--yes]` | Drop every table (see [Reset](#reset)).                                      |
-| `ar --version`     | Print the installed version.                                                 |
-| `ar --help`        | Print usage.                                                                 |
+| `ar up[:N]`        | Run all pending migrations, or just `N` of them.                                                    |
+| `ar down[:N]`      | Roll back all migrations, or just `N` of them.                                                      |
+| `ar reset [--yes]` | Drop every table (see [Reset](#reset)).                                                             |
+| `ar --version`     | Print the installed version.                                                                        |
+| `ar --help`        | Print usage.                                                                                        |
 
 ## Run Migrations
 

@@ -481,6 +481,36 @@ class MySqlAdapter is SqlAdapter is export {
           self.exec("ALTER TABLE $table RENAME INDEX $from TO $to");
         }
 
+        # MySQL carries the access method as an index_option after the column
+        # list, wraps functional indexes in an extra set of parentheses, and
+        # requires the table name to drop an index. Partial (WHERE) indexes,
+        # covering INCLUDE, CONCURRENTLY, and operator classes are unsupported.
+        method ref-index-using-prefix(Str:D $using --> Str) { '' }
+        method ref-index-using-suffix(Str:D $using --> Str) { " USING {$using.uc}" }
+        method ref-index-expression-body(Str:D $expression --> Str) { "($expression)" }
+        method ref-index-supports-opclass(--> Bool) { False }
+
+        method ref-index-algorithm-keyword($algorithm --> Str) {
+          return '' without $algorithm;
+          die 'MySqlAdapter: index algorithm (e.g. CONCURRENTLY) is not supported';
+        }
+
+        method ref-index-where-clause(Str:D $where --> Str) {
+          die 'MySqlAdapter: partial (WHERE) indexes are not supported';
+        }
+
+        method ref-index-include-clause($include --> Str) {
+          die 'MySqlAdapter: covering index INCLUDE is not supported';
+        }
+
+        method ddl-remove-index(Str:D :$name, Str :$table, :$algorithm) {
+          self.ref-index-algorithm-keyword($algorithm);
+
+          $table.defined
+            ?? self.exec("ALTER TABLE $table DROP INDEX $name")
+            !! self.exec("DROP INDEX $name");
+        }
+
         method ddl-remove-foreign-key(Str:D $from-table,
                                       Str  :$to-table,
                                       Str  :$column,

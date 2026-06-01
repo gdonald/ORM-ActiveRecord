@@ -20,14 +20,56 @@ role SqlDdl is export {
     self.exec("ALTER TABLE $table DROP COLUMN created_at, DROP COLUMN updated_at");
   }
 
-  method ddl-add-index(Str:D $table, Str:D :$name, Str:D :$columns, Bool:D :$unique = False) {
-    my $u = $unique ?? 'UNIQUE ' !! '';
-    self.exec("CREATE {$u}INDEX $name ON $table ($columns)");
+  method ddl-add-index(Str:D $table,
+                       Str:D :$name,
+                       :$columns,
+                       Bool:D :$unique = False,
+                       :$expression,
+                       :$where, :$using, :$include, :$algorithm) {
+
+    my $u    = $unique ?? 'UNIQUE ' !! '';
+    my $conc = self.ref-index-algorithm-keyword($algorithm);
+
+    my $use-pre  = $using.defined ?? self.ref-index-using-prefix($using) !! '';
+    my $use-post = $using.defined ?? self.ref-index-using-suffix($using) !! '';
+
+    my $body = $expression.defined
+      ?? self.ref-index-expression-body($expression)
+      !! $columns;
+
+    my $incl = $include.defined ?? self.ref-index-include-clause($include) !! '';
+    my $wh   = $where.defined   ?? self.ref-index-where-clause($where)     !! '';
+
+    self.exec("CREATE {$u}INDEX {$conc}{$name} ON {$table}{$use-pre} ({$body}){$incl}{$use-post}{$wh}");
   }
 
-  method ddl-remove-index(Str:D :$name) {
-    self.exec("DROP INDEX $name");
+  method ddl-remove-index(Str:D :$name, Str :$table, :$algorithm) {
+    my $conc = self.ref-index-algorithm-keyword($algorithm);
+    self.exec("DROP INDEX {$conc}$name");
   }
+
+  # Per-adapter index capability hooks. Base shape is PostgreSQL; SQLite and
+  # MySQL override the clauses they do not support to raise a clear error.
+  method ref-index-algorithm-keyword($algorithm --> Str) {
+    return '' without $algorithm;
+
+    given $algorithm.Str.lc {
+      when 'concurrently' { 'CONCURRENTLY ' }
+      default { die "add-index: unsupported algorithm '$algorithm'" }
+    }
+  }
+
+  method ref-index-using-prefix(Str:D $using --> Str) { " USING {$using.lc}" }
+  method ref-index-using-suffix(Str:D $using --> Str) { '' }
+
+  method ref-index-include-clause($include --> Str) {
+    my @cols = self.ref-columns-list($include);
+    " INCLUDE ({@cols.join(', ')})";
+  }
+
+  method ref-index-where-clause(Str:D $where --> Str) { " WHERE $where" }
+  method ref-index-expression-body(Str:D $expression --> Str) { $expression }
+  method ref-index-supports-opclass(--> Bool) { True }
 
   method ddl-rename-table(Str:D $from, Str:D $to) {
     self.exec("ALTER TABLE $from RENAME TO $to");

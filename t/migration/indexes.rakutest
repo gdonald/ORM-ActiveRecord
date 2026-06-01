@@ -1,0 +1,217 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub adapter-kind(--> Str) {
+  given $adapter.^name {
+    when /Pg/     { 'pg' }
+    when /MySql/  { 'mysql' }
+    when /Sqlite/ { 'sqlite' }
+    default       { 'unknown' }
+  }
+}
+
+my $kind      = adapter-kind();
+my $is-pg     = $kind eq 'pg';
+my $is-sqlite = $kind eq 'sqlite';
+my $is-mysql  = $kind eq 'mysql';
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub index-exists($name) {
+  my $rows = do given $kind {
+    when 'pg'     { $adapter.exec("SELECT 1 FROM pg_indexes WHERE indexname = '$name'") }
+    when 'mysql'  { $adapter.exec("SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND index_name = '$name'") }
+    when 'sqlite' { $adapter.exec("SELECT 1 FROM sqlite_master WHERE type='index' AND name='$name'") }
+  };
+  ?$rows.elems;
+}
+
+sub index-def($name --> Str) {
+  my $rows = do given $kind {
+    when 'pg'     { $adapter.exec("SELECT indexdef FROM pg_indexes WHERE indexname = '$name'") }
+    when 'sqlite' { $adapter.exec("SELECT sql FROM sqlite_master WHERE type='index' AND name='$name'") }
+    default       { [] }
+  };
+  ($rows.elems && $rows[0][0].defined) ?? $rows[0][0].Str.lc !! '';
+}
+
+my @test-tables = <_idx_users>;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+cleanup-tables;
+
+class CreateIdxUsers is Migration {
+  method change {
+    self.create-table: '_idx_users', [
+      email     => { :string, limit => 64 },
+      label     => { :string, limit => 64 },
+      active    => { :integer },
+      tenant_id => { :integer },
+      score     => { :integer },
+    ];
+  }
+}
+
+CreateIdxUsers.new.up;
+
+# Composite index over multiple columns.
+class AddCompositeIndex is Migration {
+  method change {
+    self.add-index: '_idx_users', <tenant_id email>;
+  }
+}
+
+AddCompositeIndex.new.up;
+ok index-exists('_idx_users_tenant_id_email_idx'), 'add-index creates <table>_<col1>_<col2>_idx';
+
+AddCompositeIndex.new.down;
+nok index-exists('_idx_users_tenant_id_email_idx'), 'add-index down auto-inverts to remove-index';
+
+# Unique index with an explicit name.
+class AddUniqueNamedIndex is Migration {
+  method change {
+    self.add-index: '_idx_users', :email, unique => True, name => 'uniq_user_email';
+  }
+}
+
+AddUniqueNamedIndex.new.up;
+ok index-exists('uniq_user_email'), 'add-index unique => True, name => ... creates the named index';
+
+$adapter.exec("INSERT INTO _idx_users (email) VALUES ('dup\@x.com')");
+dies-ok { $adapter.exec("INSERT INTO _idx_users (email) VALUES ('dup\@x.com')") },
+  'unique index enforces uniqueness on the column';
+
+AddUniqueNamedIndex.new.down;
+nok index-exists('uniq_user_email'), 'remove-index drops the named unique index';
+
+# Single-column index with a derived name.
+class AddSingleIndex is Migration {
+  method change {
+    self.add-index: '_idx_users', :score;
+  }
+}
+
+AddSingleIndex.new.up;
+ok index-exists('_idx_users_score_idx'), 'add-index creates <table>_<col>_idx';
+
+AddSingleIndex.new.down;
+nok index-exists('_idx_users_score_idx'), 'remove-index drops the derived-name index';
+
+# Partial (WHERE) and expression indexes: PostgreSQL and SQLite.
+if $is-pg || $is-sqlite {
+  my class AddPartial is Migration {
+    method change {
+      self.add-index: '_idx_users', :score,
+        where => 'score > 0',
+        name  => 'idx_users_positive_score';
+    }
+  }
+
+  AddPartial.new.up;
+  ok index-exists('idx_users_positive_score'), 'where: creates the partial index';
+  ok index-def('idx_users_positive_score').contains('where'), 'where: records the WHERE predicate';
+  AddPartial.new.down;
+
+  my class AddExpr is Migration {
+    method change {
+      self.add-index: '_idx_users',
+        expression => 'lower(email)',
+        name       => 'idx_users_lower_email';
+    }
+  }
+
+  AddExpr.new.up;
+  ok index-exists('idx_users_lower_email'), 'expression: creates the expression index';
+  ok index-def('idx_users_lower_email').contains('lower'), 'expression: records the lower(email) expression';
+  AddExpr.new.down;
+}
+
+# Access method, covering, concurrency, and operator-class clauses: PostgreSQL.
+if $is-pg {
+  my class AddUsing is Migration {
+    method change {
+      self.add-index: '_idx_users', :label, using => 'btree', name => 'idx_users_label_btree';
+    }
+  }
+
+  AddUsing.new.up;
+  ok index-def('idx_users_label_btree').contains('using btree'), 'using: records the access method';
+  AddUsing.new.down;
+
+  my class AddCovering is Migration {
+    method change {
+      self.add-index: '_idx_users', :tenant_id, include => <email>, name => 'idx_users_tenant_covering';
+    }
+  }
+
+  AddCovering.new.up;
+  ok index-def('idx_users_tenant_covering').contains('include'), 'include: records the covering columns';
+  AddCovering.new.down;
+
+  my class AddConcurrent is Migration {
+    method change {
+      self.add-index: '_idx_users', :active, algorithm => 'concurrently', name => 'idx_users_active_conc';
+    }
+  }
+
+  AddConcurrent.new.up;
+  ok index-exists('idx_users_active_conc'), 'algorithm: concurrently creates the index';
+  AddConcurrent.new.down;
+
+  my class AddOpclass is Migration {
+    method change {
+      self.add-index: '_idx_users', :email, opclass => 'text_pattern_ops', name => 'idx_users_email_pattern';
+    }
+  }
+
+  AddOpclass.new.up;
+  ok index-def('idx_users_email_pattern').contains('text_pattern_ops'), 'opclass: records the operator class';
+  AddOpclass.new.down;
+}
+
+# Unsupported clauses raise a clear error on the adapters that lack them.
+if $is-sqlite {
+  my class AddUsingSqlite is Migration {
+    method change {
+      self.add-index: '_idx_users', :label, using => 'btree';
+    }
+  }
+
+  dies-ok { AddUsingSqlite.new.up }, 'SQLite raises for using:';
+}
+
+if $is-mysql {
+  my class AddWhereMysql is Migration {
+    method change {
+      self.add-index: '_idx_users', :score, where => 'score > 0';
+    }
+  }
+
+  dies-ok { AddWhereMysql.new.up }, 'MySQL raises for where:';
+}
+
+cleanup-tables;
+
+done-testing;
