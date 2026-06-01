@@ -14,39 +14,36 @@ describe 'inverse-of', {
   before-each { clean-shared-tables }
   after-each  { clean-shared-tables }
 
+  let(:user, { User.new(:id(0)) });
+
   context 'auto-detected has-many → belongs-to', {
-    it 'returns both pages', {
-      my $u-seed = User.create({fname => 'Alice', lname => 'A'});
-      Page.create({user => $u-seed, name => 'Home'});
-      Page.create({user => $u-seed, name => 'About'});
+    let(:alice, { User.create({fname => 'Alice', lname => 'A'}) });
 
-      expect(User.find($u-seed.id).pages.elems).to.eq(2);
-    }
+    context 'with two pages', {
+      before-each { for <Home About> { Page.create(%(user => alice, name => $_)) } }
 
-    it 'populates back-pointer on first child', {
-      my $u-seed = User.create({fname => 'Alice', lname => 'A'});
-      Page.create({user => $u-seed, name => 'Home'});
-      Page.create({user => $u-seed, name => 'About'});
-      my $owner = User.find($u-seed.id);
-      my @pages = $owner.pages;
+      it 'returns both pages', {
+        expect(User.find(alice.id).pages.elems).to.eq(2);
+      }
 
-      expect(@pages.first.user === $owner).to.be-truthy;
-    }
+      it 'populates back-pointer on first child', {
+        my $owner = User.find(alice.id);
+        my @pages = $owner.pages;
 
-    it 'populates back-pointer on every child', {
-      my $u-seed = User.create({fname => 'Alice', lname => 'A'});
-      Page.create({user => $u-seed, name => 'Home'});
-      Page.create({user => $u-seed, name => 'About'});
-      my $owner = User.find($u-seed.id);
-      my @pages = $owner.pages;
+        expect(@pages.first.user === $owner).to.be-truthy;
+      }
 
-      expect(@pages[1].user === $owner).to.be-truthy;
+      it 'populates back-pointer on every child', {
+        my $owner = User.find(alice.id);
+        my @pages = $owner.pages;
+
+        expect(@pages[1].user === $owner).to.be-truthy;
+      }
     }
 
     it 're-applies on re-access', {
-      my $u-seed = User.create({fname => 'Alice', lname => 'A'});
-      Page.create({user => $u-seed, name => 'Home'});
-      my $owner = User.find($u-seed.id);
+      Page.create({user => alice, name => 'Home'});
+      my $owner = User.find(alice.id);
       $owner.pages;
       my @pages-again = $owner.pages;
 
@@ -55,106 +52,93 @@ describe 'inverse-of', {
   }
 
   context 'auto-detected has-one → belongs-to', {
-    it 'returns a profile', {
-      my $u-seed = User.create({fname => 'Alice', lname => 'A'});
-      Profile.create({user => $u-seed, bio => 'inverse-of test'});
-      my $owner2 = User.find($u-seed.id);
+    let(:alice, { User.create({fname => 'Alice', lname => 'A'}) });
+    let(:owner, { User.find(alice.id) });
 
-      expect($owner2.profile.defined).to.be-truthy;
+    before-each { Profile.create({user => alice, bio => 'inverse-of test'}) }
+
+    it 'returns a profile', {
+      expect(owner.profile.defined).to.be-truthy;
     }
 
     it 'populates back-pointer on has-one', {
-      my $u-seed = User.create({fname => 'Alice', lname => 'A'});
-      Profile.create({user => $u-seed, bio => 'inverse-of test'});
-      my $owner2 = User.find($u-seed.id);
-      my $prof = $owner2.profile;
-
-      expect($prof.user === $owner2).to.be-truthy;
+      expect(owner.profile.user).to.be(owner);
     }
   }
 
   context 'explicit inverse-of with foreign-key override', {
-    it 'returns rows', {
-      my $author = User.create({fname => 'Greg', lname => 'D'});
-      Article.new(:id(0), :record({attrs => {title => 'Hi', body => 'world', author_id => $author.id}})).save;
-      Article.new(:id(0), :record({attrs => {title => 'Yo', body => 'world', author_id => $author.id}})).save;
-      my $writer = User.find($author.id);
+    let(:author,   { User.create({fname => 'Greg', lname => 'D'}) });
+    let(:writer,   { User.find(author.id) });
+    let(:articles, { writer.articles });
 
-      expect($writer.articles.elems).to.eq(2);
+    before-each {
+      for <Hi Yo> -> $title {
+        Article.create({author => author, title => $title, body => 'world'});
+      }
+    }
+
+    it 'returns rows', {
+      expect(articles.elems).to.eq(2);
     }
 
     it 'populates back-pointer on first child', {
-      my $author = User.create({fname => 'Greg', lname => 'D'});
-      Article.new(:id(0), :record({attrs => {title => 'Hi', body => 'world', author_id => $author.id}})).save;
-      Article.new(:id(0), :record({attrs => {title => 'Yo', body => 'world', author_id => $author.id}})).save;
-      my $writer = User.find($author.id);
-      my @articles = $writer.articles;
-
-      expect(@articles.first.scribe === $writer).to.be-truthy;
+      expect(articles.first.scribe === writer).to.be-truthy;
     }
 
     it 'populates back-pointer on every child', {
-      my $author = User.create({fname => 'Greg', lname => 'D'});
-      Article.new(:id(0), :record({attrs => {title => 'Hi', body => 'world', author_id => $author.id}})).save;
-      Article.new(:id(0), :record({attrs => {title => 'Yo', body => 'world', author_id => $author.id}})).save;
-      my $writer = User.find($author.id);
-      my @articles = $writer.articles;
-
-      expect(@articles[1].scribe === $writer).to.be-truthy;
+      expect(articles[1].scribe === writer).to.be-truthy;
     }
   }
 
   context 'override without inverse-of disables auto-detection', {
+    let(:spec, { %(class => Article, foreign-key => 'author_id') });
+
     it 'flags as disabled', {
-      my $spec = %(class => Article, foreign-key => 'author_id');
-      expect(User.new(:id(0)).assoc-auto-inverse-disabled($spec)).to.be-truthy;
+      expect(user.assoc-auto-inverse-disabled(spec)).to.be-truthy;
     }
 
     it 'resolve-inverse-name returns empty', {
-      my $spec = %(class => Article, foreign-key => 'author_id');
-      expect(User.new(:id(0)).resolve-inverse-name($spec, Article)).to.eq('');
+      expect(user.resolve-inverse-name(spec, Article)).to.eq('');
     }
   }
 
   context 'overrides without inverse-of, each access reloads independently', {
-    it 'returns the row', {
-      my $boss = Employee.create({name => 'Big'});
-      Employee.create({name => 'Min', manager => $boss});
-      my $boss-loaded = Employee.find($boss.id);
-      my @subs = $boss-loaded.subordinates;
+    let(:boss,        { Employee.create({name => 'Big'}) });
+    let(:boss-loaded, { Employee.find(boss.id) });
+    let(:subs,        { boss-loaded.subordinates });
 
-      expect(@subs.elems).to.eq(1);
+    before-each { Employee.create({name => 'Min', manager => boss}) }
+
+    it 'returns the row', {
+      expect(subs.elems).to.eq(1);
     }
 
     it 'back-pointer is a fresh load', {
-      my $boss = Employee.create({name => 'Big'});
-      Employee.create({name => 'Min', manager => $boss});
-      my $boss-loaded = Employee.find($boss.id);
-      my @subs = $boss-loaded.subordinates;
-
-      expect(@subs.first.manager === $boss-loaded).to.be-falsy;
+      expect(subs.first.manager === boss-loaded).to.be-falsy;
     }
   }
 
   context 'direct method coverage', {
+    context 'articles has-many spec', {
+      let(:art-spec, { user.has-manys<articles> });
+
+      it 'explicit inverse-of wins even with overrides', {
+        expect(user.resolve-inverse-name(art-spec, Article)).to.eq('scribe');
+      }
+
+      it 'assoc-inverse-name reads Pair-form as string', {
+        expect(user.assoc-inverse-name(art-spec)).to.eq('scribe');
+      }
+    }
+
     it 'auto-detect picks single matching belongs-to', {
-      my $page-spec = User.new(:id(0)).has-manys<pages>;
-      expect(User.new(:id(0)).resolve-inverse-name($page-spec, Page)).to.eq('user');
-    }
-
-    it 'explicit inverse-of wins even with overrides', {
-      my $art-spec = User.new(:id(0)).has-manys<articles>;
-      expect(User.new(:id(0)).resolve-inverse-name($art-spec, Article)).to.eq('scribe');
-    }
-
-    it 'assoc-inverse-name reads Pair-form as string', {
-      my $art-spec = User.new(:id(0)).has-manys<articles>;
-      expect(User.new(:id(0)).assoc-inverse-name($art-spec)).to.eq('scribe');
+      my $page-spec = user.has-manys<pages>;
+      expect(user.resolve-inverse-name($page-spec, Page)).to.eq('user');
     }
 
     it 'assoc-inverse-name accepts plain string', {
       my $str-spec = %(class => Article, inverse-of => 'scribe');
-      expect(User.new(:id(0)).assoc-inverse-name($str-spec)).to.eq('scribe');
+      expect(user.assoc-inverse-name($str-spec)).to.eq('scribe');
     }
   }
 }

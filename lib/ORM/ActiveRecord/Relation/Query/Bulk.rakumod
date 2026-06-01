@@ -19,7 +19,7 @@ role QueryBulk is export {
     my %types = self.fields-of.map({ .name => .type }).Hash;
     my @or-groups = self.or-groups-payload;
     my @locking-bump = self!locking-bump-cols(%attrs);
-    DB.shared.update-records(
+    self.db.update-records(
       table => self.table-of, :%attrs, :%types,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
       :@locking-bump,
@@ -28,7 +28,7 @@ role QueryBulk is export {
 
   method delete-all(--> Int) {
     return 0 if self.is-none-value;
-    DB.shared.delete-records(
+    self.db.delete-records(
       table => self.table-of,
       where => self.where-values, where-not => self.where-not-values,
     );
@@ -50,7 +50,7 @@ role QueryBulk is export {
     die 'update-counters: no counters supplied' unless %counters.elems;
     my @or-groups = self.or-groups-payload;
     my @locking-bump = self!locking-bump-cols(%counters);
-    DB.shared.update-counter-records(
+    self.db.update-counter-records(
       table => self.table-of, :%counters,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
       :@locking-bump,

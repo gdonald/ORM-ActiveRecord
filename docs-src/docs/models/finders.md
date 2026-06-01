@@ -36,11 +36,11 @@ if $user.defined {
 }
 ```
 
-`find-by-or-die(%conditions)` raises `X::RecordNotFound` instead of returning
+`find-by-bang(%conditions)` raises `X::RecordNotFound` instead of returning
 `Nil`.
 
 ```perl6
-my $user = User.find-by-or-die({fname => 'Greg'});
+my $user = User.find-by-bang({fname => 'Greg'});
 ```
 
 ## first / last / take
@@ -109,7 +109,7 @@ if $u.is-invalid {
 }
 ```
 
-`find-or-create-by-or-die(%attrs)` raises `X::RecordInvalid` instead of
+`find-or-create-by-bang(%attrs)` raises `X::RecordInvalid` instead of
 returning an invalid record.
 
 `find-or-initialize-by(%attrs)` is the no-save variant: returns the existing

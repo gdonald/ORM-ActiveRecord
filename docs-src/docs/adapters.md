@@ -1,9 +1,8 @@
 # Adapters
 
-ORM::ActiveRecord supports three database backends out of the box: PostgreSQL,
-MySQL, and SQLite. Tests run against all three on every CI build, and the
-adapter API is designed so application code is the same regardless of the
-backend.
+ORM::ActiveRecord supports three database backends: PostgreSQL, MySQL, and
+SQLite. Tests run against all three on every CI build. Application code is the
+same regardless of the backend.
 
 ## Selecting an adapter
 
@@ -38,23 +37,34 @@ If `DATABASE_URL` is unset, ORM::ActiveRecord reads `config/application.json`.
 Three example templates live in `config/`:
 
 ```shell
-cp config/application.json-pg-example     config/application.json
-cp config/application.json-mysql-example  config/application.json
-cp config/application.json-sqlite-example config/application.json
+cp config/application.json-postgresql-example config/application.json
+cp config/application.json-mysql-example      config/application.json
+cp config/application.json-sqlite-example     config/application.json
 ```
 
-The shape:
+The shape is per-environment, with one or more named connections per
+environment (`primary` is the default connection):
 
 ```json
 {
-  "db": {
-    "adapter": "pg",
-    "host": "localhost",
-    "port": 5432,
-    "name": "ar_test",
-    "user": "postgres",
-    "password": "",
-    "schema": "public"
+  "test": {
+    "parallel": 4,
+    "primary": {
+      "adapter": "pg",
+      "host": "localhost",
+      "port": 5432,
+      "name": "ar_test",
+      "user": "postgres",
+      "password": "",
+      "schema": "public"
+    }
+  },
+  "development": {
+    "primary": {
+      "adapter": "pg",
+      "name": "ar_development",
+      "user": "postgres"
+    }
   }
 }
 ```
@@ -63,6 +73,45 @@ The shape:
 `DATABASE_URL` schemes are accepted). MySQL has no separate schema concept —
 the `name` field IS the schema. SQLite only needs `name` (the file path) or
 `":memory:"`.
+
+The active environment is chosen by `AR_ENV` (`bin/ar` defaults to
+`development`; the test suite uses `test`). When `DATABASE_URL` is set it
+overrides the active environment's `primary` connection; any other named
+connection is still resolved from `config/application.json`.
+
+> **Legacy flat config.** The older single-database shape — `{ "db": { … } }`
+> — is still accepted and auto-promoted to the active environment's `primary`
+> connection (with a deprecation warning). Migrate to the per-environment shape.
+
+### Multiple databases
+
+An environment may declare more than one named connection:
+
+```json
+{
+  "production": {
+    "primary":   { "adapter": "pg", "name": "app",        "user": "app" },
+    "analytics": { "adapter": "pg", "name": "app_events",  "user": "app" }
+  }
+}
+```
+
+`DB.shared(:name<analytics>)` returns a connection by name; `DB.shared` (no
+name) is `primary`. Bind a model to a non-primary connection with the
+`connects-to` class method:
+
+```raku
+class Event is Model {
+  Event.connects-to('analytics');
+}
+```
+
+Every query a bound model runs — class finders, relations, and its instances'
+saves — routes to that connection. Unbound models use `primary`.
+
+The `parallel` key (test environment only) sets how many per-worker database
+copies `ar createdb --parallel` / `test.raku --parallel` create; see
+[Tests](tests.md).
 
 ## Adapter-specific notes
 

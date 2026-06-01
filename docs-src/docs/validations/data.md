@@ -523,7 +523,7 @@ self.validates-associated: 'books', { :strict };
 
 ## Presence
 
-The `presence` validation requires a field value to simply exist for the `Model` instance to be valid.
+The `presence` validation requires a field value to exist for the `Model` instance to be valid.
 
 ```perl6
 use ORM::ActiveRecord::Model;

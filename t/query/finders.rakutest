@@ -42,12 +42,12 @@ ok !User.find-by({fname => 'Nobody'}).defined, 'find-by returns Nil on miss';
 {
   my $caught = False;
   try {
-    User.find-by-or-die({fname => 'Nobody'});
+    User.find-by-bang({fname => 'Nobody'});
     CATCH {
       when X::RecordNotFound { $caught = True }
     }
   }
-  ok $caught, 'find-by-or-die raised X::RecordNotFound';
+  ok $caught, 'find-by-bang raised X::RecordNotFound';
 }
 
 my $last = User.last;

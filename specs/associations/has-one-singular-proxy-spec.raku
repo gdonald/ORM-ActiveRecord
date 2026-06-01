@@ -73,27 +73,27 @@ describe 'has-one singular proxy', {
     }
   }
 
-  context 'create-<assoc>-or-die success', {
+  context 'create-<assoc>-bang success', {
     it 'returns a saved record', {
       my $user = User.create({fname => 'Greg', lname => 'Donald'});
-      my $forced = $user.create-profile-or-die({bio => 'forced'});
+      my $forced = $user.create-profile-bang({bio => 'forced'});
 
       expect($forced.id).to.be-greater-than(0);
     }
 
     it 'sets the foreign key', {
       my $user = User.create({fname => 'Greg', lname => 'Donald'});
-      my $forced = $user.create-profile-or-die({bio => 'forced'});
+      my $forced = $user.create-profile-bang({bio => 'forced'});
 
       expect($forced.attrs<user_id>).to.eq($user.id);
     }
   }
 
-  context 'create-<assoc>-or-die failure', {
+  context 'create-<assoc>-bang failure', {
     it 'raises when the target is invalid', {
       my $user = User.create({fname => 'Greg', lname => 'Donald'});
 
-      expect({ $user.create-profile-or-die({}) }).to.raise-error;
+      expect({ $user.create-profile-bang({}) }).to.raise-error;
     }
   }
 }

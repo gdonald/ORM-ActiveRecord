@@ -132,14 +132,14 @@ group 'pessimistic locking at runtime', {
     expect(@rows.elems).to.eq(2);
   }
 
-  context 'lock-or-die', {
+  context 'lock-bang', {
     it 'returns the same instance', {
       my $a = PlNote.create({ title => 'one', views => 1 });
       PlNote.where({ id => $a.id }).update-all({ views => 99 });
 
       my $reloaded;
       PlNote.transaction({
-        $reloaded = $a.lock-or-die;
+        $reloaded = $a.lock-bang;
       });
       expect($reloaded.WHICH).to.eq($a.WHICH);
     }
@@ -149,7 +149,7 @@ group 'pessimistic locking at runtime', {
       PlNote.where({ id => $a.id }).update-all({ views => 99 });
 
       PlNote.transaction({
-        $a.lock-or-die;
+        $a.lock-bang;
       });
       expect($a.views).to.eq(99);
     }
@@ -157,13 +157,13 @@ group 'pessimistic locking at runtime', {
     it 'raises when the row no longer exists', {
       my $a = PlNote.create({ title => 'gone' });
       $a.delete;
-      expect({ $a.lock-or-die }).to.raise-error(Exception);
+      expect({ $a.lock-bang }).to.raise-error(Exception);
     }
 
     it 'refuses readonly records', {
       my $a = PlNote.create({ title => 'a' });
       $a.make-readonly;
-      expect({ $a.lock-or-die }).to.raise-error(X::ReadOnlyRecord);
+      expect({ $a.lock-bang }).to.raise-error(X::ReadOnlyRecord);
     }
   }
 

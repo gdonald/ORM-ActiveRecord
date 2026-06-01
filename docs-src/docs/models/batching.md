@@ -32,9 +32,8 @@ raises an exception.
 ## find-in-batches
 
 `find-in-batches(:batch-size = 1000)` yields arrays of records, one array per
-batch. Use it when a step works naturally on a slice — bulk emailing, batched
-API calls, anything that benefits from amortising fixed overhead across a
-group.
+batch. Use it when a step operates on a slice — bulk emailing, batched API
+calls, or any work that amortises fixed overhead across a group.
 
 ```perl6
 for User.find-in-batches(:batch-size(1000)) -> @batch {
@@ -64,8 +63,8 @@ for User.in-batches(:of(500), :load) -> @batch {
 }
 ```
 
-`:load` is the same shape as `find-in-batches` — convenient when you already
-know you want the records and not the relation.
+`:load` is the same shape as `find-in-batches`; use it when you want the
+records rather than the relation.
 
 ## How batching iterates
 

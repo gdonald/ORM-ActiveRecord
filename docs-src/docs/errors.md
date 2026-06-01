@@ -19,8 +19,8 @@ the sections that follow document the attributes each one carries.
 
 | Exception                  | Raised by                                            |
 | -------------------------- | ---------------------------------------------------- |
-| `X::RecordNotFound`        | `find`, `find-by-or-die`                             |
-| `X::RecordInvalid`         | `save-or-die`, `update-or-die`, `create-or-die`      |
+| `X::RecordNotFound`        | `find`, `find-by-bang`                             |
+| `X::RecordInvalid`         | `save-bang`, `update-bang`, `create-bang`      |
 | `X::ReadOnlyRecord`        | `save` / `update` / `destroy` / `delete` on a record from a `readonly` relation |
 | `X::IrreversibleMigration` | `self.irreversible-migration` inside a migration `down` |
 | `X::StrictValidationFailed`| validator declared with `:strict` — see [Validator Options &raquo; strict](validations/options.md#strict) |
@@ -46,11 +46,11 @@ try {
 ```
 
 `find($id)` always raises on a miss. `find-by(%conditions)` returns `Nil`
-instead — use `find-by-or-die(%conditions)` if you want the loud variant.
+instead — use `find-by-bang(%conditions)` if you want the loud variant.
 
 ## X::RecordInvalid
 
-Raised by the `-or-die` persistence methods when validations fail. The
+Raised by the `-bang` persistence methods when validations fail. The
 exception carries both the failing record and a list of human-readable
 messages built from the model's `errors`.
 
@@ -58,7 +58,7 @@ messages built from the model's `errors`.
 use ORM::ActiveRecord::Errors::X;
 
 try {
-  User.create-or-die({fname => ''});
+  User.create-bang({fname => ''});
 
   CATCH {
     when X::RecordInvalid {
@@ -70,7 +70,7 @@ try {
 }
 ```
 
-`save` / `update` / `create` (without `-or-die`) return `False` on validation
+`save` / `update` / `create` (without `-bang`) return `False` on validation
 failure instead of raising — inspect `.errors` on the record to see what went
 wrong. See [Persistence](models/persistence.md) for the full quiet-vs-loud
 breakdown.

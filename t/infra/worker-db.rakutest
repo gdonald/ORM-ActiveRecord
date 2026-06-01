@@ -1,0 +1,87 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Support::WorkerDb;
+use ORM::ActiveRecord::DB;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+{
+  temp %*ENV<BEHAVE_WORKER_INDEX>;
+  %*ENV<BEHAVE_WORKER_INDEX>:delete;
+  nok worker-index().defined, 'worker-index is undefined when BEHAVE_WORKER_INDEX is unset';
+}
+
+{
+  temp %*ENV<BEHAVE_WORKER_INDEX> = '3';
+  is worker-index(), 3, 'worker-index returns the integer when set';
+}
+
+{
+  temp %*ENV<BEHAVE_WORKER_INDEX> = 'nope';
+  nok worker-index().defined, 'worker-index is undefined when non-numeric';
+}
+
+{
+  temp %*ENV<BEHAVE_WORKER_COUNT>;
+  %*ENV<BEHAVE_WORKER_COUNT>:delete;
+  is worker-count(), 1, 'worker-count is 1 when BEHAVE_WORKER_COUNT is unset';
+}
+
+{
+  temp %*ENV<BEHAVE_WORKER_COUNT> = '4';
+  is worker-count(), 4, 'worker-count returns the integer when set';
+}
+
+{
+  temp %*ENV<BEHAVE_WORKER_INDEX> = '2';
+  temp %*ENV<BEHAVE_WORKER_COUNT> = '4';
+  ok per-worker-dbs-active(), 'per-worker-dbs-active is true for a parallel worker';
+}
+
+{
+  temp %*ENV<BEHAVE_WORKER_INDEX> = '0';
+  temp %*ENV<BEHAVE_WORKER_COUNT> = '1';
+  nok per-worker-dbs-active(), 'per-worker-dbs-active is false in serial mode';
+}
+
+is apply-worker-suffix({ adapter => 'pg', name => 'ar_test' }, 2)<name>,
+  'ar_test_2', 'suffixes the pg name';
+
+is apply-worker-suffix({ adapter => 'mysql', name => 'ar_test' }, 2)<name>,
+  'ar_test_2', 'suffixes the mysql name';
+
+is apply-worker-suffix({ adapter => 'pg', database => 'ar_test' }, 5)<database>,
+  'ar_test_5', 'falls back to the database key when name is absent';
+
+is apply-worker-suffix({ adapter => 'sqlite', database => 'db/test.sqlite3' }, 3)<database>,
+  'db/test_3.sqlite3', 'suffixes a sqlite file path before the extension';
+
+is apply-worker-suffix({ adapter => 'sqlite', name => 'db/test' }, 3)<name>,
+  'db/test_3', 'appends to a sqlite path with no extension';
+
+is apply-worker-suffix({ adapter => 'sqlite', database => ':memory:' }, 3)<database>,
+  ':memory:', 'leaves sqlite :memory: unchanged';
+
+is apply-worker-suffix({ adapter => 'pg', name => '' }, 1)<name>,
+  '', 'leaves an empty name unchanged';
+
+{
+  temp %*ENV<DATABASE_URL>        = 'postgres://u@localhost/ar_test';
+  temp %*ENV<BEHAVE_WORKER_INDEX> = '2';
+  temp %*ENV<BEHAVE_WORKER_COUNT> = '4';
+  is DB.read-config<name>, 'ar_test_2',
+    'read-config suffixes the database name for a parallel worker';
+}
+
+{
+  temp %*ENV<DATABASE_URL>        = 'postgres://u@localhost/ar_test';
+  temp %*ENV<BEHAVE_WORKER_INDEX> = '2';
+  temp %*ENV<BEHAVE_WORKER_COUNT> = '1';
+  is DB.read-config<name>, 'ar_test',
+    'read-config leaves the database name untouched in serial mode';
+}
+
+done-testing;

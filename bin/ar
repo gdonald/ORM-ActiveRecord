@@ -1,9 +1,72 @@
-#!raku
+#!/usr/bin/env raku
 
 use v6.d;
 BEGIN %*ENV<ORM_LOG_FILE> //= 'log/error.log' if 'log'.IO.d;
 use ORM::ActiveRecord::Schema::Migrate;
+use ORM::ActiveRecord::Schema::WorkerDbs;
+use ORM::ActiveRecord::Support::Version;
 
-sub MAIN(*@args) {
-  Migrate.new(:@args).run
+# Subcommands:
+#   createdb         create the configured database(s) — all for a multi-db
+#                    config, or just the one. Does not migrate.
+#   migrate          run migrations against the configured database(s).
+#   check            report whether every expected database exists and is
+#                    migrated; exit non-zero if not (run no migrations).
+#   up[:N] down[:N]  migrate up / down (optionally N steps).
+#   reset [--yes]    drop every table.
+# Add --parallel to createdb/migrate/check to target the test environment's
+# parallel databases; the worker count comes from config (the env's `parallel`).
+sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
+  if $version {
+    say "ar (ORM::ActiveRecord) {ORM::ActiveRecord::Support::Version::version()}";
+    return;
+  }
+
+  # Raku binds `--parallel` to the named arg only when it precedes the
+  # subcommand; accept it in either position by stripping it from @args.
+  my $par  = $parallel || ('--parallel' ∈ @args);
+  my @cmd  = @args.grep(* ne '--parallel');
+
+  given @cmd[0] // 'migrate' {
+    when 'createdb' { create-test-databases(parallel => $par) }
+    when 'migrate'  { migrate-test-databases(parallel => $par) }
+    when 'check'    { exit check-command(parallel => $par) }
+    default         { Migrate.new(args => @cmd).run }
+  }
+}
+
+# Pre-flight: print one line per problem and exit 1 if any database is missing
+# or un-migrated, else confirm readiness and exit 0.
+sub check-command(Bool :$parallel --> Int) {
+  my @problems = check-test-databases(:$parallel);
+  return 0 unless @problems;
+
+  $*ERR.say: "Databases not ready:";
+  $*ERR.say: "  - $_" for @problems;
+  $*ERR.say: "Run `ar createdb"
+    ~ ($parallel ?? ' --parallel' !! '') ~ "` and `ar migrate"
+    ~ ($parallel ?? ' --parallel' !! '') ~ "` first.";
+  1;
+}
+
+sub USAGE {
+  print q:to/HELP/;
+  ar — ORM::ActiveRecord migration & database tool
+
+  Usage:
+    ar                     migrate the configured database(s)
+    ar migrate             migrate the configured database(s)
+    ar createdb            create the configured database(s) (no migrate)
+    ar check               report whether the database(s) exist and are migrated
+    ar up[:N] | down[:N]   migrate up / down (optionally N steps)
+    ar reset [--yes]       drop every table (use --yes to skip the prompt)
+
+    ar createdb --parallel   create the test env's parallel databases
+    ar migrate  --parallel   migrate the test env's parallel databases
+    ar check    --parallel   check the test env's parallel databases
+    (the worker count comes from config: the test env's `parallel` key)
+
+    ar --version           print the installed version
+    ar --help              show this help
+  HELP
 }

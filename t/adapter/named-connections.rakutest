@@ -1,0 +1,91 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Adapter::Sqlite;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+# Assert base read-config output; clear any per-worker overlay from the harness.
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+sub fresh-tmp() {
+  $*TMPDIR.add("ar-named-conn-{$*PID}-{(now * 1000).Int}.json");
+}
+
+{
+  temp %*ENV<DATABASE_URL>;
+  %*ENV<DATABASE_URL>:delete;
+
+  my $tmp = fresh-tmp();
+  $tmp.spurt: q:to/JSON/;
+{
+  "test": {
+    "primary":   { "adapter": "pg", "name": "ar_test" },
+    "analytics": { "adapter": "pg", "name": "ar_analytics_test" }
+  },
+  "development": {
+    "primary": { "adapter": "pg", "name": "ar_dev" }
+  }
+}
+JSON
+
+  is DB.read-config(path => $tmp.Str, name => 'primary', env => 'test')<name>,
+    'ar_test', 'returns the primary connection of the active env';
+
+  is DB.read-config(path => $tmp.Str, name => 'analytics', env => 'test')<name>,
+    'ar_analytics_test', 'returns a non-primary named connection';
+
+  is DB.read-config(path => $tmp.Str, name => 'primary', env => 'development')<name>,
+    'ar_dev', 'selects connections from the requested environment';
+
+  is DB.read-config(path => $tmp.Str, name => 'nope', env => 'test').elems,
+    0, 'returns an empty config for an unknown connection name';
+
+  {
+    temp %*ENV<DATABASE_URL> = 'postgres://u@localhost/from_url';
+    is DB.read-config(path => $tmp.Str, name => 'primary', env => 'test')<name>,
+      'from_url', 'DATABASE_URL overrides the primary connection';
+    is DB.read-config(path => $tmp.Str, name => 'analytics', env => 'test')<name>,
+      'ar_analytics_test', 'non-primary connections still resolve from the file';
+  }
+
+  $tmp.unlink if $tmp.e;
+}
+
+{
+  temp %*ENV<DATABASE_URL>;
+  %*ENV<DATABASE_URL>:delete;
+
+  my $tmp = fresh-tmp();
+  $tmp.spurt: q:to/JSON/;
+{
+  "db": { "adapter": "sqlite", "name": "db/legacy.sqlite3" }
+}
+JSON
+
+  is DB.read-config(path => $tmp.Str, name => 'primary', env => 'test')<name>,
+    'db/legacy.sqlite3', 'legacy flat db block promotes to the primary connection';
+
+  is DB.read-config(path => $tmp.Str, name => 'analytics', env => 'test').elems,
+    0, 'legacy flat config has no non-primary connections';
+
+  $tmp.unlink if $tmp.e;
+}
+
+{
+  my $a = DB.new(adapter => SqliteAdapter.new(database => ':memory:'));
+  my $b = DB.new(adapter => SqliteAdapter.new(database => ':memory:'));
+
+  DB.set-shared($a, name => 'primary');
+  DB.set-shared($b, name => 'analytics');
+
+  ok DB.shared(name => 'primary') === $a, 'DB.shared keys primary by name';
+  ok DB.shared(name => 'analytics') === $b, 'DB.shared keys analytics by name';
+
+  DB.set-shared(Nil, name => 'primary');
+  DB.set-shared(Nil, name => 'analytics');
+}
+
+done-testing;

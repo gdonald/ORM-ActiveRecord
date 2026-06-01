@@ -6,7 +6,7 @@ The homepage for ORM::ActiveRecord is [https://github.com/gdonald/ORM-ActiveReco
 
 ## Synopsis
 
-ORM::ActiveRecord is an [object-relational mapping](https://en.wikipedia.org/wiki/Object-relational_mapping) module for Raku that *mostly* follows the [Active Record Pattern](https://en.wikipedia.org/wiki/Active_record_pattern).
+ORM::ActiveRecord is an [object-relational mapping](https://en.wikipedia.org/wiki/Object-relational_mapping) module for Raku that mostly follows the [Active Record Pattern](https://en.wikipedia.org/wiki/Active_record_pattern).
 
 It supports **PostgreSQL**, **MySQL**, and **SQLite** through a common adapter
 layer. Application code is the same regardless of the backend; pick one with
@@ -46,5 +46,5 @@ ORM::ActiveRecord can be installed using the zef module installation tool:
 zef install --/test ORM::ActiveRecord
 ```
 
-`--/test` is suggested because you probably don't have a test database setup.
-You can of course [setup a test database](tests.md#database-configuration).
+`--/test` skips the test suite, which requires a configured test database. To
+run the tests, [set up a test database](tests.md#pointing-the-tests-at-a-database).

@@ -6,7 +6,7 @@ role ModelBulk is export {
   method destroy-all {
     my $table = Utils.table-name(self);
     my %where;
-    DB.shared.delete-records(:$table, :%where);
+    self.db.delete-records(:$table, :%where);
   }
 
   method update-all(**@args, *%kw --> Int) {
@@ -36,7 +36,7 @@ role ModelBulk is export {
   method !insert-types {
     my $table = Utils.table-name(self);
     my %types;
-    for DB.shared.get-fields(:$table) -> $f { %types{$f[0]} = $f[1] }
+    for self.db.get-fields(:$table) -> $f { %types{$f[0]} = $f[1] }
     %types;
   }
 
@@ -44,7 +44,7 @@ role ModelBulk is export {
     self!do-insert([%attrs.item], :skip-conflict)[0] // 0;
   }
 
-  method insert-or-die(%attrs --> Int) {
+  method insert-bang(%attrs --> Int) {
     self!do-insert([%attrs.item])[0];
   }
 
@@ -52,7 +52,7 @@ role ModelBulk is export {
     self!do-insert(@rows.map(*.item).Array, :skip-conflict);
   }
 
-  method insert-all-or-die(@rows) {
+  method insert-all-bang(@rows) {
     self!do-insert(@rows.map(*.item).Array);
   }
 
@@ -61,13 +61,13 @@ role ModelBulk is export {
     my $table = Utils.table-name(self);
     my %types = self!insert-types;
     my @prepared = self.touch-rows-for-insert(@rows);
-    DB.shared.insert-records(:$table, :rows(@prepared), :%types, :$skip-conflict);
+    self.db.insert-records(:$table, :rows(@prepared), :%types, :$skip-conflict);
   }
 
   method touch-rows-for-insert(@rows) {
     my $now = DateTime.now;
     my $table = Utils.table-name(self);
-    my @fields = DB.shared.get-fields(:$table);
+    my @fields = self.db.get-fields(:$table);
     my %names;
     for @fields -> $f { %names{$f[0]} = True }
     my @out;
@@ -90,6 +90,6 @@ role ModelBulk is export {
     my $table = Utils.table-name(self);
     my %types = self!insert-types;
     my @prepared = self.touch-rows-for-insert(@items);
-    DB.shared.upsert-records(:$table, :rows(@prepared), :%types, :@unique-by, :@update-cols);
+    self.db.upsert-records(:$table, :rows(@prepared), :%types, :@unique-by, :@update-cols);
   }
 }

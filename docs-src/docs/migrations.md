@@ -2,9 +2,9 @@
 
 ORM::ActiveRecord includes commands to migrate your database.  Migrations include adding and removing tables as well as adding and removing columns and indexes.
 
-Migration files contain either a single `change` method (the recommended
-form, see [Reversible migrations](#reversible-migrations)) or a pair of
-`up` and `down` methods.  The `up` method is the forward change you want to
+Migration files contain either a single `change` method (see
+[Reversible migrations](#reversible-migrations)) or a pair of `up` and `down`
+methods.  The `up` method is the forward change you want to
 perform.  The `down` method should contain what you want to happen if you
 decide to rollback the changes from the `up` method.
 
@@ -135,8 +135,7 @@ self.change-column-comment: 'users', 'email', 'primary contact address';
 
 ### Reversibility
 
-Inside `change`, the auto-revert behavior is conservative — only operations
-whose inverse is unambiguous run on `down`:
+Inside `change`, only operations whose inverse is unambiguous run on `down`:
 
 | Operation                                 | Reversible in `change`?                           |
 | ----------------------------------------- | ------------------------------------------------- |
@@ -150,8 +149,8 @@ whose inverse is unambiguous run on `down`:
 | `change-table-comment(t, $value)`         | No — raises unless the `from:`/`to:` form is used |
 
 For the irreversible cases, provide explicit `up` / `down` pairs or wrap the
-call in `reversible`. The `from:` / `to:` shorthand is the easiest way to keep
-a default / comment change inside `change`:
+call in `reversible`. The `from:` / `to:` shorthand keeps a default / comment
+change inside `change`:
 
 ```perl6
 class RenameOrderStatus is Migration {
@@ -443,9 +442,9 @@ expression cannot always be normalised back to the auto-name).
 
 ## Timestamps
 
-Most tables benefit from `created_at` and `updated_at` columns. ORM::ActiveRecord
-adds them with `add-timestamps` and manages them automatically: `created_at` is
-set on insert, `updated_at` is set on every save.
+`add-timestamps` adds `created_at` and `updated_at` columns and manages them
+automatically: `created_at` is set on insert, `updated_at` is set on every
+save.
 
 The exact column type is adapter-aware:
 
@@ -536,8 +535,8 @@ down-block first, then removes the column.
 ### `revert` to undo a previous block
 
 `revert` takes a block and performs the *inverse* of every operation
-inside, in reverse order. It is the easiest way to write a migration that
-undoes an earlier one without copy-pasting the original:
+inside, in reverse order. It undoes an earlier migration without copy-pasting
+the original:
 
 ```perl6
 class RemoveLegacyAuditLog is Migration {
@@ -583,22 +582,83 @@ class DropLegacyAuditLog is Migration {
 The runner reports the offending file and aborts the rollback if it ever
 hits this. See [Errors &raquo; X::IrreversibleMigration](errors.md#xirreversiblemigration).
 
+## The `ar` command
+
+`ar` is the command-line tool for creating, migrating, and checking your
+database(s). It reads the same configuration as the rest of the ORM
+(`DATABASE_URL`, or `config/application.json` — see [Adapters](adapters.md)).
+
+| Command            | What it does                                                                 |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `ar`               | Run all outstanding `up` migrations (same as `ar migrate`).                  |
+| `ar migrate`       | Run all outstanding `up` migrations against the configured database(s).      |
+| `ar createdb`      | Create the configured database(s); does **not** migrate.                    |
+| `ar check`         | Report whether the database(s) exist and are fully migrated; exit non-zero if not. Changes nothing. |
+| `ar up[:N]`        | Run all pending migrations, or just `N` of them.                             |
+| `ar down[:N]`      | Roll back all migrations, or just `N` of them.                               |
+| `ar reset [--yes]` | Drop every table (see [Reset](#reset)).                                      |
+| `ar --version`     | Print the installed version.                                                 |
+| `ar --help`        | Print usage.                                                                 |
+
 ## Run Migrations
 
-New migrations can be ran using the provided `ar` command.  It its most simple form `ar` will run all outstanding `up` methods.
+With no arguments, `ar` runs all outstanding `up` methods:
 
 ```shell
 $ ar
 ```
 
-Other migration options include the ability to only migrate `up` or `down` a specific number of migrations:
+You can also migrate `up` or `down` a specific number of migrations:
 
 ```shell
 $ ar up      # runs all pending migrations
-$ ar down    # resets all migrations, be careful!
-$ ar up:1    # runs 1 pending migrations
+$ ar down    # rolls back all migrations
+$ ar up:1    # runs 1 pending migration
 $ ar down:2  # resets 2 previously completed migrations
 ```
+
+## Creating databases
+
+`ar createdb` creates the database(s) named in your configuration without
+running any migrations — useful for a fresh checkout before the first `ar`:
+
+```shell
+$ ar createdb     # create the configured database(s)
+$ ar              # then migrate them
+```
+
+For a multi-database config (more than one named connection in the active
+environment) it creates every one. SQLite files are created on first connect,
+so `createdb` is effectively a no-op there.
+
+## Checking readiness
+
+`ar check` verifies, without changing anything, that every database the active
+environment expects exists and has all migrations applied. It exits non-zero
+and prints a single summary if anything is missing or behind:
+
+```shell
+$ ar check
+Databases not ready:
+  - missing database: app_production
+  - unrun migrations: app_events
+Run `ar createdb` and `ar migrate` first.
+```
+
+## Parallel test databases
+
+`createdb`, `migrate`, and `check` accept `--parallel`, which targets the test
+environment's per-worker database copies instead of the single base database.
+The worker count comes from the test environment's `parallel` key in
+`config/application.json`:
+
+```shell
+$ ar createdb --parallel    # create the N per-worker copies
+$ ar migrate  --parallel    # migrate them
+$ ar check    --parallel    # verify all N are ready
+```
+
+This is the machinery behind parallel test runs — see [Tests](tests.md).
 
 ## Reset
 
@@ -608,7 +668,7 @@ scratch. The drop ignores foreign-key dependencies: PostgreSQL uses
 `DROP TABLE ... CASCADE`, MySQL temporarily flips `FOREIGN_KEY_CHECKS = 0`,
 SQLite turns off `PRAGMA foreign_keys`.
 
-Reset is a deliberate, destructive action. It prints the tables it is
+Reset is destructive. It prints the tables it is
 about to drop and prompts:
 
 ```shell
@@ -638,8 +698,8 @@ $ ar reset --yes
 $ AR_ASSUME_YES=1 ar reset
 ```
 
-`ar reset` does **not** re-run migrations. Pair it with a plain `ar` when
-you want a clean slate plus a fresh schema:
+`ar reset` does **not** re-run migrations. Pair it with a plain `ar` to drop
+all tables and re-run every migration:
 
 ```shell
 $ ar reset --yes && ar

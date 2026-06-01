@@ -31,7 +31,7 @@ role QueryBatching is export {
         my %w = %where-base;
         %w<id> = Range.new($cursor, Inf, :excludes-min);
         my @order = ('id ASC',);
-        my @objects = DB.shared.get-objects(
+        my @objects = self.db.get-objects(
           :$table, :$class, :@fields,
           where => %w, where-not => %where-not, :@or-groups,
           :@order, limit => $batch-size, offset => 0,

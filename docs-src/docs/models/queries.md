@@ -60,7 +60,7 @@ User.excluding($alice, $dave).all;                 # multiple
 User.excluding(1, 2, 3).all;                       # by id
 ```
 
-It composes naturally:
+It composes:
 
 ```perl6
 User.where({lname => 'Anderson'}).excluding($alice).all;

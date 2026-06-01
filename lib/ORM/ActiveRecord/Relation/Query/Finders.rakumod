@@ -8,7 +8,7 @@ role QueryFinders is export {
     return () if self.is-none-value;
     self.finalize-includes;
     my @or-groups = self.or-groups-payload;
-    my @objects = DB.shared.get-objects(
+    my @objects = self.db.get-objects(
       table => self.table-of, class => self.class-of, fields => self.fields-of,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
       order => self.order-values,
@@ -38,7 +38,7 @@ role QueryFinders is export {
     self.finalize-includes;
     my @order = self.order-values.elems ?? self.order-values !! ('id',);
     my @or-groups = self.or-groups-payload;
-    my $obj = DB.shared.get-object(table => self.table-of, class => self.class-of, fields => self.fields-of, where => self.where-values, where-not => self.where-not-values, :@or-groups, :@order, distinct => self.distinct-value, group => self.group-values, having => self.having-values, from-source => self.from-source, from-alias => self.from-alias, joins => self.joins-values, ctes => self.ctes-values, annotations => self.annotations-values, optimizer-hints => self.optimizer-hints-values, lock => self.lock-value);
+    my $obj = self.db.get-object(table => self.table-of, class => self.class-of, fields => self.fields-of, where => self.where-values, where-not => self.where-not-values, :@or-groups, :@order, distinct => self.distinct-value, group => self.group-values, having => self.having-values, from-source => self.from-source, from-alias => self.from-alias, joins => self.joins-values, ctes => self.ctes-values, annotations => self.annotations-values, optimizer-hints => self.optimizer-hints-values, lock => self.lock-value);
     $obj.make-readonly if $obj.defined && self.readonly-value;
     $obj;
   }
@@ -50,7 +50,7 @@ role QueryFinders is export {
     self.finalize-includes;
     my @order = self.order-values.elems ?? self.order-values !! ('id',);
     my @or-groups = self.or-groups-payload;
-    my @objects = DB.shared.get-objects(
+    my @objects = self.db.get-objects(
       table => self.table-of, class => self.class-of, fields => self.fields-of,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
       :@order, limit => $n, offset => self.offset-value,
@@ -76,7 +76,7 @@ role QueryFinders is export {
       ?? self.order-values
       !! ('id DESC',);
     my @or-groups = self.or-groups-payload;
-    my $obj = DB.shared.get-object(table => self.table-of, class => self.class-of, fields => self.fields-of, where => self.where-values, where-not => self.where-not-values, :@or-groups, :@order, distinct => self.distinct-value, group => self.group-values, having => self.having-values, from-source => self.from-source, from-alias => self.from-alias, joins => self.joins-values, ctes => self.ctes-values, annotations => self.annotations-values, optimizer-hints => self.optimizer-hints-values, lock => self.lock-value);
+    my $obj = self.db.get-object(table => self.table-of, class => self.class-of, fields => self.fields-of, where => self.where-values, where-not => self.where-not-values, :@or-groups, :@order, distinct => self.distinct-value, group => self.group-values, having => self.having-values, from-source => self.from-source, from-alias => self.from-alias, joins => self.joins-values, ctes => self.ctes-values, annotations => self.annotations-values, optimizer-hints => self.optimizer-hints-values, lock => self.lock-value);
     $obj.make-readonly if $obj.defined && self.readonly-value;
     $obj;
   }
@@ -90,7 +90,7 @@ role QueryFinders is export {
       ?? self.order-values.map({ self!reverse-order-fragment($_) })
       !! ('id DESC',);
     my @or-groups = self.or-groups-payload;
-    my @objects = DB.shared.get-objects(
+    my @objects = self.db.get-objects(
       table => self.table-of, class => self.class-of, fields => self.fields-of,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
       :@order, limit => $n, offset => self.offset-value,
@@ -124,7 +124,7 @@ role QueryFinders is export {
     die X::RecordNotFound.new(:model(self.class-of.^name)) if self.is-none-value;
     self.finalize-includes;
     my @or-groups = self.or-groups-payload;
-    my @rows = DB.shared.get-objects(
+    my @rows = self.db.get-objects(
       table => self.table-of, class => self.class-of, fields => self.fields-of,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
       order => self.order-values,
@@ -151,8 +151,8 @@ role QueryFinders is export {
     my @names = @cols.elems ?? @cols.map({ .Str }) !! self.select-values.elems ?? self.select-values !! die 'pluck requires at least one column';
     my @fields = @names.map({ Field.new(:name($_), :type('character varying')) });
     my @or-groups = self.or-groups-payload;
-    my @rows = DB.shared.exec-stmt(
-      DB.shared.build-select(
+    my @rows = self.db.exec-stmt(
+      self.db.build-select(
         table => self.table-of, :@fields, where => self.where-values, where-not => self.where-not-values, :@or-groups,
         order => self.order-values, limit => self.limit-value, offset => self.offset-value,
         distinct => self.distinct-value,
@@ -213,10 +213,10 @@ role QueryFinders is export {
     self.class-of.create(self!build-attrs-for-create($params));
   }
 
-  method find-or-create-by-or-die(Hash:D $params) {
+  method find-or-create-by-bang(Hash:D $params) {
     my $obj = self!find-with-params($params);
     return $obj if $obj.defined;
-    self.class-of.create-or-die(self!build-attrs-for-create($params));
+    self.class-of.create-bang(self!build-attrs-for-create($params));
   }
 
   method find-or-initialize-by(Hash:D $params) {

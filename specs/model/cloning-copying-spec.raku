@@ -196,12 +196,12 @@ group 'cloning and copying', {
     }
   }
 
-  context 'becomes-or-die sets the type column', {
+  context 'becomes-bang sets the type column', {
     my $truck;
 
     before-each {
       my $v = CcVehicle.create({ name => 'V2', type => 'CcVehicle' });
-      $truck = $v.becomes-or-die(CcTruck);
+      $truck = $v.becomes-bang(CcTruck);
     }
 
     it 'returns a CcTruck', {

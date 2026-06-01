@@ -23,14 +23,14 @@ unless $user.save {
 }
 ```
 
-`save-or-die` and `update-or-die` raise `X::RecordInvalid` instead. The
+`save-bang` and `update-bang` raise `X::RecordInvalid` instead. The
 exception carries the failing record and a list of human-readable messages.
 
 ```perl6
 use ORM::ActiveRecord::Errors::X;
 
 try {
-  User.create-or-die({fname => ''});
+  User.create-bang({fname => ''});
 
   CATCH {
     when X::RecordInvalid {
@@ -42,7 +42,7 @@ try {
 }
 ```
 
-`create-or-die` is a class-level convenience that builds the record, runs
+`create-bang` is a class-level convenience that builds the record, runs
 validations, and raises if it could not be saved.
 
 ## Build
@@ -114,12 +114,12 @@ my $v = Vehicle.find($id);
 my $car = $v.becomes(Car);   # same id, same attrs, Car methods now in scope
 ```
 
-`becomes-or-die(Klass)` does the same and additionally writes the new
+`becomes-bang(Klass)` does the same and additionally writes the new
 class name into the `type` column when the table has one, mirroring
 Rails' `becomes!` for STI.
 
 ```perl6
-my $car = $v.becomes-or-die(Car);
+my $car = $v.becomes-bang(Car);
 $car.read-attribute('type');   # 'Car'
 $car.save;                     # persists the type change
 ```
@@ -384,11 +384,11 @@ helpers give you finer control over which steps run.
 | `update-columns(%attrs)`           | no  | no  | no  | yes |
 | `touch(*@names)`                   | no  | no  | yes | yes |
 | `increment(name, n=1)`             | -   | -   | -   | no  |
-| `increment-or-die(name, n=1)`      | no  | yes | yes | yes |
+| `increment-bang(name, n=1)`      | no  | yes | yes | yes |
 | `decrement(name, n=1)`             | -   | -   | -   | no  |
-| `decrement-or-die(name, n=1)`      | no  | yes | yes | yes |
+| `decrement-bang(name, n=1)`      | no  | yes | yes | yes |
 | `toggle(name)`                     | -   | -   | -   | no  |
-| `toggle-or-die(name)`              | no  | yes | yes | yes |
+| `toggle-bang(name)`              | no  | yes | yes | yes |
 
 ### update-column / update-columns
 
@@ -430,16 +430,16 @@ User.where({role => 'admin'}).touch-all;
 ### increment / decrement / toggle
 
 The unsuffixed forms mutate the in-memory value and leave persistence to
-you. The `-or-die` variants persist via `update-attribute` (so callbacks and
+you. The `-bang` variants persist via `update-attribute` (so callbacks and
 timestamps run, validations do not) and raise `X::RecordInvalid` on failure.
 
 ```perl6
 $post.increment('views');           # in memory
-$post.increment-or-die('views');    # persisted, +1
+$post.increment-bang('views');    # persisted, +1
 
 $cart.decrement('item_count', 2);
 $user.toggle('active');
-$user.toggle-or-die('active');
+$user.toggle-bang('active');
 ```
 
 ## Bulk Operations
@@ -508,16 +508,16 @@ Post.where({published => True}).update-counters(views => 1);
 
 `insert` writes a single row, skipping validations and callbacks. If a
 unique constraint would be violated, the row is silently skipped (returns
-`0`). `insert-or-die` lets the database error propagate.
+`0`). `insert-bang` lets the database error propagate.
 
 ```perl6
 my $id = User.insert({fname => 'Greg', lname => 'Donald'});
 
-User.insert-or-die({fname => 'Greg'});      # raises on duplicate
+User.insert-bang({fname => 'Greg'});      # raises on duplicate
 ```
 
 `insert-all(@rows)` writes many rows in a single statement. It returns
-the list of inserted ids. The `-or-die` variant raises on any conflict.
+the list of inserted ids. The `-bang` variant raises on any conflict.
 
 ```perl6
 my @ids = User.insert-all([

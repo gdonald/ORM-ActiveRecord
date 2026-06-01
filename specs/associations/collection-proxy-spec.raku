@@ -41,16 +41,16 @@ describe 'collection proxy', {
     }
   }
 
-  context 'create-or-die', {
+  context 'create-bang', {
     it 'returns a saved record', {
       my $alice = User.create({fname => 'alice'});
-      my $forced = $alice.extended-articles.create-or-die({title => 'forced', body => 'b'});
+      my $forced = $alice.extended-articles.create-bang({title => 'forced', body => 'b'});
       expect($forced.id).to.be-greater-than(0);
     }
 
     it 'sets the foreign key', {
       my $alice = User.create({fname => 'alice'});
-      my $forced = $alice.extended-articles.create-or-die({title => 'forced', body => 'b'});
+      my $forced = $alice.extended-articles.create-bang({title => 'forced', body => 'b'});
       expect($forced.attrs<author_id>).to.eq($alice.id);
     }
   }

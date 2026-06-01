@@ -3,6 +3,7 @@ use v6.d;
 use lib 'lib';
 use Test;
 use ORM::ActiveRecord::Support::DatabaseUrl;
+use ORM::ActiveRecord::Support::WorkerDb;
 use ORM::ActiveRecord::Support::TestSkip;
 use ORM::ActiveRecord::Adapter::MySql;
 use ORM::ActiveRecord::DB;
@@ -18,6 +19,11 @@ my $port     = (%c<port>    // 3306).Int;
 my $user     = %c<user>     // 'root';
 my $password = %c<password> // '';
 my $database = %c<name>     // 'ar_test';
+
+# Under behave --parallel, connect to this worker's own database so concurrent
+# adapter specs don't collide on a shared base database's `widgets` table.
+$database = apply-worker-suffix({ adapter => 'mysql', name => $database }, worker-index())<name>
+  if per-worker-dbs-active();
 
 my $mysql = try MySqlAdapter.new(:$host, :$port, :$user, :$password, :$database);
 

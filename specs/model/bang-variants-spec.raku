@@ -6,7 +6,7 @@ use Models::User;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-describe '-or-die variants', {
+describe '-bang variants', {
   before-each {
     User.destroy-all;
   }
@@ -15,11 +15,11 @@ describe '-or-die variants', {
     User.destroy-all;
   }
 
-  context 'create-or-die on the happy path', {
+  context 'create-bang on the happy path', {
     my $alice;
 
     before-each {
-      $alice = User.create-or-die({fname => 'Alice'});
+      $alice = User.create-bang({fname => 'Alice'});
     }
 
     it 'returns a persisted record', {
@@ -31,16 +31,16 @@ describe '-or-die variants', {
     }
   }
 
-  context 'create-or-die on the failure path', {
+  context 'create-bang on the failure path', {
     it 'raises X::RecordInvalid', {
-      expect({ User.create-or-die({fname => ''}) }).to.raise-error(X::RecordInvalid);
+      expect({ User.create-bang({fname => ''}) }).to.raise-error(X::RecordInvalid);
     }
 
     it 'carries at least one message on the exception', {
       my $caught;
 
       try {
-        User.create-or-die({fname => ''});
+        User.create-bang({fname => ''});
         CATCH { when X::RecordInvalid() { $caught = $_ } }
       }
 
@@ -51,7 +51,7 @@ describe '-or-die variants', {
       my $caught;
 
       try {
-        User.create-or-die({fname => ''});
+        User.create-bang({fname => ''});
         CATCH { when X::RecordInvalid() { $caught = $_ } }
       }
 
@@ -59,26 +59,26 @@ describe '-or-die variants', {
     }
   }
 
-  context 'save-or-die on the happy path', {
+  context 'save-bang on the happy path', {
     it 'returns self', {
-      my $alice = User.create-or-die({fname => 'Alice'});
+      my $alice = User.create-bang({fname => 'Alice'});
 
-      expect($alice.save-or-die).to.eq($alice);
+      expect($alice.save-bang).to.eq($alice);
     }
   }
 
-  context 'update-or-die on the failure path', {
+  context 'update-bang on the failure path', {
     it 'raises X::RecordInvalid', {
-      my $alice = User.create-or-die({fname => 'Alice'});
+      my $alice = User.create-bang({fname => 'Alice'});
 
-      expect({ $alice.update-or-die({fname => ''}) }).to.raise-error(X::RecordInvalid);
+      expect({ $alice.update-bang({fname => ''}) }).to.raise-error(X::RecordInvalid);
     }
   }
 
-  context 'update-or-die on the happy path', {
+  context 'update-bang on the happy path', {
     it 'persists the change', {
       my $bob = User.create({fname => 'Bob'});
-      $bob.update-or-die({fname => 'Robert'});
+      $bob.update-bang({fname => 'Robert'});
 
       expect(User.where({fname => 'Robert'}).count).to.eq(1);
     }
@@ -86,11 +86,11 @@ describe '-or-die variants', {
 
   context 'failure paths', {
     it 'leak no rows', {
-      my $alice = User.create-or-die({fname => 'Alice'});
-      try { User.create-or-die({fname => ''}) };
+      my $alice = User.create-bang({fname => 'Alice'});
+      try { User.create-bang({fname => ''}) };
 
       my $bob = User.create({fname => 'Bob'});
-      try { $bob.update-or-die({fname => ''}) };
+      try { $bob.update-bang({fname => ''}) };
 
       expect(User.count).to.eq(2);
     }

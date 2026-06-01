@@ -223,23 +223,23 @@ group 'targeted writes', {
     }
   }
 
-  context 'increment-or-die / decrement-or-die persist', {
-    it 'increment-or-die persists +1', {
+  context 'increment-bang / decrement-bang persist', {
+    it 'increment-bang persists +1', {
       my $w = TwWidget.create({ name => 'F', qty => 0 });
-      $w.increment-or-die('qty');
+      $w.increment-bang('qty');
 
       expect(TwWidget.find($w.id).qty).to.eq(1);
     }
 
-    it 'decrement-or-die persists -1', {
+    it 'decrement-bang persists -1', {
       my $w = TwWidget.create({ name => 'F2', qty => 1 });
-      $w.decrement-or-die('qty', 1);
+      $w.decrement-bang('qty', 1);
 
       expect(TwWidget.find($w.id).qty).to.eq(0);
     }
   }
 
-  context 'toggle / toggle-or-die', {
+  context 'toggle / toggle-bang', {
     my $w;
 
     before-each {
@@ -258,9 +258,9 @@ group 'targeted writes', {
       expect($w.is-changed).to.be-truthy;
     }
 
-    it 'toggle-or-die persists the flip', {
+    it 'toggle-bang persists the flip', {
       $w.toggle('active');
-      $w.toggle-or-die('active');
+      $w.toggle-bang('active');
 
       expect(TwWidget.find($w.id).active).to.eq(False);
     }

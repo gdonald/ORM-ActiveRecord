@@ -6,6 +6,7 @@ use lib 'lib';
 use JSON::Tiny;
 use DBIish;
 use ORM::ActiveRecord::Support::DatabaseUrl;
+use ORM::ActiveRecord::DB;
 
 $*OUT.out-buffer = False;
 
@@ -35,20 +36,60 @@ sub format-ts(--> Str) {
 
 sub pg-url-from-config(--> Str) {
   return Str unless 'config/application.json'.IO.e;
+  
   my $json = try { from-json('config/application.json'.IO.slurp) };
   return Str without $json;
-  my %db = $json<db> // %();
+  
+  # per-env shape (test.primary), with legacy flat `db` as fallback
+  my %db = ($json<test><primary> // $json<db> // %()).hash;
   return Str unless ((%db<adapter> // 'pg').lc) ~~ /^ p [g | ostgres ] /;
+  
   my $u = %db<user>;
   my $p = %db<password>;
   my $h = %db<host> // 'localhost';
   my $port = %db<port>;
   my $n = %db<name>;
   return Str without $n;
+  
   my $auth = $u ?? ($u ~ ($p ?? ":$p" !! '') ~ '@') !! '';
   my $hp = $port ?? "$h:$port" !! $h;
   my $q  = %db<schema> ?? "?schema={%db<schema>}" !! '';
   "postgres://$auth$hp/$n$q";
+}
+
+sub config-primary(--> Hash) {
+  return %() unless 'config/application.json'.IO.e;
+  my $json = try { from-json('config/application.json'.IO.slurp) };
+  return %() without $json;
+  ($json<test><primary> // $json<db> // %()).hash;
+}
+
+# The adapter named in config (test env), normalized to a %ADAPTERS key, or Str
+# if config is absent / specifies none.
+sub config-adapter(--> Str) {
+  given (config-primary()<adapter> // '').lc {
+    when 'pg' | 'postgres' | 'postgresql' { 'postgres' }
+    when 'mysql' | 'mysql2' | 'mariadb'   { 'mysql' }
+    when 'sqlite' | 'sqlite3'             { 'sqlite' }
+    default                                { Str }
+  }
+}
+
+sub mysql-url-from-config(--> Str) {
+  my %db = config-primary();
+  return Str unless ((%db<adapter> // '').lc) ~~ /^ m [ysql | ariadb] /;
+
+  my $n = %db<name>;
+  return Str without $n;
+
+  my $u = %db<user>;
+  my $p = %db<password>;
+  my $h = %db<host> // '127.0.0.1';
+  my $port = %db<port>;
+
+  my $auth = $u ?? ($u ~ ($p ?? ":$p" !! '') ~ '@') !! '';
+  my $hp = $port ?? "$h:$port" !! $h;
+  "mysql://$auth$hp/$n";
 }
 
 sub try-connect(Str:D $kind, *%args --> Capture) {
@@ -71,22 +112,22 @@ sub classify(Str:D $err --> Str) {
 }
 
 my %ADAPTERS =
-  postgres => {
-    dbiish          => 'Pg',
-    env             => 'AR_PG_URL',
-    default-url     => 'postgres://postgres@localhost:5432/ar_test',
-    defaults        => { host => 'localhost', port => 5432, user => 'postgres', name => 'ar_test' },
-    url-from-config => &pg-url-from-config,
-    connect-args    => -> %c {
-      host     => %c<host>,
-      port     => %c<port>.Int,
-      user     => %c<user>,
-      password => %c<password> // '',
-      database => %c<name>,
-    },
-    messages => {
-      driver => -> %, $err {
-        qq:to/MSG/.chomp;
+postgres => {
+  dbiish          => 'Pg',
+  env             => 'AR_PG_URL',
+  default-url     => 'postgres://postgres@localhost:5432/ar_test',
+  defaults        => { host => 'localhost', port => 5432, user => 'postgres', name => 'ar_test' },
+  url-from-config => &pg-url-from-config,
+  connect-args    => -> %c {
+    host     => %c<host>,
+    port     => %c<port>.Int,
+    user     => %c<user>,
+    password => %c<password> // '',
+    database => %c<name>,
+  },
+  messages => {
+    driver => -> %, $err {
+      qq:to/MSG/.chomp;
         PostgreSQL driver not loadable.
           error: $err
           fix (Debian/Ubuntu):
@@ -99,10 +140,10 @@ my %ADAPTERS =
             export PKG_CONFIG_PATH="\$(brew --prefix libpq)/lib/pkgconfig:\$PKG_CONFIG_PATH"
             zef install --/test --force-install DBIish
         MSG
-      },
-      refused => -> %c, $err {
-        my ($host, $port, $user, $name) = %c<host port user name>;
-        qq:to/MSG/.chomp;
+    },
+    refused => -> %c, $err {
+      my ($host, $port, $user, $name) = %c<host port user name>;
+      qq:to/MSG/.chomp;
         PostgreSQL not reachable at $host:$port.
           error: $err
           fix:   docker run -d --name ar-pg -p 5432:5432 \\
@@ -111,50 +152,51 @@ my %ADAPTERS =
                  or set AR_PG_URL='postgres://USER:PASS\@HOST:PORT/DB'
                  or edit config/application.json (db.adapter=pg)
         MSG
-      },
-      auth => -> %c, $err {
-        my ($host, $port, $user, $name) = %c<host port user name>;
-        qq:to/MSG/.chomp;
+    },
+    auth => -> %c, $err {
+      my ($host, $port, $user, $name) = %c<host port user name>;
+      qq:to/MSG/.chomp;
         PostgreSQL auth failed for user '$user' at $host:$port.
           error: $err
           fix:   set AR_PG_URL='postgres://USER:PASS\@$host:$port/$name'
                  or update user/password in config/application.json
         MSG
-      },
-      database => -> %c, $err {
-        my ($host, $port, $user, $name) = %c<host port user name>;
-        qq:to/MSG/.chomp;
+    },
+    database => -> %c, $err {
+      my ($host, $port, $user, $name) = %c<host port user name>;
+      qq:to/MSG/.chomp;
         PostgreSQL database '$name' does not exist on $host:$port.
           error: $err
           fix:   createdb -h $host -p $port -U $user $name
                  or set AR_PG_URL to point at an existing db
         MSG
-      },
-      default => -> %, $err {
-        qq:to/MSG/.chomp;
+    },
+    default => -> %, $err {
+      qq:to/MSG/.chomp;
         PostgreSQL probe failed.
           error: $err
           fix:   set AR_PG_URL='postgres://USER:PASS\@HOST:PORT/DB'
                  or edit config/application.json
         MSG
-      },
     },
   },
-  mysql => {
-    dbiish       => 'mysql',
-    env          => 'AR_MYSQL_URL',
-    default-url  => 'mysql://root@127.0.0.1:3306/ar_test',
-    defaults     => { host => '127.0.0.1', port => 3306, user => 'root', name => 'ar_test' },
-    connect-args => -> %c {
-      host     => %c<host>,
-      port     => %c<port>.Int,
-      user     => %c<user>,
-      password => %c<password> // '',
-      database => %c<name>,
-    },
-    messages => {
-      driver => -> %, $err {
-        qq:to/MSG/.chomp;
+},
+mysql => {
+  dbiish          => 'mysql',
+  env             => 'AR_MYSQL_URL',
+  default-url     => 'mysql://root@127.0.0.1:3306/ar_test',
+  defaults        => { host => '127.0.0.1', port => 3306, user => 'root', name => 'ar_test' },
+  url-from-config => &mysql-url-from-config,
+  connect-args => -> %c {
+    host     => %c<host>,
+    port     => %c<port>.Int,
+    user     => %c<user>,
+    password => %c<password> // '',
+    database => %c<name>,
+  },
+  messages => {
+    driver => -> %, $err {
+      qq:to/MSG/.chomp;
         MySQL driver not loadable.
           error: $err
           cause: DBDish::mysql searches libmysqlclient versions 16..21 only,
@@ -173,52 +215,52 @@ my %ADAPTERS =
           Then re-run ./test.raku — it auto-detects DBIISH_MYSQL_LIB on next
           invocation if mysql-client is in a standard Homebrew or apt path.
         MSG
-      },
-      refused => -> %c, $err {
-        my ($host, $port, $name) = %c<host port name>;
-        qq:to/MSG/.chomp;
+    },
+    refused => -> %c, $err {
+      my ($host, $port, $name) = %c<host port name>;
+      qq:to/MSG/.chomp;
         MySQL not reachable at $host:$port.
           error: $err
           fix:   docker run -d --name ar-mysql -p 3306:3306 \\
                     -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=$name mysql:8.4
                  or set AR_MYSQL_URL='mysql://USER:PASS\@HOST:PORT/DB'
         MSG
-      },
-      auth => -> %c, $err {
-        my ($host, $port, $user, $name) = %c<host port user name>;
-        qq:to/MSG/.chomp;
+    },
+    auth => -> %c, $err {
+      my ($host, $port, $user, $name) = %c<host port user name>;
+      qq:to/MSG/.chomp;
         MySQL auth failed for user '$user' at $host:$port.
           error: $err
           fix:   set AR_MYSQL_URL='mysql://USER:PASS\@$host:$port/$name'
         MSG
-      },
-      database => -> %c, $err {
-        my ($host, $port, $user, $name) = %c<host port user name>;
-        qq:to/MSG/.chomp;
+    },
+    database => -> %c, $err {
+      my ($host, $port, $user, $name) = %c<host port user name>;
+      qq:to/MSG/.chomp;
         MySQL database '$name' does not exist on $host:$port.
           error: $err
           fix:   mysql -h $host -P $port -u $user -p -e 'CREATE DATABASE $name'
                  or set AR_MYSQL_URL to point at an existing db
         MSG
-      },
-      default => -> %, $err {
-        qq:to/MSG/.chomp;
+    },
+    default => -> %, $err {
+      qq:to/MSG/.chomp;
         MySQL probe failed.
           error: $err
           fix:   set AR_MYSQL_URL='mysql://USER:PASS\@HOST:PORT/DB'
         MSG
-      },
     },
   },
-  sqlite => {
-    dbiish       => 'SQLite',
-    env          => 'AR_SQLITE_URL',
-    default-url  => 'sqlite:db/test.sqlite3',
-    defaults     => {},
-    connect-args => -> % { database => ':memory:' },
-    messages => {
-      driver => -> %, $err {
-        qq:to/MSG/.chomp;
+},
+sqlite => {
+  dbiish       => 'SQLite',
+  env          => 'AR_SQLITE_URL',
+  default-url  => 'sqlite:db/test.sqlite3',
+  defaults     => {},
+  connect-args => -> % { database => ':memory:' },
+  messages => {
+    driver => -> %, $err {
+      qq:to/MSG/.chomp;
         SQLite driver not loadable.
           error: $err
           fix (Debian/Ubuntu):
@@ -228,17 +270,17 @@ my %ADAPTERS =
           fix (macOS): libsqlite3 is preinstalled; just rebuild:
             zef install --/test --force-install DBIish
         MSG
-      },
-      default => -> %, $err {
-        qq:to/MSG/.chomp;
+    },
+    default => -> %, $err {
+      qq:to/MSG/.chomp;
         SQLite probe failed.
           error: $err
           fix:   ensure libsqlite3 is on the system; reinstall with
                  `zef install --/test --force-install DBIish`
         MSG
-      },
     },
-  };
+  },
+};
 
 sub skip-message(Str:D $name, %c, Str:D $err --> Str) {
   my %a = %ADAPTERS{$name};
@@ -257,36 +299,69 @@ sub probe(Str:D $name, Str:D $url --> Capture) {
   \($ok, $err, $ok ?? '' !! skip-message($name, %c, $err));
 }
 
-sub run-once(Str:D :$name, Str:D :$url --> Int) {
+sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
+             Bool :$run-prove6 = True, Bool :$run-behave = True --> Int) {
   say '';
-  say "==> [{format-ts()}] adapter=$name";
+  say "==> [{format-ts()}] adapter=$name" ~ ($parallel > 1 ?? " parallel=$parallel" !! '');
   %*ENV<DATABASE_URL> = $url;
+  %*ENV<AR_ENV> = 'test';
 
   my $migrate = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-                    'raku', '-Ilib', 'bin/ar';
+  'raku', '-Ilib', 'bin/ar';
   return $migrate.exitcode unless $migrate.exitcode == 0;
 
-  my $prove = run 'prove6', '-Ilib', 't';
-  return $prove.exitcode unless $prove.exitcode == 0;
+  if $run-prove6 {
+    my $prove = run 'prove6', '-Ilib', 't';
+    return $prove.exitcode unless $prove.exitcode == 0;
+  }
 
-  # behave runs every spec file in its own process (one EVAL'd compunit per
-  # invocation), matching prove6's per-test isolation model.
   my @specs = find-spec-files('specs'.IO).map(*.absolute).sort;
-
   my $any-behave-fail = 0;
-  my $cwd = $*CWD.Str;
-  for @specs -> $f {
-    my $rel = $f.starts-with($cwd ~ '/') ?? $f.substr($cwd.chars + 1) !! $f;
-    say $rel;
-    my $proc = run 'behave', $f;
+
+  if $run-behave && $parallel > 1 {
+    # Create + migrate the N worker databases (count from config), then run
+    # behave in its default isolated mode — one process per spec file (so
+    # top-level class/role symbols can't collide across files) with a recycled
+    # 0..N-1 slot. behave sets BEHAVE_WORKER_INDEX/BEHAVE_WORKER_COUNT, which is
+    # all the ORM needs to give each concurrent file its own suffixed DB.
+    my $created = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+    'raku', '-Ilib', 'bin/ar', 'createdb', '--parallel';
+    return $created.exitcode unless $created.exitcode == 0;
+
+    my $migrated = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+    'raku', '-Ilib', 'bin/ar', 'migrate', '--parallel';
+    return $migrated.exitcode unless $migrated.exitcode == 0;
+
+    # Pre-flight: confirm every expected worker database exists and is migrated
+    # before launching any specs (one clean failure beats per-worker errors).
+    my $checked = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+    'raku', '-Ilib', 'bin/ar', 'check', '--parallel';
+    return $checked.exitcode unless $checked.exitcode == 0;
+
+    my $proc = run 'behave', "--parallel=$parallel", |@specs;
     $any-behave-fail = $proc.exitcode if $proc.exitcode != 0;
+  } elsif $run-behave {
+    # Pre-flight the single configured database before running any specs.
+    my $checked = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+    'raku', '-Ilib', 'bin/ar', 'check';
+    return $checked.exitcode unless $checked.exitcode == 0;
+
+    # behave runs every spec file in its own process (one EVAL'd compunit per
+    # invocation), matching prove6's per-test isolation model.
+    my $cwd = $*CWD.Str;
+    for @specs -> $f {
+      my $rel = $f.starts-with($cwd ~ '/') ?? $f.substr($cwd.chars + 1) !! $f;
+      say $rel;
+      my $proc = run 'behave', $f;
+      $any-behave-fail = $proc.exitcode if $proc.exitcode != 0;
+    }
   }
 
   # Some specs leave DB.shared in non-canonical state (e.g. reset-spec wipes
   # all tables; round-trip-spec re-migrates a swapped sqlite). Restore the
   # canonical schema so the next test.raku run starts clean.
   run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-      'raku', '-Ilib', 'bin/ar';
+  'raku', '-Ilib', 'bin/ar';
 
   $any-behave-fail;
 }
@@ -304,6 +379,11 @@ sub find-spec-files(IO::Path $dir) {
   @out;
 }
 
+my Bool $want-prove6 = False;
+my Bool $want-behave = False;
+my Int  $parallel     = 1;
+my Int  $parallel-override;
+
 sub parse-adapter-args(--> List) {
   my %alias = pg => 'postgres', postgres => 'postgres', postgresql => 'postgres',
   mysql => 'mysql',
@@ -311,8 +391,16 @@ sub parse-adapter-args(--> List) {
   my @args = @*ARGS;
   if @args.grep({ $_ eq '-h' || $_ eq '--help' }) {
     say q:to/USAGE/;
-    Usage: ./test.raku [--adapter=NAME[,NAME...]]
-      NAME: pg|postgres|mysql|sqlite (default: all configured)
+    Usage: ./test.raku [--adapter=NAME[,NAME...]] [--prove6] [--behave]
+      NAME:       pg|postgres|mysql|sqlite (default: the configured adapter)
+      --prove6:   run only the prove6 t/ tests
+      --behave:   run only the behave specs
+                  (give neither, or both, to run both)
+
+    Parallelism defaults to config: the test env's `parallel` key (> 1 runs the
+    behave specs across that many worker databases; 1 or absent runs serially).
+      --parallel=N: override the worker count (e.g. --parallel=2)
+      --parallel:   no effect (the config count is used)
     USAGE
     exit 0;
   }
@@ -325,8 +413,16 @@ sub parse-adapter-args(--> List) {
     } elsif $a eq '--adapter' {
       die "--adapter requires a value" unless $i + 1 < @args.elems;
       @picked.append: @args[++$i];
+    } elsif $a ~~ /^ '--parallel=' (\d+) $/ {
+      $parallel-override = +$0;
+    } elsif $a eq '--parallel' {
+      # Bare flag: no effect; the config count is used.
+    } elsif $a eq '--prove6' {
+      $want-prove6 = True;
+    } elsif $a eq '--behave' {
+      $want-behave = True;
     } else {
-      die "unknown arg: $a (use --adapter=pg|mysql|sqlite)";
+      die "unknown arg: $a (use --adapter=pg|mysql|sqlite, --parallel, --prove6, or --behave)";
     }
     $i++;
   }
@@ -336,6 +432,20 @@ sub parse-adapter-args(--> List) {
 }
 
 my @wanted = parse-adapter-args();
+
+# With no explicit --adapter and no DATABASE_URL, run only the adapter
+# configured in application.json (test env) — don't probe the other two.
+if !@wanted && !%*ENV<DATABASE_URL> {
+  with config-adapter() -> $a { @wanted = ($a,); }
+}
+
+# Worker count: --parallel=N overrides, else the test env's `parallel` key
+# from config. > 1 runs the behave specs in parallel, 1 (or absent) serially.
+$parallel = $parallel-override // DB.env-parallel(env => 'test');
+
+# --prove6 / --behave select which suites run; neither given means run both.
+my Bool $run-prove6 = $want-prove6 || !($want-prove6 || $want-behave);
+my Bool $run-behave = $want-behave || !($want-prove6 || $want-behave);
 
 my @runs;
 my Bool $skip-probe = False;
@@ -401,7 +511,7 @@ for @runs -> %r {
   }
 
   my $start = now;
-  my $rc = run-once(:$name, :$url);
+  my $rc = run-once(:$name, :$url, :$parallel, :$run-prove6, :$run-behave);
   %durations{$name} = (now - $start).Num;
   $any-fail = True if $rc != 0;
 }

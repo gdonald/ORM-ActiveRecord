@@ -12,41 +12,33 @@ describe 'has-one :through', {
   before-each { clean-shared-tables }
   after-each  { clean-shared-tables }
 
+  let(:user, { User.create({fname => 'Greg', lname => 'Donald'}) });
+
   context 'before the join record exists', {
-    it 'saves the user', {
-      my $user = User.create({fname => 'Greg', lname => 'Donald'});
-      expect($user.is-valid).to.be-truthy;
+    it 'has a valid user', {
+      expect(user.is-valid).to.be-truthy;
     }
 
-    it 'returns Nil', {
-      my $user = User.create({fname => 'Greg', lname => 'Donald'});
-      expect($user.account).to.be-nil;
+    it 'has no account', {
+      expect(user.account).to.be-nil;
     }
   }
 
   context 'with a join profile that links an account', {
-    it 'saves the profile', {
-      my $user = User.create({fname => 'Greg', lname => 'Donald'});
-      my $acct = Account.create({name => 'gdonald'});
-      my $prof = Profile.create({user => $user, account => $acct, bio => 'Raku enthusiast'});
+    let(:acct, { Account.create({name => 'gdonald'}) });
 
-      expect($prof.is-valid).to.be-truthy;
+    let-bang(:prof, { Profile.create({user => user, account => acct, bio => 'Raku enthusiast'}) });
+
+    it 'saves the profile', {
+      expect(prof.is-valid).to.be-truthy;
     }
 
     it 'returns the target record', {
-      my $user = User.create({fname => 'Greg', lname => 'Donald'});
-      my $acct = Account.create({name => 'gdonald'});
-      Profile.create({user => $user, account => $acct, bio => 'Raku enthusiast'});
-
-      expect($user.account.defined).to.be-truthy;
+      expect(user.account.defined).to.be-truthy;
     }
 
     it 'returns the correct record', {
-      my $user = User.create({fname => 'Greg', lname => 'Donald'});
-      my $acct = Account.create({name => 'gdonald'});
-      Profile.create({user => $user, account => $acct, bio => 'Raku enthusiast'});
-
-      expect($user.account.id).to.eq($acct.id);
+      expect(user.account.id).to.eq(acct.id);
     }
   }
 }

@@ -1,0 +1,60 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Schema::DbReady;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::Schema::Migrate;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+is database-status({ adapter => 'sqlite', name => ':memory:' }), 'ready',
+  'database-status reports sqlite :memory: as ready';
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  skip 'no sqlite driver available', 3;
+  done-testing;
+  exit 0;
+}
+
+my @cleanup;
+
+{
+  my $path = $*TMPDIR.add("dbr-missing-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+  is database-status({ adapter => 'sqlite', name => $path }), 'missing',
+    'database-status reports a non-existent file as missing';
+}
+
+{
+  my $path = $*TMPDIR.add("dbr-pending-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+  @cleanup.push: $path;
+  $path.IO.spurt('');
+  is database-status({ adapter => 'sqlite', name => $path }), 'pending',
+    'database-status reports an empty file as pending';
+}
+
+{
+  my $path = $*TMPDIR.add("dbr-ready-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+  @cleanup.push: $path;
+
+  my $adapter = SqliteAdapter.new(database => $path);
+  DB.set-shared(DB.new(adapter => $adapter));
+  LEAVE { DB.set-shared(Nil) }
+  Migrate.new(:args([])).run;
+
+  is database-status({ adapter => 'sqlite', name => $path }), 'ready',
+    'database-status reports a fully migrated database as ready';
+}
+
+.IO.unlink for @cleanup.grep(*.IO.e);
+
+done-testing;

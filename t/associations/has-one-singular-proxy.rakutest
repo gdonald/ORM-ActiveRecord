@@ -48,22 +48,22 @@ User.destroy-all;
 Profile.destroy-all;
 User.destroy-all;
 
-# create-<assoc>-or-die success path
+# create-<assoc>-bang success path
 {
   my $user = User.create({fname => 'Greg', lname => 'Donald'});
-  my $forced = $user.create-profile-or-die({bio => 'forced'});
-  ok $forced.id > 0, 'create-<assoc>-or-die returns a saved record on success';
-  is $forced.attrs<user_id>, $user.id, 'create-<assoc>-or-die sets the foreign key';
+  my $forced = $user.create-profile-bang({bio => 'forced'});
+  ok $forced.id > 0, 'create-<assoc>-bang returns a saved record on success';
+  is $forced.attrs<user_id>, $user.id, 'create-<assoc>-bang sets the foreign key';
 }
 
 Profile.destroy-all;
 User.destroy-all;
 
-# create-<assoc>-or-die failure path
+# create-<assoc>-bang failure path
 {
   my $user = User.create({fname => 'Greg', lname => 'Donald'});
-  dies-ok { $user.create-profile-or-die({}) },
-    'create-<assoc>-or-die raises when the target is invalid';
+  dies-ok { $user.create-profile-bang({}) },
+    'create-<assoc>-bang raises when the target is invalid';
 }
 
 Profile.destroy-all;

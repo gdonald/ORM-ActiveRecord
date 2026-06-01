@@ -1,0 +1,44 @@
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'no sqlite driver available';
+  exit 0;
+}
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migrate;
+
+sub migrate-fresh-db(--> List) {
+  my $db = DB.new(adapter => SqliteAdapter.new(database => ':memory:'));
+  DB.set-shared($db);
+
+  Migrate.new(:args([])).run;
+
+  $db.get-table-names.list.grep({ $_ ne 'migrations' }).sort.List;
+}
+
+my $prior-shared = DB.shared;
+
+my @first  = migrate-fresh-db();
+my @second = migrate-fresh-db();
+
+DB.set-shared($prior-shared) if $prior-shared.defined;
+
+ok @first.elems > 0, 'first migrate pass creates tables';
+is @second.join(','), @first.join(','),
+  'second migrate pass in same process creates the same tables';
+
+done-testing;

@@ -13,10 +13,10 @@ role ModelRawSql is export {
   }
 
   method !do-find-by-sql(@parts) {
-    my $stmt = DB.shared.sanitize-sql(@parts);
-    my @rows = DB.shared.exec-stmt-hash($stmt);
+    my $stmt = self.db.sanitize-sql(@parts);
+    my @rows = self.db.exec-stmt-hash($stmt);
     my $table = Utils.table-name(self);
-    my @fields = DB.shared.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
+    my @fields = self.db.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
     my %field-types = @fields.map({ .name => .type });
 
     my @objects;
@@ -24,7 +24,7 @@ role ModelRawSql is export {
       my %attrs;
       for %row.kv -> $k, $v {
         if %field-types{$k}:exists {
-          %attrs{$k} = DB.shared.coerce-read($v, type => %field-types{$k});
+          %attrs{$k} = self.db.coerce-read($v, type => %field-types{$k});
         } else {
           %attrs{$k} = $v;
         }
@@ -45,7 +45,7 @@ role ModelRawSql is export {
   }
 
   method !do-select-all(@parts) {
-    my $stmt = DB.shared.sanitize-sql(@parts);
-    DB.shared.exec-stmt-hash($stmt);
+    my $stmt = self.db.sanitize-sql(@parts);
+    self.db.exec-stmt-hash($stmt);
   }
 }

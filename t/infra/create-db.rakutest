@@ -1,0 +1,149 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use JSON::Tiny;
+use ORM::ActiveRecord::Support::WorkerDb;
+use ORM::ActiveRecord::Schema::WorkerDbs;
+use ORM::ActiveRecord::DB;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+sub table-names(Str:D $path) {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database($path));
+  LEAVE { $h.dispose if $h.defined }
+  $h.execute("SELECT name FROM sqlite_master WHERE type = 'table'").allrows.map(*[0]).Set;
+}
+
+my @cleanup;
+
+# connection-names enumeration (no DB needed)
+{
+  my $multi = $*TMPDIR.add("cdb-multi-{$*PID}-{(now * 1e6).Int}.json").Str;
+  $multi.IO.spurt: to-json({
+    test => {
+      primary   => { adapter => 'sqlite', name => 'db/p.sqlite3' },
+      analytics => { adapter => 'sqlite', name => 'db/a.sqlite3' },
+    },
+  });
+  @cleanup.push: $multi;
+  is-deeply DB.connection-names(path => $multi, env => 'test'), <analytics primary>,
+    'connection-names lists every connection in a multi-db config';
+
+  my $single = $*TMPDIR.add("cdb-single-{$*PID}-{(now * 1e6).Int}.json").Str;
+  $single.IO.spurt: to-json({ test => { primary => { adapter => 'sqlite', name => 'db/p.sqlite3' } } });
+  @cleanup.push: $single;
+  is-deeply DB.connection-names(path => $single, env => 'test'), ('primary',),
+    'connection-names returns just primary for a single-db config';
+
+  my $legacy = $*TMPDIR.add("cdb-legacy-{$*PID}-{(now * 1e6).Int}.json").Str;
+  $legacy.IO.spurt: to-json({ db => { adapter => 'sqlite', name => 'db/p.sqlite3' } });
+  @cleanup.push: $legacy;
+  is-deeply DB.connection-names(path => $legacy, env => 'test'), ('primary',),
+    'connection-names returns just primary for a legacy flat config';
+
+  my $par = $*TMPDIR.add("cdb-par-key-{$*PID}-{(now * 1e6).Int}.json").Str;
+  $par.IO.spurt: to-json({ test => { parallel => 8, primary => { adapter => 'sqlite', name => 'db/p.sqlite3' } } });
+  @cleanup.push: $par;
+  is-deeply DB.connection-names(path => $par, env => 'test'), ('primary',),
+    'connection-names excludes the parallel key';
+  is DB.env-parallel(path => $par, env => 'test'), 8,
+    'env-parallel reads the test env parallel count';
+  is DB.env-parallel(path => $par, env => 'development'), 1,
+    'env-parallel defaults to 1 without a parallel key';
+}
+
+unless $has-sqlite {
+  .IO.unlink for @cleanup.grep(*.IO.e);
+  skip 'no sqlite driver available', 6;
+  done-testing;
+  exit 0;
+}
+
+{
+  my $p = $*TMPDIR.add("cdb-one-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+  @cleanup.push: $p;
+  temp %*ENV<DATABASE_URL> = "sqlite:$p";
+  create-test-databases();
+  migrate-test-databases();
+  ok table-names($p){'users'}, 'create-db creates and migrates the single database';
+}
+
+{
+  my $base = $*TMPDIR.add("cdb-par-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+  my @suffixed = (^2).map: { apply-worker-suffix({ adapter => 'sqlite', name => $base }, $_)<name> };
+  @cleanup.append: @suffixed;
+
+  my $cfg = $*TMPDIR.add("cdb-par-cfg-{$*PID}-{(now * 1e6).Int}.json").Str;
+  @cleanup.push: $cfg;
+  $cfg.IO.spurt: to-json({ test => { parallel => 2, primary => { adapter => 'sqlite', name => $base } } });
+
+  temp %*ENV<DATABASE_URL> = "sqlite:$base";
+  create-test-databases(:parallel, path => $cfg, env => 'test');
+  migrate-test-databases(:parallel, path => $cfg, env => 'test');
+  ok table-names(@suffixed[0]){'users'}, 'createdb --parallel creates worker copy 0';
+  ok table-names(@suffixed[1]){'users'}, 'createdb --parallel creates worker copy 1';
+}
+
+{
+  my $base = $*TMPDIR.add("cdb-defenv-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+  my @suffixed = (^2).map: { apply-worker-suffix({ adapter => 'sqlite', name => $base }, $_)<name> };
+  @cleanup.append: @suffixed;
+
+  # development has no parallel (1); only test has parallel => 2. With no
+  # explicit env, :parallel must resolve to test — creating worker copy _1,
+  # which a development resolution (count 1) would never produce.
+  my $cfg = $*TMPDIR.add("cdb-defenv-cfg-{$*PID}-{(now * 1e6).Int}.json").Str;
+  @cleanup.push: $cfg;
+  $cfg.IO.spurt: to-json({
+    development => { primary => { adapter => 'sqlite', name => $base } },
+    test        => { parallel => 2, primary => { adapter => 'sqlite', name => $base } },
+  });
+
+  temp %*ENV<DATABASE_URL>;
+  %*ENV<DATABASE_URL>:delete;
+  create-test-databases(:parallel, path => $cfg);
+  ok @suffixed[1].IO.e,
+    'createdb --parallel defaults to the test environment';
+}
+
+{
+  my $base = $*TMPDIR.add("chk-miss-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+  my $cfg  = $*TMPDIR.add("chk-miss-cfg-{$*PID}-{(now * 1e6).Int}.json").Str;
+  @cleanup.push: $cfg;
+  $cfg.IO.spurt: to-json({
+    test => { parallel => 2, primary => { adapter => 'sqlite', name => $base } },
+  });
+
+  temp %*ENV<DATABASE_URL>;
+  %*ENV<DATABASE_URL>:delete;
+  is check-test-databases(:parallel, path => $cfg, env => 'test').elems, 2,
+    'check-test-databases reports one problem per missing worker database';
+}
+
+{
+  my $base = $*TMPDIR.add("chk-ok-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+  @cleanup.append: (^2).map: { apply-worker-suffix({ adapter => 'sqlite', name => $base }, $_)<name> };
+  my $cfg = $*TMPDIR.add("chk-ok-cfg-{$*PID}-{(now * 1e6).Int}.json").Str;
+  @cleanup.push: $cfg;
+  $cfg.IO.spurt: to-json({
+    test => { parallel => 2, primary => { adapter => 'sqlite', name => $base } },
+  });
+
+  temp %*ENV<DATABASE_URL> = "sqlite:$base";
+  create-test-databases(:parallel, path => $cfg, env => 'test');
+  migrate-test-databases(:parallel, path => $cfg, env => 'test');
+  is check-test-databases(:parallel, path => $cfg, env => 'test').elems, 0,
+    'check-test-databases reports no problems once created and migrated';
+}
+
+.IO.unlink for @cleanup.grep(*.IO.e);
+
+done-testing;

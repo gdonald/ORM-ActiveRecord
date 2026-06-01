@@ -65,8 +65,8 @@ describe 'find-or-create-by', {
     }
   }
 
-  it 'find-or-create-by-or-die raises X::RecordInvalid', {
-    expect({ User.find-or-create-by-or-die({fname => 'no'}) }).to.raise-error(X::RecordInvalid);
+  it 'find-or-create-by-bang raises X::RecordInvalid', {
+    expect({ User.find-or-create-by-bang({fname => 'no'}) }).to.raise-error(X::RecordInvalid);
   }
 
   context 'scoped on relation', {

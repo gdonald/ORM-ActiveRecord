@@ -1,6 +1,7 @@
 
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
+use ORM::ActiveRecord::Support::Environment;
 use ORM::ActiveRecord::Support::Utils;
 
 role CollectionProxy is export {
@@ -9,6 +10,11 @@ role CollectionProxy is export {
   has Mu $.target-class is rw;
   has Str $.assoc-name is rw;
   has @.args           is rw;
+
+  method db(--> DB) {
+    my $name = $!target-class.^can('connection-name') ?? $!target-class.connection-name !! default-connection();
+    DB.shared(name => $name);
+  }
 
   method records { self.list }
 
@@ -50,9 +56,9 @@ role CollectionProxy is export {
     $r;
   }
 
-  method create-or-die(%attrs = {}) {
+  method create-bang(%attrs = {}) {
     my %a = self!apply-fkey(%attrs);
-    my $r = $!target-class.create-or-die(%a);
+    my $r = $!target-class.create-bang(%a);
     self.Array::push($r);
     $r;
   }
@@ -149,20 +155,20 @@ role CollectionProxy is export {
       my $as = self!as-name;
       my $id-col   = $as ~ '_id';
       my $type-col = $as ~ '_type';
-      my $stmt = DB.shared.sanitize-sql-array([
+      my $stmt = self.db.sanitize-sql-array([
         "UPDATE $table SET $id-col = NULL, $type-col = NULL WHERE id = ?",
         $record.id,
       ]);
-      DB.shared.exec-stmt($stmt);
+      self.db.exec-stmt($stmt);
       $record.attrs{$id-col}   = 0;
       $record.attrs{$type-col} = '';
     } else {
       my $col = self!fkey-col;
-      my $stmt = DB.shared.sanitize-sql-array([
+      my $stmt = self.db.sanitize-sql-array([
         "UPDATE $table SET $col = NULL WHERE id = ?",
         $record.id,
       ]);
-      DB.shared.exec-stmt($stmt);
+      self.db.exec-stmt($stmt);
       $record.attrs{$col} = 0;
     }
   }
@@ -172,7 +178,7 @@ role CollectionProxy is export {
     return unless $join-table;
     my $owner-key  = self!through-owner-key;
     my $target-key = Utils.to-foreign-key($!assoc-name);
-    DB.shared.delete-records(
+    self.db.delete-records(
       :table($join-table),
       :where(%($owner-key => self!owner-pkey-val, $target-key => $record.id)),
     );
@@ -187,11 +193,11 @@ role CollectionProxy is export {
     my $join-table = self!through-join-table;
     my $owner-key  = self!through-owner-key;
     my $target-key = Utils.to-foreign-key($!assoc-name);
-    my $stmt = DB.shared.sanitize-sql-array([
+    my $stmt = self.db.sanitize-sql-array([
       "INSERT INTO $join-table ($owner-key, $target-key) VALUES (?, ?)",
       self!owner-pkey-val, $record.id,
     ]);
-    DB.shared.exec-stmt($stmt);
+    self.db.exec-stmt($stmt);
   }
 
   method !is-through(--> Bool) {

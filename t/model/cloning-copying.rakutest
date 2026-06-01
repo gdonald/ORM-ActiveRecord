@@ -117,14 +117,14 @@ plan 24;
   is $car.name, 'V1',         'becomes copies attrs';
 }
 
-# becomes-or-die sets type column when present
+# becomes-bang sets type column when present
 {
   my $v = Vehicle.create({ name => 'V2', type => 'Vehicle' });
-  my $truck = $v.becomes-or-die(Truck);
+  my $truck = $v.becomes-bang(Truck);
 
-  ok $truck ~~ Truck,         'becomes-or-die returns a Truck';
+  ok $truck ~~ Truck,         'becomes-bang returns a Truck';
   is $truck.read-attribute('type'), 'Truck',
-                              'becomes-or-die writes new class name to type column';
+                              'becomes-bang writes new class name to type column';
 }
 
 # becomes rejects non-Model targets

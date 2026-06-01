@@ -1,0 +1,20 @@
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub ar-output(*@args --> Str) {
+  my $proc = run 'raku', '-Ilib', 'bin/ar', |@args, :out, :err;
+  my $out = $proc.out.slurp(:close);
+  $proc.err.slurp(:close);
+  $out;
+}
+
+ok ar-output('--version').contains('ORM::ActiveRecord'), 'ar --version prints the distribution name';
+ok ar-output('--version') ~~ /\d+ '.' \d+/,              'ar --version prints a version number';
+ok ar-output('--help').contains('Usage:'),               'ar --help shows usage';
+ok ar-output('--help').contains('createdb'),             'ar --help documents the createdb subcommand';
+ok ar-output('--help').contains('migrate'),              'ar --help documents the migrate subcommand';
+
+done-testing;

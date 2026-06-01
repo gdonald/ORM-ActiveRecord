@@ -3,16 +3,26 @@ use MONKEY-SEE-NO-EVAL;
 
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Support::Colors;
+use ORM::ActiveRecord::Support::Environment;
 use ORM::ActiveRecord::Errors::X;
 
 class Migrate is export {
   my Str $.dir = 'db/migrate';
 
+  # EVAL installs each migration's `class` into GLOBAL; EVALing the same file
+  # twice in one process redeclares it and dies. Cache the loaded class by path
+  # so a second migrate pass (parallel workers, or a spec migrating an isolated
+  # DB) reuses it. `.new` rebinds to the current DB.shared, so the cached class
+  # still targets the right connection.
+  my %loaded-migrations;
+
   has @.args;
   has DB $!db;
+  has Str $.connection = default-connection();
 
-  submethod BUILD(:@!args) {
-    $!db = DB.shared;
+  submethod BUILD(:@!args, Str :$connection = default-connection()) {
+    $!connection = $connection;
+    $!db = DB.shared(name => $connection);
   }
 
   method run {
@@ -95,9 +105,14 @@ class Migrate is export {
       my $last = self.last;
       next unless $action ~~ 'down' && $version == $last || $action ~~ 'up' && $version > $last;
 
-      say '';
-      say $action ~~ 'up' ?? green('↑ ' ~ $path ~ ' ↑') !! red('↓ ' ~ $path ~ ' ↓');
-      EVAL $path.IO.slurp;
+      # Migration progress goes to stdout, which behave parses as JSON events
+      # under --parallel; stay quiet when SQL logging is disabled (specs/tests).
+      unless %*ENV<DISABLE-SQL-LOG> {
+        say '';
+        say $action ~~ 'up' ?? green('↑ ' ~ $path ~ ' ↑') !! red('↓ ' ~ $path ~ ' ↓');
+      }
+
+      my $migration = self!load-migration($path);
 
       $!db.begin;
 
@@ -109,7 +124,7 @@ class Migrate is export {
           }
         }
 
-        EVAL "{$<name>.Str.split('-').map({ $_.tc }).join}.new.$action";
+        $migration.new."$action"();
       }
 
       $action ~~ 'up' ?? self.add(:$version) !! self.rm(:$version);
@@ -117,6 +132,11 @@ class Migrate is export {
 
       $cnt++;
     }
+  }
+
+  method !load-migration(Str:D $path) {
+    return %loaded-migrations{$path} if %loaded-migrations{$path}:exists;
+    %loaded-migrations{$path} = EVAL $path.IO.slurp;
   }
 
   method add(Str:D :$version) {

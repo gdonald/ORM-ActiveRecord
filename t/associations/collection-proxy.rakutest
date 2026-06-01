@@ -20,7 +20,7 @@ sub clear-all {
 
 clear-all;
 
-# build / create / create-or-die
+# build / create / create-bang
 {
   my $alice = User.create({fname => 'alice'});
 
@@ -32,9 +32,9 @@ clear-all;
   ok $created.id > 0, 'create returns a saved record';
   is $created.attrs<author_id>, $alice.id, 'create sets the foreign key';
 
-  my $forced = $alice.extended-articles.create-or-die({title => 'forced', body => 'b'});
-  ok $forced.id > 0, 'create-or-die returns a saved record';
-  is $forced.attrs<author_id>, $alice.id, 'create-or-die sets the foreign key';
+  my $forced = $alice.extended-articles.create-bang({title => 'forced', body => 'b'});
+  ok $forced.id > 0, 'create-bang returns a saved record';
+  is $forced.attrs<author_id>, $alice.id, 'create-bang sets the foreign key';
 }
 
 clear-all;

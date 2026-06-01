@@ -78,7 +78,9 @@ my @SHARED-TABLE-CLEAN-ORDER = <
 sub clean-shared-tables is export {
   my $adapter = DB.shared.adapter;
   return unless $adapter.defined && $adapter.is-connected;
+  
   my %present = $adapter.get-table-names.list.map(* => True);
+  
   for @SHARED-TABLE-CLEAN-ORDER -> $t {
     next unless %present{$t};
     try $adapter.exec("DELETE FROM $t");

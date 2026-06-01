@@ -7,12 +7,13 @@ on:
 
 jobs:
   test:
-    name: ${{ matrix.db }}
+    name: ${{ matrix.db }} / ${{ matrix.suite }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         db: [postgres, mysql, sqlite]
+        suite: [prove6, behave]
         include:
           - db: postgres
             database_url: postgres://postgres:postgres@localhost:5432/ar_test?schema=public
@@ -65,11 +66,21 @@ jobs:
       - name: Raku version
         run: raku --version
 
+      - name: Install BDD::Behave (git)
+        # git version
+        run: zef install --/test https://github.com/gdonald/BDD-Behave.git
+
       - name: Install Dependencies
         run: zef install --/test --test-depends --deps-only .
 
       - name: Install App::Prove6
+        if: matrix.suite == 'prove6'
         run: zef install --/test App::Prove6
 
-      - name: Run tests (${{ matrix.db }})
-        run: ./test.raku
+      - name: Run prove6 tests (${{ matrix.db }})
+        if: matrix.suite == 'prove6'
+        run: ./test.raku --prove6
+
+      - name: Run behave specs in parallel (${{ matrix.db }})
+        if: matrix.suite == 'behave'
+        run: ./test.raku --behave --parallel=2

@@ -1,5 +1,6 @@
 
 use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Support::Environment;
 use ORM::ActiveRecord::Errors::Error;
 use ORM::ActiveRecord::Errors::Errors;
 use ORM::ActiveRecord::Errors::X;
@@ -40,6 +41,8 @@ class Model
   does ModelSuppressor
   is export
 {
+  my %connection-of;
+
   has DB $!db;
   has Errors $.errors;
   has Validators $.validators;
@@ -107,7 +110,7 @@ class Model
   }
 
   submethod BUILD(Int:D :$!id, :%!record) {
-    $!db = DB.shared;
+    $!db = self.db;
     $!errors = Errors.new;
     $!validators = Validators.new;
 
@@ -129,6 +132,21 @@ class Model
     $obj.do-after-initializes;
     $obj.do-after-finds if $obj.was-found-from-db;
     $obj;
+  }
+
+  # Bind this model to a named connection (from config/application.json). All
+  # of the model's queries route to DB.shared(:name<...>); unbound models use
+  # the primary connection.
+  method connects-to(Str:D $name) {
+    %connection-of{self.^name} = $name;
+  }
+
+  method connection-name(--> Str) {
+    %connection-of{self.^name} // default-connection();
+  }
+
+  method db(--> DB) {
+    DB.shared(name => self.connection-name);
   }
 
   method FALLBACK(Str:D $name, *@rest) is raw {
@@ -198,11 +216,11 @@ class Model
         return self.has-one-build($assoc, %attrs);
       }
     }
-    if $name ~~ /^ 'create-' (.+) '-or-die' $/ {
+    if $name ~~ /^ 'create-' (.+) '-bang' $/ {
       my $assoc = ~$0;
       if %!has-ones{$assoc}:exists {
         my %attrs = @rest.elems ?? @rest[0] !! {};
-        return self.has-one-create-or-die($assoc, %attrs);
+        return self.has-one-create-bang($assoc, %attrs);
       }
     }
     if $name ~~ /^ 'create-' (.+) $/ {
@@ -826,9 +844,9 @@ class Model
     $class.create(%a);
   }
 
-  method has-one-create-or-die(Str:D $name, %attrs) {
+  method has-one-create-bang(Str:D $name, %attrs) {
     my ($class, %a) = self.has-one-attrs($name, %attrs);
-    $class.create-or-die(%a);
+    $class.create-bang(%a);
   }
 
   method has-and-belongs-to-many(*%rest) {
@@ -1197,7 +1215,7 @@ class Model
     self;
   }
 
-  method increment-or-die(Str:D $name, Numeric:D $n = 1) {
+  method increment-bang(Str:D $name, Numeric:D $n = 1) {
     self.increment($name, $n);
     self.update-attribute($name, %!attrs{$name}) or self.raise-invalid;
     self;
@@ -1207,7 +1225,7 @@ class Model
     self.increment($name, -$n);
   }
 
-  method decrement-or-die(Str:D $name, Numeric:D $n = 1) {
+  method decrement-bang(Str:D $name, Numeric:D $n = 1) {
     self.decrement($name, $n);
     self.update-attribute($name, %!attrs{$name}) or self.raise-invalid;
     self;
@@ -1218,18 +1236,18 @@ class Model
     self;
   }
 
-  method toggle-or-die(Str:D $name) {
+  method toggle-bang(Str:D $name) {
     self.toggle($name);
     self.update-attribute($name, %!attrs{$name}) or self.raise-invalid;
     self;
   }
 
-  method save-or-die {
+  method save-bang {
     self.save or self.raise-invalid;
     self;
   }
 
-  method update-or-die(%attrs) {
+  method update-bang(%attrs) {
     self.update(%attrs) or self.raise-invalid;
     self;
   }
@@ -1253,15 +1271,15 @@ class Model
     self.create({});
   }
 
-  multi method create-or-die(%attrs) {
+  multi method create-bang(%attrs) {
     my %record = 'attrs' => %attrs;
     my $obj = self.new(:id(0), :%record);
-    $obj.save-or-die;
+    $obj.save-bang;
     $obj;
   }
 
-  multi method create-or-die {
-    self.create-or-die({});
+  multi method create-bang {
+    self.create-bang({});
   }
 
   multi method build(%attrs) {
@@ -1440,13 +1458,13 @@ class Model
   multi method count {
     my $table = Utils.table-name(self);
     my %where;
-    DB.shared.count-records(:$table, :%where);
+    self.db.count-records(:$table, :%where);
   }
 
   multi method count(Hash:D $params) {
     my $table = Utils.table-name(self);
     my %where = $params;
-    DB.shared.count-records(:$table, :%where);
+    self.db.count-records(:$table, :%where);
   }
 
   multi method count(Str:D $col) {
@@ -1636,10 +1654,10 @@ class Model
     True;
   }
 
-  method lock-or-die($mode = True) {
+  method lock-bang($mode = True) {
     die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!is-readonly;
     die X::FrozenRecord.new(model => self.WHAT.^name)   if $!is-destroyed;
-    die "lock-or-die: record has no id (call save first)" unless $!id;
+    die "lock-bang: record has no id (call save first)" unless $!id;
     my $klass = self.WHAT;
     my @rows = $klass.where({ id => $!id }).lock($mode).all;
     die X::RecordNotFound.new(:model($klass.^name)) unless @rows.elems;
@@ -1652,7 +1670,7 @@ class Model
 
   method with-lock(&block, $mode = True) {
     $!db.transaction({
-      self.lock-or-die($mode);
+      self.lock-bang($mode);
       block(self);
     });
   }
@@ -1667,7 +1685,7 @@ class Model
     $new;
   }
 
-  method becomes-or-die($klass) {
+  method becomes-bang($klass) {
     my $new = self.becomes($klass);
     if $new.has-attribute('type') {
       $new.write-attribute('type', $klass.^name);

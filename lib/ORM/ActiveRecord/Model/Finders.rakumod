@@ -18,7 +18,7 @@ role ModelFinders is export {
     self.where($params).first;
   }
 
-  method find-by-or-die(Hash:D $params) {
+  method find-by-bang(Hash:D $params) {
     my $obj = self.find-by($params);
     die X::RecordNotFound.new(:model(Utils.base-name(self.WHAT.^name))) without $obj;
     $obj;
@@ -36,8 +36,8 @@ role ModelFinders is export {
     self.all.find-or-create-by($params);
   }
 
-  method find-or-create-by-or-die(Hash:D $params) {
-    self.all.find-or-create-by-or-die($params);
+  method find-or-create-by-bang(Hash:D $params) {
+    self.all.find-or-create-by-bang($params);
   }
 
   method find-or-initialize-by(Hash:D $params) {
@@ -55,9 +55,9 @@ role ModelFinders is export {
 
   method take(Int:D $limit = 1) {
     my $table = Utils.table-name(self);
-    my @fields = DB.shared.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
+    my @fields = self.db.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
     my %where;
-    DB.shared.get-objects(:$table, class => self.WHAT, :@fields, :%where, :$limit);
+    self.db.get-objects(:$table, class => self.WHAT, :@fields, :%where, :$limit);
   }
 
   multi method exists(Hash:D $params) {

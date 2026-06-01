@@ -159,20 +159,20 @@ plan 43;
   ok Widget.where({ name => 'dup' }).count == 1, 'no duplicate row inserted';
 }
 
-# insert-or-die — raises on duplicate
+# insert-bang — raises on duplicate
 {
   Widget.destroy-all;
   Widget.insert({ name => 'dup' });
-  dies-ok { Widget.insert-or-die({ name => 'dup' }) },
-                                    'insert-or-die raises on unique violation';
+  dies-ok { Widget.insert-bang({ name => 'dup' }) },
+                                    'insert-bang raises on unique violation';
 }
 
-# insert-all-or-die — raises if any row would conflict
+# insert-all-bang — raises if any row would conflict
 {
   Widget.destroy-all;
   Widget.insert({ name => 'taken' });
-  dies-ok { Widget.insert-all-or-die([{ name => 'taken' }]) },
-                                    'insert-all-or-die raises on conflict';
+  dies-ok { Widget.insert-all-bang([{ name => 'taken' }]) },
+                                    'insert-all-bang raises on conflict';
 }
 
 # upsert — insert when new, update when conflicting

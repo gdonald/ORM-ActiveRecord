@@ -7,6 +7,11 @@ use ORM::ActiveRecord::Adapter::MySql;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
+# These specs assert base read-config output, so neutralize any per-worker
+# overlay the parallel test harness may have exported into this worker.
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
 describe 'DB.adapter-class-for', {
   context 'postgres family', {
     it 'maps adapter pg to PgAdapter', {

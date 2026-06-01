@@ -274,19 +274,19 @@ group 'bulk write operations', {
     }
   }
 
-  context 'insert-or-die', {
+  context 'insert-bang', {
     it 'raises on unique violation', {
       BkWidget.insert({ name => 'dup' });
 
-      expect({ BkWidget.insert-or-die({ name => 'dup' }) }).to.raise-error;
+      expect({ BkWidget.insert-bang({ name => 'dup' }) }).to.raise-error;
     }
   }
 
-  context 'insert-all-or-die', {
+  context 'insert-all-bang', {
     it 'raises on conflict', {
       BkWidget.insert({ name => 'taken' });
 
-      expect({ BkWidget.insert-all-or-die([{ name => 'taken' }]) }).to.raise-error;
+      expect({ BkWidget.insert-all-bang([{ name => 'taken' }]) }).to.raise-error;
     }
   }
 

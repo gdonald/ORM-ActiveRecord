@@ -9,6 +9,10 @@ use ORM::ActiveRecord::Adapter::MySql;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
+# Assert base read-config output; clear any per-worker overlay from the harness.
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
 plan 22;
 
 is DB.adapter-class-for({adapter => 'pg'}),         PgAdapter,    'adapter pg → PgAdapter';

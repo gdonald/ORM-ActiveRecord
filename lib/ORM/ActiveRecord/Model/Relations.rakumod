@@ -48,7 +48,7 @@ role ModelRelations is export {
   method annotate(*@comments)                        { self.all.annotate(|@comments) }
   method optimizer-hints(*@hints)                    { self.all.optimizer-hints(|@hints) }
   method transaction(&block, Bool :$requires-new = False, Str :$isolation) {
-    DB.shared.transaction(&block, :$requires-new, :$isolation);
+    self.db.transaction(&block, :$requires-new, :$isolation);
   }
   method to-sql(--> Str)        { self.all.to-sql }
   method explain(--> Str)       { self.all.explain }

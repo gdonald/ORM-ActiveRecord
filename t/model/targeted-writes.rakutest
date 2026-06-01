@@ -123,24 +123,24 @@ plan 34;
   ok $w.qty == 10,                   'decrement(name, n) subtracts n';
 }
 
-# increment-or-die / decrement-or-die persist via update-attribute
+# increment-bang / decrement-bang persist via update-attribute
 {
   my $w = Widget.create({ name => 'F', qty => 0 });
-  $w.increment-or-die('qty');
-  ok Widget.find($w.id).qty == 1,    'increment-or-die persisted +1';
-  $w.decrement-or-die('qty', 1);
-  ok Widget.find($w.id).qty == 0,    'decrement-or-die persisted -1';
+  $w.increment-bang('qty');
+  ok Widget.find($w.id).qty == 1,    'increment-bang persisted +1';
+  $w.decrement-bang('qty', 1);
+  ok Widget.find($w.id).qty == 0,    'decrement-bang persisted -1';
 }
 
-# toggle / toggle-or-die
+# toggle / toggle-bang
 {
   my $w = Widget.create({ name => 'G', active => False });
   $w.toggle('active');
   ok $w.active == True,              'toggle flips boolean in memory';
   ok $w.is-changed,                  'toggle is in-memory only';
 
-  $w.toggle-or-die('active');
-  ok Widget.find($w.id).active == False, 'toggle-or-die persisted the flip';
+  $w.toggle-bang('active');
+  ok Widget.find($w.id).active == False, 'toggle-bang persisted the flip';
 }
 
 # Frozen + readonly guards on targeted writes

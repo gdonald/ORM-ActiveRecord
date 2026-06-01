@@ -1,6 +1,7 @@
 
 use ORM::ActiveRecord::Schema::Field;
 use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Support::Environment;
 use ORM::ActiveRecord::Support::Utils;
 use ORM::ActiveRecord::Relation::Query::Conditions;
 use ORM::ActiveRecord::Relation::Query::Modifiers;
@@ -58,7 +59,7 @@ is export
     $!table = Utils.table-name($!class);
     $!params = {};
     $!not-params = {};
-    @!fields = DB.shared.get-fields(:$!table).map({ Field.new(:name($_[0]), :type($_[1])) });
+    @!fields = self.db.get-fields(:$!table).map({ Field.new(:name($_[0]), :type($_[1])) });
     for self!normalize-assoc-params($params).kv -> $k, $v { $!params{$k} = $v }
   }
 
@@ -88,6 +89,12 @@ is export
   method pending-includes-values is rw { @!pending-includes }
   method class-of               { $!class }
   method table-of               { $!table }
+
+  method db(--> DB) {
+    my $name = $!class.^can('connection-name') ?? $!class.connection-name !! default-connection();
+    DB.shared(name => $name);
+  }
+
   method fields-of              { @!fields }
 
   method clone-query(--> Query) {

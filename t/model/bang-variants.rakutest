@@ -11,16 +11,16 @@ plan 9;
 
 User.destroy-all;
 
-# create-or-die: success path
-my $alice = User.create-or-die({fname => 'Alice'});
-ok $alice.id, 'create-or-die returns persisted record';
+# create-bang: success path
+my $alice = User.create-bang({fname => 'Alice'});
+ok $alice.id, 'create-bang returns persisted record';
 ok $alice.is-valid, 'persisted record is valid';
 
-# create-or-die: failure raises X::RecordInvalid
+# create-bang: failure raises X::RecordInvalid
 {
   my $caught = False;
   try {
-    User.create-or-die({fname => ''});
+    User.create-bang({fname => ''});
     CATCH {
       when X::RecordInvalid {
         $caught = True;
@@ -29,30 +29,30 @@ ok $alice.is-valid, 'persisted record is valid';
       }
     }
   }
-  ok $caught, 'create-or-die raised X::RecordInvalid';
+  ok $caught, 'create-bang raised X::RecordInvalid';
 }
 
-# save-or-die: success
-ok $alice.save-or-die === $alice, 'save-or-die returns self on success';
+# save-bang: success
+ok $alice.save-bang === $alice, 'save-bang returns self on success';
 
-# update-or-die: failure
+# update-bang: failure
 {
   my $caught = False;
   try {
-    $alice.update-or-die({fname => ''});
+    $alice.update-bang({fname => ''});
     CATCH {
       when X::RecordInvalid {
         $caught = True;
       }
     }
   }
-  ok $caught, 'update-or-die raised X::RecordInvalid';
+  ok $caught, 'update-bang raised X::RecordInvalid';
 }
 
-# update-or-die: success
+# update-bang: success
 my $bob = User.create({fname => 'Bob'});
-$bob.update-or-die({fname => 'Robert'});
-ok User.where({fname => 'Robert'}).count == 1, 'update-or-die persisted change';
+$bob.update-bang({fname => 'Robert'});
+ok User.where({fname => 'Robert'}).count == 1, 'update-bang persisted change';
 
 ok User.count == 2, 'no rows leaked from failure paths';
 

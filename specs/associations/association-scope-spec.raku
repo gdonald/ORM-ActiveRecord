@@ -15,111 +15,85 @@ describe 'association scope', {
   before-each { clean-shared-tables }
   after-each  { clean-shared-tables }
 
-  context 'block scope on has-many filters by where', {
-    it 'returns only published rows', {
-      my $alice = User.create({fname => 'Alice', is_active => True});
-      Article.create({title => 'low',  score => 1, published => True,  active-author => $alice});
-      Article.create({title => 'mid',  score => 5, published => True,  active-author => $alice});
-      Article.create({title => 'high', score => 9, published => True,  active-author => $alice});
-      Article.create({title => 'wip',  score => 2, published => False, active-author => $alice});
+  let(:alice, { User.create({fname => 'Alice', is_active => True}) });
 
-      expect($alice.published-articles.elems).to.eq(3);
+  context 'with published articles scored 1, 5, and 9', {
+    before-each {
+      Article.create({title => 'low',  score => 1, published => True, active-author => alice});
+      Article.create({title => 'mid',  score => 5, published => True, active-author => alice});
+      Article.create({title => 'high', score => 9, published => True, active-author => alice});
     }
 
-    it 'excludes drafts', {
-      my $alice = User.create({fname => 'Alice', is_active => True});
-      Article.create({title => 'low',  score => 1, published => True,  active-author => $alice});
-      my $draft = Article.create({title => 'wip', score => 2, published => False, active-author => $alice});
+    context 'has-many block scope filters by where', {
+      let-bang(:draft, { Article.create({title => 'wip', score => 2, published => False, active-author => alice}) });
 
-      expect($alice.published-articles.map({ .id }).Bag{$draft.id}:!exists).to.be-truthy;
-    }
-  }
+      it 'returns only the published rows', {
+        expect(alice.published-articles.elems).to.eq(3);
+      }
 
-  context 'scope with limit', {
-    it 'returns two records', {
-      my $alice = User.create({fname => 'Alice', is_active => True});
-      Article.create({title => 'low',  score => 1, published => True, active-author => $alice});
-      Article.create({title => 'mid',  score => 5, published => True, active-author => $alice});
-      Article.create({title => 'high', score => 9, published => True, active-author => $alice});
-
-      expect($alice.top-articles.elems).to.eq(2);
+      it 'excludes the draft', {
+        expect(alice.published-articles.map({ .id }).Bag{draft.id}:!exists).to.be-truthy;
+      }
     }
 
-    it 'orders by score ASC then limits', {
-      my $alice = User.create({fname => 'Alice', is_active => True});
-      Article.create({title => 'low',  score => 1, published => True, active-author => $alice});
-      Article.create({title => 'mid',  score => 5, published => True, active-author => $alice});
-      Article.create({title => 'high', score => 9, published => True, active-author => $alice});
+    context 'has-many scope with a limit', {
+      it 'returns two records', {
+        expect(alice.top-articles.elems).to.eq(2);
+      }
 
-      expect($alice.top-articles.map({ .attrs<title> }).join(',')).to.eq('low,mid');
-    }
-  }
-
-  context 'argument-taking scope', {
-    it 'filters with caller-supplied bound', {
-      my $alice = User.create({fname => 'Alice', is_active => True});
-      Article.create({title => 'low',  score => 1, published => True, active-author => $alice});
-      Article.create({title => 'mid',  score => 5, published => True, active-author => $alice});
-      Article.create({title => 'high', score => 9, published => True, active-author => $alice});
-
-      expect($alice.by-score(5).map({ .attrs<title> }).sort.join(',')).to.eq('high,mid');
+      it 'orders by score ascending before limiting', {
+        expect(alice.top-articles.map({ .attrs<title> }).join(',')).to.eq('low,mid');
+      }
     }
 
-    it 'reflects different bound', {
-      my $alice = User.create({fname => 'Alice', is_active => True});
-      Article.create({title => 'low',  score => 1, published => True, active-author => $alice});
-      Article.create({title => 'mid',  score => 5, published => True, active-author => $alice});
-      Article.create({title => 'high', score => 9, published => True, active-author => $alice});
+    context 'has-many scope taking an argument', {
+      it 'filters by the caller-supplied bound', {
+        expect(alice.by-score(5).map({ .attrs<title> }).sort.join(',')).to.eq('high,mid');
+      }
 
-      expect($alice.by-score(9).map({ .attrs<title> }).join(',')).to.eq('high');
+      it 'reflects a different bound', {
+        expect(alice.by-score(9).map({ .attrs<title> }).join(',')).to.eq('high');
+      }
     }
   }
 
-  it 'has-one scope filters by visible', {
-    my $alice = User.create({fname => 'Alice', is_active => True});
-    my $visible-prof = Profile.create({bio => 'pinned', visible => True, user => $alice});
-    Profile.create({bio => 'hidden', visible => False, user => $alice});
+  it 'has-one scope returns only the visible profile', {
+    my $visible-prof = Profile.create({bio => 'pinned', visible => True, user => alice});
+    Profile.create({bio => 'hidden', visible => False, user => alice});
 
-    expect(User.find($alice.id).visible-profile.id).to.eq($visible-prof.id);
+    expect(User.find(alice.id).visible-profile.id).to.eq($visible-prof.id);
   }
 
   context 'belongs-to scope', {
-    it 'hides article whose author is inactive', {
+    it 'hides an article whose author is inactive', {
       my $inactive = User.create({fname => 'Zed', is_active => False});
       my $orphan = Article.create({title => 'orphan', published => True, score => 0, active-author => $inactive});
 
       expect(Article.find($orphan.id).active-author.defined).to.be-falsy;
     }
 
-    it 'still returns active author', {
-      my $alice = User.create({fname => 'Alice', is_active => True});
-      my $pub-low = Article.create({title => 'low', score => 1, published => True, active-author => $alice});
+    it 'returns an active author', {
+      my $pub-low = Article.create({title => 'low', score => 1, published => True, active-author => alice});
 
       expect(Article.find($pub-low.id).active-author.defined).to.be-truthy;
     }
   }
 
-  context 'habtm scope', {
-    it 'filters out non-hot rows', {
-      my $alice = User.create({fname => 'Alice', is_active => True});
-      my $pub-low = Article.create({title => 'low', score => 1, published => True, active-author => $alice});
-      my $hot  = Tag.create({name => 'raku', hot => True});
-      my $cool = Tag.create({name => 'old',  hot => False});
-      $pub-low.add-hot-tag($hot);
-      $pub-low.add-hot-tag($cool);
+  context 'has-and-belongs-to-many scope', {
+    let(:pub-low,  { Article.create({title => 'low', score => 1, published => True, active-author => alice}) });
+    let(:hot-tags, { Article.find(pub-low.id).hot-tags });
 
-      expect(Article.find($pub-low.id).hot-tags.elems).to.eq(1);
+    before-each {
+      pub-low.add-hot-tag(Tag.create({name => 'raku', hot => True}));
+      pub-low.add-hot-tag(Tag.create({name => 'old',  hot => False}));
     }
 
-    it 'returns matching row', {
-      my $alice = User.create({fname => 'Alice', is_active => True});
-      my $pub-low = Article.create({title => 'low', score => 1, published => True, active-author => $alice});
-      my $hot  = Tag.create({name => 'raku', hot => True});
-      my $cool = Tag.create({name => 'old',  hot => False});
-      $pub-low.add-hot-tag($hot);
-      $pub-low.add-hot-tag($cool);
+    it 'excludes the non-hot tag', {
+      expect(hot-tags.elems).to.eq(1);
+    }
 
-      expect(Article.find($pub-low.id).hot-tags.first.attrs<name>).to.eq('raku');
+    it 'returns the hot tag', {
+      expect(hot-tags.first.attrs<name>).to.eq('raku');
     }
   }
 }

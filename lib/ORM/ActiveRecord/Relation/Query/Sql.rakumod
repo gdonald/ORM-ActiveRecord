@@ -7,7 +7,7 @@ role QuerySql is export {
   method to-sql-into(SqlStmt:D $stmt --> Str) {
     self.finalize-includes;
     my @or-groups = self.or-groups-payload;
-    DB.shared.build-select-body(
+    self.db.build-select-body(
       $stmt,
       table => self.table-of, fields => self.fields-of,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
@@ -25,13 +25,13 @@ role QuerySql is export {
   }
 
   method explain(--> Str) {
-    DB.shared.explain(self.build-select-stmt);
+    self.db.explain(self.build-select-stmt);
   }
 
   method build-select-stmt(--> SqlStmt) {
     self.finalize-includes;
     my @or-groups = self.or-groups-payload;
-    DB.shared.build-select(
+    self.db.build-select(
       table => self.table-of, fields => self.fields-of,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
       order => self.order-values, limit => self.limit-value, offset => self.offset-value,

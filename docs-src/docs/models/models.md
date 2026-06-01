@@ -152,14 +152,14 @@ When no associated record exists, `has-one` returns `Nil`.
 
 ### Singular proxy methods
 
-For each `has-one` declaration, the owner gets `build-<assoc>`, `create-<assoc>`, and `create-<assoc>-or-die` methods. They construct the associated record with the foreign key already set to the owner's primary key. `build-` returns an unsaved record; `create-` saves and returns the record (with errors if invalid); `create-...-or-die` saves and raises `X::RecordInvalid` when the target fails validation.
+For each `has-one` declaration, the owner gets `build-<assoc>`, `create-<assoc>`, and `create-<assoc>-bang` methods. They construct the associated record with the foreign key already set to the owner's primary key. `build-` returns an unsaved record; `create-` saves and returns the record (with errors if invalid); `create-...-bang` saves and raises `X::RecordInvalid` when the target fails validation.
 
 ```perl6
 my $user = User.create({fname => 'Greg'});
 
 my $draft = $user.build-profile({bio => 'unsaved'});
 my $saved = $user.create-profile({bio => 'persisted'});
-my $forced = $user.create-profile-or-die({bio => 'forced'});
+my $forced = $user.create-profile-bang({bio => 'forced'});
 ```
 
 These methods are not available on `has-one :through` declarations.
@@ -328,7 +328,7 @@ my $alice = Author.create({name => 'alice'});
 ```perl6
 my $draft   = $alice.posts.build({title => 'wip'});       # unsaved, fkey set
 my $live    = $alice.posts.create({title => 'live'});     # saved
-my $forced  = $alice.posts.create-or-die({title => 'pinned'});
+my $forced  = $alice.posts.create-bang({title => 'pinned'});
 ```
 
 **Push** moves an existing record into the collection (sets its fkey and saves). Raku reserves `<<` for hyperops, so the proxy uses `.push` and `.append`:

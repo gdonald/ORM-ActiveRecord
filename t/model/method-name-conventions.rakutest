@@ -2,9 +2,9 @@
 # Documents the empirical fact that Raku rejects both trailing `!` and `?`
 # in method-name identifiers. The parser fails with "Missing block" at the
 # suffix character. This is the basis for our Raku-idiomatic API choices:
-#   Rails save!     →  save-or-die
-#   Rails update!   →  update-or-die
-#   Rails create!   →  create-or-die
+#   Rails save!     →  save-bang
+#   Rails update!   →  update-bang
+#   Rails create!   →  create-bang
 #   Rails exists?   →  exists  (bare)
 #   Rails valid?    →  is-valid
 
@@ -12,11 +12,11 @@ use v6.d;
 use Test;
 plan 2;
 
-# Confirm the kebab-case + -or-die / is- conventions actually compile.
+# Confirm the kebab-case + -bang / is- conventions actually compile.
 class D {
-  method save-or-die { 'ok' }
+  method save-bang { 'ok' }
   method is-valid    { True  }
 }
 
-ok D.new.save-or-die eq 'ok', '-or-die suffix compiles and runs';
+ok D.new.save-bang eq 'ok', '-bang suffix compiles and runs';
 ok D.new.is-valid,            'is- prefix compiles and runs';

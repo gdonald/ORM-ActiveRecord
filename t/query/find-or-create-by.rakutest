@@ -29,9 +29,9 @@ ok $invalid.is-invalid, 'returned record has validation errors';
 my $err;
 {
   CATCH { when X::RecordInvalid { $err = $_ } }
-  User.find-or-create-by-or-die({fname => 'no'});
+  User.find-or-create-by-bang({fname => 'no'});
 }
-ok $err.defined, 'find-or-create-by-or-die raises X::RecordInvalid';
+ok $err.defined, 'find-or-create-by-bang raises X::RecordInvalid';
 
 my $scoped = User.where({lname => 'Z'}).find-or-create-by({fname => 'Carol'});
 ok $scoped.defined && $scoped.id > 0, 'relation.find-or-create-by creates a row';

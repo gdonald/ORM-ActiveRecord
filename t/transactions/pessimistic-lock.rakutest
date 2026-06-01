@@ -128,7 +128,7 @@ my $is-sqlite = $current eq 'sqlite';
   });
 }
 
-# Per-instance lock-or-die refreshes the receiver.
+# Per-instance lock-bang refreshes the receiver.
 {
   Note.destroy-all;
   my $a = Note.create({ title => 'one', views => 1 });
@@ -136,9 +136,9 @@ my $is-sqlite = $current eq 'sqlite';
   Note.where({ id => $a.id }).update-all({ views => 99 });
 
   Note.transaction({
-    my $reloaded = $a.lock-or-die;
-    is $reloaded.WHICH, $a.WHICH, 'lock-or-die returns the same instance';
-    is $a.views, 99, 'lock-or-die refreshes attrs from the DB';
+    my $reloaded = $a.lock-bang;
+    is $reloaded.WHICH, $a.WHICH, 'lock-bang returns the same instance';
+    is $a.views, 99, 'lock-bang refreshes attrs from the DB';
   });
 }
 
@@ -146,16 +146,16 @@ my $is-sqlite = $current eq 'sqlite';
   Note.destroy-all;
   my $a = Note.create({ title => 'gone' });
   $a.delete;
-  throws-like { $a.lock-or-die }, Exception,
-    'lock-or-die raises when the row no longer exists';
+  throws-like { $a.lock-bang }, Exception,
+    'lock-bang raises when the row no longer exists';
 }
 
 {
   Note.destroy-all;
   my $a = Note.create({ title => 'a' });
   $a.make-readonly;
-  throws-like { $a.lock-or-die }, X::ReadOnlyRecord,
-    'lock-or-die refuses readonly records';
+  throws-like { $a.lock-bang }, X::ReadOnlyRecord,
+    'lock-bang refuses readonly records';
 }
 
 # with-lock { ... } block helper

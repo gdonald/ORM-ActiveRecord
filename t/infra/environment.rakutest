@@ -1,0 +1,38 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Support::Environment;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+{
+  temp %*ENV<AR_ENV>;
+  %*ENV<AR_ENV>:delete;
+  temp %*ENV<BEHAVE_WORKER_COUNT>;
+  %*ENV<BEHAVE_WORKER_COUNT>:delete;
+  is current-env('development'), 'development', 'current-env returns the caller default when AR_ENV is unset';
+}
+
+{
+  temp %*ENV<AR_ENV>;
+  %*ENV<AR_ENV>:delete;
+  temp %*ENV<BEHAVE_WORKER_COUNT> = '4';
+  is current-env('development'), 'test', 'current-env defaults to test under behave';
+}
+
+{
+  temp %*ENV<AR_ENV> = 'production';
+  is current-env('development'), 'production', 'current-env returns AR_ENV when set';
+}
+
+{
+  temp %*ENV<AR_ENV> = '';
+  temp %*ENV<BEHAVE_WORKER_COUNT>;
+  %*ENV<BEHAVE_WORKER_COUNT>:delete;
+  is current-env('development'), 'development', 'current-env ignores an empty AR_ENV';
+}
+
+is default-connection(), 'primary', 'default-connection is primary';
+
+done-testing;

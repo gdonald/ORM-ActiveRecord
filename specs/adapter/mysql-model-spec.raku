@@ -1,6 +1,7 @@
 use lib 'lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Support::DatabaseUrl;
+use ORM::ActiveRecord::Support::WorkerDb;
 use ORM::ActiveRecord::Adapter::MySql;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Model;
@@ -26,6 +27,11 @@ my $port     = (%c<port>    // 3306).Int;
 my $user     = %c<user>     // 'root';
 my $password = %c<password> // '';
 my $database = %c<name>     // 'ar_test';
+
+# Under behave --parallel, connect to this worker's own database so concurrent
+# adapter specs don't collide on a shared base database's `widgets` table.
+$database = apply-worker-suffix({ adapter => 'mysql', name => $database }, worker-index())<name>
+  if per-worker-dbs-active();
 
 my $mysql       = $is-mysql ?? (try MySqlAdapter.new(:$host, :$port, :$user, :$password, :$database)) !! Nil;
 my $can-connect = $is-mysql && $mysql.defined && $mysql.is-connected;

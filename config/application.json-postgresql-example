@@ -1,0 +1,25 @@
+{
+  "test": {
+    "parallel": 16,
+    "primary": {
+      "adapter": "pg",
+      "schema": "public",
+      "host": "localhost",
+      "port": 5432,
+      "name": "ar_test",
+      "user": "gd",
+      "password": ""
+    }
+  },
+  "development": {
+    "primary": {
+      "adapter": "pg",
+      "schema": "public",
+      "host": "localhost",
+      "port": 5432,
+      "name": "ar_development",
+      "user": "gd",
+      "password": ""
+    }
+  }
+}

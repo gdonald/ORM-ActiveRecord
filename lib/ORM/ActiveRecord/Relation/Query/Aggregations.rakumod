@@ -17,7 +17,7 @@ role QueryAggregations is export {
       return self!aggregate('COUNT', $col);
     }
     my @or-groups = self.or-groups-payload;
-    DB.shared.count-records(
+    self.db.count-records(
       table => self.table-of,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
       distinct => self.distinct-value, select => self.select-values,
@@ -54,7 +54,7 @@ role QueryAggregations is export {
   method !aggregate(Str:D $op, $col) {
     self.finalize-includes;
     my @or-groups = self.or-groups-payload;
-    DB.shared.aggregate(
+    self.db.aggregate(
       table => self.table-of, :$op, :$col,
       where => self.where-values, where-not => self.where-not-values, :@or-groups,
       distinct => self.distinct-value,

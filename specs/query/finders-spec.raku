@@ -71,8 +71,8 @@ describe 'finders', {
     expect(User.find-by({fname => 'Nobody'}).defined).to.be-falsy;
   }
 
-  it 'find-by-or-die raises X::RecordNotFound', {
-    expect({ User.find-by-or-die({fname => 'Nobody'}) }).to.raise-error(X::RecordNotFound);
+  it 'find-by-bang raises X::RecordNotFound', {
+    expect({ User.find-by-bang({fname => 'Nobody'}) }).to.raise-error(X::RecordNotFound);
   }
 
   it 'last returns highest-id record', {

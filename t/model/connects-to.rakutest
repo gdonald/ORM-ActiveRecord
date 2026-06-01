@@ -1,0 +1,61 @@
+use v6.d;
+use lib 'lib';
+use Test;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+
+class PlainGadget is Model {
+  method table-name { 'plain_gadgets' }
+}
+
+class AnalyticsGadget is Model {
+  method table-name { 'analytics_gadgets' }
+}
+
+AnalyticsGadget.connects-to('analytics');
+
+is PlainGadget.connection-name, 'primary', 'unbound model defaults to primary';
+is AnalyticsGadget.connection-name, 'analytics', 'bound model reports its connection';
+
+unless $has-sqlite {
+  skip 'no sqlite driver available', 3;
+  done-testing;
+  exit 0;
+}
+
+my $saved-primary    = DB.shared(name => 'primary');
+my $primary-adapter   = SqliteAdapter.new(database => ':memory:');
+my $analytics-adapter = SqliteAdapter.new(database => ':memory:');
+
+DB.set-shared(DB.new(adapter => $primary-adapter),   name => 'primary');
+DB.set-shared(DB.new(adapter => $analytics-adapter), name => 'analytics');
+
+$analytics-adapter.ddl-create-table('analytics_gadgets', [
+  name => { :string, limit => 64 },
+]);
+
+AnalyticsGadget.create({ name => 'Alpha' });
+
+is $analytics-adapter.count-records(table => 'analytics_gadgets', where => {}), 1,
+  'bound model persists to its connection';
+
+nok 'analytics_gadgets' (elem) $primary-adapter.get-table-names.list,
+  'bound model does not touch the primary connection';
+
+is AnalyticsGadget.all.elems, 1, 'bound model finds through its connection';
+
+DB.set-shared($saved-primary, name => 'primary');
+DB.set-shared(Nil, name => 'analytics');
+
+done-testing;
