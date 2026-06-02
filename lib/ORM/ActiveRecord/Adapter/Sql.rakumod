@@ -38,7 +38,7 @@ class SqlAdapter
   method upsert-records(Str:D :$table, :@rows, :%types = {}, :@unique-by = (), :@update-cols = () --> Int) { ... }
 
   # DDL — engines override.
-  method ddl-create-table(Str:D $table, @params, :@foreign-keys) { ... }
+  method ddl-create-table(Str:D $table, @params, :@foreign-keys, :$id, :$primary-key) { ... }
   method ddl-add-column(Str:D $table, Pair:D $param)             { ... }
   method ddl-add-timestamps(Str:D $table)                        { ... }
 

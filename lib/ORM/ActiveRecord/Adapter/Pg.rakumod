@@ -223,18 +223,28 @@ class PgAdapter is SqlAdapter is export {
   # ---- DDL emission ----
 
   method ddl-create-table(Str:D $table, @params, :@foreign-keys is copy,
-                          :$force, Bool :$temporary = False, Bool :$if-not-exists = False) {
+                          :$force, Bool :$temporary = False, Bool :$if-not-exists = False,
+                          :$id = True, :$primary-key) {
     self.ddl-force-drop($table, $force);
 
     # The primary key is a separate ALTER, so IF NOT EXISTS can't make the whole
     # operation atomic — skip entirely when the table is already present.
     return if $if-not-exists && self.get-table-names.list.grep(* eq $table).elems;
 
+    my %pk     = self.pk-plan(:$id, :$primary-key);
     my $fields = self!build-fields(@params, :@foreign-keys);
     my $prefix = self.ref-create-table-prefix(:$temporary, :$if-not-exists);
 
-    self.exec("{$prefix}$table ( id SERIAL, $fields )");
-    self.exec("ALTER TABLE $table ADD CONSTRAINT {$table}_pkey PRIMARY KEY (id)");
+    my @cols;
+    @cols.push(self!pg-id-column(%pk<pk-name>, %pk<id-type>)) if %pk<emit-id-col>;
+    @cols.push($fields) if $fields.chars;
+
+    self.exec("{$prefix}$table ( {@cols.join(', ')} )");
+
+    if %pk<want-pk> {
+      self.exec("ALTER TABLE $table ADD CONSTRAINT {$table}_pkey PRIMARY KEY ({%pk<pk-cols>.join(', ')})");
+    }
+
     for @foreign-keys -> $fk {
       self.exec(qq:to/SQL/);
         ALTER TABLE $table
@@ -242,6 +252,16 @@ class PgAdapter is SqlAdapter is export {
         FOREIGN KEY ({$fk}_id)
         REFERENCES {$fk ~ 's'}(id)
         SQL
+    }
+  }
+
+  method !pg-id-column(Str:D $name, Str:D $type --> Str) {
+    given $type {
+      when 'integer'              { "$name SERIAL" }
+      when 'bigint' | 'bigserial' { "$name BIGSERIAL" }
+      when 'uuid'                 { "$name UUID DEFAULT gen_random_uuid()" }
+      when 'string' | 'text'      { "$name VARCHAR(255)" }
+      default                     { "$name " ~ self!sql-type-for($type) }
     }
   }
 

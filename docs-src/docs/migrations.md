@@ -157,6 +157,70 @@ self.drop-table:    'users', :if-exists;
 `drop-table` also accepts `:cascade` (PostgreSQL) to drop dependents alongside
 the table.
 
+### Primary keys
+
+By default `create-table` adds an auto-incrementing integer surrogate key named
+`id` (`SERIAL` on PostgreSQL, `INTEGER PRIMARY KEY AUTOINCREMENT` on SQLite,
+`INT AUTO_INCREMENT` on MySQL). The `id` and `primary-key` options change that.
+
+#### Custom `id` type
+
+Pass `id => '<type>'` to give the surrogate key a different type. `'uuid'`,
+`'bigint'`, `'integer'`, and `'string'` are recognised; anything else falls
+through to the adapter's type map.
+
+```perl6
+# UUID primary key. PostgreSQL defaults it to gen_random_uuid(); SQLite stores
+# it as TEXT and MySQL as CHAR(36), with generation left to the application.
+self.create-table: 'documents', [ title => { :string, limit => 128 } ],
+  id => 'uuid';
+
+# 64-bit integer surrogate key.
+self.create-table: 'events', [ name => { :string, limit => 64 } ],
+  id => 'bigint';
+```
+
+#### No primary key
+
+`id => False` skips the surrogate column entirely; pair it with
+`primary-key => False` for a table with no primary key at all:
+
+```perl6
+self.create-table: 'audit_log', [
+  message => { :text },
+  at      => { :datetime },
+], id => False, primary-key => False;
+```
+
+#### Renaming the primary key
+
+`primary-key => 'name'` names the surrogate column (and its `PRIMARY KEY`)
+something other than `id`:
+
+```perl6
+self.create-table: 'users', [ email => { :string, limit => 128 } ],
+  primary-key => 'guid';   # → guid SERIAL PRIMARY KEY, no id column
+```
+
+#### Composite primary keys
+
+Pass a list to `primary-key` to build a composite key over columns you declare
+yourself. A composite key implies `id => False` — no surrogate column is added,
+so every key column must appear in the column list:
+
+```perl6
+self.create-table: 'order_lines', [
+  order_id => { :integer },
+  id       => { :integer },
+  sku      => { :string, limit => 32 },
+], id => False, primary-key => ['order_id', 'id'];
+```
+
+The key columns are emitted in the order given.
+
+> These options shape the table DDL only. Model-level support for composite and
+> renamed primary keys (finders, `self.primary-key = ...`) is tracked separately.
+
 ## Join tables
 
 `create-join-table` builds the two-column table that backs a many-to-many

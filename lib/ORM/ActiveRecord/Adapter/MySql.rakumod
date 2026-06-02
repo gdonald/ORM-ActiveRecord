@@ -311,20 +311,37 @@ class MySqlAdapter is SqlAdapter is export {
     # ---- DDL emission ----
 
     method ddl-create-table(Str:D $table, @params,
-                            :$force, Bool :$temporary = False, Bool :$if-not-exists = False) {
+                            :$force, Bool :$temporary = False, Bool :$if-not-exists = False,
+                            :$id = True, :$primary-key) {
       self.ddl-force-drop($table, $force);
 
+      my %pk = self.pk-plan(:$id, :$primary-key);
       my @fk-clauses;
       my $fields = self!build-fields(@params, :@fk-clauses);
-      my $fk-sql = @fk-clauses.elems ?? ', ' ~ @fk-clauses.join(', ') !! '';
       my $prefix = self.ref-create-table-prefix(:$temporary, :$if-not-exists);
+
+      my @parts;
+      @parts.push(self!mysql-id-column(%pk<pk-name>, %pk<id-type>)) if %pk<emit-id-col>;
+      @parts.push($fields) if $fields.chars;
+      @parts.append(@fk-clauses);
+      @parts.push("PRIMARY KEY ({%pk<pk-cols>.join(', ')})") if %pk<want-pk>;
+
+      my $body = @parts.join(",\n        ");
       self.exec(qq:to/SQL/);
       {$prefix}$table (
-        id INT NOT NULL AUTO_INCREMENT,
-        $fields$fk-sql,
-        PRIMARY KEY (id)
+        $body
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       SQL
+      }
+
+      method !mysql-id-column(Str:D $name, Str:D $type --> Str) {
+        given $type {
+          when 'integer'         { "$name INT NOT NULL AUTO_INCREMENT" }
+          when 'bigint'          { "$name BIGINT NOT NULL AUTO_INCREMENT" }
+          when 'uuid'            { "$name CHAR(36) NOT NULL" }
+          when 'string' | 'text' { "$name VARCHAR(255) NOT NULL" }
+          default                { "$name " ~ self!sql-type-for($type) ~ ' NOT NULL' }
+        }
       }
 
       method ddl-add-column(Str:D $table, Pair:D $param, Bool :$if-not-exists = False) {

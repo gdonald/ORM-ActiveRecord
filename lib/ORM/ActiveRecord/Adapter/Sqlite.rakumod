@@ -248,14 +248,43 @@ class SqliteAdapter is SqlAdapter is export {
   # ---- DDL emission ----
 
   method ddl-create-table(Str:D $table, @params,
-                          :$force, Bool :$temporary = False, Bool :$if-not-exists = False) {
+                          :$force, Bool :$temporary = False, Bool :$if-not-exists = False,
+                          :$id = True, :$primary-key) {
     self.ddl-force-drop($table, $force);
 
+    my %pk = self.pk-plan(:$id, :$primary-key);
     my @fk-clauses;
     my $fields = self!build-fields(@params, :@fk-clauses);
-    my $fk-sql = @fk-clauses.elems ?? ', ' ~ @fk-clauses.join(', ') !! '';
     my $prefix = self.ref-create-table-prefix(:$temporary, :$if-not-exists);
-    self.exec("{$prefix}$table ( id INTEGER PRIMARY KEY AUTOINCREMENT, $fields$fk-sql )");
+
+    my @cols;
+    my Bool $inline-pk = False;
+
+    if %pk<emit-id-col> {
+      # INTEGER PRIMARY KEY AUTOINCREMENT couples the column and the key, so it
+      # only applies to a single integer surrogate; other types take a separate
+      # table-level PRIMARY KEY constraint below.
+      if %pk<id-type> eq 'integer' && %pk<pk-cols>.elems == 1 {
+        @cols.push("{%pk<pk-name>} INTEGER PRIMARY KEY AUTOINCREMENT");
+        $inline-pk = True;
+      }
+      else {
+        @cols.push("{%pk<pk-name>} {self!sqlite-id-type(%pk<id-type>)}");
+      }
+    }
+
+    @cols.push($fields) if $fields.chars;
+    @cols.push("PRIMARY KEY ({%pk<pk-cols>.join(', ')})") if %pk<want-pk> && !$inline-pk;
+    @cols.append(@fk-clauses);
+
+    self.exec("{$prefix}$table ( {@cols.join(', ')} )");
+  }
+
+  method !sqlite-id-type(Str:D $type --> Str) {
+    given $type {
+      when 'uuid' | 'string' | 'text' { 'TEXT' }
+      default                         { self.ref-sql-type($type) }
+    }
   }
 
   method ddl-add-column(Str:D $table, Pair:D $param, Bool :$if-not-exists = False) {

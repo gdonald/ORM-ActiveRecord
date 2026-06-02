@@ -37,6 +37,43 @@ role SqlDdl is export {
 
   method ref-temporary-keyword(--> Str) { 'TEMPORARY ' }
 
+  # Resolve the `id:` / `primary-key:` create-table options into a plan the
+  # adapters emit from. Semantics mirror Rails:
+  #   id => True (default)  surrogate auto-increment integer named 'id'
+  #   id => 'uuid'          surrogate column of that type (custom PK type)
+  #   id => False           no surrogate column
+  #   primary-key => 'guid' rename the surrogate column / PK
+  #   primary-key => False  no PRIMARY KEY at all
+  #   primary-key => [a, b] composite PRIMARY KEY over already-declared columns
+  method pk-plan(:$id = True, :$primary-key) {
+    my Bool $composite = $primary-key ~~ Positional;
+    my Bool $id-false  = $id === False;
+
+    my Str $pk-name = $primary-key ~~ Str:D ?? $primary-key.Str !! 'id';
+
+    my Str $id-type = do given $id {
+      when Bool { 'integer' }
+      when Pair { $id.key.Str.lc }
+      when Str  { $id.lc }
+      default   { $id.defined ?? $id.Str.lc !! 'integer' }
+    };
+
+    my Bool $emit-id-col = !$id-false && !$composite;
+
+    my Bool $want-pk = do {
+      if    $composite             { True }
+      elsif $primary-key === False { False }
+      elsif $id-false              { $primary-key ~~ Str:D }
+      else                         { True }
+    };
+
+    my @pk-cols = $composite
+      ?? $primary-key.map(*.Str).list
+      !! ($want-pk ?? ($pk-name,) !! ());
+
+    %( :$emit-id-col, :$pk-name, :$id-type, :$want-pk, :@pk-cols );
+  }
+
   # A join table is just two NOT NULL foreign-key columns and no primary key.
   # Name and column names are derived in the migration layer.
   method ddl-create-join-table(Str:D $table, Str:D $col1, Str:D $col2,
