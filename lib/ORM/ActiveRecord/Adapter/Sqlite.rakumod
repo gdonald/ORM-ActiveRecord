@@ -249,12 +249,12 @@ class SqliteAdapter is SqlAdapter is export {
 
   method ddl-create-table(Str:D $table, @params,
                           :$force, Bool :$temporary = False, Bool :$if-not-exists = False,
-                          :$id = True, :$primary-key) {
+                          :$id = True, :$primary-key, :$comment) {
     self.ddl-force-drop($table, $force);
 
     my %pk = self.pk-plan(:$id, :$primary-key);
     my @fk-clauses;
-    my $fields = self!build-fields(@params, :@fk-clauses);
+    my @field-defs = self!build-fields(@params, :@fk-clauses);
     my $prefix = self.ref-create-table-prefix(:$temporary, :$if-not-exists);
 
     my @cols;
@@ -273,11 +273,13 @@ class SqliteAdapter is SqlAdapter is export {
       }
     }
 
-    @cols.push($fields) if $fields.chars;
+    @cols.append(@field-defs);
     @cols.push("PRIMARY KEY ({%pk<pk-cols>.join(', ')})") if %pk<want-pk> && !$inline-pk;
     @cols.append(@fk-clauses);
 
     self.exec("{$prefix}$table ( {@cols.join(', ')} )");
+    # SQLite has no table comments — `:comment` is accepted for cross-adapter
+    # parity and ignored.
   }
 
   method !sqlite-id-type(Str:D $type --> Str) {
@@ -297,7 +299,7 @@ class SqliteAdapter is SqlAdapter is export {
 
   method ddl-column-defs(Pair:D $param --> List) {
     my @fk-clauses;
-    self!build-fields([$param], :@fk-clauses).split(', ').list;
+    self!build-fields([$param], :@fk-clauses);
   }
 
   # SQLite's ALTER TABLE allows only one column operation per statement, so a
@@ -399,6 +401,18 @@ class SqliteAdapter is SqlAdapter is export {
     self.exec("ALTER TABLE $table DROP COLUMN updated_at");
   }
 
+  method !default-literal($value --> Str) {
+    return 'NULL' without $value;
+    return $value().Str if $value ~~ Callable;
+    return ($value ?? '1' !! '0') if $value ~~ Bool;
+    return $value.Str if $value ~~ Numeric;
+    self!string-literal($value.Str);
+  }
+
+  method !string-literal(Str:D $s --> Str) {
+    "'" ~ $s.subst("'", "''", :g) ~ "'";
+  }
+
   method !build-fields(@params, :@fk-clauses) {
     my @fields;
 
@@ -416,9 +430,13 @@ class SqliteAdapter is SqlAdapter is export {
       }
 
       my $type = '';
-      my $default = '';
       my $null = '';
       my Bool $is-bool = False;
+      my Bool $has-default = False;
+      my $default-value;
+      my $collation;
+      my $generated-as;
+      my Bool $stored = False;
 
       for $_{$name}.keys -> $attr {
         my $value = $_{$name}{$attr};
@@ -429,41 +447,41 @@ class SqliteAdapter is SqlAdapter is export {
           when 'integer' { $type = 'INTEGER' }
           when 'boolean' { $type = 'BOOLEAN'; $is-bool = True }
           when 'datetime' | 'timestamp' { $type = 'DATETIME' }
-          when 'limit'   { }   # SQLite ignores VARCHAR length; types use affinity
-          when 'default' { $default = $value }
-          when 'null'    { $null = $value }
+          when 'limit'     { }   # SQLite ignores VARCHAR length; types use affinity
+          when 'default'   { $has-default = True; $default-value = $value }
+          when 'null'      { $null = $value }
+          when 'collation' { $collation = $value }
+          when 'charset'   { }   # SQLite has no charset; ignored for parity
+          when 'as'        { $generated-as = $value }
+          when 'stored'    { $stored = $value.so }
+          when 'virtual'   { }
+          when 'comment'   { }   # SQLite has no column comments; ignored
           when 'reference' {
             $type = 'INTEGER';
             $field_name = $field_name ~ '_id';
             @fk-clauses.push("FOREIGN KEY ($field_name) REFERENCES { $name ~ 's' }(id)");
           }
-          default { say 'unknown attr: ' ~ $attr ~ ' ' ~ $value; die }
+          default { die 'SqliteAdapter: unknown column attr: ' ~ $attr }
         }
       }
 
-      if $is-bool && $default ne '' {
-        given $default {
-          when 'True'  { $default = ' DEFAULT 1' }
-          when 'False' { $default = ' DEFAULT 0' }
-          default      { $default = '' }
-        }
-      } elsif $type eq 'INTEGER' && $default ne '' {
-        $default = $default ~~ /^ '-'? \d+ $/
-          ?? " DEFAULT $default"
-          !! '';
-      } else {
-        $default = '';
+      my $col = "$field_name $type";
+
+      $col ~= ' COLLATE ' ~ $collation if $collation.defined;
+
+      if $generated-as.defined {
+        my $kind = $stored ?? 'STORED' !! 'VIRTUAL';
+        $col ~= " GENERATED ALWAYS AS ($generated-as) $kind";
+      }
+      elsif $has-default {
+        $col ~= ' DEFAULT ' ~ self!default-literal($default-value);
       }
 
-      given $null {
-        when 'True'  { $null = ' NULL' }
-        when 'False' { $null = ' NOT NULL' }
-        default      { $null = '' }
-      }
+      $col ~= self.ref-null-clause($null);
 
-      @fields.push($field_name ~ ' ' ~ $type ~ $default ~ $null);
+      @fields.push($col);
     }
 
-    @fields.join(', ').trim;
+    @fields;
   }
 }

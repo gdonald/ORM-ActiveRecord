@@ -312,25 +312,26 @@ class MySqlAdapter is SqlAdapter is export {
 
     method ddl-create-table(Str:D $table, @params,
                             :$force, Bool :$temporary = False, Bool :$if-not-exists = False,
-                            :$id = True, :$primary-key) {
+                            :$id = True, :$primary-key, :$comment) {
       self.ddl-force-drop($table, $force);
 
       my %pk = self.pk-plan(:$id, :$primary-key);
       my @fk-clauses;
-      my $fields = self!build-fields(@params, :@fk-clauses);
+      my @field-defs = self!build-fields(@params, :@fk-clauses);
       my $prefix = self.ref-create-table-prefix(:$temporary, :$if-not-exists);
 
       my @parts;
       @parts.push(self!mysql-id-column(%pk<pk-name>, %pk<id-type>)) if %pk<emit-id-col>;
-      @parts.push($fields) if $fields.chars;
+      @parts.append(@field-defs);
       @parts.append(@fk-clauses);
       @parts.push("PRIMARY KEY ({%pk<pk-cols>.join(', ')})") if %pk<want-pk>;
 
       my $body = @parts.join(",\n        ");
+      my $comment-clause = $comment.defined ?? ' COMMENT=' ~ self!string-literal($comment.Str) !! '';
       self.exec(qq:to/SQL/);
       {$prefix}$table (
         $body
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4$comment-clause
       SQL
       }
 
@@ -353,7 +354,7 @@ class MySqlAdapter is SqlAdapter is export {
 
       method ddl-column-defs(Pair:D $param --> List) {
         my @fk-clauses;
-        self!build-fields([$param], :@fk-clauses).split(', ').list;
+        self!build-fields([$param], :@fk-clauses);
       }
 
       method ddl-change-column(Str:D $table, Str:D $name, Str:D $type, *%opts) {
@@ -485,6 +486,7 @@ class MySqlAdapter is SqlAdapter is export {
 
       method !default-literal($value --> Str) {
         return 'NULL' without $value;
+        return $value().Str if $value ~~ Callable;
         return ($value ?? '1' !! '0') if $value ~~ Bool;
         return $value.Str if $value ~~ Numeric;
         self!string-literal($value.Str);
@@ -599,11 +601,17 @@ class MySqlAdapter is SqlAdapter is export {
               next;
             }
 
-            my $type    = '';
-            my $limit   = '';
-            my $default = '';
-            my $null    = '';
+            my $type  = '';
+            my $limit = '';
+            my $null  = '';
             my Bool $is-bool = False;
+            my Bool $has-default = False;
+            my $default-value;
+            my $charset;
+            my $collation;
+            my $generated-as;
+            my Bool $stored = False;
+            my $comment;
 
             for $_{$name}.keys -> $attr {
               my $value = $_{$name}{$attr};
@@ -615,14 +623,20 @@ class MySqlAdapter is SqlAdapter is export {
                 when 'boolean'   { $type = 'TINYINT'; $is-bool = True }
                 when 'datetime' | 'timestamp' { $type = 'DATETIME(6)' }
                 when 'limit'     { $limit = '(' ~ $value ~ ')' }
-                when 'default'   { $default = $value }
+                when 'default'   { $has-default = True; $default-value = $value }
                 when 'null'      { $null = $value }
+                when 'charset'   { $charset = $value }
+                when 'collation' { $collation = $value }
+                when 'as'        { $generated-as = $value }
+                when 'stored'    { $stored = $value.so }
+                when 'virtual'   { }
+                when 'comment'   { $comment = $value }
                 when 'reference' {
                   $type = 'INT';
                   $field_name = $field_name ~ '_id';
                   @fk-clauses.push("FOREIGN KEY ($field_name) REFERENCES { $name ~ 's' }(id)");
                 }
-                default { say 'unknown attr: ' ~ $attr ~ ' ' ~ $value; die }
+                default { die 'MySqlAdapter: unknown column attr: ' ~ $attr }
               }
             }
 
@@ -632,29 +646,26 @@ class MySqlAdapter is SqlAdapter is export {
               default        { $limit = '' if $type ne 'VARCHAR' && $type ne 'TINYINT' }
             }
 
-            if $is-bool && $default ne '' {
-              given $default {
-                when 'True'  { $default = ' DEFAULT 1' }
-                when 'False' { $default = ' DEFAULT 0' }
-                default      { $default = '' }
-              }
-            } elsif $type eq 'INT' && $default ne '' {
-              $default = $default ~~ /^ '-'? \d+ $/
-              ?? " DEFAULT $default"
-              !! '';
-            } else {
-              $default = '';
+            my $col = "$field_name $type$limit";
+
+            $col ~= ' CHARACTER SET ' ~ $charset if $charset.defined;
+            $col ~= ' COLLATE ' ~ $collation     if $collation.defined;
+
+            if $generated-as.defined {
+              my $kind = $stored ?? 'STORED' !! 'VIRTUAL';
+              $col ~= " GENERATED ALWAYS AS ($generated-as) $kind";
+            }
+            elsif $has-default {
+              $col ~= ' DEFAULT ' ~ self!default-literal($default-value);
             }
 
-            given $null {
-              when 'True'  { $null = ' NULL' }
-              when 'False' { $null = ' NOT NULL' }
-              default      { $null = '' }
-            }
+            $col ~= self.ref-null-clause($null);
 
-            @fields.push($field_name ~ ' ' ~ $type ~ $limit ~ $default ~ $null);
+            $col ~= ' COMMENT ' ~ self!string-literal($comment.Str) if $comment.defined;
+
+            @fields.push($col);
           }
 
-          @fields.join(', ').trim;
+          @fields;
         }
       }

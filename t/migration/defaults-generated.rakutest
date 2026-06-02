@@ -1,0 +1,231 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub adapter-kind(--> Str) {
+  given $adapter.^name {
+    when /Pg/     { 'pg' }
+    when /MySql/  { 'mysql' }
+    when /Sqlite/ { 'sqlite' }
+    default       { 'unknown' }
+  }
+}
+
+my $kind      = adapter-kind();
+my $is-pg     = $kind eq 'pg';
+my $is-mysql  = $kind eq 'mysql';
+my $is-sqlite = $kind eq 'sqlite';
+
+sub now-fn(--> Str) {
+  given $kind {
+    when 'pg'     { 'now()' }
+    when 'mysql'  { 'CURRENT_TIMESTAMP(6)' }
+    default       { 'CURRENT_TIMESTAMP' }
+  }
+}
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub scalar-of(Str:D $sql) {
+  my @rows = $adapter.exec($sql);
+  return Nil unless @rows.elems;
+  my $v = @rows[0][0];
+  return Nil without $v;
+  $v ~~ Blob ?? $v.decode('utf-8') !! $v;
+}
+
+my @test-tables = < _dg_fn _dg_lit _dg_gen _dg_virt _dg_coll _dg_cmt >;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+cleanup-tables;
+
+# function default emits raw SQL and populates the column on insert
+class CreateFn is Migration {
+  method change {
+    self.create-table: '_dg_fn', [
+      n       => { :integer },
+      made_at => { :timestamp, default => -> { now-fn() } },
+    ];
+  }
+}
+
+CreateFn.new.up;
+$adapter.exec('INSERT INTO _dg_fn (n) VALUES (1)');
+
+ok scalar-of('SELECT made_at FROM _dg_fn').defined,
+  'function default populates the column on insert';
+
+# literal default is stored quoted
+class CreateLit is Migration {
+  method change {
+    self.create-table: '_dg_lit', [
+      n      => { :integer },
+      status => { :string, limit => 32, default => 'pending' },
+    ];
+  }
+}
+
+CreateLit.new.up;
+$adapter.exec('INSERT INTO _dg_lit (n) VALUES (1)');
+
+is scalar-of('SELECT status FROM _dg_lit'), 'pending',
+  'literal default stores the value';
+
+# stored generated column computes from its expression
+class CreateGen is Migration {
+  method change {
+    self.create-table: '_dg_gen', [
+      a       => { :integer },
+      doubled => { :integer, as => 'a * 2', stored => True },
+    ];
+  }
+}
+
+CreateGen.new.up;
+$adapter.exec('INSERT INTO _dg_gen (a) VALUES (21)');
+
+is scalar-of('SELECT doubled FROM _dg_gen').Int, 42,
+  'stored generated column computes from the expression';
+
+# virtual generated column (MySQL / SQLite default to VIRTUAL when stored omitted)
+if $is-mysql || $is-sqlite {
+  my class CreateVirt is Migration {
+    method change {
+      self.create-table: '_dg_virt', [
+        a       => { :integer },
+        tripled => { :integer, as => 'a * 3' },
+      ];
+    }
+  }
+
+  CreateVirt.new.up;
+  $adapter.exec('INSERT INTO _dg_virt (a) VALUES (10)');
+
+  is scalar-of('SELECT tripled FROM _dg_virt').Int, 30,
+    'virtual generated column computes on read';
+}
+
+# collation
+if $is-sqlite {
+  my class CreateCollSqlite is Migration {
+    method change {
+      self.create-table: '_dg_coll', [ name => { :text, collation => 'NOCASE' } ];
+    }
+  }
+
+  CreateCollSqlite.new.up;
+  $adapter.exec("INSERT INTO _dg_coll (name) VALUES ('Hello')");
+
+  is scalar-of("SELECT COUNT(*) FROM _dg_coll WHERE name = 'hello'").Int, 1,
+    'SQLite NOCASE collation matches case-insensitively';
+}
+
+if $is-pg {
+  my class CreateCollPg is Migration {
+    method change {
+      self.create-table: '_dg_coll', [ name => { :string, limit => 32, collation => 'C' } ];
+    }
+  }
+
+  CreateCollPg.new.up;
+
+  is scalar-of(qq{SELECT collation_name FROM information_schema.columns WHERE table_name = '_dg_coll' AND column_name = 'name'}),
+    'C',
+    'PostgreSQL records the requested collation';
+}
+
+if $is-mysql {
+  my class CreateCollMysql is Migration {
+    method change {
+      self.create-table: '_dg_coll', [
+        name => { :string, limit => 32, charset => 'utf8mb4', collation => 'utf8mb4_bin' },
+      ];
+    }
+  }
+
+  CreateCollMysql.new.up;
+
+  is scalar-of(qq{SELECT collation_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '_dg_coll' AND column_name = 'name'}),
+    'utf8mb4_bin',
+    'MySQL records the requested collation';
+}
+
+# create-time column / table comments
+if $is-pg {
+  my class CreateCmtPg is Migration {
+    method change {
+      self.create-table: '_dg_cmt', [
+        note => { :string, limit => 32, comment => 'free text' },
+      ], comment => 'sample table';
+    }
+  }
+
+  CreateCmtPg.new.up;
+
+  my $col = scalar-of(qq:to/SQL/);
+    SELECT d.description
+      FROM pg_description d
+      JOIN pg_class c ON c.oid = d.objoid
+      JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = d.objsubid
+     WHERE c.relname = '_dg_cmt' AND a.attname = 'note'
+    SQL
+  is $col, 'free text', 'PostgreSQL sets the column comment at create time';
+
+  is scalar-of(q{SELECT obj_description('_dg_cmt'::regclass)}), 'sample table',
+    'PostgreSQL sets the table comment at create time';
+}
+
+if $is-mysql {
+  my class CreateCmtMysql is Migration {
+    method change {
+      self.create-table: '_dg_cmt', [
+        note => { :string, limit => 32, comment => 'free text' },
+      ], comment => 'sample table';
+    }
+  }
+
+  CreateCmtMysql.new.up;
+
+  is scalar-of(qq{SELECT column_comment FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '_dg_cmt' AND column_name = 'note'}),
+    'free text', 'MySQL sets the column comment at create time';
+
+  is scalar-of(qq{SELECT table_comment FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = '_dg_cmt'}),
+    'sample table', 'MySQL sets the table comment at create time';
+}
+
+if $is-sqlite {
+  my class CreateCmtSqlite is Migration {
+    method change {
+      self.create-table: '_dg_cmt', [
+        note => { :string, comment => 'free text' },
+      ], comment => 'sample table';
+    }
+  }
+
+  lives-ok { CreateCmtSqlite.new.up },
+    'SQLite create-time comments are a silent no-op';
+}
+
+cleanup-tables;
+
+done-testing;

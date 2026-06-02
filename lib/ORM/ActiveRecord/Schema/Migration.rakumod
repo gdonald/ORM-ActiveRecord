@@ -324,10 +324,10 @@ class Migration is export {
   }
 
   method create-table(Str:D $table, @params, :$force, Bool :$temporary = False, Bool :$if-not-exists = False,
-                      :$id = True, :$primary-key) {
+                      :$id = True, :$primary-key, :$comment) {
     if $!recorder { $!recorder.record('create-table', $table, @params); return }
 
-    $!db.ddl-create-table($table, @params, :$force, :$temporary, :$if-not-exists, :$id, :$primary-key);
+    $!db.ddl-create-table($table, @params, :$force, :$temporary, :$if-not-exists, :$id, :$primary-key, :$comment);
   }
 
   method create-join-table(Str:D $table1, Str:D $table2, :$table-name, *%opts) {

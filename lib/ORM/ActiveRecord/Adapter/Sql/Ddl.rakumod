@@ -429,6 +429,17 @@ role SqlDdl is export {
 
   method ref-text-sql-type(--> Str) { 'VARCHAR(255)' }
 
+  # NULL / NOT NULL clause from a column's `null` option. The raw value is a
+  # Bool (or the empty string when the option was omitted); stringifying keeps
+  # the same shape every adapter's build-fields used to inline.
+  method ref-null-clause($null --> Str) {
+    given $null {
+      when 'True'  { ' NULL' }
+      when 'False' { ' NOT NULL' }
+      default      { '' }
+    }
+  }
+
   method ref-index-name(Str:D $table, Str:D $name, Bool :$polymorphic --> Str) {
     $polymorphic
       ?? "{$table}_{$name}_type_{$name}_id_idx"

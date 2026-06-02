@@ -313,6 +313,97 @@ self.remove-index: 'users', :email, if-exists => True;
 | `add/remove-column if-[not-]exists` | yes    |   —    |   —   |
 | `add/remove-index if-[not-]exists`  | yes    |  yes   |   —   |
 
+## Defaults, generated columns, collation, and comments
+
+`create-table` and `add-column` accept several further per-column options.
+
+### Function defaults
+
+A literal `default => $value` emits a quoted/typed literal. To use a SQL
+expression instead (so the database evaluates it on every insert), pass a
+block — it is emitted verbatim, unquoted:
+
+```perl6
+self.create-table: 'events', [
+  name       => { :string, limit => 64 },
+  created_at => { :timestamp, default => -> { 'now()' } },
+];
+```
+
+The block's return value is raw SQL, so use the function spelling your adapter
+understands (`now()` on PostgreSQL, `CURRENT_TIMESTAMP(6)` on MySQL,
+`CURRENT_TIMESTAMP` on SQLite). A plain `default => 'now()'` would store the
+*string* `now()`, not call the function.
+
+### Generated (computed) columns
+
+Pass `as => '<expression>'` to make a column computed from other columns. Add
+`stored => True` to persist the value; omit it (or `stored => False`) for a
+virtual column computed on read:
+
+```perl6
+self.create-table: 'rectangles', [
+  width     => { :integer },
+  height    => { :integer },
+  area      => { :integer, as => 'width * height', stored => True },
+  perimeter => { :integer, as => '2 * (width + height)' },   # virtual
+];
+```
+
+PostgreSQL only supports `STORED` generated columns (before PG 18), so `area`
+and `perimeter` are both emitted `STORED` there; MySQL and SQLite honour the
+`stored` flag and default to `VIRTUAL`. A generated column cannot also carry a
+`default`.
+
+### Collation and charset
+
+`collation => '<name>'` sets a per-column collation; on MySQL you can also pass
+`charset => '<name>'`:
+
+```perl6
+# PostgreSQL — COLLATE "C"
+self.create-table: 'people', [ name => { :string, collation => 'C' } ];
+
+# MySQL — CHARACTER SET utf8mb4 COLLATE utf8mb4_bin
+self.create-table: 'people', [
+  name => { :string, charset => 'utf8mb4', collation => 'utf8mb4_bin' },
+];
+
+# SQLite — COLLATE NOCASE
+self.create-table: 'people', [ name => { :text, collation => 'NOCASE' } ];
+```
+
+PostgreSQL has no per-column charset (passing `charset` raises); SQLite ignores
+`charset` for parity.
+
+### Comments at create time
+
+`comment => '<text>'` on a column, and `comment => '<text>'` on `create-table`
+itself, set column and table comments:
+
+```perl6
+self.create-table: 'orders', [
+  status => { :string, limit => 16, comment => 'pending | shipped | closed' },
+], comment => 'one row per checkout';
+```
+
+On PostgreSQL these emit `COMMENT ON COLUMN` / `COMMENT ON TABLE` statements
+after the table is created; MySQL inlines `COMMENT '...'` on the column and
+`COMMENT='...'` on the table. SQLite has no comment concept and silently
+ignores both. To change a comment on an existing table, see
+[`change-column-comment` / `change-table-comment`](#changing-columns).
+
+### Adapter support
+
+| Option                       | PostgreSQL          | MySQL                 | SQLite               |
+| ---------------------------- | ------------------- | --------------------- | -------------------- |
+| `default => -> { ... }`      | yes                 | yes                   | yes                  |
+| `as` / `stored` (generated)  | `STORED` only       | `STORED` / `VIRTUAL`  | `STORED` / `VIRTUAL` |
+| `collation`                  | `COLLATE "name"`    | `COLLATE name`        | `COLLATE name`       |
+| `charset`                    | — (raises)          | `CHARACTER SET name`  | ignored              |
+| column `comment`             | `COMMENT ON COLUMN` | inline `COMMENT`      | ignored              |
+| table `comment`              | `COMMENT ON TABLE`  | `COMMENT=` on table   | ignored              |
+
 ## Changing columns
 
 After a table exists, four methods alter the shape of a column in place:

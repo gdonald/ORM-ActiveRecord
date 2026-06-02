@@ -224,20 +224,21 @@ class PgAdapter is SqlAdapter is export {
 
   method ddl-create-table(Str:D $table, @params, :@foreign-keys is copy,
                           :$force, Bool :$temporary = False, Bool :$if-not-exists = False,
-                          :$id = True, :$primary-key) {
+                          :$id = True, :$primary-key, :$comment) {
     self.ddl-force-drop($table, $force);
 
     # The primary key is a separate ALTER, so IF NOT EXISTS can't make the whole
     # operation atomic — skip entirely when the table is already present.
     return if $if-not-exists && self.get-table-names.list.grep(* eq $table).elems;
 
-    my %pk     = self.pk-plan(:$id, :$primary-key);
-    my $fields = self!build-fields(@params, :@foreign-keys);
+    my %pk = self.pk-plan(:$id, :$primary-key);
+    my @comments;
+    my @field-defs = self!build-fields(@params, :@foreign-keys, :@comments);
     my $prefix = self.ref-create-table-prefix(:$temporary, :$if-not-exists);
 
     my @cols;
     @cols.push(self!pg-id-column(%pk<pk-name>, %pk<id-type>)) if %pk<emit-id-col>;
-    @cols.push($fields) if $fields.chars;
+    @cols.append(@field-defs);
 
     self.exec("{$prefix}$table ( {@cols.join(', ')} )");
 
@@ -253,6 +254,11 @@ class PgAdapter is SqlAdapter is export {
         REFERENCES {$fk ~ 's'}(id)
         SQL
     }
+
+    # PostgreSQL has no inline column-comment syntax, so comments collected
+    # during build-fields are emitted as separate COMMENT ON statements.
+    self.ddl-change-column-comment($table, .key, .value) for @comments;
+    self.ddl-change-table-comment($table, $comment) if $comment.defined;
   }
 
   method !pg-id-column(Str:D $name, Str:D $type --> Str) {
@@ -267,14 +273,17 @@ class PgAdapter is SqlAdapter is export {
 
   method ddl-add-column(Str:D $table, Pair:D $param, Bool :$if-not-exists = False) {
     my $clause = $if-not-exists ?? self.ref-column-if-not-exists-clause !! '';
-    for self.ddl-column-defs($param) -> $col {
+    my @fk;
+    my @comments;
+    for self!build-fields([$param], foreign-keys => @fk, :@comments) -> $col {
       self.exec("ALTER TABLE $table ADD COLUMN {$clause}$col");
     }
+    self.ddl-change-column-comment($table, .key, .value) for @comments;
   }
 
   method ddl-column-defs(Pair:D $param --> List) {
     my @fk;
-    self!build-fields([$param], foreign-keys => @fk).split(', ').list;
+    self!build-fields([$param], foreign-keys => @fk);
   }
 
   method ref-drop-cascade-suffix(--> Str) { ' CASCADE' }
@@ -356,9 +365,14 @@ class PgAdapter is SqlAdapter is export {
 
   method !default-literal($value --> Str) {
     return 'NULL' without $value;
+    return $value().Str if $value ~~ Callable;
     return ($value ?? "'t'" !! "'f'") if $value ~~ Bool;
     return $value.Str if $value ~~ Numeric;
     self!string-literal($value.Str);
+  }
+
+  method !quote-collation(Str:D $name --> Str) {
+    '"' ~ $name.subst('"', '""', :g) ~ '"';
   }
 
   method !string-literal(Str:D $s --> Str) {
@@ -441,7 +455,7 @@ class PgAdapter is SqlAdapter is export {
     self.exec("ALTER TYPE $name RENAME VALUE {self!string-literal($from)} TO {self!string-literal($to)}");
   }
 
-  method !build-fields(@params, :@foreign-keys) {
+  method !build-fields(@params, :@foreign-keys, :@comments) {
     my @fields;
 
     for @params {
@@ -457,58 +471,62 @@ class PgAdapter is SqlAdapter is export {
         next;
       }
 
-      my $type = '';
+      my $type  = '';
       my $limit = '';
-      my $default = '';
-      my $null = '';
+      my $null  = '';
+      my Bool $has-default = False;
+      my $default-value;
+      my $collation;
+      my $generated-as;
+      my Bool $stored = False;
+      my $comment;
 
       for $_{$name}.keys -> $attr {
         my $value = $_{$name}{$attr};
 
         given $attr {
-          when 'string' { $type = 'VARCHAR' }
-          when 'text' { $type = 'TEXT' }
-          when 'integer' { $type = 'INTEGER' }
-          when 'boolean' { $type = 'BOOL' }
+          when 'string'    { $type = 'VARCHAR' }
+          when 'text'      { $type = 'TEXT' }
+          when 'integer'   { $type = 'INTEGER' }
+          when 'boolean'   { $type = 'BOOL' }
           when 'datetime' | 'timestamp' { $type = 'TIMESTAMPTZ' }
-          when 'limit' { $limit = '(' ~ $value ~ ')' }
-          when 'default' { $default = $value }
-          when 'null' { $null = $value }
+          when 'limit'     { $limit = '(' ~ $value ~ ')' }
+          when 'default'   { $has-default = True; $default-value = $value }
+          when 'null'      { $null = $value }
+          when 'collation' { $collation = $value }
+          when 'charset'   { die 'PgAdapter: charset is not supported (use collation)' }
+          when 'as'        { $generated-as = $value }
+          when 'stored'    { $stored = $value.so }
+          when 'virtual'   { }
+          when 'comment'   { $comment = $value }
           when 'reference' {
             @foreign-keys.push($field_name);
             $type = 'INTEGER';
             $field_name = $field_name ~ '_id';
           }
-          default { say 'unknown attr: ' ~ $attr ~ ' ' ~ $value; die }
+          default { die 'PgAdapter: unknown column attr: ' ~ $attr }
         }
       }
 
-      if $type ~~ 'BOOL' {
-        given $default {
-          when 'True' { $default = " DEFAULT 't'" }
-          when 'False' { $default = " DEFAULT 'f'" }
-          default { $default = '' }
-        }
+      my $col = $field_name ~ ' ' ~ $type ~ $limit;
+
+      $col ~= ' COLLATE ' ~ self!quote-collation($collation) if $collation.defined;
+
+      if $generated-as.defined {
+        # PostgreSQL only persists generated columns (no VIRTUAL before PG 18).
+        $col ~= " GENERATED ALWAYS AS ($generated-as) STORED";
+      }
+      elsif $has-default {
+        $col ~= ' DEFAULT ' ~ self!default-literal($default-value);
       }
 
-      if $type ~~ /(INTEGER|VARCHAR)/ {
-        given $null {
-          when 'True' { $null = ' NULL' }
-          when 'False' { $null = ' NOT NULL' }
-          default { $null = '' }
-        }
-      }
+      $col ~= self.ref-null-clause($null);
 
-      if $type ~~ 'INTEGER' {
-        given $default {
-          when /\d+/ { $default = " DEFAULT $default" }
-          default { $default = '' }
-        }
-      }
+      @comments.push($field_name => $comment) if $comment.defined;
 
-      @fields.push($field_name ~ ' ' ~ $type ~ $limit ~ $default ~ $null);
+      @fields.push($col);
     }
 
-    @fields.join(', ').trim;
+    @fields;
   }
 }
