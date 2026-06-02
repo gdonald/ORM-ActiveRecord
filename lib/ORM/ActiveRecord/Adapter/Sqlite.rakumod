@@ -445,9 +445,23 @@ class SqliteAdapter is SqlAdapter is export {
           when 'string'  { $type = 'TEXT' }
           when 'text'    { $type = 'TEXT' }
           when 'integer' { $type = 'INTEGER' }
+          when 'bigint'  { $type = 'INTEGER' }
+          when 'smallint' { $type = 'INTEGER' }
           when 'boolean' { $type = 'BOOLEAN'; $is-bool = True }
+          when 'decimal' | 'numeric' { $type = 'NUMERIC' }
+          when 'float'   { $type = 'REAL' }
+          when 'money'   { $type = 'NUMERIC' }
           when 'datetime' | 'timestamp' { $type = 'DATETIME' }
-          when 'limit'     { }   # SQLite ignores VARCHAR length; types use affinity
+          when 'timestamptz' { $type = 'DATETIME' }
+          when 'date'    { $type = 'DATE' }
+          when 'time'    { $type = 'TIME' }
+          when 'interval' { die 'SqliteAdapter: :interval columns are PostgreSQL-only' }
+          when 'uuid'    { $type = 'TEXT' }
+          when 'binary'  { $type = 'BLOB' }
+          # SQLite uses type affinity, so size / precision / scale are ignored.
+          when 'limit'     { }
+          when 'precision' { }
+          when 'scale'     { }
           when 'default'   { $has-default = True; $default-value = $value }
           when 'null'      { $null = $value }
           when 'collation' { $collation = $value }

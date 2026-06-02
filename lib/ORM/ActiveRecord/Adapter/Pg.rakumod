@@ -356,9 +356,15 @@ class PgAdapter is SqlAdapter is export {
       when 'bigint'                 { 'BIGINT' }
       when 'smallint'               { 'SMALLINT' }
       when 'boolean'                { 'BOOL' }
-      when 'datetime' | 'timestamp' { 'TIMESTAMPTZ' }
+      when 'decimal' | 'numeric'    { 'NUMERIC' }
+      when 'float'                  { 'DOUBLE PRECISION' }
+      when 'money'                  { 'MONEY' }
+      when 'datetime' | 'timestamp' | 'timestamptz' { 'TIMESTAMPTZ' }
       when 'date'                   { 'DATE' }
       when 'time'                   { 'TIME' }
+      when 'interval'               { 'INTERVAL' }
+      when 'uuid'                   { 'UUID' }
+      when 'binary'                 { 'BYTEA' }
       default                       { $type.uc }
     }
   }
@@ -480,6 +486,10 @@ class PgAdapter is SqlAdapter is export {
       my $generated-as;
       my Bool $stored = False;
       my $comment;
+      my Bool $is-decimal = False;
+      my Bool $is-binary = False;
+      my $precision;
+      my $scale;
 
       for $_{$name}.keys -> $attr {
         my $value = $_{$name}{$attr};
@@ -488,9 +498,22 @@ class PgAdapter is SqlAdapter is export {
           when 'string'    { $type = 'VARCHAR' }
           when 'text'      { $type = 'TEXT' }
           when 'integer'   { $type = 'INTEGER' }
+          when 'bigint'    { $type = 'BIGINT' }
+          when 'smallint'  { $type = 'SMALLINT' }
           when 'boolean'   { $type = 'BOOL' }
+          when 'decimal' | 'numeric' { $type = 'NUMERIC'; $is-decimal = True }
+          when 'float'     { $type = 'DOUBLE PRECISION' }
+          when 'money'     { $type = 'MONEY' }
           when 'datetime' | 'timestamp' { $type = 'TIMESTAMPTZ' }
+          when 'timestamptz' { $type = 'TIMESTAMPTZ' }
+          when 'date'      { $type = 'DATE' }
+          when 'time'      { $type = 'TIME' }
+          when 'interval'  { $type = 'INTERVAL' }
+          when 'uuid'      { $type = 'UUID' }
+          when 'binary'    { $type = 'BYTEA'; $is-binary = True }
           when 'limit'     { $limit = '(' ~ $value ~ ')' }
+          when 'precision' { $precision = $value }
+          when 'scale'     { $scale = $value }
           when 'default'   { $has-default = True; $default-value = $value }
           when 'null'      { $null = $value }
           when 'collation' { $collation = $value }
@@ -507,6 +530,13 @@ class PgAdapter is SqlAdapter is export {
           default { die 'PgAdapter: unknown column attr: ' ~ $attr }
         }
       }
+
+      if $is-decimal && $precision.defined {
+        $limit = "($precision" ~ ($scale.defined ?? ", $scale" !! '') ~ ')';
+      }
+
+      # BYTEA takes no length modifier; a stray `limit` is ignored.
+      $limit = '' if $is-binary;
 
       my $col = $field_name ~ ' ' ~ $type ~ $limit;
 

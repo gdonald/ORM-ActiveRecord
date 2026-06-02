@@ -55,25 +55,40 @@ canonical name (the adjective on the right-hand side) is what you pass; the
 DDL produced is adapter-aware (see [Adapters](adapters.md) for the per-engine
 differences).
 
-| Type         | Notes                                                                                                                                                          |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `:string`    | Variable-length text. Accepts `limit => N` (defaults to 255).                                                                                                  |
-| `:text`      | Unbounded text. No `limit`.                                                                                                                                    |
-| `:integer`   | Whole-number column.                                                                                                                                           |
-| `:boolean`   | True/False. Storage varies by adapter (`BOOLEAN`, `TINYINT(1)`, `INTEGER 0/1`).                                                                                |
-| `:datetime`  | Timestamp without explicit timezone semantics.                                                                                                                 |
-| `:timestamp` | Synonym for `:datetime`.                                                                                                                                       |
-| `:reference` | Foreign-key column. The column declared as `user => { :reference }` becomes `user_id INTEGER` plus an index. See the `pages` / `subscriptions` examples above. |
+| Type          | Notes                                                                                                                                                          |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `:string`     | Variable-length text. Accepts `limit => N` (defaults to 255).                                                                                                  |
+| `:text`       | Unbounded text. No `limit`.                                                                                                                                    |
+| `:integer`    | 32-bit whole number.                                                                                                                                           |
+| `:bigint`     | 64-bit whole number. (SQLite stores all integers as 64-bit `INTEGER`.)                                                                                         |
+| `:smallint`   | 16-bit whole number.                                                                                                                                           |
+| `:decimal` / `:numeric` | Exact numeric. Accepts `precision => P` and `scale => S` (ignored by SQLite's affinity).                                                            |
+| `:float`      | Approximate floating point (`DOUBLE PRECISION` / `DOUBLE` / `REAL`).                                                                                           |
+| `:money`      | Currency. `MONEY` on PostgreSQL, `DECIMAL(19, 4)` on MySQL, `NUMERIC` on SQLite.                                                                               |
+| `:boolean`    | True/False. Storage varies by adapter (`BOOLEAN`, `TINYINT(1)`, `INTEGER 0/1`).                                                                                |
+| `:date`       | Calendar date.                                                                                                                                                 |
+| `:time`       | Time of day.                                                                                                                                                   |
+| `:datetime`   | Timestamp without explicit timezone semantics.                                                                                                                 |
+| `:timestamp`  | Synonym for `:datetime`.                                                                                                                                        |
+| `:timestamptz`| Timestamp with time zone (`TIMESTAMPTZ` on PostgreSQL; falls back to the plain timestamp type on MySQL / SQLite).                                               |
+| `:interval`   | Time span. **PostgreSQL only** — MySQL and SQLite raise.                                                                                                        |
+| `:uuid`       | `UUID` on PostgreSQL, `CHAR(36)` on MySQL, `TEXT` on SQLite.                                                                                                    |
+| `:binary`     | Raw bytes (`BYTEA` / `BLOB`). On MySQL a `limit => N` makes it `VARBINARY(N)`; elsewhere `limit` is ignored.                                                    |
+| `:reference`  | Foreign-key column. The column declared as `user => { :reference }` becomes `user_id INTEGER` plus an index. See the `pages` / `subscriptions` examples above.  |
 
 Every column type accepts a `default => $value` option to set a column-level
-default.
+default (see also [function defaults](#function-defaults)).
 
 ```perl6
 self.create-table: 'articles', [
-  title       => { :string, limit => 64 },
-  body        => { :text },
-  view_count  => { :integer, default => 0 },
-  published   => { :boolean, default => False },
+  title        => { :string, limit => 64 },
+  body         => { :text },
+  view_count   => { :integer, default => 0 },
+  price        => { :decimal, precision => 10, scale => 2 },
+  weight       => { :float },
+  token        => { :uuid },
+  payload      => { :binary },
+  published    => { :boolean, default => False },
   published_at => { :datetime },
 ];
 ```

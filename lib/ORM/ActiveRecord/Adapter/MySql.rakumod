@@ -477,9 +477,14 @@ class MySqlAdapter is SqlAdapter is export {
           when 'bigint'                 { 'BIGINT' }
           when 'smallint'               { 'SMALLINT' }
           when 'boolean'                { 'TINYINT(1)' }
-          when 'datetime' | 'timestamp' { 'DATETIME(6)' }
+          when 'decimal' | 'numeric'    { 'DECIMAL' }
+          when 'float'                  { 'DOUBLE' }
+          when 'money'                  { 'DECIMAL(19, 4)' }
+          when 'datetime' | 'timestamp' | 'timestamptz' { 'DATETIME(6)' }
           when 'date'                   { 'DATE' }
           when 'time'                   { 'TIME' }
+          when 'uuid'                   { 'CHAR(36)' }
+          when 'binary'                 { $limit ?? "VARBINARY($limit)" !! 'BLOB' }
           default                       { $type.uc }
         }
       }
@@ -603,6 +608,7 @@ class MySqlAdapter is SqlAdapter is export {
 
             my $type  = '';
             my $limit = '';
+            my $limit-val;
             my $null  = '';
             my Bool $is-bool = False;
             my Bool $has-default = False;
@@ -612,6 +618,11 @@ class MySqlAdapter is SqlAdapter is export {
             my $generated-as;
             my Bool $stored = False;
             my $comment;
+            my Bool $is-decimal = False;
+            my Bool $is-binary = False;
+            my Bool $is-money = False;
+            my $precision;
+            my $scale;
 
             for $_{$name}.keys -> $attr {
               my $value = $_{$name}{$attr};
@@ -620,9 +631,22 @@ class MySqlAdapter is SqlAdapter is export {
                 when 'string'    { $type = 'VARCHAR' }
                 when 'text'      { $type = 'TEXT' }
                 when 'integer'   { $type = 'INT' }
+                when 'bigint'    { $type = 'BIGINT' }
+                when 'smallint'  { $type = 'SMALLINT' }
                 when 'boolean'   { $type = 'TINYINT'; $is-bool = True }
+                when 'decimal' | 'numeric' { $type = 'DECIMAL'; $is-decimal = True }
+                when 'float'     { $type = 'DOUBLE' }
+                when 'money'     { $type = 'DECIMAL'; $is-decimal = True; $is-money = True }
                 when 'datetime' | 'timestamp' { $type = 'DATETIME(6)' }
-                when 'limit'     { $limit = '(' ~ $value ~ ')' }
+                when 'timestamptz' { $type = 'DATETIME(6)' }
+                when 'date'      { $type = 'DATE' }
+                when 'time'      { $type = 'TIME' }
+                when 'interval'  { die 'MySqlAdapter: :interval columns are PostgreSQL-only' }
+                when 'uuid'      { $type = 'CHAR(36)' }
+                when 'binary'    { $is-binary = True }
+                when 'limit'     { $limit-val = $value; $limit = '(' ~ $value ~ ')' }
+                when 'precision' { $precision = $value }
+                when 'scale'     { $scale = $value }
                 when 'default'   { $has-default = True; $default-value = $value }
                 when 'null'      { $null = $value }
                 when 'charset'   { $charset = $value }
@@ -644,6 +668,16 @@ class MySqlAdapter is SqlAdapter is export {
               when 'VARCHAR' { $limit = '(255)' unless $limit }
               when 'TINYINT' { $limit = '(1)' if $is-bool }
               default        { $limit = '' if $type ne 'VARCHAR' && $type ne 'TINYINT' }
+            }
+
+            if $is-binary {
+              $type  = $limit-val.defined ?? 'VARBINARY' !! 'BLOB';
+              $limit = $limit-val.defined ?? "($limit-val)" !! '';
+            }
+            elsif $is-decimal {
+              my $p = $precision // ($is-money ?? 19 !! Nil);
+              my $s = $scale     // ($is-money ?? 4  !! Nil);
+              $limit = $p.defined ?? "($p" ~ ($s.defined ?? ", $s" !! '') ~ ')' !! '';
             }
 
             my $col = "$field_name $type$limit";
