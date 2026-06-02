@@ -718,6 +718,102 @@ expression cannot always be normalised back to the auto-name).
 | `add-exclusion-constraint`     | `ALTER TABLE ... ADD CONSTRAINT`  | Raises                           | Raises                                               |
 | `remove-exclusion-constraint`  | `ALTER TABLE ... DROP CONSTRAINT` | Raises                           | Raises                                               |
 
+## PostgreSQL extensions and enums
+
+Extensions and enum types are PostgreSQL-specific. These DSL methods raise on
+MySQL and SQLite, so a migration that needs them is portable only as far as the
+server is.
+
+```perl6
+class SetUpCatalog is Migration {
+  method change {
+    self.enable-extension: 'pgcrypto';
+
+    self.create-enum: 'mood', <sad neutral happy>;
+  }
+}
+```
+
+### `enable-extension(name)` / `disable-extension(name, ...)`
+
+`enable-extension` emits `CREATE EXTENSION IF NOT EXISTS "name"`;
+`disable-extension` emits `DROP EXTENSION IF EXISTS "name"`. Both are idempotent
+at the SQL level, so re-running a migration does not error.
+
+| Option    | Default | Effect                                                       |
+| --------- | ------- | ------------------------------------------------------------ |
+| `cascade` | `False` | On `disable-extension`, also drop objects that depend on it. |
+
+```perl6
+self.enable-extension:  'citext';
+self.disable-extension: 'citext', cascade => True;
+```
+
+### `create-enum(name, values)` / `drop-enum(name, ...)`
+
+`create-enum` emits `CREATE TYPE name AS ENUM (...)` with the values in the order
+given; passing an empty value list raises. `drop-enum` emits `DROP TYPE name`.
+
+| Option      | Default | Effect                                                    |
+| ----------- | ------- | --------------------------------------------------------- |
+| `if-exists` | `False` | On `drop-enum`, emit `DROP TYPE IF EXISTS` instead.       |
+
+```perl6
+self.create-enum: 'mood', <sad neutral happy>;
+self.drop-enum:   'mood', if-exists => True;
+```
+
+### `add-enum-value(name, value, ...)`
+
+Emits `ALTER TYPE name ADD VALUE 'value'`. By default the value is appended;
+`before:` / `after:` position it relative to an existing label (pass at most
+one).
+
+| Option          | Default | Effect                                                    |
+| --------------- | ------- | --------------------------------------------------------- |
+| `before`        | (none)  | Insert the new value immediately before this label.       |
+| `after`         | (none)  | Insert the new value immediately after this label.        |
+| `if-not-exists` | `False` | Emit `ADD VALUE IF NOT EXISTS` so a repeat run is a no-op. |
+
+```perl6
+self.add-enum-value: 'mood', 'ecstatic', after => 'happy';
+```
+
+PostgreSQL cannot remove a value from an enum type, so `add-enum-value` is
+**irreversible** inside `change` — supply explicit `up` / `down` if you need a
+rollback path.
+
+### `rename-enum-value(name, from, to)`
+
+Emits `ALTER TYPE name RENAME VALUE 'from' TO 'to'`. It is reversible inside
+`change`: the rollback renames `to` back to `from`.
+
+```perl6
+self.rename-enum-value: 'mood', 'neutral', 'meh';
+```
+
+### Reversibility
+
+| Operation           | Inside `change`                                  |
+| ------------------- | ------------------------------------------------ |
+| `enable-extension`  | Reversed by `disable-extension`.                 |
+| `disable-extension` | Reversed by `enable-extension`.                  |
+| `create-enum`       | Reversed by `drop-enum`.                         |
+| `drop-enum`         | Irreversible — supply explicit `up` / `down`.    |
+| `add-enum-value`    | Irreversible — PostgreSQL cannot drop a value.   |
+| `rename-enum-value` | Reversed by renaming `to` back to `from`.        |
+
+### Adapter differences
+
+| Operation           | PostgreSQL                       | MySQL  | SQLite |
+| ------------------- | -------------------------------- | ------ | ------ |
+| `enable-extension`  | `CREATE EXTENSION IF NOT EXISTS` | Raises | Raises |
+| `disable-extension` | `DROP EXTENSION IF EXISTS`       | Raises | Raises |
+| `create-enum`       | `CREATE TYPE ... AS ENUM`        | Raises | Raises |
+| `drop-enum`         | `DROP TYPE`                      | Raises | Raises |
+| `add-enum-value`    | `ALTER TYPE ... ADD VALUE`       | Raises | Raises |
+| `rename-enum-value` | `ALTER TYPE ... RENAME VALUE`    | Raises | Raises |
+
 ## Timestamps
 
 `add-timestamps` adds `created_at` and `updated_at` columns and manages them

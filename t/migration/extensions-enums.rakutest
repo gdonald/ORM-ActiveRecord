@@ -1,0 +1,129 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Errors::X;
+use ORM::ActiveRecord::Support::TestSkip;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+only-on(:adapter<pg>, :reason('extensions and enums are PostgreSQL-only'));
+
+sub enum-exists(Str:D $name --> Bool) {
+  ?$adapter.exec("SELECT 1 FROM pg_type WHERE typname = '$name' AND typtype = 'e'").elems;
+}
+
+sub enum-values(Str:D $name --> List) {
+  $adapter.exec(qq:to/SQL/).map({ $_[0] }).list;
+    SELECT e.enumlabel
+      FROM pg_enum e
+      JOIN pg_type t ON t.oid = e.enumtypid
+     WHERE t.typname = '$name'
+     ORDER BY e.enumsortorder
+    SQL
+}
+
+sub extension-exists(Str:D $name --> Bool) {
+  ?$adapter.exec("SELECT 1 FROM pg_extension WHERE extname = '$name'").elems;
+}
+
+sub available-extension(--> Str) {
+  my @candidates = <pgcrypto citext hstore unaccent>;
+  my $list = @candidates.map({ "'$_'" }).join(', ');
+  my @rows = $adapter.exec("SELECT name FROM pg_available_extensions WHERE name IN ($list)").map({ $_[0] }).list;
+  @candidates.first({ $_ (elem) @rows.Set }) // Str;
+}
+
+sub drop-enums {
+  for <_mood _status> -> $e {
+    try { $adapter.exec("DROP TYPE IF EXISTS $e") }
+  }
+}
+
+drop-enums;
+
+# create-enum / drop-enum (reversible)
+class CreateMood is Migration {
+  method change {
+    self.create-enum: '_mood', <sad neutral happy>;
+  }
+}
+
+CreateMood.new.up;
+ok enum-exists('_mood'), 'create-enum creates the enum type';
+is-deeply enum-values('_mood'), <sad neutral happy>.list,
+  'create-enum stores values in declared order';
+
+CreateMood.new.down;
+nok enum-exists('_mood'), 'create-enum down auto-inverts to drop-enum';
+
+# add-enum-value with :after
+class AddEcstatic is Migration {
+  method up {
+    self.add-enum-value: '_mood', 'ecstatic', after => 'happy';
+  }
+  method down {
+    self.irreversible-migration;
+  }
+}
+
+CreateMood.new.up;
+AddEcstatic.new.up;
+is-deeply enum-values('_mood'), <sad neutral happy ecstatic>.list,
+  'add-enum-value :after appends at the requested position';
+
+throws-like { AddEcstatic.new.down }, X::IrreversibleMigration,
+  'add-enum-value is irreversible inside change';
+
+drop-enums;
+
+# rename-enum-value (reversible — swaps from/to)
+class RenameNeutral is Migration {
+  method change {
+    self.rename-enum-value: '_mood', 'neutral', 'meh';
+  }
+}
+
+CreateMood.new.up;
+RenameNeutral.new.up;
+is-deeply enum-values('_mood'), <sad meh happy>.list,
+  'rename-enum-value renames the value';
+
+RenameNeutral.new.down;
+is-deeply enum-values('_mood'), <sad neutral happy>.list,
+  'rename-enum-value down restores the original name';
+
+drop-enums;
+
+# enable-extension / disable-extension (reversible)
+my $ext = available-extension();
+
+if $ext.defined {
+  class EnableExt is Migration {
+    has Str $.ext is rw;
+    method change {
+      self.enable-extension: $!ext;
+    }
+  }
+
+  my $m = EnableExt.new(:$ext);
+  $m.up;
+  ok extension-exists($ext), "enable-extension enables $ext";
+
+  $m.down;
+  nok extension-exists($ext), 'enable-extension down auto-inverts to disable-extension';
+} else {
+  skip 'no candidate extension available on this server', 2;
+}
+
+done-testing;

@@ -404,6 +404,43 @@ class PgAdapter is SqlAdapter is export {
     self.exec("ALTER TABLE $table DROP CONSTRAINT $name");
   }
 
+  method ddl-enable-extension(Str:D $name) {
+    self.exec(qq{CREATE EXTENSION IF NOT EXISTS "$name"});
+  }
+
+  method ddl-disable-extension(Str:D $name, Bool :$cascade = False) {
+    my $suffix = $cascade ?? ' CASCADE' !! '';
+    self.exec(qq{DROP EXTENSION IF EXISTS "$name"$suffix});
+  }
+
+  method ddl-create-enum(Str:D $name, @values) {
+    die 'create-enum: at least one value is required' unless @values.elems;
+    my $vals = @values.map({ self!string-literal($_.Str) }).join(', ');
+    self.exec("CREATE TYPE $name AS ENUM ($vals)");
+  }
+
+  method ddl-drop-enum(Str:D $name, Bool :$if-exists = False) {
+    my $clause = $if-exists ?? 'IF EXISTS ' !! '';
+    self.exec("DROP TYPE {$clause}$name");
+  }
+
+  method ddl-add-enum-value(Str:D $name, Str:D $value,
+                            Str :$before, Str :$after, Bool :$if-not-exists = False) {
+    die 'add-enum-value: pass :before or :after, not both'
+      if $before.defined && $after.defined;
+
+    my $exists = $if-not-exists ?? 'IF NOT EXISTS ' !! '';
+    my $pos = $before.defined ?? ' BEFORE ' ~ self!string-literal($before)
+            !! $after.defined  ?? ' AFTER '  ~ self!string-literal($after)
+            !! '';
+
+    self.exec("ALTER TYPE $name ADD VALUE {$exists}{self!string-literal($value)}$pos");
+  }
+
+  method ddl-rename-enum-value(Str:D $name, Str:D $from, Str:D $to) {
+    self.exec("ALTER TYPE $name RENAME VALUE {self!string-literal($from)} TO {self!string-literal($to)}");
+  }
+
   method !build-fields(@params, :@foreign-keys) {
     my @fields;
 

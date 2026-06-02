@@ -367,6 +367,34 @@ role SqlDdl is export {
     die "remove-exclusion-constraint: not supported on this adapter ({self.^name})";
   }
 
+  # PostgreSQL extensions and enums. Both are PG-specific concepts; the base
+  # adapters raise so non-PG migrations fail loudly rather than silently doing
+  # nothing. PgAdapter overrides each with real DDL.
+  method ddl-enable-extension(Str:D $name) {
+    die "enable-extension: not supported on this adapter ({self.^name})";
+  }
+
+  method ddl-disable-extension(Str:D $name, Bool :$cascade = False) {
+    die "disable-extension: not supported on this adapter ({self.^name})";
+  }
+
+  method ddl-create-enum(Str:D $name, @values) {
+    die "create-enum: not supported on this adapter ({self.^name})";
+  }
+
+  method ddl-drop-enum(Str:D $name, Bool :$if-exists = False) {
+    die "drop-enum: not supported on this adapter ({self.^name})";
+  }
+
+  method ddl-add-enum-value(Str:D $name, Str:D $value,
+                            Str :$before, Str :$after, Bool :$if-not-exists = False) {
+    die "add-enum-value: not supported on this adapter ({self.^name})";
+  }
+
+  method ddl-rename-enum-value(Str:D $name, Str:D $from, Str:D $to) {
+    die "rename-enum-value: not supported on this adapter ({self.^name})";
+  }
+
   method ref-default-check-name(Str:D $table, Str:D $expression --> Str) {
     "chk_{$table}_" ~ self.ref-expr-hash($expression);
   }

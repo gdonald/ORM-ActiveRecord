@@ -84,6 +84,34 @@ class CommandRecorder {
            args => [ %cmd<kw><block> ],
            kw   => {} );
       }
+      when 'enable-extension' {
+        %( name => 'disable-extension',
+           args => [ %cmd<args>[0] ],
+           kw   => {} );
+      }
+      when 'disable-extension' {
+        %( name => 'enable-extension',
+           args => [ %cmd<args>[0] ],
+           kw   => {} );
+      }
+      when 'create-enum' {
+        %( name => 'drop-enum',
+           args => [ %cmd<args>[0] ],
+           kw   => {} );
+      }
+      when 'drop-enum' {
+        die X::IrreversibleMigration.new;
+      }
+      when 'add-enum-value' {
+        # PostgreSQL cannot remove a value from an enum type.
+        die X::IrreversibleMigration.new;
+      }
+      when 'rename-enum-value' {
+        my @args = %cmd<args>.list;
+        %( name => 'rename-enum-value',
+           args => [ @args[0], @args[2], @args[1] ],
+           kw   => {} );
+      }
       when 'execute' {
         die X::IrreversibleMigration.new;
       }
@@ -693,6 +721,42 @@ class Migration is export {
     if $!recorder { $!recorder.record('remove-exclusion-constraint', $table, |%opts); return }
 
     $!db.ddl-remove-exclusion-constraint($table, |%opts);
+  }
+
+  method enable-extension(Str:D $name) {
+    if $!recorder { $!recorder.record('enable-extension', $name); return }
+
+    $!db.ddl-enable-extension($name);
+  }
+
+  method disable-extension(Str:D $name, *%opts) {
+    if $!recorder { $!recorder.record('disable-extension', $name, |%opts); return }
+
+    $!db.ddl-disable-extension($name, |%opts);
+  }
+
+  method create-enum(Str:D $name, @values) {
+    if $!recorder { $!recorder.record('create-enum', $name, @values); return }
+
+    $!db.ddl-create-enum($name, @values);
+  }
+
+  method drop-enum(Str:D $name, *%opts) {
+    if $!recorder { $!recorder.record('drop-enum', $name, |%opts); return }
+
+    $!db.ddl-drop-enum($name, |%opts);
+  }
+
+  method add-enum-value(Str:D $name, Str:D $value, *%opts) {
+    if $!recorder { $!recorder.record('add-enum-value', $name, $value, |%opts); return }
+
+    $!db.ddl-add-enum-value($name, $value, |%opts);
+  }
+
+  method rename-enum-value(Str:D $name, Str:D $from, Str:D $to) {
+    if $!recorder { $!recorder.record('rename-enum-value', $name, $from, $to); return }
+
+    $!db.ddl-rename-enum-value($name, $from, $to);
   }
 
   method execute(Str:D $sql) {
