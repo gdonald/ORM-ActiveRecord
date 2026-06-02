@@ -287,6 +287,7 @@ class Migration is export {
   has DB $!db;
   has Str $.direction is rw = 'up';
   has CommandRecorder $!recorder;
+  has Bool $!suppress-messages = False;
 
   submethod DESTROY {
     $!db = Nil;
@@ -797,6 +798,52 @@ class Migration is export {
 
   method run-block(&block) {
     block() if &block.defined;
+  }
+
+  # Per-migration toggle. Override to return True so the runner does not wrap
+  # this migration in a BEGIN/COMMIT — required for statements that cannot run
+  # inside a transaction (e.g. CREATE INDEX CONCURRENTLY on PostgreSQL).
+  method disable-ddl-transaction(--> Bool) { False }
+
+  # Strong-migration-style escape hatch. No safety checks are enforced in this
+  # ORM, so this simply runs the block; it exists for API parity and to mark
+  # intent. The block's DDL records normally, so reversibility is unaffected.
+  method safety-assured(&block) {
+    block();
+  }
+
+  # Reporter helpers. Output goes to $*OUT and is silenced inside
+  # `suppress-messages`.
+  method announce(Str:D $message) {
+    return if $!suppress-messages;
+    my $pad = max(0, 75 - $message.chars);
+    $*OUT.say("== $message " ~ ('=' x $pad));
+  }
+
+  method say(Str:D $message, Bool :$subitem = False) {
+    return if $!suppress-messages;
+    $*OUT.say(($subitem ?? '   -> ' !! '-- ') ~ $message);
+  }
+
+  method say-with-time(Str:D $message, &block) {
+    self.say($message);
+
+    my $t0     = now;
+    my $result = block();
+    my $secs   = (now - $t0).round(0.0001);
+
+    self.say("{$secs}s", :subitem);
+    self.say("$result rows", :subitem) if $result ~~ Int:D;
+
+    $result;
+  }
+
+  method suppress-messages(&block) {
+    my $prev = $!suppress-messages;
+    $!suppress-messages = True;
+    LEAVE $!suppress-messages = $prev;
+
+    block();
   }
 
   method irreversible-migration {

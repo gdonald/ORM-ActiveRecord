@@ -1047,6 +1047,79 @@ class DropLegacyAuditLog is Migration {
 The runner reports the offending file and aborts the rollback if it ever
 hits this. See [Errors &raquo; X::IrreversibleMigration](errors.md#xirreversiblemigration).
 
+## Raw SQL and guards
+
+### `execute` raw SQL
+
+`execute` runs an arbitrary SQL string against the migration's connection.
+Use it for anything the DSL doesn't cover:
+
+```perl6
+self.execute('UPDATE users SET role = 0 WHERE role IS NULL');
+```
+
+It is irreversible inside `change` (see [above](#execute-is-irreversible-inside-change)) —
+give it an `up`/`down` pair or wrap it in `reversible`.
+
+### `disable-ddl-transaction`
+
+By default the runner wraps each migration in a `BEGIN` / `COMMIT`. Some
+statements can't run inside a transaction — most notably
+`CREATE INDEX CONCURRENTLY` on PostgreSQL. Override `disable-ddl-transaction`
+to return `True` so the runner skips the wrapping for that migration:
+
+```perl6
+class AddIndexConcurrently is Migration {
+  method disable-ddl-transaction { True }
+
+  method change {
+    self.add-index: 'users', :email, algorithm => :concurrently;
+  }
+}
+```
+
+Without a wrapping transaction the migration is **not** atomic — if it fails
+partway, the already-applied statements stay applied.
+
+### `safety-assured`
+
+`safety-assured` runs its block unchanged. This ORM enforces no
+strong-migration safety checks, so the helper exists for API parity and to
+mark intent in migrations ported from Rails:
+
+```perl6
+self.safety-assured: -> {
+  self.execute('ALTER TABLE orders DROP COLUMN legacy_total');
+};
+```
+
+The wrapped operations record normally, so reversibility is unaffected.
+
+### Reporter helpers
+
+Three helpers write progress to standard output:
+
+```perl6
+self.announce('backfilling order totals');     # == backfilling order totals ====...
+self.say('starting');                           # -- starting
+self.say('rebuilt cache', :subitem);            #    -> rebuilt cache
+
+# Prints the message, runs the block, then reports elapsed time — and, when
+# the block returns an Int, the row count. Returns the block's result.
+my $rows = self.say-with-time('migrating data', -> {
+  self.execute('UPDATE orders SET total = subtotal + tax');
+});
+```
+
+Wrap any of them in `suppress-messages` to silence the output (the block's
+result is still returned):
+
+```perl6
+self.suppress-messages: -> {
+  self.say('this is not printed');
+};
+```
+
 ## The `ar` command
 
 `ar` is the command-line tool for creating, migrating, and checking your

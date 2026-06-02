@@ -1,0 +1,138 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Schema::Migrate;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub cleanup-tables {
+  try { $adapter.ddl-drop-table('_rg_safe') if table-exists('_rg_safe') }
+}
+
+class OutCapture {
+  has Str @.lines;
+  method say(|c)   { @!lines.push(c.list.join ~ "\n") }
+  method print(|c) { @!lines.push(c.list.join) }
+  method text(--> Str) { @!lines.join }
+}
+
+sub capture(&block --> Str) {
+  my $cap = OutCapture.new;
+  {
+    my $*OUT = $cap;
+    block();
+  }
+  $cap.text;
+}
+
+class NormalMig is Migration {
+  method change { }
+}
+
+class NoTxnMig is Migration {
+  method disable-ddl-transaction { True }
+  method change { }
+}
+
+class SafetyMig is Migration {
+  method change {
+    self.safety-assured: -> {
+      self.create-table: '_rg_safe', [ name => { :string, limit => 16 } ];
+    };
+  }
+}
+
+class AnnounceMig is Migration {
+  method change { self.announce('doing the thing') }
+}
+
+class SayMig is Migration {
+  method change {
+    self.say('top level');
+    self.say('nested', :subitem);
+  }
+}
+
+class SuppressedMig is Migration {
+  method change {
+    self.suppress-messages: -> {
+      self.announce('hidden banner');
+      self.say('hidden line');
+    };
+  }
+}
+
+cleanup-tables;
+
+# disable-ddl-transaction
+nok NormalMig.new.disable-ddl-transaction,
+  'disable-ddl-transaction defaults to False';
+
+ok NoTxnMig.new.disable-ddl-transaction,
+  'disable-ddl-transaction can be overridden to True';
+
+ok Migrate.new(:args([])).wraps-in-transaction(NormalMig.new),
+  'the runner wraps a normal migration in a transaction';
+
+nok Migrate.new(:args([])).wraps-in-transaction(NoTxnMig.new),
+  'the runner skips the transaction when the migration opts out';
+
+# safety-assured
+SafetyMig.new.up;
+ok table-exists('_rg_safe'),
+  'safety-assured runs the wrapped DDL on up';
+
+SafetyMig.new.down;
+nok table-exists('_rg_safe'),
+  'safety-assured wrapped DDL still inverts on down';
+
+# announce / say
+ok capture({ AnnounceMig.new.up }).contains('== doing the thing'),
+  'announce prints a banner containing the message';
+
+ok capture({ SayMig.new.up }).contains('-- top level'),
+  'say prints a top-level line with a -- prefix';
+
+ok capture({ SayMig.new.up }).contains('   -> nested'),
+  'say indents a subitem with ->';
+
+# say-with-time
+ok capture({ NormalMig.new.say-with-time('counting', -> { 5 }) }).contains('-- counting'),
+  'say-with-time reports the message';
+
+ok capture({ NormalMig.new.say-with-time('counting', -> { 5 }) }).contains('s'),
+  'say-with-time reports the elapsed time in seconds';
+
+ok capture({ NormalMig.new.say-with-time('counting', -> { 5 }) }).contains('5 rows'),
+  'say-with-time reports the row count when the block returns an Int';
+
+my $time-ret;
+capture({ $time-ret = NormalMig.new.say-with-time('counting', -> { 42 }) });
+is $time-ret, 42, 'say-with-time returns the block result';
+
+# suppress-messages
+is capture({ SuppressedMig.new.up }), '',
+  'suppress-messages silences announce and say output';
+
+my $suppress-ret;
+capture({ $suppress-ret = NormalMig.new.suppress-messages(-> { 99 }) });
+is $suppress-ret, 99, 'suppress-messages returns the block result';
+
+cleanup-tables;
+
+done-testing;

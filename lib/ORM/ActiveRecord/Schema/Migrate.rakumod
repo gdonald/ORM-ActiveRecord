@@ -113,8 +113,10 @@ class Migrate is export {
       }
 
       my $migration = self!load-migration($path);
+      my $instance  = $migration.new;
+      my $wrap      = self.wraps-in-transaction($instance);
 
-      $!db.begin;
+      $!db.begin if $wrap;
 
       try {
         CATCH {
@@ -124,14 +126,20 @@ class Migrate is export {
           }
         }
 
-        $migration.new."$action"();
+        $instance."$action"();
       }
 
       $action ~~ 'up' ?? self.add(:$version) !! self.rm(:$version);
-      $!db.commit;
+      $!db.commit if $wrap;
 
       $cnt++;
     }
+  }
+
+  # A migration runs inside a BEGIN/COMMIT unless it opts out via
+  # `disable-ddl-transaction` (e.g. for CREATE INDEX CONCURRENTLY).
+  method wraps-in-transaction($migration --> Bool) {
+    !$migration.disable-ddl-transaction;
   }
 
   method !load-migration(Str:D $path) {
