@@ -557,6 +557,12 @@ class PgAdapter is SqlAdapter is export {
           when 'path'      { $type = 'PATH' }
           when 'polygon'   { $type = 'POLYGON' }
           when 'circle'    { $type = 'CIRCLE' }
+          when 'tsvector'    { $type = 'TSVECTOR' }
+          when 'tsquery'     { $type = 'TSQUERY' }
+          when 'bit'         { $type = 'BIT' }
+          when 'bit_varying' { $type = 'BIT VARYING' }
+          when 'citext'      { $type = 'CITEXT' }
+          when 'enum_type'   { $type = $value }
           when 'limit'     { $limit = '(' ~ $value ~ ')' }
           when 'precision' { $precision = $value }
           when 'scale'     { $scale = $value }

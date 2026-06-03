@@ -464,7 +464,8 @@ class SqliteAdapter is SqlAdapter is export {
           when 'xml'     { die 'SqliteAdapter: :xml columns are PostgreSQL-only' }
           when 'array' | 'ltree' | 'inet' | 'cidr' | 'macaddr'
              | 'int4range' | 'int8range' | 'numrange' | 'tsrange' | 'tstzrange' | 'daterange'
-             | 'point' | 'line' | 'lseg' | 'box' | 'path' | 'polygon' | 'circle' {
+             | 'point' | 'line' | 'lseg' | 'box' | 'path' | 'polygon' | 'circle'
+             | 'tsvector' | 'tsquery' | 'bit' | 'bit_varying' | 'citext' | 'enum_type' {
             die "SqliteAdapter: :$attr columns are PostgreSQL-only";
           }
           # SQLite uses type affinity, so size / precision / scale are ignored.

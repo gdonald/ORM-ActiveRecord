@@ -91,6 +91,13 @@ These are emitted on PostgreSQL only; MySQL and SQLite raise.
 | `:ltree` | Hierarchical label tree (needs the `ltree` extension). |
 | `:inet` / `:cidr` / `:macaddr` | Network address types. |
 | `:point` / `:line` / `:lseg` / `:box` / `:path` / `:polygon` / `:circle` | Geometric types. |
+| `:tsvector` / `:tsquery` | Full-text search types. |
+| `:bit_varying` | Variable-length bit string (`BIT VARYING(N)` with `limit`). |
+| `:citext` | Case-insensitive text (needs the `citext` extension). |
+| `enum_type => 'name'` | Use an existing PostgreSQL enum type (created with `create-enum`) as the column's type. |
+
+`:bit` (a fixed-length bit string, `BIT(N)` via `limit`) works on PostgreSQL
+**and** MySQL; on SQLite it raises.
 
 ```perl6
 self.create-table: 'places', [

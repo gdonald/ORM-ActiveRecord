@@ -1,0 +1,125 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub adapter-kind(--> Str) {
+  given $adapter.^name {
+    when /Pg/     { 'pg' }
+    when /MySql/  { 'mysql' }
+    when /Sqlite/ { 'sqlite' }
+    default       { 'unknown' }
+  }
+}
+
+my $kind     = adapter-kind();
+my $is-pg    = $kind eq 'pg';
+my $is-mysql = $kind eq 'mysql';
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub scalar-of(Str:D $sql) {
+  my @rows = $adapter.exec($sql);
+  return Nil unless @rows.elems;
+  my $v = @rows[0][0];
+  return Nil without $v;
+  $v ~~ Blob ?? $v.decode('utf-8') !! $v;
+}
+
+my @test-tables = < _ft_tsv _ft_tsq _ft_bit _ft_vbit _ft_ci _ft_enum >;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+  try { $adapter.ddl-drop-enum('mood', :if-exists) }
+}
+
+class CreateTsvector is Migration {
+  method change { self.create-table: '_ft_tsv', [ v => { :tsvector } ]; }
+}
+class CreateTsquery is Migration {
+  method change { self.create-table: '_ft_tsq', [ q => { :tsquery } ]; }
+}
+class CreateBit is Migration {
+  method change { self.create-table: '_ft_bit', [ b => { :bit, limit => 3 } ]; }
+}
+class CreateBitVarying is Migration {
+  method change { self.create-table: '_ft_vbit', [ b => { :bit_varying, limit => 8 } ]; }
+}
+class CreateCitext is Migration {
+  method change {
+    self.enable-extension('citext');
+    self.create-table: '_ft_ci', [ t => { :citext } ];
+  }
+}
+class CreateMoodEnum is Migration {
+  method change { self.create-enum('mood', <happy sad>); }
+}
+class CreateEnumCol is Migration {
+  method change { self.create-table: '_ft_enum', [ m => { enum_type => 'mood' } ]; }
+}
+
+cleanup-tables;
+
+if $is-pg {
+  CreateTsvector.new.up;
+  $adapter.exec(q{INSERT INTO _ft_tsv (v) VALUES ('cat:1 dog:2')});
+  ok scalar-of('SELECT v FROM _ft_tsv').Str.contains('cat'), 'tsvector round-trips (PostgreSQL)';
+
+  CreateTsquery.new.up;
+  $adapter.exec(q{INSERT INTO _ft_tsq (q) VALUES ('cat & dog')});
+  ok scalar-of('SELECT q FROM _ft_tsq').Str.contains('cat'), 'tsquery round-trips (PostgreSQL)';
+
+  CreateBit.new.up;
+  $adapter.exec(q{INSERT INTO _ft_bit (b) VALUES (B'101')});
+  ok scalar-of('SELECT b FROM _ft_bit').Str.contains('101'), 'bit(n) round-trips (PostgreSQL)';
+
+  CreateBitVarying.new.up;
+  $adapter.exec(q{INSERT INTO _ft_vbit (b) VALUES (B'1010')});
+  ok scalar-of('SELECT b FROM _ft_vbit').Str.contains('1010'), 'bit varying round-trips (PostgreSQL)';
+
+  CreateCitext.new.up;
+  $adapter.exec(q{INSERT INTO _ft_ci (t) VALUES ('Hello')});
+  is scalar-of(q{SELECT COUNT(*) FROM _ft_ci WHERE t = 'hello'}).Int, 1, 'citext matches case-insensitively (PostgreSQL)';
+
+  CreateMoodEnum.new.up;
+  CreateEnumCol.new.up;
+  $adapter.exec(q{INSERT INTO _ft_enum (m) VALUES ('happy')});
+  is scalar-of('SELECT m FROM _ft_enum').Str, 'happy', 'user-defined enum type used as a column type (PostgreSQL)';
+} elsif $is-mysql {
+  CreateBit.new.up;
+  $adapter.exec(q{INSERT INTO _ft_bit (b) VALUES (b'101')});
+  ok scalar-of('SELECT BIN(b) FROM _ft_bit').Str.contains('101'), 'bit(n) round-trips (MySQL)';
+
+  throws-like { CreateTsvector.new.up },   Exception, 'tsvector is PostgreSQL-only';
+  throws-like { CreateTsquery.new.up },    Exception, 'tsquery is PostgreSQL-only';
+  throws-like { CreateBitVarying.new.up }, Exception, 'bit varying is PostgreSQL-only';
+  throws-like { CreateCitext.new.up },     Exception, 'citext is PostgreSQL-only';
+  throws-like { CreateEnumCol.new.up },    Exception, 'enum_type is PostgreSQL-only';
+} else {
+  throws-like { CreateTsvector.new.up },   Exception, 'tsvector is PostgreSQL-only';
+  throws-like { CreateTsquery.new.up },    Exception, 'tsquery is PostgreSQL-only';
+  throws-like { CreateBit.new.up },        Exception, 'bit is unsupported on SQLite';
+  throws-like { CreateBitVarying.new.up }, Exception, 'bit varying is PostgreSQL-only';
+  throws-like { CreateCitext.new.up },     Exception, 'citext is PostgreSQL-only';
+  throws-like { CreateEnumCol.new.up },    Exception, 'enum_type is PostgreSQL-only';
+}
+
+cleanup-tables;
+
+done-testing;

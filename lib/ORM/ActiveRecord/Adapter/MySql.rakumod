@@ -660,9 +660,11 @@ class MySqlAdapter is SqlAdapter is export {
                 when 'jsonb'     { $type = 'JSON' }
                 when 'hstore'    { die 'MySqlAdapter: :hstore columns are PostgreSQL-only' }
                 when 'xml'       { die 'MySqlAdapter: :xml columns are PostgreSQL-only' }
+                when 'bit'       { $type = 'BIT' }
                 when 'array' | 'ltree' | 'inet' | 'cidr' | 'macaddr'
                    | 'int4range' | 'int8range' | 'numrange' | 'tsrange' | 'tstzrange' | 'daterange'
-                   | 'point' | 'line' | 'lseg' | 'box' | 'path' | 'polygon' | 'circle' {
+                   | 'point' | 'line' | 'lseg' | 'box' | 'path' | 'polygon' | 'circle'
+                   | 'tsvector' | 'tsquery' | 'bit_varying' | 'citext' | 'enum_type' {
                   die "MySqlAdapter: :$attr columns are PostgreSQL-only";
                 }
                 when 'limit'     { $limit-val = $value; $limit = '(' ~ $value ~ ')' }
@@ -688,6 +690,7 @@ class MySqlAdapter is SqlAdapter is export {
             given $type {
               when 'VARCHAR' { $limit = '(255)' unless $limit }
               when 'TINYINT' { $limit = '(1)' if $is-bool }
+              when 'BIT'     { }   # keep an explicit BIT(n) length
               default        { $limit = '' if $type ne 'VARCHAR' && $type ne 'TINYINT' }
             }
 
