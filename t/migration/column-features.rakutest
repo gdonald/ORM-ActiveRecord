@@ -1,0 +1,79 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+my @test-tables = < _cf_null _cf_uniq _cf_cmt >;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+class CreateNotNull is Migration {
+  method change {
+    self.create-table: '_cf_null', [
+      tag     => { :string, limit => 16 },
+      flag    => { :boolean, null => False },
+      made_at => { :datetime, null => False },
+    ];
+  }
+}
+
+class CreateUnique is Migration {
+  method change {
+    self.create-table: '_cf_uniq', [
+      email => { :string, limit => 64, unique => True },
+    ];
+  }
+}
+
+class CreateCommented is Migration {
+  method change {
+    self.create-table: '_cf_cmt', [
+      note => { :string, limit => 16, comment => 'a note' },
+    ];
+  }
+}
+
+cleanup-tables;
+
+# null: False enforced on all types (boolean / datetime previously skipped on PG)
+CreateNotNull.new.up;
+throws-like { $adapter.exec("INSERT INTO _cf_null (tag) VALUES ('x')") }, Exception,
+  'null: False is enforced on boolean / datetime columns';
+
+# unique shorthand
+CreateUnique.new.up;
+$adapter.exec(q{INSERT INTO _cf_uniq (email) VALUES ('a@b.com')});
+
+lives-ok { $adapter.exec(q{INSERT INTO _cf_uniq (email) VALUES ('c@d.com')}) },
+  'unique column allows a distinct value';
+
+throws-like { $adapter.exec(q{INSERT INTO _cf_uniq (email) VALUES ('a@b.com')}) }, Exception,
+  'unique column rejects a duplicate value';
+
+# column comment
+lives-ok { CreateCommented.new.up },
+  'a commented column is created without error';
+
+cleanup-tables;
+
+done-testing;

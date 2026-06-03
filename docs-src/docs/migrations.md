@@ -108,6 +108,24 @@ self.create-table: 'places', [
 ];
 ```
 
+### Column constraints
+
+Any column type also accepts these constraint options:
+
+| Option            | Effect                                                                                   |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| `null => False`   | Emits `NOT NULL` — enforced on every type (boolean, datetime, …), not just text/integer. |
+| `unique => True`  | Emits an inline `UNIQUE` constraint. (SQLite cannot add a `UNIQUE` column via `add-column` — declare it in `create-table`.) |
+| `comment => '…'`  | Column comment (`COMMENT ON COLUMN` on PostgreSQL, inline `COMMENT` on MySQL, ignored on SQLite). |
+
+```perl6
+self.create-table: 'users', [
+  email     => { :string, limit => 128, null => False, unique => True },
+  is_active => { :boolean, null => False, default => True },
+  ssn       => { :string, comment => 'redacted in logs' },
+];
+```
+
 Every column type accepts a `default => $value` option to set a column-level
 default (see also [function defaults](#function-defaults)).
 

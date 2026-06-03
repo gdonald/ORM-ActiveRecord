@@ -512,6 +512,7 @@ class PgAdapter is SqlAdapter is export {
       my Bool $is-decimal = False;
       my Bool $is-binary = False;
       my Bool $is-array = False;
+      my Bool $is-unique = False;
       my $precision;
       my $scale;
 
@@ -568,6 +569,7 @@ class PgAdapter is SqlAdapter is export {
           when 'scale'     { $scale = $value }
           when 'default'   { $has-default = True; $default-value = $value }
           when 'null'      { $null = $value }
+          when 'unique'    { $is-unique = $value.so }
           when 'collation' { $collation = $value }
           when 'charset'   { die 'PgAdapter: charset is not supported (use collation)' }
           when 'as'        { $generated-as = $value }
@@ -604,6 +606,7 @@ class PgAdapter is SqlAdapter is export {
       }
 
       $col ~= self.ref-null-clause($null);
+      $col ~= ' UNIQUE' if $is-unique;
 
       @comments.push($field_name => $comment) if $comment.defined;
 

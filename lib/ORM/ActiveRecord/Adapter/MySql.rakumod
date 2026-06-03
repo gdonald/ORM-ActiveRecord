@@ -633,6 +633,7 @@ class MySqlAdapter is SqlAdapter is export {
             my Bool $is-decimal = False;
             my Bool $is-binary = False;
             my Bool $is-money = False;
+            my Bool $is-unique = False;
             my $precision;
             my $scale;
 
@@ -672,6 +673,7 @@ class MySqlAdapter is SqlAdapter is export {
                 when 'scale'     { $scale = $value }
                 when 'default'   { $has-default = True; $default-value = $value }
                 when 'null'      { $null = $value }
+                when 'unique'    { $is-unique = $value.so }
                 when 'charset'   { $charset = $value }
                 when 'collation' { $collation = $value }
                 when 'as'        { $generated-as = $value }
@@ -718,6 +720,7 @@ class MySqlAdapter is SqlAdapter is export {
             }
 
             $col ~= self.ref-null-clause($null);
+            $col ~= ' UNIQUE' if $is-unique;
 
             $col ~= ' COMMENT ' ~ self!string-literal($comment.Str) if $comment.defined;
 

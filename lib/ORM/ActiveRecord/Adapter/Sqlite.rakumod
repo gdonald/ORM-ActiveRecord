@@ -437,6 +437,7 @@ class SqliteAdapter is SqlAdapter is export {
       my $collation;
       my $generated-as;
       my Bool $stored = False;
+      my Bool $is-unique = False;
 
       for $_{$name}.keys -> $attr {
         my $value = $_{$name}{$attr};
@@ -474,6 +475,7 @@ class SqliteAdapter is SqlAdapter is export {
           when 'scale'     { }
           when 'default'   { $has-default = True; $default-value = $value }
           when 'null'      { $null = $value }
+          when 'unique'    { $is-unique = $value.so }
           when 'collation' { $collation = $value }
           when 'charset'   { }   # SQLite has no charset; ignored for parity
           when 'as'        { $generated-as = $value }
@@ -502,6 +504,7 @@ class SqliteAdapter is SqlAdapter is export {
       }
 
       $col ~= self.ref-null-clause($null);
+      $col ~= ' UNIQUE' if $is-unique;
 
       @fields.push($col);
     }
