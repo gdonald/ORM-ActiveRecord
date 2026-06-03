@@ -1,0 +1,123 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub adapter-kind(--> Str) {
+  given $adapter.^name {
+    when /Pg/     { 'pg' }
+    when /MySql/  { 'mysql' }
+    when /Sqlite/ { 'sqlite' }
+    default       { 'unknown' }
+  }
+}
+
+my $is-pg = adapter-kind() eq 'pg';
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub scalar-of(Str:D $sql) {
+  my @rows = $adapter.exec($sql);
+  return Nil unless @rows.elems;
+  my $v = @rows[0][0];
+  return Nil without $v;
+  $v ~~ Blob ?? $v.decode('utf-8') !! $v;
+}
+
+my @test-tables = < _tc_arr _tc_rng _tc_ltree _tc_net _tc_geo >;
+
+sub cleanup-tables {
+  for @test-tables -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+class CreateArrays is Migration {
+  method change {
+    self.create-table: '_tc_arr', [
+      tags  => { :integer, array => True },
+      names => { :string, array => True },
+    ];
+  }
+}
+
+class CreateRanges is Migration {
+  method change {
+    self.create-table: '_tc_rng', [
+      r4 => { :int4range }, r8 => { :int8range }, rn => { :numrange },
+      rts => { :tsrange }, rtstz => { :tstzrange }, rd => { :daterange },
+    ];
+  }
+}
+
+class CreateLtree is Migration {
+  method change {
+    self.enable-extension('ltree');
+    self.create-table: '_tc_ltree', [ p => { :ltree } ];
+  }
+}
+
+class CreateNetwork is Migration {
+  method change {
+    self.create-table: '_tc_net', [
+      addr => { :inet }, net => { :cidr }, mac => { :macaddr },
+    ];
+  }
+}
+
+class CreateGeo is Migration {
+  method change {
+    self.create-table: '_tc_geo', [
+      pt => { :point }, ln => { :line }, sg => { :lseg }, bx => { :box },
+      pa => { :path }, pl => { :polygon }, ci => { :circle },
+    ];
+  }
+}
+
+cleanup-tables;
+
+if $is-pg {
+  CreateArrays.new.up;
+  $adapter.exec(q{INSERT INTO _tc_arr (tags, names) VALUES ('{1,2,3}', '{a,b}')});
+  ok scalar-of('SELECT tags FROM _tc_arr').Str.contains('1'), 'integer[] array round-trips (PostgreSQL)';
+
+  CreateRanges.new.up;
+  $adapter.exec(q{INSERT INTO _tc_rng (r4, r8, rn, rts, rtstz, rd) VALUES ('[1,5)', '[1,100)', '[1.5,2.5)', '[2021-01-01 00:00,2021-01-02 00:00)', '[2021-01-01 00:00+00,2021-01-02 00:00+00)', '[2021-01-01,2021-02-01)')});
+  ok scalar-of('SELECT r4 FROM _tc_rng').Str.contains('1'), 'six range types create and round-trip (PostgreSQL)';
+
+  CreateLtree.new.up;
+  $adapter.exec(q{INSERT INTO _tc_ltree (p) VALUES ('a.b.c')});
+  ok scalar-of('SELECT p FROM _tc_ltree').Str.contains('a'), 'ltree round-trips (PostgreSQL)';
+
+  CreateNetwork.new.up;
+  $adapter.exec(q{INSERT INTO _tc_net (addr, net, mac) VALUES ('192.168.0.1', '192.168.0.0/24', '08:00:2b:01:02:03')});
+  ok scalar-of('SELECT addr FROM _tc_net').Str.contains('192.168'), 'inet / cidr / macaddr round-trip (PostgreSQL)';
+
+  CreateGeo.new.up;
+  $adapter.exec(q{INSERT INTO _tc_geo (pt, ln, sg, bx, pa, pl, ci) VALUES ('(1,2)', '{1,2,3}', '[(0,0),(1,1)]', '((0,0),(1,1))', '((0,0),(1,1),(2,2))', '((0,0),(1,1),(2,0))', '<(0,0),1>')});
+  ok scalar-of('SELECT pt FROM _tc_geo').Str.contains('1'), 'geometric types create and round-trip (PostgreSQL)';
+} else {
+  throws-like { CreateArrays.new.up },  Exception, 'array is PostgreSQL-only';
+  throws-like { CreateRanges.new.up },  Exception, 'range types are PostgreSQL-only';
+  throws-like { CreateLtree.new.up },   Exception, 'ltree is PostgreSQL-only';
+  throws-like { CreateNetwork.new.up }, Exception, 'network types are PostgreSQL-only';
+  throws-like { CreateGeo.new.up },     Exception, 'geometric types are PostgreSQL-only';
+}
+
+cleanup-tables;
+
+done-testing;

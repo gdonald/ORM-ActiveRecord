@@ -462,6 +462,11 @@ class SqliteAdapter is SqlAdapter is export {
           when 'jsonb'   { $type = 'JSON' }
           when 'hstore'  { die 'SqliteAdapter: :hstore columns are PostgreSQL-only' }
           when 'xml'     { die 'SqliteAdapter: :xml columns are PostgreSQL-only' }
+          when 'array' | 'ltree' | 'inet' | 'cidr' | 'macaddr'
+             | 'int4range' | 'int8range' | 'numrange' | 'tsrange' | 'tstzrange' | 'daterange'
+             | 'point' | 'line' | 'lseg' | 'box' | 'path' | 'polygon' | 'circle' {
+            die "SqliteAdapter: :$attr columns are PostgreSQL-only";
+          }
           # SQLite uses type affinity, so size / precision / scale are ignored.
           when 'limit'     { }
           when 'precision' { }

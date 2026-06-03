@@ -660,6 +660,11 @@ class MySqlAdapter is SqlAdapter is export {
                 when 'jsonb'     { $type = 'JSON' }
                 when 'hstore'    { die 'MySqlAdapter: :hstore columns are PostgreSQL-only' }
                 when 'xml'       { die 'MySqlAdapter: :xml columns are PostgreSQL-only' }
+                when 'array' | 'ltree' | 'inet' | 'cidr' | 'macaddr'
+                   | 'int4range' | 'int8range' | 'numrange' | 'tsrange' | 'tstzrange' | 'daterange'
+                   | 'point' | 'line' | 'lseg' | 'box' | 'path' | 'polygon' | 'circle' {
+                  die "MySqlAdapter: :$attr columns are PostgreSQL-only";
+                }
                 when 'limit'     { $limit-val = $value; $limit = '(' ~ $value ~ ')' }
                 when 'precision' { $precision = $value }
                 when 'scale'     { $scale = $value }

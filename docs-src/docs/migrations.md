@@ -80,6 +80,27 @@ differences).
 | `:xml`        | XML document. **PostgreSQL only** — MySQL and SQLite raise.                                                                                                     |
 | `:reference`  | Foreign-key column. The column declared as `user => { :reference }` becomes `user_id INTEGER` plus an index. See the `pages` / `subscriptions` examples above.  |
 
+### PostgreSQL-specific types
+
+These are emitted on PostgreSQL only; MySQL and SQLite raise.
+
+| Type / option | Notes |
+| ------------- | ----- |
+| `array => True` | Modifier on any base type → a PostgreSQL array (`INTEGER[]`, `VARCHAR(255)[]`, …). |
+| `:int4range` / `:int8range` / `:numrange` / `:tsrange` / `:tstzrange` / `:daterange` | Range types. |
+| `:ltree` | Hierarchical label tree (needs the `ltree` extension). |
+| `:inet` / `:cidr` / `:macaddr` | Network address types. |
+| `:point` / `:line` / `:lseg` / `:box` / `:path` / `:polygon` / `:circle` | Geometric types. |
+
+```perl6
+self.create-table: 'places', [
+  tags     => { :string, array => True },   # VARCHAR(255)[]
+  span      => { :daterange },
+  location  => { :point },
+  ip        => { :inet },
+];
+```
+
 Every column type accepts a `default => $value` option to set a column-level
 default (see also [function defaults](#function-defaults)).
 

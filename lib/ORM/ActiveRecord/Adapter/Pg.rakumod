@@ -511,6 +511,7 @@ class PgAdapter is SqlAdapter is export {
       my $comment;
       my Bool $is-decimal = False;
       my Bool $is-binary = False;
+      my Bool $is-array = False;
       my $precision;
       my $scale;
 
@@ -538,6 +539,24 @@ class PgAdapter is SqlAdapter is export {
           when 'jsonb'     { $type = 'JSONB' }
           when 'hstore'    { $type = 'HSTORE' }
           when 'xml'       { $type = 'XML' }
+          when 'array'     { $is-array = True }
+          when 'int4range' { $type = 'INT4RANGE' }
+          when 'int8range' { $type = 'INT8RANGE' }
+          when 'numrange'  { $type = 'NUMRANGE' }
+          when 'tsrange'   { $type = 'TSRANGE' }
+          when 'tstzrange' { $type = 'TSTZRANGE' }
+          when 'daterange' { $type = 'DATERANGE' }
+          when 'ltree'     { $type = 'LTREE' }
+          when 'inet'      { $type = 'INET' }
+          when 'cidr'      { $type = 'CIDR' }
+          when 'macaddr'   { $type = 'MACADDR' }
+          when 'point'     { $type = 'POINT' }
+          when 'line'      { $type = 'LINE' }
+          when 'lseg'      { $type = 'LSEG' }
+          when 'box'       { $type = 'BOX' }
+          when 'path'      { $type = 'PATH' }
+          when 'polygon'   { $type = 'POLYGON' }
+          when 'circle'    { $type = 'CIRCLE' }
           when 'limit'     { $limit = '(' ~ $value ~ ')' }
           when 'precision' { $precision = $value }
           when 'scale'     { $scale = $value }
@@ -565,7 +584,8 @@ class PgAdapter is SqlAdapter is export {
       # BYTEA takes no length modifier; a stray `limit` is ignored.
       $limit = '' if $is-binary;
 
-      my $col = $field_name ~ ' ' ~ $type ~ $limit;
+      my $array-suffix = $is-array ?? '[]' !! '';
+      my $col = $field_name ~ ' ' ~ $type ~ $limit ~ $array-suffix;
 
       $col ~= ' COLLATE ' ~ self!quote-collation($collation) if $collation.defined;
 
