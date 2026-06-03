@@ -38,6 +38,7 @@
     "ORM::ActiveRecord::Model::StatePredicates": "lib/ORM/ActiveRecord/Model/StatePredicates.rakumod",
     "ORM::ActiveRecord::Model::StrictLoading": "lib/ORM/ActiveRecord/Model/StrictLoading.rakumod",
     "ORM::ActiveRecord::Model::Suppressor": "lib/ORM/ActiveRecord/Model/Suppressor.rakumod",
+    "ORM::ActiveRecord::Model::Typing": "lib/ORM/ActiveRecord/Model/Typing.rakumod",
     "ORM::ActiveRecord::Relation::Collection": "lib/ORM/ActiveRecord/Relation/Collection.rakumod",
     "ORM::ActiveRecord::Relation::Query": "lib/ORM/ActiveRecord/Relation/Query.rakumod",
     "ORM::ActiveRecord::Relation::Query::Aggregations": "lib/ORM/ActiveRecord/Relation/Query/Aggregations.rakumod",
@@ -68,6 +69,7 @@
     "ORM::ActiveRecord::Support::Utils": "lib/ORM/ActiveRecord/Support/Utils.rakumod",
     "ORM::ActiveRecord::Support::Version": "lib/ORM/ActiveRecord/Support/Version.rakumod",
     "ORM::ActiveRecord::Support::WorkerDb": "lib/ORM/ActiveRecord/Support/WorkerDb.rakumod",
+    "ORM::ActiveRecord::Type": "lib/ORM/ActiveRecord/Type.rakumod",
     "ORM::ActiveRecord::Validations::Validator": "lib/ORM/ActiveRecord/Validations/Validator.rakumod",
     "ORM::ActiveRecord::Validations::Validators": "lib/ORM/ActiveRecord/Validations/Validators.rakumod"
   },

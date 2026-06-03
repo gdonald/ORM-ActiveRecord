@@ -1,0 +1,81 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Type;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+class CsvType does AttributeType {
+  method cast($v) {
+    return $v.list if $v ~~ Positional;
+    return [] unless $v.defined && $v.Str.chars;
+    $v.Str.split(',').list;
+  }
+  method deserialize($v) {
+    return [] unless $v.defined && $v.Str.chars;
+    $v.Str.split(',').list;
+  }
+  method serialize($v) {
+    $v ~~ Positional ?? $v.join(',') !! $v;
+  }
+}
+
+try { $adapter.ddl-drop-table('_ty_widgets') if table-exists('_ty_widgets') }
+$adapter.ddl-create-table('_ty_widgets', [
+  raw   => { :text },
+  prefs => { :text },
+  level => { :integer },
+  token => { :string, limit => 32 },
+]);
+
+class TyWidget is Model {
+  method table-name { '_ty_widgets' }
+
+  submethod BUILD {
+    self.attribute('raw', CsvType.new);
+    self.serialize('prefs', JsonCoder.new);
+    self.attribute('level', :default(5));
+    self.attribute('token', :default(-> { 'gen-token' }));
+  }
+}
+
+TyWidget.destroy-all;
+
+# type registry
+ok Type.is-registered('integer'), 'built-in integer type is pre-registered';
+ok Type.lookup('integer') ~~ IntegerType, 'built-in type resolves to its class';
+Type.register('csv', CsvType.new);
+ok Type.lookup('csv') ~~ CsvType, 'a custom type registers and looks up';
+
+# custom attribute type round-trip
+my $w1 = TyWidget.create({ raw => ['x', 'y', 'z'], prefs => {}, level => 1, token => 't' });
+is TyWidget.find($w1.id).raw.join(','), 'x,y,z', 'custom-typed attribute round-trips through the database';
+
+# serialized attribute round-trip
+my $w2 = TyWidget.create({ raw => [], prefs => { theme => 'dark', size => 3 }, level => 1, token => 't' });
+is TyWidget.find($w2.id).prefs<theme>, 'dark', 'serialized hash round-trips through the database';
+
+# defaults
+is TyWidget.build({}).level, 5, 'value default applied on a new record';
+is TyWidget.build({}).token, 'gen-token', 'block default applied on a new record';
+is TyWidget.build({ level => 9 }).level, 9, 'supplied value is not overridden by the default';
+
+TyWidget.destroy-all;
+try { $adapter.ddl-drop-table('_ty_widgets') }
+
+done-testing;

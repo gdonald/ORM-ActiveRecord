@@ -15,6 +15,7 @@ use ORM::ActiveRecord::Validations::Validator;
 use ORM::ActiveRecord::Validations::Validators;
 use ORM::ActiveRecord::Model::Attributes;
 use ORM::ActiveRecord::Model::Bulk;
+use ORM::ActiveRecord::Model::Typing;
 use ORM::ActiveRecord::Model::Callbacks;
 use ORM::ActiveRecord::Model::Cloning;
 use ORM::ActiveRecord::Model::DirtyTracking;
@@ -39,6 +40,7 @@ class Model
   does ModelStatePredicates
   does ModelStrictLoading
   does ModelSuppressor
+  does ModelTyping
   is export
 {
   my %connection-of;
@@ -129,6 +131,7 @@ class Model
 
   method new(|c) {
     my $obj = self.bless(|c);
+    $obj.apply-attribute-types;
     $obj.do-after-initializes;
     $obj.do-after-finds if $obj.was-found-from-db;
     $obj;
@@ -1064,7 +1067,7 @@ class Model
         my %types = @!fields.map({ .name => .type }).Hash;
         my $affected = $!db.update-records(
           :table(self.table-name),
-          :attrs(%!attrs),
+          :attrs(self.attrs-to-persist),
           :%types,
           :where({ id => $!id, $lock-col => $prev-lock }),
         );

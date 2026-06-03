@@ -423,7 +423,7 @@ role SqlBuilders is export {
 
   method update-object(Mu:D $obj) {
     my $table = Utils.table-name($obj);
-    my %attrs = $obj.attrs;
+    my %attrs = $obj.attrs-to-persist;
     my %types = self!types-from-fields($obj);
     my $id = $obj.id;
     my $stmt = self.build-update(:$table, :%attrs, :%types, :$id);

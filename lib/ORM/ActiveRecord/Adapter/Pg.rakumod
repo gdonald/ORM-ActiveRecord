@@ -105,7 +105,7 @@ class PgAdapter is SqlAdapter is export {
 
   method create-object(Mu:D $obj) {
     my $table = Utils.table-name($obj);
-    my %attrs = $obj.attrs;
+    my %attrs = $obj.attrs-to-persist;
     my %types = self!types-from-fields($obj);
     my $stmt = self.build-insert(:$table, :%attrs, :%types);
 
