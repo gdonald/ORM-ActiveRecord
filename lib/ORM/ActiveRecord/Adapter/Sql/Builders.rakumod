@@ -1,6 +1,9 @@
 
+use JSON::Tiny;
+
 use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::Support::Utils;
+use ORM::ActiveRecord::Relation::Query::Json;
 
 role SqlBuilders is export {
   method !bind-typed(SqlStmt:D $stmt, $value, Str :$type --> Str) {
@@ -322,6 +325,9 @@ role SqlBuilders is export {
     return $negate ?? "$col IS NOT NULL" !! "$col IS NULL"
       unless $v.defined;
     given $v {
+      when JsonPredicate {
+        self.json-fragment($stmt, $col, $op, $v);
+      }
       when Range {
         my $lo = $v.min;
         my $hi = $v.max;
@@ -353,6 +359,42 @@ role SqlBuilders is export {
         "$col $op " ~ $stmt.placeholder($v);
       }
     }
+  }
+
+  # ---- JSON / JSONB predicate operators ----
+
+  method json-fragment(SqlStmt:D $stmt, Str:D $col, Str:D $op, JsonPredicate:D $p --> Str) {
+    my $frag = do given $p.kind {
+      when 'extract'  {
+        self.json-extract-text-sql($col, @($p.path)) ~ " {$p.cmp} " ~ $stmt.placeholder($p.value);
+      }
+      when 'contains' { self.json-contains-sql($stmt, $col, $p.value) }
+      when 'has-key'  { self.json-has-key-sql($stmt, $col, $p.value) }
+    };
+
+    $op eq '!=' ?? "NOT ($frag)" !! $frag;
+  }
+
+  # MySQL / SQLite share the `col ->> '$.a.b'` path syntax; PostgreSQL overrides.
+  method json-path-expr(@path --> Str) {
+    '$' ~ @path.map({ '.' ~ $_ }).join;
+  }
+
+  method json-extract-text-sql(Str:D $col, @path --> Str) {
+    "$col ->> '" ~ self.json-path-expr(@path) ~ "'";
+  }
+
+  method json-contains-sql(SqlStmt:D $stmt, Str:D $col, $data --> Str) {
+    die "JSON containment is not supported on this adapter ({self.^name})";
+  }
+
+  method json-has-key-sql(SqlStmt:D $stmt, Str:D $col, Str:D $key --> Str) {
+    die "JSON key-existence is not supported on this adapter ({self.^name})";
+  }
+
+  # Serialize a containment candidate: a Str is assumed to already be JSON.
+  method json-literal($data --> Str) {
+    $data ~~ Str ?? $data !! to-json($data);
   }
 
   method get-objects(Mu:U :$class, Str:D :$table, Str:D :$join-table = '', :@fields, :%where, :%where-not, :@or-groups, :@order, Int:D :$limit=0, Int:D :$offset=0, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock = False) {

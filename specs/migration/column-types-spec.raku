@@ -41,7 +41,10 @@ sub digits-of(Str:D $sql --> Str) {
   (scalar-of($sql) // '').Str.subst(/<-[\d.]>/, '', :g);
 }
 
-my @test-tables = < _t_num _t_tmp _t_uuid _t_bin _t_int _t_binlimit >;
+my @test-tables = <
+  _t_num _t_tmp _t_uuid _t_bin _t_int _t_binlimit
+  _t_json _t_jsonb _t_hstore _t_xml
+>;
 
 sub cleanup-tables {
   for @test-tables -> $t {
@@ -92,6 +95,31 @@ class CreateInterval is Migration {
 class CreateBinaryLimit is Migration {
   method change {
     self.create-table: '_t_binlimit', [ b => { :binary, limit => 16 } ];
+  }
+}
+
+class CreateJson is Migration {
+  method change {
+    self.create-table: '_t_json', [ payload => { :json } ];
+  }
+}
+
+class CreateJsonb is Migration {
+  method change {
+    self.create-table: '_t_jsonb', [ payload => { :jsonb } ];
+  }
+}
+
+class CreateHstore is Migration {
+  method change {
+    self.enable-extension('hstore');
+    self.create-table: '_t_hstore', [ h => { :hstore } ];
+  }
+}
+
+class CreateXml is Migration {
+  method change {
+    self.create-table: '_t_xml', [ doc => { :xml } ];
   }
 }
 
@@ -202,6 +230,60 @@ group 'migration column types', :order<defined>, {
 
     sqlite-it 'is rejected as PostgreSQL-only on SQLite', {
       expect({ CreateInterval.new.up }).to.raise-error;
+    }
+  }
+
+  context 'json type', :order<defined>, {
+    before-all {
+      CreateJson.new.up;
+      $adapter.exec(q{INSERT INTO _t_json (payload) VALUES ('{"a":1}')});
+    }
+
+    it 'round-trips a json document', {
+      expect(scalar-of('SELECT payload FROM _t_json').Str.contains('a')).to.be-truthy;
+    }
+  }
+
+  context 'jsonb type', :order<defined>, {
+    before-all {
+      CreateJsonb.new.up;
+      $adapter.exec(q{INSERT INTO _t_jsonb (payload) VALUES ('{"b":2}')});
+    }
+
+    it 'round-trips a jsonb document', {
+      expect(scalar-of('SELECT payload FROM _t_jsonb').Str.contains('b')).to.be-truthy;
+    }
+  }
+
+  context 'hstore type', :order<defined>, {
+    pg-it 'round-trips an hstore value (PostgreSQL)', {
+      CreateHstore.new.up;
+      $adapter.exec(q{INSERT INTO _t_hstore (h) VALUES ('a=>1')});
+      expect(scalar-of('SELECT h FROM _t_hstore').Str.contains('a')).to.be-truthy;
+    }
+
+    mysql-it 'is rejected as PostgreSQL-only on MySQL', {
+      expect({ CreateHstore.new.up }).to.raise-error;
+    }
+
+    sqlite-it 'is rejected as PostgreSQL-only on SQLite', {
+      expect({ CreateHstore.new.up }).to.raise-error;
+    }
+  }
+
+  context 'xml type', :order<defined>, {
+    pg-it 'round-trips an xml document (PostgreSQL)', {
+      CreateXml.new.up;
+      $adapter.exec(q{INSERT INTO _t_xml (doc) VALUES ('<r>x</r>')});
+      expect(scalar-of('SELECT doc FROM _t_xml').Str.contains('<r>')).to.be-truthy;
+    }
+
+    mysql-it 'is rejected as PostgreSQL-only on MySQL', {
+      expect({ CreateXml.new.up }).to.raise-error;
+    }
+
+    sqlite-it 'is rejected as PostgreSQL-only on SQLite', {
+      expect({ CreateXml.new.up }).to.raise-error;
     }
   }
 }

@@ -45,7 +45,10 @@ sub digits-of(Str:D $sql --> Str) {
   (scalar-of($sql) // '').Str.subst(/<-[\d.]>/, '', :g);
 }
 
-my @test-tables = < _t_num _t_tmp _t_uuid _t_bin _t_int _t_binlimit >;
+my @test-tables = <
+  _t_num _t_tmp _t_uuid _t_bin _t_int _t_binlimit
+  _t_json _t_jsonb _t_hstore _t_xml
+>;
 
 sub cleanup-tables {
   for @test-tables -> $t {
@@ -97,6 +100,25 @@ class CreateBinaryLimit is Migration {
   method change {
     self.create-table: '_t_binlimit', [ b => { :binary, limit => 16 } ];
   }
+}
+
+class CreateJson is Migration {
+  method change { self.create-table: '_t_json', [ payload => { :json } ]; }
+}
+
+class CreateJsonb is Migration {
+  method change { self.create-table: '_t_jsonb', [ payload => { :jsonb } ]; }
+}
+
+class CreateHstore is Migration {
+  method change {
+    self.enable-extension('hstore');
+    self.create-table: '_t_hstore', [ h => { :hstore } ];
+  }
+}
+
+class CreateXml is Migration {
+  method change { self.create-table: '_t_xml', [ doc => { :xml } ]; }
 }
 
 cleanup-tables;
@@ -161,6 +183,29 @@ if $is-pg {
 } else {
   throws-like { CreateInterval.new.up }, Exception,
     'interval is rejected as PostgreSQL-only';
+}
+
+# JSON / JSONB (cross-adapter)
+CreateJson.new.up;
+$adapter.exec(q{INSERT INTO _t_json (payload) VALUES ('{"a":1}')});
+ok scalar-of('SELECT payload FROM _t_json').Str.contains('a'), 'json round-trips a document';
+
+CreateJsonb.new.up;
+$adapter.exec(q{INSERT INTO _t_jsonb (payload) VALUES ('{"b":2}')});
+ok scalar-of('SELECT payload FROM _t_jsonb').Str.contains('b'), 'jsonb round-trips a document';
+
+# hstore / xml (PostgreSQL only)
+if $is-pg {
+  CreateHstore.new.up;
+  $adapter.exec(q{INSERT INTO _t_hstore (h) VALUES ('a=>1')});
+  ok scalar-of('SELECT h FROM _t_hstore').Str.contains('a'), 'hstore round-trips a value (PostgreSQL)';
+
+  CreateXml.new.up;
+  $adapter.exec(q{INSERT INTO _t_xml (doc) VALUES ('<r>x</r>')});
+  ok scalar-of('SELECT doc FROM _t_xml').Str.contains('<r>'), 'xml round-trips a document (PostgreSQL)';
+} else {
+  throws-like { CreateHstore.new.up }, Exception, 'hstore is rejected as PostgreSQL-only';
+  throws-like { CreateXml.new.up },    Exception, 'xml is rejected as PostgreSQL-only';
 }
 
 cleanup-tables;

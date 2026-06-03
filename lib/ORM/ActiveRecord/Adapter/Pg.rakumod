@@ -381,6 +381,29 @@ class PgAdapter is SqlAdapter is export {
     '"' ~ $name.subst('"', '""', :g) ~ '"';
   }
 
+  # ---- JSON / JSONB operators (PostgreSQL) ----
+
+  # Chain `-> 'a' -> 'b' ->> 'last'` so the final hop returns text.
+  method json-extract-text-sql(Str:D $col, @path --> Str) {
+    return $col unless @path.elems;
+    my @p   = @path;
+    my $last = @p.pop;
+    my $expr = $col;
+    $expr ~= " -> '$_'" for @p;
+    $expr ~= " ->> '$last'";
+    $expr;
+  }
+
+  method json-contains-sql(SqlStmt:D $stmt, Str:D $col, $data --> Str) {
+    "$col @> " ~ $stmt.placeholder(self.json-literal($data)) ~ '::jsonb';
+  }
+
+  # The `?` jsonb operator collides with bind placeholders, so use the
+  # equivalent function form.
+  method json-has-key-sql(SqlStmt:D $stmt, Str:D $col, Str:D $key --> Str) {
+    "jsonb_exists($col, " ~ $stmt.placeholder($key) ~ ')';
+  }
+
   method !string-literal(Str:D $s --> Str) {
     "'" ~ $s.subst("'", "''", :g) ~ "'";
   }
@@ -511,6 +534,10 @@ class PgAdapter is SqlAdapter is export {
           when 'interval'  { $type = 'INTERVAL' }
           when 'uuid'      { $type = 'UUID' }
           when 'binary'    { $type = 'BYTEA'; $is-binary = True }
+          when 'json'      { $type = 'JSON' }
+          when 'jsonb'     { $type = 'JSONB' }
+          when 'hstore'    { $type = 'HSTORE' }
+          when 'xml'       { $type = 'XML' }
           when 'limit'     { $limit = '(' ~ $value ~ ')' }
           when 'precision' { $precision = $value }
           when 'scale'     { $scale = $value }

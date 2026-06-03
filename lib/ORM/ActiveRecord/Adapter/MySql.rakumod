@@ -485,6 +485,7 @@ class MySqlAdapter is SqlAdapter is export {
           when 'time'                   { 'TIME' }
           when 'uuid'                   { 'CHAR(36)' }
           when 'binary'                 { $limit ?? "VARBINARY($limit)" !! 'BLOB' }
+          when 'json' | 'jsonb'         { 'JSON' }
           default                       { $type.uc }
         }
       }
@@ -499,6 +500,17 @@ class MySqlAdapter is SqlAdapter is export {
 
       method !string-literal(Str:D $s --> Str) {
         "'" ~ $s.subst("\\", "\\\\", :g).subst("'", "''", :g) ~ "'";
+      }
+
+      # ---- JSON operators (MySQL) ----
+      # Path extraction (`->> '$.a.b'`) uses the shared default in SqlBuilders.
+
+      method json-contains-sql(SqlStmt:D $stmt, Str:D $col, $data --> Str) {
+        "JSON_CONTAINS($col, " ~ $stmt.placeholder(self.json-literal($data)) ~ ')';
+      }
+
+      method json-has-key-sql(SqlStmt:D $stmt, Str:D $col, Str:D $key --> Str) {
+        "JSON_CONTAINS_PATH($col, 'one', " ~ $stmt.placeholder('$.' ~ $key) ~ ')';
       }
 
       method ddl-add-timestamps(Str:D $table) {
@@ -644,6 +656,10 @@ class MySqlAdapter is SqlAdapter is export {
                 when 'interval'  { die 'MySqlAdapter: :interval columns are PostgreSQL-only' }
                 when 'uuid'      { $type = 'CHAR(36)' }
                 when 'binary'    { $is-binary = True }
+                when 'json'      { $type = 'JSON' }
+                when 'jsonb'     { $type = 'JSON' }
+                when 'hstore'    { die 'MySqlAdapter: :hstore columns are PostgreSQL-only' }
+                when 'xml'       { die 'MySqlAdapter: :xml columns are PostgreSQL-only' }
                 when 'limit'     { $limit-val = $value; $limit = '(' ~ $value ~ ')' }
                 when 'precision' { $precision = $value }
                 when 'scale'     { $scale = $value }

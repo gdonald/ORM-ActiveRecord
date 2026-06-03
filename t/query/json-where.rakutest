@@ -1,0 +1,81 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Adapter;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Relation::Query::Json;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub adapter-kind(--> Str) {
+  given $adapter.^name {
+    when /Pg/     { 'pg' }
+    when /MySql/  { 'mysql' }
+    when /Sqlite/ { 'sqlite' }
+    default       { 'unknown' }
+  }
+}
+
+my $kind    = adapter-kind();
+my $is-sqlite = $kind eq 'sqlite';
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub cleanup-tables {
+  try { $adapter.ddl-drop-table('_jw') if table-exists('_jw') }
+}
+
+sub matched-ids(%where, %where-not = {} --> Str) {
+  my $stmt = SqlStmt.new(:adapter($adapter));
+  my $w = $adapter.build-where($stmt, %where, %where-not);
+  $stmt.sql = 'SELECT id FROM _jw' ~ ($w ?? " WHERE $w" !! '') ~ ' ORDER BY id';
+  $adapter.exec-stmt($stmt).map({ $_[0].Int }).join(',');
+}
+
+class CreateJw is Migration {
+  method change { self.create-table: '_jw', [ data => { :jsonb } ]; }
+}
+
+cleanup-tables;
+CreateJw.new.up;
+$adapter.exec(q{INSERT INTO _jw (data) VALUES ('{"theme":"dark","level":"5"}')});
+$adapter.exec(q{INSERT INTO _jw (data) VALUES ('{"theme":"light"}')});
+
+# path extraction (->>)
+is matched-ids({ data => JsonPredicate.extract('theme').eq('dark') }), '1',
+  'JSON path extraction matches text equality';
+
+is matched-ids({ data => JsonPredicate.extract('theme').ne('dark') }), '2',
+  'JSON path extraction ne matches the complement';
+
+is matched-ids({}, { data => JsonPredicate.extract('theme').eq('dark') }), '2',
+  'JSON path extraction inverts under where.not';
+
+# containment / key existence
+if $is-sqlite {
+  throws-like { matched-ids({ data => JsonPredicate.contains({ theme => 'dark' }) }) },
+    Exception, 'JSON containment is unsupported on SQLite';
+  throws-like { matched-ids({ data => JsonPredicate.has-key('level') }) },
+    Exception, 'JSON key existence is unsupported on SQLite';
+} else {
+  is matched-ids({ data => JsonPredicate.contains({ theme => 'dark' }) }), '1',
+    'JSON containment matches a contained object';
+  is matched-ids({ data => JsonPredicate.has-key('level') }), '1',
+    'JSON key existence matches rows that have the key';
+}
+
+cleanup-tables;
+
+done-testing;

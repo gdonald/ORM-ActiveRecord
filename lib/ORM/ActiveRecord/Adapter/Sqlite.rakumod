@@ -458,6 +458,10 @@ class SqliteAdapter is SqlAdapter is export {
           when 'interval' { die 'SqliteAdapter: :interval columns are PostgreSQL-only' }
           when 'uuid'    { $type = 'TEXT' }
           when 'binary'  { $type = 'BLOB' }
+          when 'json'    { $type = 'JSON' }     # stored as text; json1 functions apply
+          when 'jsonb'   { $type = 'JSON' }
+          when 'hstore'  { die 'SqliteAdapter: :hstore columns are PostgreSQL-only' }
+          when 'xml'     { die 'SqliteAdapter: :xml columns are PostgreSQL-only' }
           # SQLite uses type affinity, so size / precision / scale are ignored.
           when 'limit'     { }
           when 'precision' { }

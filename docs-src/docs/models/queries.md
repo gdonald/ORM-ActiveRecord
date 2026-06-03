@@ -35,6 +35,36 @@ User.where.not({age => 18..65}).all;         # NOT BETWEEN
 User.where.not({id => [1, 2, 3]}).all;       # NOT IN (...)
 ```
 
+## JSON / JSONB predicate operators
+
+For [`:json` / `:jsonb` columns](migrations.md#column-types), pass a
+`JsonPredicate` as the value to query inside the document. Import it with
+`use ORM::ActiveRecord::Relation::Query::Json;`.
+
+```perl6
+# Path extraction (the ->> operator) compared as text — works on PostgreSQL,
+# MySQL, and SQLite:
+User.where({ prefs => JsonPredicate.extract('theme').eq('dark') });
+User.where({ prefs => JsonPredicate.extract('address', 'city').ne('NYC') });
+
+# Containment — PostgreSQL @>, MySQL JSON_CONTAINS (SQLite raises):
+User.where({ prefs => JsonPredicate.contains({ theme => 'dark' }) });
+
+# Key existence — PostgreSQL jsonb_exists, MySQL JSON_CONTAINS_PATH (SQLite raises):
+User.where({ prefs => JsonPredicate.has-key('theme') });
+```
+
+`extract(*@path)` walks a nested path and compares the extracted **text** with
+`.eq` / `.ne`. All three predicates also work under `where.not`, which negates
+the whole condition. Containment and key-existence need a `:jsonb` column on
+PostgreSQL.
+
+| Predicate                         | PostgreSQL          | MySQL                 | SQLite          |
+| --------------------------------- | ------------------- | --------------------- | --------------- |
+| `extract(path).eq/.ne(v)`         | `col -> .. ->> ..`  | `col ->> '$.path'`    | `col ->> '$.path'` |
+| `contains(data)`                  | `col @> ?::jsonb`   | `JSON_CONTAINS(col, ?)` | — (raises)    |
+| `has-key(key)`                    | `jsonb_exists(col, ?)` | `JSON_CONTAINS_PATH(col, 'one', ?)` | — (raises) |
+
 ## where.missing and where.associated
 
 For relations through associations, `where.missing(:assoc)` finds records

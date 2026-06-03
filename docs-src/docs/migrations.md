@@ -74,6 +74,10 @@ differences).
 | `:interval`   | Time span. **PostgreSQL only** — MySQL and SQLite raise.                                                                                                        |
 | `:uuid`       | `UUID` on PostgreSQL, `CHAR(36)` on MySQL, `TEXT` on SQLite.                                                                                                    |
 | `:binary`     | Raw bytes (`BYTEA` / `BLOB`). On MySQL a `limit => N` makes it `VARBINARY(N)`; elsewhere `limit` is ignored.                                                    |
+| `:json`       | JSON document. `JSON` on PostgreSQL / MySQL; stored as text on SQLite.                                                                                          |
+| `:jsonb`      | Binary JSON. `JSONB` on PostgreSQL; maps to `JSON` on MySQL; stored as text on SQLite. Required for the [`@>` / key-existence operators](#json--jsonb-predicate-operators). |
+| `:hstore`     | Key/value store. **PostgreSQL only** (needs the `hstore` extension) — MySQL and SQLite raise.                                                                   |
+| `:xml`        | XML document. **PostgreSQL only** — MySQL and SQLite raise.                                                                                                     |
 | `:reference`  | Foreign-key column. The column declared as `user => { :reference }` becomes `user_id INTEGER` plus an index. See the `pages` / `subscriptions` examples above.  |
 
 Every column type accepts a `default => $value` option to set a column-level
