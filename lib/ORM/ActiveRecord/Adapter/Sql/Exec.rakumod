@@ -5,13 +5,21 @@ use ORM::ActiveRecord::Support::Log;
 role SqlExec is export {
   method ensure-connected { self.connect unless self.db.defined }
 
+  # Reify the rows, then let the adapter release the statement. SQLite resets
+  # the statement so a leftover read lock can't block a later DROP TABLE; other
+  # adapters leave statement teardown to GC (MySQL would leak prepared-statement
+  # slots if reset here without a close).
+  method release-statement($query) { }
+
   method exec(Str:D $sql, *@binds) {
     self.ensure-connected;
     self.check-write-allowed($sql);
     Log.sql(:$sql);
     my $query = self.db.prepare($sql);
     $query.execute(|@binds);
-    $query.allrows;
+    my @rows = $query.allrows;
+    self.release-statement($query);
+    @rows;
   }
 
   method exec-stmt(SqlStmt:D $stmt) {
@@ -20,7 +28,9 @@ role SqlExec is export {
     Log.sql(:sql($stmt.sql));
     my $query = self.db.prepare($stmt.sql);
     $query.execute(|$stmt.binds);
-    $query.allrows;
+    my @rows = $query.allrows;
+    self.release-statement($query);
+    @rows;
   }
 
   method exec-stmt-hash(SqlStmt:D $stmt) {
@@ -29,7 +39,9 @@ role SqlExec is export {
     Log.sql(:sql($stmt.sql));
     my $query = self.db.prepare($stmt.sql);
     $query.execute(|$stmt.binds);
-    $query.allrows(:array-of-hash);
+    my @rows = $query.allrows(:array-of-hash);
+    self.release-statement($query);
+    @rows;
   }
 
   method explain(SqlStmt:D $stmt --> Str) {

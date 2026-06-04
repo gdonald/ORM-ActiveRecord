@@ -1,0 +1,108 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Schema::Cache;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub adapter-kind(--> Str) {
+  given $adapter.^name {
+    when /Pg/     { 'pg' }
+    when /MySql/  { 'mysql' }
+    when /Sqlite/ { 'sqlite' }
+    default       { 'unknown' }
+  }
+}
+
+my $kind = adapter-kind();
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub cleanup-tables {
+  for < _si_things _si_widgets > -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+sub index-columns(Str:D $table) {
+  $adapter.get-indexes(:$table).map({ .<columns>.list }).flat.list;
+}
+
+sub constraint-types(Str:D $table) {
+  $adapter.get-constraints(:$table).map(*.<type>).list;
+}
+
+class CreateWidgets is Migration {
+  method change { self.create-table: '_si_widgets', [ name => { :string, limit => 32 } ]; }
+}
+
+class CreateThings is Migration {
+  method change {
+    self.create-table: '_si_things', [
+      _si_widget => { :reference },
+      token      => { :string, limit => 32, unique => True },
+      val        => { :integer },
+    ];
+    self.add-index: '_si_things', :val;
+  }
+}
+
+my $cache-path = $*TMPDIR.add('ar-schema-cache-test.json').Str;
+
+cleanup-tables;
+CreateWidgets.new.up;
+CreateThings.new.up;
+$adapter.exec(q{INSERT INTO _si_things (token, val) VALUES ('t1', 1)});
+
+# index introspection
+ok 'val' (elem) index-columns('_si_things'), 'get-indexes reports the column-covering index';
+ok $adapter.get-indexes(table => '_si_things').grep(*.<unique>).elems > 0,
+  'get-indexes reports a unique index';
+
+# constraint introspection
+ok 'foreign-key' (elem) constraint-types('_si_things'), 'get-constraints reports the foreign key';
+ok 'unique'      (elem) constraint-types('_si_things'), 'get-constraints reports the unique constraint';
+ok 'primary-key' (elem) constraint-types('_si_things'), 'get-constraints reports the primary key';
+
+# sequence introspection (per adapter)
+given $kind {
+  when 'pg' {
+    ok $adapter.get-sequences.grep({ .contains('_si_things') }).elems > 0,
+      'get-sequences lists the serial sequence (PostgreSQL)';
+  }
+  when 'sqlite' {
+    ok '_si_things' (elem) $adapter.get-sequences,
+      'get-sequences lists the autoincrement table (SQLite)';
+  }
+  default {
+    is $adapter.get-sequences.elems, 0, 'get-sequences is empty (MySQL)';
+  }
+}
+
+# schema cache
+my $json   = SchemaCache.new(adapter => $adapter).serialize;
+my $loaded = SchemaCache.new.deserialize($json);
+ok '_si_things' (elem) $loaded.table-names, 'schema cache round-trips table names';
+ok 'val' (elem) $loaded.columns-for('_si_things').map(*<name>), 'schema cache caches columns';
+
+SchemaCache.new(adapter => $adapter).dump(path => $cache-path);
+my $from-file = SchemaCache.new.load(path => $cache-path);
+ok '_si_things' (elem) $from-file.table-names, 'schema cache round-trips through a dumped file';
+
+cleanup-tables;
+try { $cache-path.IO.unlink }
+
+done-testing;

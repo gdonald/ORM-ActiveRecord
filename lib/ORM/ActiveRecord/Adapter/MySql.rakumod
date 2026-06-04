@@ -224,6 +224,50 @@ class MySqlAdapter is SqlAdapter is export {
       @$rows.map({ self!stringify($_[0]) });
     }
 
+    method get-indexes(Str:D :$table --> List) {
+      my $stmt = SqlStmt.new(:adapter(self));
+      my $tph = $stmt.placeholder($table);
+      $stmt.sql = qq:to/SQL/;
+        SELECT index_name, non_unique, column_name, seq_in_index
+          FROM information_schema.statistics
+         WHERE table_schema = DATABASE() AND table_name = $tph
+         ORDER BY index_name, seq_in_index
+        SQL
+
+      my @triples = self.exec-stmt($stmt).map({
+        (self!stringify($_[0]), $_[1].Int == 0, self!stringify($_[2]))
+      });
+      self.ref-group-index-rows(@triples);
+    }
+
+    method get-constraints(Str:D :$table --> List) {
+      my $stmt = SqlStmt.new(:adapter(self));
+      my $tph = $stmt.placeholder($table);
+      $stmt.sql = qq:to/SQL/;
+        SELECT constraint_name, constraint_type
+          FROM information_schema.table_constraints
+         WHERE table_schema = DATABASE() AND table_name = $tph
+         ORDER BY constraint_name
+        SQL
+
+      self.exec-stmt($stmt).map({
+        %( name => self!stringify($_[0]), type => self!mysql-ctype(self!stringify($_[1])) )
+      }).list;
+    }
+
+    method !mysql-ctype(Str:D $t --> Str) {
+      given $t.uc {
+        when 'FOREIGN KEY' { 'foreign-key' }
+        when 'CHECK'       { 'check' }
+        when 'UNIQUE'      { 'unique' }
+        when 'PRIMARY KEY' { 'primary-key' }
+        default            { $t.lc }
+      }
+    }
+
+    # MySQL has no sequences (AUTO_INCREMENT lives on the column).
+    method get-sequences(--> List) { () }
+
     method ddl-drop-all-tables(--> List) {
       my @tables = self.get-table-names.list;
       return @tables unless @tables.elems;

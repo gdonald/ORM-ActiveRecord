@@ -1185,6 +1185,50 @@ self.suppress-messages: -> {
 };
 ```
 
+## Schema introspection
+
+The adapter can report a table's catalog metadata beyond its columns:
+
+```perl6
+my $db = DB.shared;
+
+$db.get-indexes(table => 'users');
+# ({ name => 'users_email_idx', unique => True, columns => ['email'] }, ...)
+
+$db.get-constraints(table => 'orders');
+# ({ name => 'fk_orders_user_id', type => 'foreign-key' },
+#  { name => 'orders_pkey',       type => 'primary-key' }, ...)
+
+$db.get-sequences;        # ('orders_id_seq', 'users_id_seq')  (PostgreSQL)
+```
+
+`get-constraints` reports a canonical `type` of `foreign-key`, `check`,
+`unique`, `primary-key`, or `exclusion`. Coverage varies by engine: SQLite
+cannot introspect `CHECK` constraints, and `get-sequences` is PostgreSQL's
+sequence list, SQLite's `AUTOINCREMENT` tables, and empty on MySQL.
+
+### Schema cache
+
+`SchemaCache` snapshots the whole schema (every table's columns, indexes, and
+constraints, plus sequences) so an app can skip live introspection on boot.
+
+```perl6
+use ORM::ActiveRecord::Schema::Cache;
+
+# Dump on deploy:
+SchemaCache.new.dump(path => 'db/schema_cache.json');
+
+# Load on boot — no database round-trips:
+my $cache = SchemaCache.new.load(path => 'db/schema_cache.json');
+$cache.table-names;
+$cache.columns-for('users');       # ({ name => 'id', type => 'integer' }, ...)
+$cache.indexes-for('users');
+$cache.constraints-for('users');
+```
+
+`serialize` / `deserialize` do the same round-trip through a JSON string
+instead of a file.
+
 ## The `ar` command
 
 `ar` is the command-line tool for creating, migrating, and checking your

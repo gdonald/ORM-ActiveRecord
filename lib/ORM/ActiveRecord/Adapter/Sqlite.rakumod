@@ -43,6 +43,10 @@ class SqliteAdapter is SqlAdapter is export {
 
   method bind-placeholder(Int:D $n --> Str) { '?' }
 
+  # Reset the finished statement so its read lock is released right away; a
+  # lingering lock would otherwise block a later DROP TABLE on the same table.
+  method release-statement($query) { $query.finish }
+
   # SQLite has no SQL-standard isolation levels — validated upstream, dropped here.
   method begin-sql(Str :$isolation) {
     self.txn-exec('BEGIN');
@@ -177,6 +181,56 @@ class SqliteAdapter is SqlAdapter is export {
       ORDER BY name
       SQL
     @$rows.map({ $_[0] });
+  }
+
+  # PRAGMA index_list: (seq, name, unique, origin, partial)
+  # PRAGMA index_info: (seqno, cid, name)
+  method get-indexes(Str:D :$table --> List) {
+    my @triples;
+    # Materialise the outer PRAGMA before issuing the per-index PRAGMA below;
+    # iterating a live SQLite statement while running a nested query holds a
+    # read lock that would block a later DROP TABLE.
+    my @list = self.exec("PRAGMA index_list('$table')").list;
+    for @list -> $ix {
+      my $name   = $ix[1].Str;
+      my $unique = so $ix[2].Int;
+      my @cols   = self.exec("PRAGMA index_info('$name')").list;
+      if @cols.elems {
+        @triples.push: ($name, $unique, $_[2].Str) for @cols;
+      } else {
+        @triples.push: ($name, $unique, Str);
+      }
+    }
+    self.ref-group-index-rows(@triples);
+  }
+
+  # SQLite exposes constraints through pragmas: foreign keys, the primary key,
+  # and user-defined UNIQUE constraints (index_list origin 'u'). CHECK
+  # constraints are not introspectable without parsing the table DDL.
+  method get-constraints(Str:D :$table --> List) {
+    my @out;
+
+    my %seen-fk;
+    for self.exec("PRAGMA foreign_key_list('$table')") -> $fk {
+      next if %seen-fk{$fk[0].Str}++;
+      @out.push: %( name => "fk_{$table}_{$fk[3].Str}", type => 'foreign-key' );
+    }
+
+    @out.push(%( name => "{$table}_pkey", type => 'primary-key' ))
+      if self.exec("PRAGMA table_info('$table')").grep({ $_[5].Int > 0 }).elems;
+
+    for self.exec("PRAGMA index_list('$table')") -> $ix {
+      @out.push: %( name => $ix[1].Str, type => 'unique' ) if $ix[3].Str eq 'u';
+    }
+
+    @out;
+  }
+
+  # SQLite has no sequences; AUTOINCREMENT bookkeeping lives in sqlite_sequence.
+  method get-sequences(--> List) {
+    my $exists = self.exec(q{SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'sqlite_sequence'});
+    return () unless @$exists.elems;
+    self.exec('SELECT name FROM sqlite_sequence ORDER BY name').map({ $_[0].Str }).list;
   }
 
   method ddl-drop-all-tables(--> List) {

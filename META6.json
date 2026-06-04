@@ -54,6 +54,7 @@
     "ORM::ActiveRecord::Relation::Query::Sql": "lib/ORM/ActiveRecord/Relation/Query/Sql.rakumod",
     "ORM::ActiveRecord::Relation::Scope": "lib/ORM/ActiveRecord/Relation/Scope.rakumod",
     "ORM::ActiveRecord::Relation::Scopes": "lib/ORM/ActiveRecord/Relation/Scopes.rakumod",
+    "ORM::ActiveRecord::Schema::Cache": "lib/ORM/ActiveRecord/Schema/Cache.rakumod",
     "ORM::ActiveRecord::Schema::Field": "lib/ORM/ActiveRecord/Schema/Field.rakumod",
     "ORM::ActiveRecord::Schema::Migrate": "lib/ORM/ActiveRecord/Schema/Migrate.rakumod",
     "ORM::ActiveRecord::Schema::Migration": "lib/ORM/ActiveRecord/Schema/Migration.rakumod",

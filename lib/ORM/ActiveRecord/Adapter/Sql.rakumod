@@ -27,6 +27,9 @@ class SqlAdapter
   method bind-placeholder(Int:D $n --> Str)                         { ... }
   method get-fields(Str:D :$table)                                  { ... }
   method get-table-names()                                          { ... }
+  method get-indexes(Str:D :$table --> List)                        { ... }
+  method get-constraints(Str:D :$table --> List)                    { ... }
+  method get-sequences(--> List)                                    { ... }
   method build-insert(Str:D :$table, :%attrs, :%types --> SqlStmt)  { ... }
   method create-object(Mu:D $obj)                                   { ... }
   method delete-records(Str:D :$table, :%where, :%where-not --> Int) { ... }

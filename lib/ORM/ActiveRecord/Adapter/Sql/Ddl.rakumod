@@ -403,6 +403,22 @@ role SqlDdl is export {
     "uq_{$table}_" ~ @columns.join('_');
   }
 
+  # Fold per-(index, column) introspection rows into one hash per index.
+  # Each triple is (index-name, unique-Bool, column-name); column order is the
+  # order the triples arrive in.
+  method ref-group-index-rows(@triples --> List) {
+    my @order;
+    my %by;
+    for @triples -> ($name, $unique, $col) {
+      unless %by{$name}:exists {
+        %by{$name} = %( :$name, :$unique, columns => [] );
+        @order.push($name);
+      }
+      %by{$name}<columns>.push($col) if $col.defined;
+    }
+    @order.map({ %by{$_} }).list;
+  }
+
   method ref-expr-hash(Str:D $expr --> Str) {
     my Int $hash = 0;
     for $expr.comb -> $c {

@@ -151,6 +151,48 @@ class PgAdapter is SqlAdapter is export {
     self.exec-stmt($stmt).map({ $_[0] });
   }
 
+  method get-indexes(Str:D :$table --> List) {
+    my $rows = self.exec(q:to/SQL/, $table);
+      SELECT i.relname, ix.indisunique, a.attname,
+             array_position(ix.indkey, a.attnum)
+        FROM pg_index ix
+        JOIN pg_class i ON i.oid = ix.indexrelid
+        JOIN pg_class t ON t.oid = ix.indrelid
+        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+       WHERE t.relname = $1
+       ORDER BY i.relname, array_position(ix.indkey, a.attnum)
+      SQL
+
+    my @triples = $rows.map({ ($_[0].Str, so $_[1], $_[2].Str) });
+    self.ref-group-index-rows(@triples);
+  }
+
+  method get-constraints(Str:D :$table --> List) {
+    my $rows = self.exec(q:to/SQL/, $table);
+      SELECT conname, contype
+        FROM pg_constraint
+       WHERE conrelid = $1::regclass
+       ORDER BY conname
+      SQL
+
+    $rows.map({ %( name => $_[0].Str, type => self!pg-contype($_[1].Str) ) }).list;
+  }
+
+  method !pg-contype(Str:D $c --> Str) {
+    given $c {
+      when 'f' { 'foreign-key' }
+      when 'c' { 'check' }
+      when 'u' { 'unique' }
+      when 'p' { 'primary-key' }
+      when 'x' { 'exclusion' }
+      default  { $c }
+    }
+  }
+
+  method get-sequences(--> List) {
+    self.exec(q{SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public' ORDER BY sequence_name}).map({ $_[0].Str }).list;
+  }
+
   method delete-records(Str:D :$table, :%where, :%where-not) {
     my $stmt = SqlStmt.new(:adapter(self));
     my $where-sql = self.build-where($stmt, %where, %where-not);

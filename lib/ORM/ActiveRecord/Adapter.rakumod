@@ -26,6 +26,12 @@ role Adapter is export {
   method get-fields(Str:D :$table)  { ... }
   method get-table-names()          { ... }
 
+  # Catalog introspection beyond columns: indexes, constraints, sequences.
+  # Each returns a List of Hashes (sequences: a List of names).
+  method get-indexes(Str:D :$table --> List)     { ... }
+  method get-constraints(Str:D :$table --> List) { ... }
+  method get-sequences(--> List)                 { ... }
+
   # CRUD primitives whose SQL shape varies by dialect
   method build-insert(Str:D :$table, :%attrs, :%types --> SqlStmt) { ... }
   method delete-records(Str:D :$table, :%where, :%where-not --> Int) { ... }
