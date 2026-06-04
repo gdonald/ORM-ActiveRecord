@@ -1,0 +1,98 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Adapter::Sqlite;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Connection::Switching;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  use DBIish;
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+class RoleModel is Model { method table-name { 'role_models' } }
+RoleModel.connects-to(database => { writing => 'm_primary', reading => 'm_replica' });
+
+class ShardModel is Model { method table-name { 'shard_models' } }
+ShardModel.connects-to(shards => {
+  default   => { writing => 'sh_default_w', reading => 'sh_default_r' },
+  shard_one => { writing => 'sh_one_w',     reading => 'sh_one_r' },
+});
+
+class LegacyModel is Model { method table-name { 'legacy_models' } }
+LegacyModel.connects-to('legacy_conn');
+
+class UnboundModel is Model { method table-name { 'unbound_models' } }
+
+# role resolution
+is RoleModel.connection-name, 'm_primary', 'defaults to the writing role';
+is RoleModel.connected-to(role => 'reading', { RoleModel.connection-name }), 'm_replica',
+  'switches to the reading role inside connected-to';
+RoleModel.connected-to(role => 'reading', { 1 });
+is RoleModel.connection-name, 'm_primary', 'restores the role after the block';
+
+# shard resolution
+is ShardModel.connection-name, 'sh_default_w', 'defaults to the default shard writing connection';
+is ShardModel.connected-to(shard => 'shard_one', { ShardModel.connection-name }), 'sh_one_w',
+  'switches shard inside connected-to';
+is ShardModel.connected-to(shard => 'shard_one', role => 'reading', { ShardModel.connection-name }), 'sh_one_r',
+  'switches shard and role together';
+is ShardModel.connected-to(role => 'reading', { ShardModel.connected-to(shard => 'shard_one', { ShardModel.connection-name }) }),
+  'sh_one_r', 'nested block inherits the outer context';
+
+# explicit override
+is RoleModel.connected-to(connection => 'override', { RoleModel.connection-name }), 'override',
+  'connected-to(connection) wins over the binding';
+is UnboundModel.connected-to(connection => 'override', { UnboundModel.connection-name }), 'override',
+  'connected-to(connection) overrides an unbound model';
+
+# connected-to-many
+is Model.connected-to-many([RoleModel, ShardModel], role => 'reading',
+     { RoleModel.connection-name ~ ',' ~ ShardModel.connection-name }),
+   'm_replica,sh_default_r', 'connected-to-many switches the role for every model';
+
+# legacy + unbound
+is LegacyModel.connection-name, 'legacy_conn', 'legacy binding resolves the single connection';
+is LegacyModel.connected-to(role => 'reading', { LegacyModel.connection-name }), 'legacy_conn',
+  'legacy binding is unaffected by role switching';
+is UnboundModel.connection-name, 'primary', 'unbound model uses the primary connection';
+is UnboundModel.connected-to(role => 'reading', shard => 'shard_one', { UnboundModel.connection-name }), 'primary',
+  'unbound model ignores role and shard switching';
+
+# DatabaseSelector
+is DatabaseSelector.new.role-for, 'reading', 'selector reads by default';
+is DatabaseSelector.new.role-for(:write), 'writing', 'selector writes when a write is requested';
+my $sel = DatabaseSelector.new(delay => 5);
+$sel.record-write;
+is $sel.role-for, 'writing', 'selector sticks to writing within the delay window';
+
+# end-to-end role routing
+if $has-sqlite {
+  my $saved = DB.shared(name => 'primary');
+  my $writing = SqliteAdapter.new(database => ':memory:');
+  my $reading = SqliteAdapter.new(database => ':memory:');
+  DB.set-shared(DB.new(adapter => $writing), name => 'm_primary');
+  DB.set-shared(DB.new(adapter => $reading), name => 'm_replica');
+  $_.ddl-create-table('role_models', [ name => { :string, limit => 64 } ]) for $writing, $reading;
+
+  RoleModel.create({ name => 'Alpha' });
+
+  is $writing.count-records(table => 'role_models', where => {}), 1, 'write routes to the writing connection';
+  is RoleModel.count, 1, 'read defaults to the writing connection';
+  is RoleModel.connected-to(role => 'reading', { RoleModel.count }), 0,
+    'read routes to the reading connection inside connected-to(role => reading)';
+
+  DB.set-shared($saved, name => 'primary');
+  DB.set-shared(Nil, name => 'm_primary');
+  DB.set-shared(Nil, name => 'm_replica');
+} else {
+  skip 'DBDish::SQLite not installed', 3;
+}
+
+done-testing;

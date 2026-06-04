@@ -5,11 +5,12 @@ use ORM::ActiveRecord::Support::Log;
 role SqlExec is export {
   method ensure-connected { self.connect unless self.db.defined }
 
-  # Reify the rows, then let the adapter release the statement. SQLite resets
-  # the statement so a leftover read lock can't block a later DROP TABLE; other
-  # adapters leave statement teardown to GC (MySQL would leak prepared-statement
-  # slots if reset here without a close).
-  method release-statement($query) { }
+  # Reify the rows, then dispose the statement immediately rather than leaving
+  # it to GC. This finalizes it on every driver: SQLite releases the read lock
+  # that would otherwise block a later DROP TABLE, and MySQL closes the
+  # server-side prepared statement so a long run can't exhaust
+  # max_prepared_stmt_count.
+  method release-statement($query) { $query.dispose }
 
   method exec(Str:D $sql, *@binds) {
     self.ensure-connected;

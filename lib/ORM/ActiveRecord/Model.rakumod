@@ -1,5 +1,6 @@
 
 use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Connection::Switching;
 use ORM::ActiveRecord::Support::Environment;
 use ORM::ActiveRecord::Errors::Error;
 use ORM::ActiveRecord::Errors::Errors;
@@ -137,15 +138,73 @@ class Model
     $obj;
   }
 
-  # Bind this model to a named connection (from config/application.json). All
-  # of the model's queries route to DB.shared(:name<...>); unbound models use
-  # the primary connection.
-  method connects-to(Str:D $name) {
-    %connection-of{self.^name} = $name;
+  # Bind this model to one or more named connections (from
+  # config/application.json). Three forms:
+  #
+  #   connects-to('analytics')                                  # single connection
+  #   connects-to(database => { writing => 'primary', reading => 'replica' })
+  #   connects-to(shards => { default   => { writing => 'p',  reading => 'r'  },
+  #                           shard_one => { writing => 's1', reading => 's1r' } })
+  #
+  # Stored normalized as { shards => { <shard> => { <role> => <connection> } } }.
+  # `connected-to(role:/shard:)` then selects which connection a query uses;
+  # unbound models always use the primary connection.
+  proto method connects-to(|) {*}
+
+  multi method connects-to(Str:D $name) {
+    %connection-of{self.^name} = %( shards => %( default => %( writing => $name, reading => $name ) ) );
+  }
+
+  multi method connects-to(*%opts) {
+    my %shards;
+    if %opts<shards>:exists {
+      for %opts<shards>.kv -> $shard, $roles { %shards{$shard} = $roles.hash }
+    }
+    %shards<default> = %opts<database>.hash if %opts<database>:exists;
+    %connection-of{self.^name} = %( shards => %shards );
   }
 
   method connection-name(--> Str) {
-    %connection-of{self.^name} // default-connection();
+    return active-connection() if active-connection().defined;
+
+    my $spec = %connection-of{self.^name};
+    return default-connection() without $spec;
+
+    my $shard = active-shard() // 'default';
+    my $role  = active-role()  // 'writing';
+
+    my %shards = $spec<shards>;
+    my %roles  = (%shards{$shard} // %shards<default> // %()).hash;
+
+    %roles{$role} // %roles<writing> // %roles.values.first // default-connection();
+  }
+
+  # Run a block with the connection role / shard (or an explicit connection
+  # name) switched, restoring the previous context afterward. Affects every
+  # model's query routing for the dynamic extent of the block.
+  method connected-to(&block, :$role, :$shard, :$connection) {
+    # Resolve the inherited context here, where there is no `my $*AR-*`
+    # declaration to shadow the outer dynamic variables (a `my $*X` is
+    # hoisted over the whole method, so reading it even before assignment
+    # would see the new, uninitialized binding). The actual rebinding happens
+    # in a separate method.
+    self!run-connected(
+      role       => ($role       // active-role()),
+      shard      => ($shard      // active-shard()),
+      connection => ($connection // active-connection()),
+      &block,
+    );
+  }
+
+  method !run-connected(&block, :$role, :$shard, :$connection) {
+    my $*AR-ROLE       = $role;
+    my $*AR-SHARD      = $shard;
+    my $*AR-CONNECTION = $connection;
+    block();
+  }
+
+  method connected-to-many(@classes, &block, :$role, :$shard) {
+    self.connected-to(&block, :$role, :$shard);
   }
 
   method db(--> DB) {

@@ -43,10 +43,6 @@ class SqliteAdapter is SqlAdapter is export {
 
   method bind-placeholder(Int:D $n --> Str) { '?' }
 
-  # Reset the finished statement so its read lock is released right away; a
-  # lingering lock would otherwise block a later DROP TABLE on the same table.
-  method release-statement($query) { $query.finish }
-
   # SQLite has no SQL-standard isolation levels — validated upstream, dropped here.
   method begin-sql(Str :$isolation) {
     self.txn-exec('BEGIN');

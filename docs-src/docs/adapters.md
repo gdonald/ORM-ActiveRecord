@@ -109,6 +109,64 @@ class Event is Model {
 Every query a bound model runs — class finders, relations, and its instances'
 saves — routes to that connection. Unbound models use `primary`.
 
+#### Roles (writing / reading)
+
+A model can bind a connection per role — typically a primary for writes and a
+replica for reads:
+
+```raku
+class User is Model {
+  User.connects-to(database => { writing => 'primary', reading => 'replica' });
+}
+```
+
+Queries use the `writing` role by default. Wrap work in `connected-to(role:)`
+to switch — for example to read from the replica:
+
+```raku
+User.connected-to(role => 'reading', { User.all });   # runs against 'replica'
+```
+
+#### Shards
+
+`connects-to(shards: ...)` binds a writing/reading pair per shard, and
+`connected-to(shard:)` selects one (role and shard compose):
+
+```raku
+class Order is Model {
+  Order.connects-to(shards => {
+    default   => { writing => 'primary',  reading => 'replica' },
+    shard_one => { writing => 'shard1',   reading => 'shard1_replica' },
+  });
+}
+
+Order.connected-to(shard => 'shard_one', { Order.count });
+Order.connected-to(shard => 'shard_one', role => 'reading', { Order.all });
+```
+
+`connected-to` blocks nest (an inner block inherits the outer role/shard unless
+it overrides them), and `connected-to(connection => 'name')` bypasses
+role/shard to force a specific connection. `Model.connected-to-many(@classes,
+role => ..., shard => ...) { ... }` switches the context for a block covering
+several models.
+
+#### Automatic role selection
+
+For request-based read/write splitting, `DatabaseSelector`
+(`use ORM::ActiveRecord::Connection::Switching;`) decides a role: writes — and
+reads for a short window after a write, so a user sees their own change — go to
+`writing`, everything else to `reading`. A web middleware wraps each request:
+
+```raku
+my $selector = DatabaseSelector.new(delay => 2);
+
+# per request:
+Model.connected-to(role => $selector.role-for(:write($is-mutating)), {
+  handle-request();
+});
+$selector.record-write if $is-mutating;
+```
+
 The `parallel` key (test environment only) sets how many per-worker database
 copies `ar createdb --parallel` / `test.raku --parallel` create; see
 [Tests](tests.md).
