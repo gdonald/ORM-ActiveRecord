@@ -1,0 +1,86 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Adapter::Pg;
+use ORM::ActiveRecord::Schema::Migrate;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+sub adapter-kind(--> Str) {
+  my $a = DB.shared.adapter;
+  return 'none' without $a;
+  given $a.^name {
+    when /Pg/     { 'pg' }
+    when /MySql/  { 'mysql' }
+    when /Sqlite/ { 'sqlite' }
+    default       { 'unknown' }
+  }
+}
+my $is-pg = adapter-kind() eq 'pg';
+
+my $tmp = $*TMPDIR.add("ar-cfg-extras-t-{$*PID}.json");
+my $saved-url = %*ENV<DATABASE_URL>;
+%*ENV<DATABASE_URL>:delete;
+
+$tmp.spurt: q:to/JSON/;
+{
+  "development": { "primary": { "adapter": "pg", "name": "app_dev" } },
+  "production":  { "primary": {
+    "adapter": "pg", "name": "app_prod",
+    "sslmode": "require", "sslrootcert": "/etc/ssl/ca.pem", "application_name": "myapp"
+  } }
+}
+JSON
+
+# per-environment config
+is DB.read-config(path => $tmp.Str, name => 'primary', env => 'development')<name>, 'app_dev',
+  'reads the development environment';
+is DB.read-config(path => $tmp.Str, name => 'primary', env => 'production')<name>, 'app_prod',
+  'reads the production environment';
+
+# connection options preserved in config
+is DB.read-config(path => $tmp.Str, name => 'primary', env => 'production')<sslmode>, 'require',
+  'config preserves sslmode';
+is DB.read-config(path => $tmp.Str, name => 'primary', env => 'production')<sslrootcert>, '/etc/ssl/ca.pem',
+  'config preserves sslrootcert';
+is DB.read-config(path => $tmp.Str, name => 'primary', env => 'production')<application_name>, 'myapp',
+  'config preserves application_name';
+
+$tmp.unlink if $tmp.e;
+
+# connection options in DATABASE_URL
+%*ENV<DATABASE_URL> = 'postgres://u@h:5432/db?sslmode=require&application_name=myapp';
+is DB.read-config(name => 'primary')<application_name>, 'myapp',
+  'DATABASE_URL preserves application_name';
+$saved-url.defined ?? (%*ENV<DATABASE_URL> = $saved-url) !! (%*ENV<DATABASE_URL>:delete);
+
+# per-connection migration path
+is Migrate.new(args => [], migration-path => 'custom/migrate').migration-path, 'custom/migrate',
+  'Migrate uses an explicit migration-path';
+is Migrate.new(args => []).migration-path, 'db/migrate',
+  'Migrate defaults to db/migrate';
+
+# PostgreSQL: application_name takes effect on the session
+if $is-pg {
+  my %c = DB.read-config(name => 'primary');
+  my $pg = PgAdapter.new(
+    schema           => %c<schema> // 'public',
+    host             => %c<host> // 'localhost',
+    database         => %c<name> // %c<database>,
+    user             => %c<user> // '',
+    password         => %c<password> // '',
+    sslmode          => 'disable',
+    application-name => 'ar-cfg-test',
+  );
+  my @rows = $pg.exec('SELECT application_name FROM pg_stat_activity WHERE pid = pg_backend_pid()');
+  $pg.disconnect;
+  is @rows[0][0].Str, 'ar-cfg-test', 'PgAdapter sets the session application_name';
+} else {
+  skip 'application_name probe is PostgreSQL-only', 1;
+}
+
+done-testing;

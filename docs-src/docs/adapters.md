@@ -74,10 +74,46 @@ environment (`primary` is the default connection):
 the `name` field IS the schema. SQLite only needs `name` (the file path) or
 `":memory:"`.
 
-The active environment is chosen by `AR_ENV` (`bin/ar` defaults to
-`development`; the test suite uses `test`). When `DATABASE_URL` is set it
-overrides the active environment's `primary` connection; any other named
+The active environment is chosen by `AR_ENV`, then `RAKU_ENV` (`bin/ar`
+defaults to `development`; the test suite uses `test`). When `DATABASE_URL` is
+set it overrides the active environment's `primary` connection; any other named
 connection is still resolved from `config/application.json`.
+
+#### Connection options (PostgreSQL)
+
+A connection block (or `DATABASE_URL` query string) may carry extra
+PostgreSQL connection parameters, passed straight through to the driver:
+
+| Key                | Effect                                                       |
+| ------------------ | ----------------------------------------------------------- |
+| `sslmode`          | `disable` / `prefer` / `require` / `verify-full` / …        |
+| `sslrootcert`      | CA certificate path for verified TLS.                       |
+| `sslcert` / `sslkey` | Client certificate / key paths.                          |
+| `application_name` | Labels the session in `pg_stat_activity` and server logs.  |
+
+```json
+{ "production": { "primary": {
+  "adapter": "pg", "name": "app", "host": "db",
+  "sslmode": "require", "sslrootcert": "/etc/ssl/ca.pem",
+  "application_name": "app-web"
+} } }
+```
+
+```
+DATABASE_URL=postgres://app@db/app?sslmode=require&application_name=app-web
+```
+
+#### Per-connection migration path
+
+A connection may set its own migration directory with a `migration-path` (or
+`migrations`) key; it defaults to `db/migrate`. `ar` migrates each connection
+from its configured path.
+
+```json
+{ "production": { "analytics": {
+  "adapter": "pg", "name": "events", "migration-path": "db/migrate_analytics"
+} } }
+```
 
 > **Legacy flat config.** The older single-database shape — `{ "db": { … } }`
 > — is still accepted and auto-promoted to the active environment's `primary`

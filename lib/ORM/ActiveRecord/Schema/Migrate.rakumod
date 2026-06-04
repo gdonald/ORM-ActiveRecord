@@ -19,10 +19,19 @@ class Migrate is export {
   has @.args;
   has DB $!db;
   has Str $.connection = default-connection();
+  has Str $.migration-path;
 
-  submethod BUILD(:@!args, Str :$connection = default-connection()) {
+  submethod BUILD(:@!args, Str :$connection = default-connection(), Str :$migration-path) {
     $!connection = $connection;
     $!db = DB.shared(name => $connection);
+    # Per-connection migration directory: an explicit arg wins, then the
+    # connection's `migration-path` / `migrations` config key, then the default.
+    $!migration-path = $migration-path // self!config-migration-path // Migrate.dir;
+  }
+
+  method !config-migration-path {
+    my %config = DB.read-config(name => $!connection);
+    %config<migration-path> // %config<migrations>;
   }
 
   method run {
@@ -94,7 +103,7 @@ class Migrate is export {
     my ($action, $count) = ac[0];
     my $cnt = 0;
 
-    my @files = self.files(Migrate.dir).sort;
+    my @files = self.files($!migration-path).sort;
     @files .= reverse if $action ~~ 'down';
 
     for @files -> $path {

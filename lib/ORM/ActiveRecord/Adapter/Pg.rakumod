@@ -13,8 +13,15 @@ class PgAdapter is SqlAdapter is export {
   has Str $!database;
   has Str $!user;
   has Str $!password;
+  has Str $!sslmode;
+  has Str $!sslrootcert;
+  has Str $!sslcert;
+  has Str $!sslkey;
+  has Str $!application-name;
 
-  submethod BUILD(Str :$!schema, Str :$!host, Str :$!database, Str :$!user, Str :$!password) {
+  submethod BUILD(Str :$!schema, Str :$!host, Str :$!database, Str :$!user, Str :$!password,
+                  Str :$!sslmode, Str :$!sslrootcert, Str :$!sslcert, Str :$!sslkey,
+                  Str :$!application-name) {
     self.connect;
   }
 
@@ -24,7 +31,13 @@ class PgAdapter is SqlAdapter is export {
 
   method connect() {
     return if self.db.defined;
-    self.db = DBIish.connect('Pg', :$!schema, :$!host, :$!database, :$!user, :$!password);
+    my %params = :$!schema, :$!host, :$!database, :$!user, :$!password;
+    %params<sslmode>          = $!sslmode          with $!sslmode;
+    %params<sslrootcert>      = $!sslrootcert      with $!sslrootcert;
+    %params<sslcert>          = $!sslcert          with $!sslcert;
+    %params<sslkey>           = $!sslkey           with $!sslkey;
+    %params<application-name> = $!application-name  with $!application-name;
+    self.db = DBIish.connect('Pg', |%params);
     self.db.do('SET client_min_messages = WARNING');
   }
 

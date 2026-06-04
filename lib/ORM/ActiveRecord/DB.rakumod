@@ -108,6 +108,11 @@ class DB is export {
           database => %config<name>     // %config<database>,
           user     => %config<user>     // '',
           password => %config<password> // '',
+          |(sslmode          => $_ with %config<sslmode>),
+          |(sslrootcert      => $_ with %config<sslrootcert>),
+          |(sslcert          => $_ with %config<sslcert>),
+          |(sslkey           => $_ with %config<sslkey>),
+          |(application-name => $_ with (%config<application_name> // %config<application-name>)),
         );
       }
       when SqliteAdapter {

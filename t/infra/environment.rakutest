@@ -33,6 +33,30 @@ use ORM::ActiveRecord::Support::Environment;
   is current-env('development'), 'development', 'current-env ignores an empty AR_ENV';
 }
 
+{
+  temp %*ENV<AR_ENV>;
+  %*ENV<AR_ENV>:delete;
+  temp %*ENV<RAKU_ENV> = 'production';
+  temp %*ENV<BEHAVE_WORKER_COUNT>;
+  %*ENV<BEHAVE_WORKER_COUNT>:delete;
+  is current-env('development'), 'production', 'current-env returns RAKU_ENV when AR_ENV is unset';
+}
+
+{
+  temp %*ENV<AR_ENV>  = 'staging';
+  temp %*ENV<RAKU_ENV> = 'production';
+  is current-env('development'), 'staging', 'current-env lets AR_ENV win over RAKU_ENV';
+}
+
+{
+  temp %*ENV<AR_ENV>;
+  %*ENV<AR_ENV>:delete;
+  temp %*ENV<RAKU_ENV> = '';
+  temp %*ENV<BEHAVE_WORKER_COUNT>;
+  %*ENV<BEHAVE_WORKER_COUNT>:delete;
+  is current-env('development'), 'development', 'current-env ignores an empty RAKU_ENV';
+}
+
 is default-connection(), 'primary', 'default-connection is primary';
 
 done-testing;

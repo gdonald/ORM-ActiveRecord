@@ -39,6 +39,33 @@ describe 'current-env', {
 
     expect(current-env('development')).to.eq('development');
   }
+
+  it 'returns RAKU_ENV when AR_ENV is unset', {
+    temp %*ENV<AR_ENV>;
+    %*ENV<AR_ENV>:delete;
+    temp %*ENV<RAKU_ENV> = 'production';
+    temp %*ENV<BEHAVE_WORKER_COUNT>;
+    %*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+    expect(current-env('development')).to.eq('production');
+  }
+
+  it 'lets AR_ENV win over RAKU_ENV', {
+    temp %*ENV<AR_ENV>  = 'staging';
+    temp %*ENV<RAKU_ENV> = 'production';
+
+    expect(current-env('development')).to.eq('staging');
+  }
+
+  it 'ignores an empty RAKU_ENV', {
+    temp %*ENV<AR_ENV>;
+    %*ENV<AR_ENV>:delete;
+    temp %*ENV<RAKU_ENV> = '';
+    temp %*ENV<BEHAVE_WORKER_COUNT>;
+    %*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+    expect(current-env('development')).to.eq('development');
+  }
 }
 
 describe 'default-connection', {
