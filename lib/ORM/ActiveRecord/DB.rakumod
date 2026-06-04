@@ -5,6 +5,7 @@ use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::Adapter::Pg;
 use ORM::ActiveRecord::Adapter::Sqlite;
 use ORM::ActiveRecord::Adapter::MySql;
+use ORM::ActiveRecord::Connection::Pool;
 use ORM::ActiveRecord::Support::DatabaseUrl;
 use ORM::ActiveRecord::Support::WorkerDb;
 use ORM::ActiveRecord::Support::Environment;
@@ -15,6 +16,8 @@ class DB is export {
 
   has Adapter $.adapter handles *;
   has Str $.name = default-connection();
+  has %!config;
+  has ConnectionPool $!pool;
 
   submethod BUILD(Adapter :$adapter, Str :$name = default-connection()) {
     $!name = $name;
@@ -22,9 +25,49 @@ class DB is export {
     if $adapter.defined {
       $!adapter = $adapter;
     } else {
-      my %config = self.read-config(:$name);
-      $!adapter = self!build-adapter(%config);
+      %!config  = self.read-config(:$name);
+      $!adapter = self!build-adapter(%!config);
     }
+  }
+
+  # Build a fresh, connected adapter from this connection's config. Used by the
+  # pool to add connections; each is a full adapter with its own driver handle.
+  method build-connection(--> Adapter) {
+    my %config = %!config.elems ?? %!config !! self.read-config(:name($!name));
+    self!build-adapter(%config);
+  }
+
+  # A lazily-built connection pool for this named connection, sized from the
+  # config's `pool` key (and `min-threads` / `checkout-timeout` / etc.).
+  method pool(--> ConnectionPool) {
+    $!pool //= self!build-pool;
+  }
+
+  method with-connection(&block) {
+    self.pool.with-connection(&block);
+  }
+
+  method !build-pool(--> ConnectionPool) {
+    my %config = %!config.elems ?? %!config !! self.read-config(:name($!name));
+
+    my $size              = (self!cfg-num(%config, 'pool', 'size', 'max-threads', 'max_threads') // 5).Int;
+    my $min               = (self!cfg-num(%config, 'min-threads', 'min_threads', 'min') // 0).Int;
+    my $checkout-timeout  =  self!cfg-num(%config, 'checkout-timeout', 'checkout_timeout') // 5;
+    my $idle-timeout      =  self!cfg-num(%config, 'idle-timeout', 'idle_timeout') // 0;
+    my $reaping-frequency =  self!cfg-num(%config, 'reaping-frequency', 'reaping_frequency') // 0;
+    my $verify-timeout    =  self!cfg-num(%config, 'verify-timeout', 'verify_timeout') // 0;
+
+    ConnectionPool.new(
+      builder => { self.build-connection },
+      :$size, :$min, :$checkout-timeout, :$idle-timeout, :$reaping-frequency, :$verify-timeout,
+    );
+  }
+
+  method !cfg-num(%config, *@keys) {
+    for @keys -> $k {
+      return +%config{$k} if %config{$k}:exists && %config{$k}.defined;
+    }
+    Nil;
   }
 
   # Process-wide shared connection, keyed by connection name. Use this

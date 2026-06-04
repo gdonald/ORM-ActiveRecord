@@ -200,6 +200,53 @@ $db.disconnect;
 my @rows = $db.exec('SELECT 2');   # exec auto-reconnects, returns 2
 ```
 
+**Health probes** — `is-active` runs a trivial round-trip and returns `False`
+(never throws) on a dropped connection; `verify` reconnects once if the
+connection is dead and returns whether it is live afterward.
+
+```perl6
+$db.is-active;            # True on a live connection, False on a dropped one
+$db.verify;               # reconnects if needed; True if live afterward
+```
+
+## Connection pooling
+
+For concurrent work, a connection pool hands out separate connections — each a
+full adapter with its own driver handle and transaction state. Size it from
+config (the `pool` key, with `min-threads`, `checkout-timeout`,
+`idle-timeout`, `reaping-frequency`, and `verify-timeout` as further knobs):
+
+```json
+{ "production": { "primary": {
+  "adapter": "pg", "name": "app", "host": "db",
+  "pool": 10, "checkout-timeout": 5, "idle-timeout": 300
+} } }
+```
+
+`with-connection` checks a connection out for the block and back in afterward
+(even if the block throws):
+
+```perl6
+DB.shared.with-connection: -> $conn {
+  $conn.exec('SELECT count(*) FROM orders');
+};
+```
+
+The lower-level `checkout` / `checkin` are also available via `DB.shared.pool`:
+
+```perl6
+my $pool = DB.shared.pool;
+my $conn = $pool.checkout;          # waits up to checkout-timeout for a free slot
+LEAVE $pool.checkin($conn);
+$conn.exec('...');
+```
+
+Connections are created lazily up to the pool size. `checkout` verifies the
+connection first, so one dropped while idle is reconnected transparently; a
+`checkout` that can't get a free connection within `checkout-timeout` throws.
+`pool.reap` closes connections idle past `idle-timeout` (down to
+`min-threads`), and `pool.disconnect-all` closes them all.
+
 ## Raw SQL with bound parameters
 
 `sanitize-sql` and `sanitize-sql-array` turn a SQL fragment + values into a

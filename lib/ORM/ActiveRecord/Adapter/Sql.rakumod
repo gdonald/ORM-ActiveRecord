@@ -61,4 +61,20 @@ class SqlAdapter
     self.connect;
     self;
   }
+
+  # Health probe: a defined handle is not proof the server is still there, so
+  # run a trivial round-trip. Returns False (never throws) on a dropped or
+  # dead connection.
+  method is-active(--> Bool) {
+    return False unless self.is-connected;
+    (try { self.exec('SELECT 1'); True }) // False;
+  }
+
+  # Verify the connection, reconnecting once if it is dead. Returns whether the
+  # connection is live afterward.
+  method verify(--> Bool) {
+    return True if self.is-active;
+    self.reconnect;
+    self.is-active;
+  }
 }

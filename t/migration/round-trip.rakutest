@@ -15,7 +15,7 @@ unless $adapter.defined && $adapter.is-connected {
   exit 0;
 }
 
-my @before = $adapter.get-table-names.list.grep({ $_ ne 'migrations' }).sort;
+my @before = $adapter.get-table-names.list.grep({ $_ ne 'migrations' && !.starts-with('_') }).sort;
 ok @before.elems > 0, 'starting schema has at least one migrated table';
 
 Migrate.new(:args(['reset', '--yes'])).run;
@@ -25,7 +25,7 @@ is @after-reset.elems, 0, 'reset --yes drops every table on the adapter';
 
 Migrate.new(:args([])).run;
 
-my @after-up = $adapter.get-table-names.list.grep({ $_ ne 'migrations' }).sort;
+my @after-up = $adapter.get-table-names.list.grep({ $_ ne 'migrations' && !.starts-with('_') }).sort;
 is @after-up.join(','), @before.join(','),
   'migrate up restores the same set of tables';
 

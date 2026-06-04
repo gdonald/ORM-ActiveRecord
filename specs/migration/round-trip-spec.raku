@@ -27,7 +27,7 @@ group 'migration round-trip', :order<defined>, {
   before-all {
     if $has-db {
       @canonical-tables = $canonical-adapter.get-table-names.list
-        .grep({ $_ ne 'migrations' }).sort;
+        .grep({ $_ ne 'migrations' && !.starts-with('_') }).sort;
 
       $original-shared = DB.shared;
       $iso-db = DB.new(adapter => SqliteAdapter.new(database => ':memory:'));
@@ -54,7 +54,7 @@ group 'migration round-trip', :order<defined>, {
       if $has-db {
         Migrate.new(:args([])).run;
         @after-up = $iso-db.get-table-names.list
-          .grep({ $_ ne 'migrations' }).sort;
+          .grep({ $_ ne 'migrations' && !.starts-with('_') }).sort;
       }
     }
 

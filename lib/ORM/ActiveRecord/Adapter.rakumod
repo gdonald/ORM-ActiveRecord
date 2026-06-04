@@ -7,6 +7,8 @@ role Adapter is export {
   method is-connected(--> Bool) { ... }
   method disconnect(--> Bool)   { ... }
   method reconnect()            { ... }
+  method is-active(--> Bool)    { ... }
+  method verify(--> Bool)       { ... }
 
   # Statement execution — engine-specific (uses driver handle)
   method exec(Str:D $sql, *@binds)  { ... }

@@ -21,6 +21,7 @@
     "ORM::ActiveRecord::Adapter::Sql::Guards": "lib/ORM/ActiveRecord/Adapter/Sql/Guards.rakumod",
     "ORM::ActiveRecord::Adapter::Sql::Transactions": "lib/ORM/ActiveRecord/Adapter/Sql/Transactions.rakumod",
     "ORM::ActiveRecord::Adapter::Sqlite": "lib/ORM/ActiveRecord/Adapter/Sqlite.rakumod",
+    "ORM::ActiveRecord::Connection::Pool": "lib/ORM/ActiveRecord/Connection/Pool.rakumod",
     "ORM::ActiveRecord::DB": "lib/ORM/ActiveRecord/DB.rakumod",
     "ORM::ActiveRecord::Errors::Error": "lib/ORM/ActiveRecord/Errors/Error.rakumod",
     "ORM::ActiveRecord::Errors::Errors": "lib/ORM/ActiveRecord/Errors/Errors.rakumod",

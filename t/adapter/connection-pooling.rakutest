@@ -1,0 +1,95 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Connection::Pool;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub new-pool(*%opts --> ConnectionPool) {
+  ConnectionPool.new(builder => { DB.shared.build-connection }, |%opts);
+}
+
+# adapter health probes
+ok DB.shared.is-active, 'is-active is true on a live connection';
+
+my $dead = DB.shared.build-connection;
+$dead.disconnect;
+ok $dead.verify, 'verify reconnects a disconnected connection';
+$dead.disconnect;
+
+# checkout / checkin
+{
+  my $pool = new-pool(size => 2);
+  my $conn = $pool.checkout;
+  ok $conn.is-active, 'checkout returns a live connection';
+  $pool.checkin($conn);
+  is $pool.stats<in-use>, 0, 'checkin returns the connection to the pool';
+  $pool.disconnect-all;
+}
+
+# reuse rather than grow
+{
+  my $pool = new-pool(size => 5);
+  $pool.checkin($pool.checkout);
+  $pool.checkin($pool.checkout);
+  is $pool.stats<created>, 1, 'an idle connection is reused rather than growing the pool';
+  $pool.disconnect-all;
+}
+
+# with-connection
+{
+  my $pool = new-pool(size => 2);
+  is $pool.with-connection(-> $c { $c.exec('SELECT 1'); 42 }), 42,
+    'with-connection returns the block result';
+  is $pool.stats<in-use>, 0, 'with-connection checks the connection back in';
+  $pool.disconnect-all;
+}
+
+# size cap + checkout timeout
+{
+  my $pool = new-pool(size => 1, checkout-timeout => 0.2);
+  my $held = $pool.checkout;
+  my $second = try { $pool.checkout };
+  nok $second.defined, 'checkout times out when the pool is exhausted';
+  $pool.disconnect-all;
+}
+
+# auto-reconnect on a dropped connection
+{
+  my $pool = new-pool(size => 1);
+  my $conn = $pool.checkout;
+  $pool.checkin($conn);
+  $conn.disconnect;
+  my $again = $pool.checkout;
+  ok $again.is-active, 'checkout reconnects a connection that died while idle';
+  $pool.disconnect-all;
+}
+
+# reaping
+{
+  my $pool = new-pool(size => 2, idle-timeout => 0.01);
+  $pool.checkin($pool.checkout);
+  sleep 0.05;
+  $pool.reap;
+  is $pool.stats<created>, 0, 'reap disconnects connections idle past the idle timeout';
+  $pool.disconnect-all;
+}
+
+# DB.with-connection
+{
+  my @rows = DB.shared.with-connection(-> $c { $c.exec('SELECT 1') });
+  DB.shared.pool.disconnect-all;
+  is @rows[0][0].Int, 1, 'DB.with-connection runs a query on a pooled connection';
+}
+
+done-testing;
