@@ -1,0 +1,150 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::X;
+use ORM::ActiveRecord::Instrumentation::Notifications;
+use ORM::ActiveRecord::Instrumentation::QueryLogs;
+use ORM::ActiveRecord::Instrumentation::LogSubscriber;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+my $has-db  = $adapter.defined && $adapter.is-connected;
+
+if $has-db {
+  $adapter.exec('DROP TABLE IF EXISTS instr_widgets');
+  $adapter.ddl-create-table('instr_widgets', [ name => { :string, limit => 64 } ]);
+}
+
+class InstrWidget is Model {
+  method table-name { 'instr_widgets' }
+}
+
+END {
+  try $adapter.exec('DROP TABLE IF EXISTS instr_widgets') if $has-db;
+}
+
+# --- Notifications pub/sub ---
+Notifications.reset;
+{
+  my @got;
+  my $id = Notifications.subscribe('e.test', -> %p { @got.push: %p });
+  Notifications.notify('e.test', { x => 1 });
+  is @got.elems, 1, 'a subscriber receives a notification';
+  is @got[0]<x>, 1, 'the payload is delivered to the subscriber';
+
+  ok Notifications.has-subscribers('e.test'), 'has-subscribers is true while subscribed';
+  Notifications.unsubscribe($id);
+  nok Notifications.has-subscribers('e.test'), 'unsubscribe removes the subscriber';
+}
+
+{
+  my @got;
+  Notifications.subscribe('e.timed', -> %p { @got.push: %p });
+  my $result = Notifications.instrument('e.timed', { tag => 'z' }, { 42 });
+  is $result, 42, 'instrument returns the block result';
+  is @got[0]<tag>, 'z', 'instrument preserves the supplied payload';
+  ok @got[0]<duration> ~~ Numeric, 'instrument adds a numeric duration';
+}
+
+Notifications.reset;
+is Notifications.instrument('nobody', {}, { 7 }), 7, 'instrument runs the block when nothing is subscribed';
+
+# --- QueryLogs ---
+QueryLogs.reset;
+is QueryLogs.comment, '', 'no comment is produced while disabled';
+QueryLogs.enable;
+QueryLogs.set-tags([application => 'myapp', controller => 'users']);
+is QueryLogs.comment, '/*application:myapp,controller:users*/', 'the comment is built from the tags';
+QueryLogs.clear-tags;
+QueryLogs.add-tag('dyn', { 'live' });
+is QueryLogs.comment, '/*dyn:live*/', 'a callable tag value is resolved';
+QueryLogs.set-tags([bad => 'a*/b']);
+is QueryLogs.comment, '/*bad:ab*/', 'a comment terminator is stripped from a value';
+QueryLogs.reset;
+
+# --- LogSubscriber classification ---
+LogSubscriber.reset;
+LogSubscriber.attach(slow-threshold => 0.1);
+ok LogSubscriber.is-slow(0.5), 'is-slow is true at or above the threshold';
+nok LogSubscriber.is-slow(0.01), 'is-slow is false below the threshold';
+LogSubscriber.reset;
+nok LogSubscriber.is-slow(9.9), 'is-slow is false when no threshold is set';
+
+# --- database-backed events ---
+if $has-db {
+  Notifications.reset;
+  my @sql;
+  Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p });
+  $adapter.exec('SELECT 1');
+  my $ev = @sql.first({ .<sql> eq 'SELECT 1' });
+  ok $ev.defined, 'sql.active_record fires for an executed query';
+  nok $ev<cached>, 'a live query event is not marked cached';
+  ok $ev<duration> ~~ Numeric, 'the sql event carries a duration';
+  Notifications.reset;
+
+  my $conn = DB.shared.build-connection;
+  $conn.enable-query-cache;
+  my @cev;
+  Notifications.subscribe('sql.active_record', -> %p { @cev.push: %p });
+  $conn.exec('SELECT 1');
+  $conn.exec('SELECT 1');
+  ok @cev.grep({ .<cached> }), 'a cache hit fires a cached sql event';
+  $conn.disconnect;
+  Notifications.reset;
+
+  QueryLogs.reset;
+  QueryLogs.enable;
+  QueryLogs.set-tags([app => 'instr']);
+  my @tev;
+  Notifications.subscribe('sql.active_record', -> %p { @tev.push: %p });
+  $adapter.exec('SELECT 1');
+  ok @tev.grep({ .<sql>.contains('/*app:instr*/') }), 'the query-log comment is appended to the executed sql';
+  QueryLogs.reset;
+  Notifications.reset;
+
+  InstrWidget.destroy-all;
+  InstrWidget.create({ name => 'a' });
+  InstrWidget.create({ name => 'b' });
+  my @inst;
+  Notifications.subscribe('instantiation.active_record', -> %p { @inst.push: %p });
+  InstrWidget.all.perform;
+  my $ie = @inst.first({ .<class-name> eq 'InstrWidget' });
+  ok $ie.defined, 'instantiation.active_record fires when records are loaded';
+  is $ie<record-count>, 2, 'the instantiation event reports the record count';
+  Notifications.reset;
+
+  my @tx;
+  Notifications.subscribe('start_transaction.active_record', -> %p { @tx.push: 'start' });
+  Notifications.subscribe('transaction.active_record', -> %p { @tx.push: %p<outcome> });
+  DB.shared.transaction({ InstrWidget.create({ name => 'c' }) });
+  is-deeply @tx, ['start', 'commit'], 'a commit fires start_transaction then transaction(commit)';
+  Notifications.reset;
+
+  my @rb;
+  Notifications.subscribe('transaction.active_record', -> %p { @rb.push: %p<outcome> });
+  DB.shared.transaction({ InstrWidget.create({ name => 'd' }); die X::Rollback.new; });
+  is-deeply @rb, ['rollback'], 'a rolled-back transaction fires transaction(rollback)';
+  Notifications.reset;
+
+  my @slow;
+  LogSubscriber.attach(slow-threshold => 0, sink => -> %p, :$slow { @slow.push: $slow });
+  $adapter.exec('SELECT 1');
+  ok @slow.grep({ $_ }), 'the log subscriber flags a query over the slow threshold';
+  LogSubscriber.reset;
+  Notifications.reset;
+
+  my @all;
+  LogSubscriber.attach(slow-threshold => 999, log-all => True, sink => -> %p, :$slow { @all.push: $slow });
+  $adapter.exec('SELECT 1');
+  ok (@all.elems && !@all[0]), 'log-all logs a query that is not slow';
+  LogSubscriber.reset;
+  Notifications.reset;
+} else {
+  skip 'database-backed instrumentation', 11;
+}
+
+done-testing;

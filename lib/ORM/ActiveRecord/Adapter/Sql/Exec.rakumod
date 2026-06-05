@@ -1,6 +1,8 @@
 
 use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::Support::Log;
+use ORM::ActiveRecord::Instrumentation::Notifications;
+use ORM::ActiveRecord::Instrumentation::QueryLogs;
 
 role SqlExec is export {
   has Bool $.prepared-statements is rw = False;
@@ -119,7 +121,13 @@ role SqlExec is export {
 
     if $!query-cache-enabled && self!is-cacheable-sql($sql) {
       my $key = self!query-cache-key($sql, @binds, $format);
-      return %!query-cache{$key} if %!query-cache{$key}:exists;
+
+      if %!query-cache{$key}:exists {
+        my @cached = %!query-cache{$key};
+        Notifications.notify('sql.active_record',
+          { :$sql, binds => @binds.List, cached => True, name => self!sql-name($sql), duration => 0e0 });
+        return @cached;
+      }
 
       my @rows = self!run-statement($sql, @binds, $format);
       %!query-cache{$key} = @rows;
@@ -131,12 +139,22 @@ role SqlExec is export {
   }
 
   method !run-statement(Str:D $sql, @binds, Str:D $format) {
-    my $query = self!acquire-statement($sql);
-    $query.execute(|@binds);
-    my @rows = $format eq 'hash' ?? $query.allrows(:array-of-hash) !! $query.allrows;
-    self!finish-statement($query);
+    my $exec-sql = QueryLogs.annotate($sql);
 
-    @rows;
+    Notifications.instrument('sql.active_record',
+      { sql => $exec-sql, binds => @binds.List, cached => False, name => self!sql-name($sql) },
+      {
+        my $query = self!acquire-statement($exec-sql);
+        $query.execute(|@binds);
+        my @rows = $format eq 'hash' ?? $query.allrows(:array-of-hash) !! $query.allrows;
+        self!finish-statement($query);
+
+        @rows;
+      });
+  }
+
+  method !sql-name(Str:D $sql --> Str) {
+    ($sql.subst(/^ \s+ /, '') ~~ /^ (\w+) /) ?? $0.Str.uc !! 'SQL';
   }
 
   method explain(SqlStmt:D $stmt --> Str) {

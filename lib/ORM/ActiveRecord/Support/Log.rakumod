@@ -20,4 +20,11 @@ class Log is export {
       default { info blue($_) }
     }
   }
+
+  method query(Str:D :$sql, :$ms, Bool :$slow = False) {
+    return if %*ENV<DISABLE-SQL-LOG>;
+
+    my $line = ($slow ?? 'SLOW ' !! '') ~ "({$ms}ms) " ~ $sql.trans(/\n/ => ' ', /<[\s]>+/ => ' ');
+    $slow ?? warning(red($line)) !! info(blue($line));
+  }
 }

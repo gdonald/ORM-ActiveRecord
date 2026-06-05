@@ -24,6 +24,7 @@ nav:
     - Options: validations/options.md
   - Errors: errors.md
   - Logging: logging.md
+  - Instrumentation: instrumentation.md
   - Tests: tests.md
 theme:
   name: 'material'

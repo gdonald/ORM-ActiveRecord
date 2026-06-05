@@ -4,6 +4,7 @@ use JSON::Tiny;
 use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::Support::Utils;
 use ORM::ActiveRecord::Relation::Query::Json;
+use ORM::ActiveRecord::Instrumentation::Notifications;
 
 role SqlBuilders is export {
   method !bind-typed(SqlStmt:D $stmt, $value, Str :$type --> Str) {
@@ -405,6 +406,9 @@ role SqlBuilders is export {
       my $obj = $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
       @objects.push: $obj;
     }
+
+    Notifications.notify('instantiation.active_record',
+      { class-name => $class.^name, record-count => @objects.elems });
 
     @objects;
   }

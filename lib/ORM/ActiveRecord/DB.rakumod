@@ -9,6 +9,8 @@ use ORM::ActiveRecord::Connection::Pool;
 use ORM::ActiveRecord::Support::DatabaseUrl;
 use ORM::ActiveRecord::Support::WorkerDb;
 use ORM::ActiveRecord::Support::Environment;
+use ORM::ActiveRecord::Instrumentation::QueryLogs;
+use ORM::ActiveRecord::Instrumentation::LogSubscriber;
 
 class DB is export {
   my %shared;
@@ -161,6 +163,19 @@ class DB is export {
 
     with (%config<advisory_locks> // %config<advisory-locks>) {
       $adapter.advisory-locks = self!config-bool($_);
+    }
+
+    with (%config<slow_query_threshold> // %config<slow-query-threshold>) {
+      LogSubscriber.attach(slow-threshold => .Num);
+    }
+
+    with (%config<query_log_tags> // %config<query-log-tags>) -> $tags {
+      if $tags ~~ Associative {
+        QueryLogs.set-tags($tags.pairs);
+        QueryLogs.enable if $tags.elems;
+      } elsif self!config-bool($tags) {
+        QueryLogs.enable;
+      }
     }
   }
 

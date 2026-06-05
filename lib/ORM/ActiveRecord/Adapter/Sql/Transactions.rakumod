@@ -1,11 +1,13 @@
 
 use ORM::ActiveRecord::Errors::X;
 use ORM::ActiveRecord::Support::Log;
+use ORM::ActiveRecord::Instrumentation::Notifications;
 
 role SqlTransactions is export {
   has Int $.txn-depth = 0;
   has Int $!sp-counter = 0;
   has @!txn-frames;
+  has     $!txn-start;
 
   method reset-txn-state {
     $!txn-depth = 0;
@@ -55,6 +57,8 @@ role SqlTransactions is export {
       self.begin-sql(:$isolation);
       $!txn-depth = 1;
       $!sp-counter = 0;
+      $!txn-start = now;
+      Notifications.notify('start_transaction.active_record', { :$isolation });
       self!push-txn-frame;
       return self!run-outer(&block);
     }
@@ -79,12 +83,14 @@ role SqlTransactions is export {
           $rolled-back = True;
           my $frame = self!pop-txn-frame;
           self!fire-rollback-frame($frame);
+          self!notify-transaction('rollback');
         }
         default {
           self.rollback;
           $!txn-depth = 0;
           my $frame = self!pop-txn-frame;
           self!fire-rollback-frame($frame);
+          self!notify-transaction('rollback');
           .rethrow;
         }
       }
@@ -95,7 +101,13 @@ role SqlTransactions is export {
     $!txn-depth = 0;
     my $frame = self!pop-txn-frame;
     self!fire-commit-frame($frame);
+    self!notify-transaction('commit');
     $result;
+  }
+
+  method !notify-transaction(Str:D $outcome) {
+    Notifications.notify('transaction.active_record',
+      { :$outcome, duration => ($!txn-start.defined ?? (now - $!txn-start).Num !! 0e0) });
   }
 
   method !run-joined(&block) {
