@@ -1,0 +1,100 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Adapter::Pg;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $shared = DB.shared.adapter;
+
+unless $shared.defined && $shared.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+my $is-pg = $shared.^name ~~ /Pg/;
+
+# caching disabled (the default)
+{
+  my $conn = DB.shared.build-connection;
+  $conn.exec('SELECT 1');
+  $conn.exec('SELECT 1');
+  is $conn.cached-statement-count, 0, 'caching is off by default';
+  is $conn.exec('SELECT 1')[0][0].Int, 1, 'returns correct rows with caching off';
+  $conn.disconnect;
+}
+
+# caching enabled
+{
+  my $conn = DB.shared.build-connection;
+  $conn.prepared-statements = True;
+
+  $conn.exec('SELECT 1');
+  is $conn.cached-statement-count, 1, 'caches a prepared statement keyed by its sql';
+
+  $conn.exec('SELECT 1');
+  is $conn.cached-statement-count, 1, 'reuses the cached statement for the same sql';
+
+  $conn.exec('SELECT 2');
+  is $conn.cached-statement-count, 2, 'caches distinct statements separately';
+
+  is $conn.exec('SELECT 1')[0][0].Int, 1, 'returns correct rows when a cached statement is re-executed';
+  $conn.disconnect;
+}
+
+# cache size limit
+{
+  my $conn = DB.shared.build-connection;
+  $conn.prepared-statements = True;
+  $conn.prepared-statement-cache-size = 1;
+
+  $conn.exec('SELECT 1');
+  $conn.exec('SELECT 2');
+  is $conn.cached-statement-count, 1, 'evicts the least-recently-used statement past the cache size';
+  $conn.disconnect;
+}
+
+# cache lifecycle on disconnect
+{
+  my $conn = DB.shared.build-connection;
+  $conn.prepared-statements = True;
+  $conn.exec('SELECT 1');
+  $conn.disconnect;
+  is $conn.cached-statement-count, 0, 'clears the cache when the connection is disconnected';
+}
+
+# PostgreSQL statement timeouts
+if $is-pg {
+  my %c = DB.read-config(name => 'primary');
+
+  sub timeout-adapter(*%opts --> PgAdapter) {
+    PgAdapter.new(
+      schema   => %c<schema> // 'public',
+      host     => %c<host> // 'localhost',
+      database => %c<name> // %c<database>,
+      user     => %c<user> // '',
+      password => %c<password> // '',
+      |%opts,
+    );
+  }
+
+  my $st = timeout-adapter(statement-timeout => '7s');
+  is $st.exec('SHOW statement_timeout')[0][0].Str, '7s', 'applies the statement timeout to the session';
+  $st.disconnect;
+
+  my $lt = timeout-adapter(lock-timeout => '3s');
+  is $lt.exec('SHOW lock_timeout')[0][0].Str, '3s', 'applies the lock timeout to the session';
+  $lt.disconnect;
+
+  my $it = timeout-adapter(idle-in-transaction-session-timeout => '10s');
+  is $it.exec('SHOW idle_in_transaction_session_timeout')[0][0].Str, '10s',
+    'applies the idle-in-transaction session timeout';
+  $it.disconnect;
+} else {
+  skip 'PostgreSQL statement timeouts', 3;
+}
+
+done-testing;

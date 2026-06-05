@@ -99,6 +99,12 @@ class DB is export {
   }
 
   method !build-adapter(%config) {
+    my $adapter = self!construct-adapter(%config);
+    self!apply-statement-options($adapter, %config);
+    $adapter;
+  }
+
+  method !construct-adapter(%config) {
     my $cls = self.adapter-class-for(%config);
     given $cls {
       when PgAdapter {
@@ -113,6 +119,10 @@ class DB is export {
           |(sslcert          => $_ with %config<sslcert>),
           |(sslkey           => $_ with %config<sslkey>),
           |(application-name => $_ with (%config<application_name> // %config<application-name>)),
+          |(statement-timeout => .Str with (%config<statement_timeout> // %config<statement-timeout>)),
+          |(lock-timeout      => .Str with (%config<lock_timeout> // %config<lock-timeout>)),
+          |(idle-in-transaction-session-timeout => .Str
+              with (%config<idle_in_transaction_session_timeout> // %config<idle-in-transaction-session-timeout>)),
         );
       }
       when SqliteAdapter {
@@ -131,6 +141,21 @@ class DB is export {
         );
       }
     }
+  }
+
+  method !apply-statement-options($adapter, %config) {
+    with (%config<prepared_statements> // %config<prepared-statements>) {
+      $adapter.prepared-statements = self!config-bool($_);
+    }
+
+    with (%config<prepared_statement_cache_size> // %config<prepared-statement-cache-size>) {
+      $adapter.prepared-statement-cache-size = .Int;
+    }
+  }
+
+  method !config-bool($value --> Bool) {
+    return $value if $value ~~ Bool;
+    so $value.Str.lc eq 'true' | '1' | 'yes' | 'on';
   }
 
   method read-config(Str :$path = 'config/application.json',

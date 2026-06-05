@@ -115,6 +115,50 @@ from its configured path.
 } } }
 ```
 
+#### Statement caching
+
+By default each query prepares a fresh statement, runs it, and disposes it
+immediately. Set `prepared_statements` to `true` to keep prepared statements
+and reuse them across queries, keyed by their SQL text. A reused statement is
+reset after each call (releasing the SQLite read lock and resetting MySQL
+result state) and re-executed with fresh bind values.
+
+`prepared_statement_cache_size` bounds the cache (default `1000`). When the
+cache is full the least-recently-used statement is evicted and disposed. The
+cache is per connection and is cleared when the connection disconnects.
+
+| Key                             | Effect                                          |
+| ------------------------------- | ----------------------------------------------- |
+| `prepared_statements`           | `true` / `false` (default `false`).             |
+| `prepared_statement_cache_size` | Max cached statements per connection (`1000`).  |
+
+```json
+{ "production": { "primary": {
+  "adapter": "pg", "name": "app",
+  "prepared_statements": true, "prepared_statement_cache_size": 500
+} } }
+```
+
+#### Statement timeouts (PostgreSQL)
+
+A connection block may set PostgreSQL session timeouts, applied with `SET` on
+connect. Values are passed through verbatim, so any form PostgreSQL accepts
+works (`'5s'`, `'500ms'`, or a bare millisecond count).
+
+| Key                                   | Effect                                            |
+| ------------------------------------- | ------------------------------------------------- |
+| `statement_timeout`                   | Aborts any statement running longer than this.    |
+| `lock_timeout`                        | Aborts a statement waiting this long for a lock.  |
+| `idle_in_transaction_session_timeout` | Ends a session idle this long inside a transaction. |
+
+```json
+{ "production": { "primary": {
+  "adapter": "pg", "name": "app",
+  "statement_timeout": "5s", "lock_timeout": "2s",
+  "idle_in_transaction_session_timeout": "10s"
+} } }
+```
+
 > **Legacy flat config.** The older single-database shape — `{ "db": { … } }`
 > — is still accepted and auto-promoted to the active environment's `primary`
 > connection (with a deprecation warning). Migrate to the per-environment shape.

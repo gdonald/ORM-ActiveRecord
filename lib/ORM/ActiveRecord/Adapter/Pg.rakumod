@@ -18,10 +18,15 @@ class PgAdapter is SqlAdapter is export {
   has Str $!sslcert;
   has Str $!sslkey;
   has Str $!application-name;
+  has Str $!statement-timeout;
+  has Str $!lock-timeout;
+  has Str $!idle-in-transaction-session-timeout;
 
   submethod BUILD(Str :$!schema, Str :$!host, Str :$!database, Str :$!user, Str :$!password,
                   Str :$!sslmode, Str :$!sslrootcert, Str :$!sslcert, Str :$!sslkey,
-                  Str :$!application-name) {
+                  Str :$!application-name,
+                  Str :$!statement-timeout, Str :$!lock-timeout,
+                  Str :$!idle-in-transaction-session-timeout) {
     self.connect;
   }
 
@@ -39,6 +44,10 @@ class PgAdapter is SqlAdapter is export {
     %params<application-name> = $!application-name  with $!application-name;
     self.db = DBIish.connect('Pg', |%params);
     self.db.do('SET client_min_messages = WARNING');
+    self.db.do("SET statement_timeout = '$!statement-timeout'") with $!statement-timeout;
+    self.db.do("SET lock_timeout = '$!lock-timeout'")          with $!lock-timeout;
+    self.db.do("SET idle_in_transaction_session_timeout = '$!idle-in-transaction-session-timeout'")
+      with $!idle-in-transaction-session-timeout;
   }
 
   method bind-placeholder(Int:D $n --> Str) {

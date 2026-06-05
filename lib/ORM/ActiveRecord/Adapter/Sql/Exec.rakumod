@@ -3,6 +3,11 @@ use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::Support::Log;
 
 role SqlExec is export {
+  has Bool $.prepared-statements is rw = False;
+  has Int  $.prepared-statement-cache-size is rw = 1000;
+  has      %!stmt-cache;
+  has      @!stmt-lru;
+
   method ensure-connected { self.connect unless self.db.defined }
 
   # Reify the rows, then dispose the statement immediately rather than leaving
@@ -12,14 +17,60 @@ role SqlExec is export {
   # max_prepared_stmt_count.
   method release-statement($query) { $query.dispose }
 
+  # When prepared statements are enabled, a prepared handle is reused across
+  # calls keyed by its SQL text. A cached handle is reset (finish) after each
+  # use, which releases the SQLite read lock and resets MySQL result state
+  # while leaving it ready to re-execute with fresh binds. The cache is bounded
+  # by prepared-statement-cache-size and evicts least-recently-used handles.
+  method !acquire-statement(Str:D $sql) {
+    return self.db.prepare($sql) unless $!prepared-statements;
+
+    if %!stmt-cache{$sql}:exists {
+      @!stmt-lru = @!stmt-lru.grep(* ne $sql);
+      @!stmt-lru.push($sql);
+
+      return %!stmt-cache{$sql};
+    }
+
+    my $query = self.db.prepare($sql);
+
+    %!stmt-cache{$sql} = $query;
+    @!stmt-lru.push($sql);
+    self!evict-statements;
+
+    $query;
+  }
+
+  method !finish-statement($query) {
+    $!prepared-statements ?? $query.finish !! self.release-statement($query);
+  }
+
+  method !evict-statements {
+    while @!stmt-lru.elems > $!prepared-statement-cache-size {
+      my $sql = @!stmt-lru.shift;
+      (%!stmt-cache{$sql}:delete).dispose;
+    }
+  }
+
+  method clear-statement-cache {
+    .dispose for %!stmt-cache.values;
+
+    %!stmt-cache = ();
+    @!stmt-lru  = ();
+  }
+
+  method cached-statement-count(--> Int) { %!stmt-cache.elems }
+
   method exec(Str:D $sql, *@binds) {
     self.ensure-connected;
     self.check-write-allowed($sql);
     Log.sql(:$sql);
-    my $query = self.db.prepare($sql);
+
+    my $query = self!acquire-statement($sql);
     $query.execute(|@binds);
     my @rows = $query.allrows;
-    self.release-statement($query);
+    self!finish-statement($query);
+
     @rows;
   }
 
@@ -27,10 +78,12 @@ role SqlExec is export {
     self.ensure-connected;
     self.check-write-allowed($stmt.sql);
     Log.sql(:sql($stmt.sql));
-    my $query = self.db.prepare($stmt.sql);
+
+    my $query = self!acquire-statement($stmt.sql);
     $query.execute(|$stmt.binds);
     my @rows = $query.allrows;
-    self.release-statement($query);
+    self!finish-statement($query);
+
     @rows;
   }
 
@@ -38,10 +91,12 @@ role SqlExec is export {
     self.ensure-connected;
     self.check-write-allowed($stmt.sql);
     Log.sql(:sql($stmt.sql));
-    my $query = self.db.prepare($stmt.sql);
+
+    my $query = self!acquire-statement($stmt.sql);
     $query.execute(|$stmt.binds);
     my @rows = $query.allrows(:array-of-hash);
-    self.release-statement($query);
+    self!finish-statement($query);
+
     @rows;
   }
 
