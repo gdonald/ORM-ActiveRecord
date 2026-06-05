@@ -8,6 +8,9 @@ role SqlExec is export {
   has      %!stmt-cache;
   has      @!stmt-lru;
 
+  has Bool $!query-cache-enabled = False;
+  has      %!query-cache;
+
   method ensure-connected { self.connect unless self.db.defined }
 
   # Reify the rows, then dispose the statement immediately rather than leaving
@@ -61,40 +64,76 @@ role SqlExec is export {
 
   method cached-statement-count(--> Int) { %!stmt-cache.elems }
 
+  # Per-request query cache. When enabled, the rows from a read statement are
+  # memoised by SQL + binds + result shape, so repeating the same query inside
+  # the cache window skips the database. Any write clears the cache (even when
+  # caching is disabled) so a later read can't serve stale rows.
+  method query-cache-enabled(--> Bool) { $!query-cache-enabled }
+  method cached-query-count(--> Int)   { %!query-cache.elems }
+
+  method enable-query-cache  { $!query-cache-enabled = True }
+  method disable-query-cache { $!query-cache-enabled = False; self.clear-query-cache }
+  method clear-query-cache   { %!query-cache = () }
+
+  method cache(&block) {
+    my $was = $!query-cache-enabled;
+    $!query-cache-enabled = True;
+    LEAVE { $!query-cache-enabled = $was; self.clear-query-cache unless $was }
+    block();
+  }
+
+  method uncached(&block) {
+    my $was = $!query-cache-enabled;
+    $!query-cache-enabled = False;
+    LEAVE $!query-cache-enabled = $was;
+    block();
+  }
+
+  method !is-cacheable-sql(Str:D $sql --> Bool) {
+    return False if self.is-write-sql($sql);
+    so $sql.subst(/^ \s+ /, '') ~~ /^ :i (select | with) <|w> /;
+  }
+
+  method !query-cache-key(Str:D $sql, @binds, Str:D $format --> Str) {
+    ($format, $sql, |@binds.map({ .defined ?? .Str !! "\x[0]" })).join("\x[1]");
+  }
+
   method exec(Str:D $sql, *@binds) {
+    self!run-cached($sql, @binds, 'rows');
+  }
+
+  method exec-stmt(SqlStmt:D $stmt) {
+    self!run-cached($stmt.sql, $stmt.binds, 'rows');
+  }
+
+  method exec-stmt-hash(SqlStmt:D $stmt) {
+    self!run-cached($stmt.sql, $stmt.binds, 'hash');
+  }
+
+  method !run-cached(Str:D $sql, @binds, Str:D $format) {
     self.ensure-connected;
     self.check-write-allowed($sql);
     Log.sql(:$sql);
 
+    self.clear-query-cache if self.is-write-sql($sql);
+
+    if $!query-cache-enabled && self!is-cacheable-sql($sql) {
+      my $key = self!query-cache-key($sql, @binds, $format);
+      return %!query-cache{$key} if %!query-cache{$key}:exists;
+
+      my @rows = self!run-statement($sql, @binds, $format);
+      %!query-cache{$key} = @rows;
+
+      return @rows;
+    }
+
+    self!run-statement($sql, @binds, $format);
+  }
+
+  method !run-statement(Str:D $sql, @binds, Str:D $format) {
     my $query = self!acquire-statement($sql);
     $query.execute(|@binds);
-    my @rows = $query.allrows;
-    self!finish-statement($query);
-
-    @rows;
-  }
-
-  method exec-stmt(SqlStmt:D $stmt) {
-    self.ensure-connected;
-    self.check-write-allowed($stmt.sql);
-    Log.sql(:sql($stmt.sql));
-
-    my $query = self!acquire-statement($stmt.sql);
-    $query.execute(|$stmt.binds);
-    my @rows = $query.allrows;
-    self!finish-statement($query);
-
-    @rows;
-  }
-
-  method exec-stmt-hash(SqlStmt:D $stmt) {
-    self.ensure-connected;
-    self.check-write-allowed($stmt.sql);
-    Log.sql(:sql($stmt.sql));
-
-    my $query = self!acquire-statement($stmt.sql);
-    $query.execute(|$stmt.binds);
-    my @rows = $query.allrows(:array-of-hash);
+    my @rows = $format eq 'hash' ?? $query.allrows(:array-of-hash) !! $query.allrows;
     self!finish-statement($query);
 
     @rows;

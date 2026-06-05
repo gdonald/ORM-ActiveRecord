@@ -47,6 +47,13 @@ class DB is export {
     self.pool.with-connection(&block);
   }
 
+  method cache(&block)       { $!adapter.cache(&block) }
+  method uncached(&block)    { $!adapter.uncached(&block) }
+  method clear-query-cache   { $!adapter.clear-query-cache }
+  method enable-query-cache  { $!adapter.enable-query-cache }
+  method disable-query-cache { $!adapter.disable-query-cache }
+  method query-cache-enabled { $!adapter.query-cache-enabled }
+
   method !build-pool(--> ConnectionPool) {
     my %config = %!config.elems ?? %!config !! self.read-config(:name($!name));
 

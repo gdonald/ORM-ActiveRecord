@@ -1,0 +1,95 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $shared = DB.shared.adapter;
+
+unless $shared.defined && $shared.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+# disabled by default
+{
+  my $conn = DB.shared.build-connection;
+  nok $conn.query-cache-enabled, 'the query cache is disabled by default';
+  $conn.exec('SELECT 1');
+  is $conn.cached-query-count, 0, 'nothing is cached while disabled';
+  $conn.disconnect;
+}
+
+# memoises reads while enabled
+{
+  my $conn = DB.shared.build-connection;
+  $conn.enable-query-cache;
+
+  $conn.exec('SELECT 1');
+  is $conn.cached-query-count, 1, 'caches a read keyed by sql';
+
+  $conn.exec('SELECT 1');
+  is $conn.cached-query-count, 1, 'reuses the cached read for the same sql';
+
+  $conn.exec('SELECT 2');
+  is $conn.cached-query-count, 2, 'caches distinct reads separately';
+
+  is $conn.exec('SELECT 1')[0][0].Int, 1, 'a cached read returns the correct rows';
+  $conn.disconnect;
+}
+
+# writes clear the cache
+{
+  my $conn = DB.shared.build-connection;
+  $conn.enable-query-cache;
+
+  $conn.exec('CREATE TEMPORARY TABLE qc_t (id INTEGER)');
+  $conn.exec('SELECT id FROM qc_t');
+  is $conn.cached-query-count, 1, 'a read populates the cache';
+
+  $conn.exec('INSERT INTO qc_t (id) VALUES (1)');
+  is $conn.cached-query-count, 0, 'a write clears the query cache';
+  $conn.disconnect;
+}
+
+# uncached bypasses the cache
+{
+  my $conn = DB.shared.build-connection;
+  $conn.enable-query-cache;
+  $conn.uncached({ $conn.exec('SELECT 1') });
+  is $conn.cached-query-count, 0, 'uncached bypasses the cache';
+  $conn.disconnect;
+}
+
+# cache block enables, then restores and clears
+{
+  my $conn = DB.shared.build-connection;
+  my $inside;
+  $conn.cache({ $inside = $conn.query-cache-enabled; $conn.exec('SELECT 1') });
+  ok $inside, 'the cache block enables the query cache inside';
+  nok $conn.query-cache-enabled, 'the cache block restores the disabled state on exit';
+  is $conn.cached-query-count, 0, 'the cache block clears the cache on exit';
+  $conn.disconnect;
+}
+
+# disable clears and turns off
+{
+  my $conn = DB.shared.build-connection;
+  $conn.enable-query-cache;
+  $conn.exec('SELECT 1');
+  $conn.disable-query-cache;
+  nok $conn.query-cache-enabled, 'disable-query-cache turns the cache off';
+  is $conn.cached-query-count, 0, 'disable-query-cache clears the cache';
+  $conn.disconnect;
+}
+
+# DB forwards the block helper and returns its result
+{
+  is DB.shared.cache({ 42 }), 42, 'DB.cache returns the block result';
+  nok DB.shared.query-cache-enabled, 'DB.cache leaves the shared cache disabled';
+}
+
+done-testing;

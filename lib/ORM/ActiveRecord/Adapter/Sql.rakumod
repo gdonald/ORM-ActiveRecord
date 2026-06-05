@@ -51,6 +51,7 @@ class SqlAdapter
   method disconnect(--> Bool) {
     return False unless $!db.defined;
     self.clear-statement-cache;
+    self.clear-query-cache;
     $!db.dispose;
     $!db = Nil;
     self.reset-txn-state;

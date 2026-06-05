@@ -385,6 +385,37 @@ connection first, so one dropped while idle is reconnected transparently; a
 `pool.reap` closes connections idle past `idle-timeout` (down to
 `min-threads`), and `pool.disconnect-all` closes them all.
 
+## Query cache
+
+The query cache memoises read results for the duration of a unit of work. While
+it is on, repeating the same `SELECT` (same SQL and bind values) returns the
+first result without going back to the database. Any write clears the cache, so
+a later read never serves stale rows.
+
+The cache is off by default. Wrap a unit of work in `cache` to turn it on for
+that block; it is cleared and turned back off when the block exits:
+
+```perl6
+DB.shared.cache: {
+  Order.where(:status<open>).all;   # hits the database
+  Order.where(:status<open>).all;   # served from the cache
+};
+```
+
+`uncached` forces queries inside it to bypass the cache (and not populate it),
+even within a surrounding `cache` block:
+
+```perl6
+DB.shared.uncached: {
+  Order.find($id);                  # always hits the database
+};
+```
+
+The cache can also be controlled directly: `enable-query-cache` and
+`disable-query-cache` toggle it (disabling also clears it), and
+`clear-query-cache` empties it without changing the on/off state. Each pooled
+connection has its own cache, and disconnecting clears it.
+
 ## Raw SQL with bound parameters
 
 `sanitize-sql` and `sanitize-sql-array` turn a SQL fragment + values into a
