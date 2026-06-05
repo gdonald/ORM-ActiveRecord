@@ -158,6 +158,10 @@ class DB is export {
     with (%config<prepared_statement_cache_size> // %config<prepared-statement-cache-size>) {
       $adapter.prepared-statement-cache-size = .Int;
     }
+
+    with (%config<advisory_locks> // %config<advisory-locks>) {
+      $adapter.advisory-locks = self!config-bool($_);
+    }
   }
 
   method !config-bool($value --> Bool) {

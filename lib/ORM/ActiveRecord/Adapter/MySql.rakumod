@@ -60,6 +60,37 @@ class MySqlAdapter is SqlAdapter is export {
 
   method bind-placeholder(Int:D $n --> Str) { '?' }
 
+  method supports-advisory-locks(--> Bool) { True }
+
+  # GET_LOCK names are capped at 64 characters; hash anything longer into a
+  # short stable name. The lock SELECTs are side-effecting, so they run
+  # uncached to avoid being served a memoised result.
+  method !advisory-name(Str:D $name --> Str) {
+    return $name if $name.chars <= 64;
+    my $hash = 14695981039346656037;
+    for $name.encode('utf-8').list -> $byte {
+      $hash = (($hash +^ $byte) * 1099511628211) % 18446744073709551616;
+    }
+    'ar_' ~ $hash.base(16).lc;
+  }
+
+  method get-advisory-lock(Str:D $name, :$timeout --> Bool) {
+    my $key  = self!advisory-name($name);
+    my $secs = ($timeout // -1).Int;     # negative waits indefinitely
+    my $stmt = self.sanitize-sql-array(['SELECT GET_LOCK(?, ?)', $key, $secs]);
+    my $got  = self.uncached({ self.exec-stmt($stmt)[0][0] });
+
+    $got.defined && $got.Int == 1;
+  }
+
+  method release-advisory-lock(Str:D $name --> Bool) {
+    my $key  = self!advisory-name($name);
+    my $stmt = self.sanitize-sql-array(['SELECT RELEASE_LOCK(?)', $key]);
+    my $released = self.uncached({ self.exec-stmt($stmt)[0][0] });
+
+    $released.defined && $released.Int == 1;
+  }
+
   # MySQL's default collation (utf8mb4_0900_ai_ci) makes `col = ?` compare
   # case-insensitively. Use BINARY to force a byte-level comparison when the
   # caller asks for case-sensitive matching.

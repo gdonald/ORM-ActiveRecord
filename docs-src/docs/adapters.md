@@ -416,6 +416,42 @@ The cache can also be controlled directly: `enable-query-cache` and
 `clear-query-cache` empties it without changing the on/off state. Each pooled
 connection has its own cache, and disconnecting clears it.
 
+## Advisory locks
+
+An advisory lock is a named, application-level lock the database tracks but does
+not tie to any row or table. `with-advisory-lock` takes the lock for the
+duration of a block and releases it on exit (including when the block throws):
+
+```perl6
+DB.shared.adapter.with-advisory-lock('import-orders', {
+  # only one process runs this block at a time
+});
+```
+
+A connection that already holds the lock blocks others. Pass a `timeout` (in
+seconds) to give up waiting; `with-advisory-lock` then throws
+`X::AdvisoryLock` rather than blocking forever:
+
+```perl6
+$adapter.with-advisory-lock('import-orders', :timeout(5), {
+  ...
+});
+```
+
+The lower-level `get-advisory-lock(name, :timeout)` and
+`release-advisory-lock(name)` return a Bool and are available when a block does
+not fit. PostgreSQL hashes the name into a 64-bit key for `pg_advisory_lock`;
+MySQL uses `GET_LOCK`. SQLite has no advisory-lock primitive, so
+`supports-advisory-locks` is `False` there and `with-advisory-lock` runs the
+block without locking.
+
+Set `advisory_locks` to `false` in a connection block to disable locking
+entirely; `with-advisory-lock` then just runs the block.
+
+| Key              | Effect                                            |
+| ---------------- | ------------------------------------------------- |
+| `advisory_locks` | `true` / `false` (default `true`).                |
+
 ## Raw SQL with bound parameters
 
 `sanitize-sql` and `sanitize-sql-array` turn a SQL fragment + values into a

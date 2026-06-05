@@ -54,6 +54,42 @@ class PgAdapter is SqlAdapter is export {
     '$' ~ $n;
   }
 
+  method supports-advisory-locks(--> Bool) { True }
+
+  # pg_advisory_lock keys are 64-bit signed integers, so hash the name into
+  # that range with FNV-1a. The advisory SELECTs are side-effecting, so they
+  # run uncached to avoid being served a memoised result.
+  method !advisory-key(Str:D $name --> Int) {
+    my $hash = 14695981039346656037;
+    for $name.encode('utf-8').list -> $byte {
+      $hash = (($hash +^ $byte) * 1099511628211) % 18446744073709551616;
+    }
+    $hash >= 9223372036854775808 ?? $hash - 18446744073709551616 !! $hash;
+  }
+
+  method get-advisory-lock(Str:D $name, :$timeout --> Bool) {
+    my $key = self!advisory-key($name);
+
+    self.uncached: {
+      without $timeout {
+        self.exec("SELECT pg_advisory_lock($key)");
+        return True;
+      }
+
+      my $deadline = now + $timeout;
+      loop {
+        return True if self.exec("SELECT pg_try_advisory_lock($key)")[0][0].so;
+        return False if now >= $deadline;
+        sleep 0.005;
+      }
+    }
+  }
+
+  method release-advisory-lock(Str:D $name --> Bool) {
+    my $key = self!advisory-key($name);
+    self.uncached({ self.exec("SELECT pg_advisory_unlock($key)")[0][0].so });
+  }
+
   method coerce-read($value, Str :$type) {
     return $value without $value;
     return $value unless $type.defined;

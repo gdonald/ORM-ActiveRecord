@@ -14,6 +14,7 @@
     "ORM::ActiveRecord::Adapter::Pg": "lib/ORM/ActiveRecord/Adapter/Pg.rakumod",
     "ORM::ActiveRecord::Adapter::MySql": "lib/ORM/ActiveRecord/Adapter/MySql.rakumod",
     "ORM::ActiveRecord::Adapter::Sql": "lib/ORM/ActiveRecord/Adapter/Sql.rakumod",
+    "ORM::ActiveRecord::Adapter::Sql::AdvisoryLocks": "lib/ORM/ActiveRecord/Adapter/Sql/AdvisoryLocks.rakumod",
     "ORM::ActiveRecord::Adapter::Sql::Aggregates": "lib/ORM/ActiveRecord/Adapter/Sql/Aggregates.rakumod",
     "ORM::ActiveRecord::Adapter::Sql::Builders": "lib/ORM/ActiveRecord/Adapter/Sql/Builders.rakumod",
     "ORM::ActiveRecord::Adapter::Sql::Ddl": "lib/ORM/ActiveRecord/Adapter/Sql/Ddl.rakumod",

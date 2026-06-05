@@ -70,6 +70,11 @@ class X::ProhibitedShardSwap is Exception is export {
   method message { 'Shard swapping is prohibited in this scope' }
 }
 
+class X::AdvisoryLock is Exception is export {
+  has Str $.name;
+  method message { "Could not acquire advisory lock '$!name'" }
+}
+
 class X::ProhibitedReplicaSwap is Exception is export {
   method message { 'Replica role swapping is prohibited in this scope' }
 }

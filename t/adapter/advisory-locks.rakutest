@@ -1,0 +1,83 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $shared = DB.shared.adapter;
+
+unless $shared.defined && $shared.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+my $supports = $shared.supports-advisory-locks;
+
+# the toggle defaults on, and disabling it runs the block without locking
+{
+  my $conn = DB.shared.build-connection;
+  ok $conn.advisory-locks, 'advisory locks are enabled by default';
+  $conn.advisory-locks = False;
+  is $conn.with-advisory-lock('ar-off', { 7 }), 7, 'with-advisory-lock runs the block when disabled';
+  $conn.disconnect;
+}
+
+if $supports {
+  # acquire / release round trip
+  {
+    my $conn = DB.shared.build-connection;
+    ok $conn.get-advisory-lock('ar-rt'), 'get-advisory-lock acquires the lock';
+    ok $conn.release-advisory-lock('ar-rt'), 'release-advisory-lock releases the lock';
+    $conn.disconnect;
+  }
+
+  # the lock is held for the block and released afterward
+  {
+    my $a = DB.shared.build-connection;
+    my $b = DB.shared.build-connection;
+
+    my $blocked;
+    my $result = $a.with-advisory-lock('ar-wl', {
+      $blocked = $b.get-advisory-lock('ar-wl', timeout => 0.2);
+      99;
+    });
+
+    is $result, 99, 'with-advisory-lock returns the block result';
+    nok $blocked, 'a second connection cannot acquire the lock during the block';
+
+    ok $b.get-advisory-lock('ar-wl', timeout => 0.2), 'the lock is free once the block exits';
+    $b.release-advisory-lock('ar-wl');
+
+    $a.disconnect;
+    $b.disconnect;
+  }
+
+  # failing to acquire within the timeout throws
+  {
+    my $a = DB.shared.build-connection;
+    my $b = DB.shared.build-connection;
+
+    $a.get-advisory-lock('ar-die');
+    dies-ok { $b.with-advisory-lock('ar-die', { 1 }, timeout => 0.2) },
+      'with-advisory-lock throws when it cannot acquire within the timeout';
+    $a.release-advisory-lock('ar-die');
+
+    $a.disconnect;
+    $b.disconnect;
+  }
+} else {
+  # SQLite has no advisory-lock primitive
+  my $conn = DB.shared.build-connection;
+  nok $conn.supports-advisory-locks, 'SQLite reports no advisory-lock support';
+  is $conn.with-advisory-lock('ar-x', { 5 }), 5, 'with-advisory-lock runs the block without locking';
+  nok $conn.get-advisory-lock('ar-x'), 'get-advisory-lock returns false without support';
+  $conn.disconnect;
+
+  skip 'advisory locks (unsupported adapter)', 5;
+}
+
+done-testing;
