@@ -1,0 +1,142 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+my $has-db  = $adapter.defined && $adapter.is-connected;
+
+if $has-db {
+  $adapter.exec('DROP TABLE IF EXISTS vehicles');
+  $adapter.ddl-create-table('vehicles', [
+    type   => { :string, limit => 32 },
+    name   => { :string, limit => 64 },
+    wheels => { :integer, default => 0 },
+  ]);
+
+  $adapter.exec('DROP TABLE IF EXISTS gizmos');
+  $adapter.ddl-create-table('gizmos', [
+    kind  => { :string, limit => 32 },
+    label => { :string, limit => 64 },
+  ]);
+
+  $adapter.exec('DROP TABLE IF EXISTS tools');
+  $adapter.ddl-create-table('tools', [
+    type => { :string, limit => 32 },
+    name => { :string, limit => 64 },
+  ]);
+}
+
+class Vehicle is Model { method table-name { 'vehicles' } }
+class Car        is Vehicle { }
+class Motorcycle is Vehicle { }
+class SportsCar  is Car     { }
+
+class Gizmo is Model { method table-name { 'gizmos' } }
+class Widget2 is Gizmo { }
+
+class Tool is Model { method table-name { 'tools' } }
+class Hammer  is Tool   { }
+class BallPeen is Hammer { }
+
+class Catalog is Model { method table-name { 'gizmos' } }
+class Vendor::Item is Catalog { }
+
+GLOBAL::<Vehicle>    := Vehicle;
+GLOBAL::<Car>        := Car;
+GLOBAL::<Motorcycle> := Motorcycle;
+GLOBAL::<SportsCar>  := SportsCar;
+GLOBAL::<Gizmo>      := Gizmo;
+GLOBAL::<Widget2>    := Widget2;
+GLOBAL::<Tool>       := Tool;
+GLOBAL::<Hammer>     := Hammer;
+GLOBAL::<BallPeen>   := BallPeen;
+
+# class-level configuration set once, up front
+Gizmo.inheritance-column('kind');
+Tool.abstract-class(True);
+Motorcycle.sti-name('moto');
+Catalog.store-full-sti-class(False);
+
+END {
+  if $has-db {
+    try $adapter.exec('DROP TABLE IF EXISTS vehicles');
+    try $adapter.exec('DROP TABLE IF EXISTS gizmos');
+    try $adapter.exec('DROP TABLE IF EXISTS tools');
+  }
+}
+
+# ---- hierarchy predicates (no database needed) ----
+ok  Vehicle.descends-from-active-record,    'the STI base descends from active record';
+nok Car.descends-from-active-record,        'an STI subclass does not descend from active record';
+nok SportsCar.descends-from-active-record,  'a deeper STI subclass does not descend from active record';
+
+ok  Tool.abstract-class,                     'an abstract class reports itself abstract';
+nok Hammer.abstract-class,                   'a concrete subclass is not abstract';
+ok  Tool.descends-from-active-record,        'an abstract class descends from active record';
+ok  Hammer.descends-from-active-record,      'the first concrete class under an abstract base is the STI root';
+nok BallPeen.descends-from-active-record,    'a subclass of the concrete root does not descend from active record';
+
+is Vehicle.inheritance-column, 'type',       'the inheritance column defaults to type';
+is Gizmo.inheritance-column,   'kind',        'the inheritance column can be customised';
+is Widget2.inheritance-column, 'kind',        'a subclass inherits the customised inheritance column';
+
+is Car.sti-name,              'Car',          'the stored type defaults to the class name';
+is Motorcycle.sti-name,       'moto',         'the stored type can be overridden';
+nok Catalog.store-full-sti-class,             'store-full-sti-class can be turned off';
+is  Vendor::Item.sti-name,    'Item',         'a short STI name drops the namespace';
+
+if $has-db {
+  # save populates the type column
+  Vehicle.destroy-all;
+  my $car = Car.create({ name => 'Civic', wheels => 4 });
+  is $car.attrs<type>, 'Car', 'saving a subclass populates the type column';
+
+  # reads dispatch to the subclass named by the type column
+  Vehicle.destroy-all;
+  Car.create({ name => 'Civic', wheels => 4 });
+  Motorcycle.create({ name => 'Harley', wheels => 2 });
+  my @all = Vehicle.all.perform;
+  is @all.map(*.^name).sort.list, ('Car', 'Motorcycle'), 'a base read instantiates each row as its subclass';
+
+  # subclass finders scope to their own rows
+  is Car.all.perform.elems, 1, 'a subclass finder returns only its own rows';
+
+  # a parent finder includes descendant subclasses
+  Vehicle.destroy-all;
+  Car.create({ name => 'Civic', wheels => 4 });
+  SportsCar.create({ name => 'GT', wheels => 4 });
+  is Car.all.perform.elems, 2, 'a finder includes deeper descendant subclasses';
+  is SportsCar.all.perform.elems, 1, 'the deeper subclass finder returns only its own rows';
+
+  # an overridden STI name round-trips through write and read
+  Vehicle.destroy-all;
+  my $moto = Motorcycle.create({ name => 'Harley', wheels => 2 });
+  is $moto.attrs<type>, 'moto', 'an overridden STI name is written to the type column';
+  is Vehicle.all.perform[0].^name, 'Motorcycle', 'an overridden STI name dispatches back to its class on read';
+
+  # custom inheritance column
+  Gizmo.destroy-all;
+  my $widget = Widget2.create({ label => 'left' });
+  is $widget.attrs<kind>, 'Widget2', 'the custom inheritance column is populated on save';
+  is Gizmo.all.perform[0].^name, 'Widget2', 'reads dispatch on the custom inheritance column';
+
+  # abstract base hierarchy
+  Hammer.destroy-all;
+  my $bp = BallPeen.create({ name => 'forged' });
+  is $bp.attrs<type>, 'BallPeen', 'a subclass under an abstract base populates its type';
+  is Hammer.all.perform[0].^name, 'BallPeen', 'the concrete root dispatches to its subclasses on read';
+
+  # becomes-bang updates the type column
+  my $again = $car // Car.create({ name => 'Civic', wheels => 4 });
+  my $as-moto = Car.create({ name => 'x', wheels => 4 }).becomes-bang(Motorcycle);
+  is $as-moto.attrs<type>, 'moto', 'becomes-bang rewrites the type column to the target class';
+} else {
+  skip 'database-backed single-table inheritance', 13;
+}
+
+done-testing;

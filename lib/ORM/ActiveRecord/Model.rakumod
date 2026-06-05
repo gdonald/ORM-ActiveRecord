@@ -21,6 +21,7 @@ use ORM::ActiveRecord::Model::Callbacks;
 use ORM::ActiveRecord::Model::Cloning;
 use ORM::ActiveRecord::Model::DirtyTracking;
 use ORM::ActiveRecord::Model::Finders;
+use ORM::ActiveRecord::Model::Inheritance;
 use ORM::ActiveRecord::Model::RawSql;
 use ORM::ActiveRecord::Model::Relations;
 use ORM::ActiveRecord::Model::Serialization;
@@ -35,6 +36,7 @@ class Model
   does ModelCloning
   does ModelDirtyTracking
   does ModelFinders
+  does ModelInheritance
   does ModelRawSql
   does ModelRelations
   does ModelSerialization
@@ -117,6 +119,7 @@ class Model
     $!errors = Errors.new;
     $!validators = Validators.new;
 
+    self.WHAT.register-sti;
     @!fields = self.get-fields(self.table-name);
     self.init-attrs;
 
@@ -1114,6 +1117,7 @@ class Model
 
     my $do-create = -> {
       return False unless self.do-before-creates;
+      self.apply-sti-type;
       %!attrs<id> = $!id = $!db.create-object(self);
       self.apply-counter-cache-on-create;
       self.apply-touch-on-belongs-to;
@@ -1749,8 +1753,9 @@ class Model
 
   method becomes-bang($klass) {
     my $new = self.becomes($klass);
-    if $new.has-attribute('type') {
-      $new.write-attribute('type', $klass.^name);
+    my $column = $klass.inheritance-column;
+    if $new.has-attribute($column) {
+      $new.write-attribute($column, $klass.sti-name);
     }
     $new;
   }

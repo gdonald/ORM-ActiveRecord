@@ -403,8 +403,7 @@ role SqlBuilders is export {
     my @objects;
 
     for @records.kv -> $k, $record {
-      my $obj = $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
-      @objects.push: $obj;
+      @objects.push: self!instantiate($class, $record, :@fields);
     }
 
     Notifications.notify('instantiation.active_record',
@@ -413,10 +412,16 @@ role SqlBuilders is export {
     @objects;
   }
 
+  method !instantiate(Mu:U $class, %record, :@fields) {
+    $class.^can('instantiate-record')
+      ?? $class.instantiate-record(%record, :@fields)
+      !! $class.new(id => %record{'id'}, record => { attrs => %record, :@fields });
+  }
+
   method get-object(Str:D :$table, Mu:U :$class, :@fields, :%where, :%where-not, :@or-groups, :@order, Bool:D :$distinct=False, :@group, :@having, Str :$from-source, Str :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock = False) {
     my $record = self.get-record(:@fields, :$table, :%where, :%where-not, :@or-groups, :@order, :$distinct, :@group, :@having, :$from-source, :$from-alias, :@joins, :@ctes, :@annotations, :@optimizer-hints, :$lock);
     return Nil unless $record && $record{'id'};
-    $class.new(id => $record{'id'}, record => { attrs => $record, :@fields });
+    self!instantiate($class, $record, :@fields);
   }
 
   method !types-from-fields(Mu:D $obj) {

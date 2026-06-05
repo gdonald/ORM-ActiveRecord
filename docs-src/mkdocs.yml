@@ -17,6 +17,7 @@ nav:
     - Attribute types: models/types.md
     - Serialization: models/serialization.md
     - Callbacks: models/callbacks.md
+    - Inheritance: models/inheritance.md
     - Transactions: models/transactions.md
   - Validations:
     - Data: validations/data.md

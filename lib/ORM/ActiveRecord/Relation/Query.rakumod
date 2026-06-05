@@ -61,6 +61,19 @@ is export
     $!not-params = {};
     @!fields = self.db.get-fields(:$!table).map({ Field.new(:name($_[0]), :type($_[1])) });
     for self!normalize-assoc-params($params).kv -> $k, $v { $!params{$k} = $v }
+    self!apply-sti-default-scope;
+  }
+
+  # A subclass finder restricts to its own STI type values; the base sees all
+  # rows. A user-supplied filter on the inheritance column takes precedence.
+  method !apply-sti-default-scope {
+    return unless $!class.^can('sti-active');
+    $!class.register-sti;
+    return unless $!class.sti-active && !$!class.descends-from-active-record;
+
+    my $column = $!class.inheritance-column;
+    return if $!params{$column}:exists;
+    $!params{$column} = $!class.sti-scope-names;
   }
 
   method where-values           is rw { $!params }

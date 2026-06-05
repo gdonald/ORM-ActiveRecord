@@ -38,6 +38,7 @@
     "ORM::ActiveRecord::Model::Cloning": "lib/ORM/ActiveRecord/Model/Cloning.rakumod",
     "ORM::ActiveRecord::Model::DirtyTracking": "lib/ORM/ActiveRecord/Model/DirtyTracking.rakumod",
     "ORM::ActiveRecord::Model::Finders": "lib/ORM/ActiveRecord/Model/Finders.rakumod",
+    "ORM::ActiveRecord::Model::Inheritance": "lib/ORM/ActiveRecord/Model/Inheritance.rakumod",
     "ORM::ActiveRecord::Model::RawSql": "lib/ORM/ActiveRecord/Model/RawSql.rakumod",
     "ORM::ActiveRecord::Model::Relations": "lib/ORM/ActiveRecord/Model/Relations.rakumod",
     "ORM::ActiveRecord::Model::Serialization": "lib/ORM/ActiveRecord/Model/Serialization.rakumod",
