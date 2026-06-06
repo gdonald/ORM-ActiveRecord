@@ -71,6 +71,37 @@ class SerializedType does AttributeType is export {
   method serialize($v)   { $!coder.dump($v) }
 }
 
+# Maps an enum's symbolic names to their backing (integer or text) values. The
+# in-memory representation is always the symbol; cast / deserialize normalise
+# any input to the symbol, and serialize maps the symbol to the backing value.
+class EnumType does AttributeType is export {
+  has %.mapping;   # symbol => backing
+  has %.reverse;   # backing (stringified) => symbol
+
+  submethod BUILD(:%!mapping) {
+    %!reverse{.value.Str} = .key for %!mapping;
+  }
+
+  method cast($value) {
+    return $value unless $value.defined;
+    return $value                if %!mapping{$value}:exists;
+    return %!reverse{$value.Str} if %!reverse{$value.Str}:exists;
+    $value;
+  }
+
+  method deserialize($value) {
+    return $value unless $value.defined;
+    %!reverse{$value.Str} // $value;
+  }
+
+  method serialize($value) {
+    return $value unless $value.defined;
+    return %!mapping{$value} if %!mapping{$value}:exists;
+    return $value            if %!reverse{$value.Str}:exists;
+    $value;
+  }
+}
+
 # The type registry: name → AttributeType. Pre-seeded with the built-ins.
 class Type is export {
   my %registry;

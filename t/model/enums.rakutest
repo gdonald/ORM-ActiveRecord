@@ -1,0 +1,90 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+my $has-db  = $adapter.defined && $adapter.is-connected;
+
+if $has-db {
+  $adapter.exec('DROP TABLE IF EXISTS orders');
+  $adapter.ddl-create-table('orders', [
+    status => { :integer, default => 0 },
+    state  => { :string, limit => 20 },
+    name   => { :string, limit => 40 },
+  ]);
+}
+
+class Order is Model {
+  method table-name { 'orders' }
+
+  submethod BUILD {
+    self.enum: 'status', { active => 0, archived => 9 };   # custom integer backing
+    self.enum: 'state',  { open => 'open', closed => 'closed' };  # text backing
+  }
+}
+
+GLOBAL::<Order> := Order;
+
+END { try $adapter.exec('DROP TABLE IF EXISTS orders') if $has-db }
+
+if $has-db {
+  sub raw-status(Int:D $id) { $adapter.exec("SELECT status FROM orders WHERE id = $id")[0][0] }
+
+  Order.destroy-all;
+
+  # reader returns the symbolic name
+  my $o = Order.create({ status => 'active', name => 'a' });
+  is $o.status, 'active', 'the reader returns the symbolic name';
+
+  # the backing value is stored in the column
+  is raw-status($o.id).Int, 0, 'the backing integer value is persisted';
+
+  # custom (non-contiguous) integer mapping
+  my $arch = Order.create({ status => 'archived', name => 'b' });
+  is raw-status($arch.id).Int, 9, 'a custom backing value is persisted';
+
+  # a backing value assigned directly is normalised to the symbol
+  my $byint = Order.create({ status => 9, name => 'c' });
+  is $byint.status, 'archived', 'assigning a backing value normalises to the symbol';
+
+  # reload from the database returns the symbol
+  is Order.find($o.id).status, 'active', 'a record loaded from the database reads back the symbol';
+
+  # predicates
+  ok  $o.is-active,    'the predicate is true for the current value';
+  nok $o.is-archived,  'the predicate is false for another value';
+
+  # bang setter assigns and saves
+  $o.archived-bang;
+  is $o.status, 'archived', 'the bang setter assigns the value';
+  is Order.find($o.id).status, 'archived', 'the bang setter persists the value';
+
+  # class scopes
+  Order.destroy-all;
+  Order.create({ status => 'active', name => 'x' });
+  Order.create({ status => 'active', name => 'y' });
+  Order.create({ status => 'archived', name => 'z' });
+  is Order.active.all.elems, 2, 'a class scope returns only rows with that value';
+  is Order.archived.all.elems, 1, 'another class scope returns its own rows';
+
+  # text backing
+  Order.destroy-all;
+  my $t = Order.create({ state => 'closed', name => 't' });
+  is $adapter.exec("SELECT state FROM orders WHERE id = {$t.id}")[0][0], 'closed', 'a text backing value is persisted';
+  is $t.state, 'closed', 'the reader returns the symbol for a text-backed enum';
+  ok $t.is-closed, 'a text-backed predicate works';
+  is Order.closed.all.elems, 1, 'a text-backed class scope works';
+
+  # value enumeration helper
+  is Order.enum-values('status').sort.list, ('active', 'archived'), 'enum-values lists the symbols';
+} else {
+  plan 1;
+  skip 'no database connection available';
+}
+
+done-testing;

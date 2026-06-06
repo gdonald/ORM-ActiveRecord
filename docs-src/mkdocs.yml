@@ -15,6 +15,7 @@ nav:
     - Inspection: models/inspection.md
     - Persistence: models/persistence.md
     - Attribute types: models/types.md
+    - Enums: models/enums.md
     - Serialization: models/serialization.md
     - Callbacks: models/callbacks.md
     - Inheritance: models/inheritance.md

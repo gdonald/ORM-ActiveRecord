@@ -16,6 +16,7 @@ use ORM::ActiveRecord::Validations::Validator;
 use ORM::ActiveRecord::Validations::Validators;
 use ORM::ActiveRecord::Model::Attributes;
 use ORM::ActiveRecord::Model::Bulk;
+use ORM::ActiveRecord::Model::Enum;
 use ORM::ActiveRecord::Model::Typing;
 use ORM::ActiveRecord::Model::Callbacks;
 use ORM::ActiveRecord::Model::Cloning;
@@ -33,6 +34,7 @@ class Model
   does ModelAttributes
   does ModelBulk
   does ModelCallbacks
+  does ModelEnum
   does ModelCloning
   does ModelDirtyTracking
   does ModelFinders
@@ -217,6 +219,29 @@ class Model
   method FALLBACK(Str:D $name, *@rest) is raw {
     if $?CLASS.scopes.exists($name) {
       return $?CLASS.scopes.exec($name);
+    }
+
+    # Enum value predicate: record.is-active
+    if self.DEFINITE && $name ~~ /^ 'is-' (.+) $/ {
+      my $value = ~$0;
+      with self.enum-attr-for-value($value) -> $attr {
+        return (self.read-attribute($attr) // '') eq $value;
+      }
+    }
+    # Enum bang setter: record.active-bang assigns the value and saves
+    if self.DEFINITE && $name ~~ /^ (.+) '-bang' $/ {
+      my $value = ~$0;
+      with self.enum-attr-for-value($value) -> $attr {
+        self.write-attribute($attr, $value);
+        self.save;
+        return self;
+      }
+    }
+    # Enum class scope: Order.active
+    unless self.DEFINITE {
+      with self.enum-attr-for-value($name) -> $attr {
+        return self.where({ $attr => self.enum-backing($attr, $name) });
+      }
     }
 
     if $name ~~ /^ 'is-saved-change-to-' (.+) $/ {
