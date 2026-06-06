@@ -321,6 +321,13 @@ class Model
       }
     }
 
+    if self.DEFINITE {
+      with self.store-accessor-column($name) -> $column {
+        %!attrs{$column} = %() unless %!attrs{$column} ~~ Associative;
+        return-rw %!attrs{$column}{$name};
+      }
+    }
+
     return-rw %!attrs«$name» if %!attrs«$name»:exists;
 
     if any(%!has-manys.keys) eq $name {

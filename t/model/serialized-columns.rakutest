@@ -1,0 +1,83 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Type;
+use ORM::ActiveRecord::Type::Yaml;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+my $has-db  = $adapter.defined && $adapter.is-connected;
+
+if $has-db {
+  $adapter.exec('DROP TABLE IF EXISTS _accounts');
+  $adapter.ddl-create-table('_accounts', [
+    prefs    => { :text },
+    settings => { :text },
+    tags     => { :text },
+    name     => { :string, limit => 40 },
+  ]);
+}
+
+class PipeCoder {
+  method dump($v)  { $v ~~ Positional ?? $v.join('|') !! $v }
+  method load($s)  { $s.defined && $s.Str.chars ?? $s.Str.split('|').list !! () }
+}
+
+class Account is Model {
+  method table-name { '_accounts' }
+
+  submethod BUILD {
+    self.store('prefs', accessors => ['theme', 'locale']);   # default JSON coder
+    self.serialize('settings', YamlCoder.new);
+    self.store-accessor('settings', 'sound');
+    self.serialize('tags', PipeCoder.new);
+  }
+}
+
+GLOBAL::<Account> := Account;
+
+END { try $adapter.exec('DROP TABLE IF EXISTS _accounts') if $has-db }
+
+sub raw(Str:D $col, Int:D $id) {
+  my $v = $adapter.exec("SELECT $col FROM _accounts WHERE id = $id")[0][0];
+  $v ~~ Blob ?? $v.decode !! $v;
+}
+
+if $has-db {
+  Account.destroy-all;
+
+  # store with the default JSON coder round-trips, and an accessor reads a key
+  my $a = Account.create({ prefs => { theme => 'dark', locale => 'en' } });
+  is Account.find($a.id).theme, 'dark', 'a store accessor reads a key from the serialized hash';
+  like raw('prefs', $a.id), /'"theme"'/, 'a store column is serialized as JSON';
+
+  # a store accessor writes a key and the change persists
+  $a.theme = 'light';
+  $a.save;
+  is Account.find($a.id).theme, 'light', 'a store accessor write persists';
+
+  # YAML serialization round-trips
+  my $b = Account.create({ settings => { sound => 'loud', volume => 5 } });
+  is Account.find($b.id).settings<sound>, 'loud', 'a YAML-serialized column round-trips';
+  like raw('settings', $b.id), /'sound'/, 'a YAML column is serialized as YAML';
+
+  # store-accessor declared after the fact reads and writes
+  is $b.sound, 'loud', 'an after-the-fact store accessor reads a key';
+  $b.sound = 'quiet';
+  $b.save;
+  is Account.find($b.id).sound, 'quiet', 'an after-the-fact store accessor write persists';
+
+  # a custom coder round-trips
+  my $c = Account.create({ tags => ['x', 'y', 'z'] });
+  is raw('tags', $c.id), 'x|y|z', 'a custom coder serializes to the column';
+  is Account.find($c.id).tags.sort.list, ('x', 'y', 'z'), 'a custom coder deserializes from the column';
+} else {
+  plan 1;
+  skip 'no database connection available';
+}
+
+done-testing;

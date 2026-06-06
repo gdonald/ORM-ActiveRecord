@@ -46,6 +46,27 @@ role ModelTyping is export {
     self;
   }
 
+  has %.store-accessors;   # accessor key => backing column
+
+  # Serialize a column and expose named accessors that read / write keys inside
+  # the stored hash (e.g. `record.theme` <-> `prefs<theme>`).
+  method store(Str:D $column, :@accessors, :$coder = JsonCoder.new) {
+    self.serialize($column, $coder);
+    self.attribute($column, :default(-> { %() }));
+    self.store-accessor($column, |@accessors);
+    self;
+  }
+
+  # Add store accessors to an already-serialized column after the fact.
+  method store-accessor(Str:D $column, *@keys) {
+    %!store-accessors{$_.Str} = $column for @keys;
+    self;
+  }
+
+  method store-accessor-column(Str:D $key) {
+    %!store-accessors{$key};
+  }
+
   # Cast declared attributes once an instance is built. DB-loaded records use
   # `deserialize`; freshly-built records apply defaults then `cast`. A virtual
   # attribute has no column value, so it also takes its default on load.

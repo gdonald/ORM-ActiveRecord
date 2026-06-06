@@ -6,7 +6,7 @@
   "perl": "6.d",
   "authors": ["Greg Donald"],
   "auth": "zef:gdonald",
-  "depends": ["DBIish", "JSON::Tiny", "Log::Async"],
+  "depends": ["DBIish", "JSON::Tiny", "Log::Async", "YAMLish"],
   "build-depends": [],
   "test-depends": ["Test", "Test::META", "BDD::Behave:auth<zef:gdonald>"],
   "provides": {
@@ -79,6 +79,7 @@
     "ORM::ActiveRecord::Support::Version": "lib/ORM/ActiveRecord/Support/Version.rakumod",
     "ORM::ActiveRecord::Support::WorkerDb": "lib/ORM/ActiveRecord/Support/WorkerDb.rakumod",
     "ORM::ActiveRecord::Type": "lib/ORM/ActiveRecord/Type.rakumod",
+    "ORM::ActiveRecord::Type::Yaml": "lib/ORM/ActiveRecord/Type/Yaml.rakumod",
     "ORM::ActiveRecord::Validations::Validator": "lib/ORM/ActiveRecord/Validations/Validator.rakumod",
     "ORM::ActiveRecord::Validations::Validators": "lib/ORM/ActiveRecord/Validations/Validators.rakumod"
   },
