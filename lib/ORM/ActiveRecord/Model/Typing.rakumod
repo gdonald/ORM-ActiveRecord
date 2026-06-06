@@ -15,6 +15,7 @@ use ORM::ActiveRecord::Type;
 role ModelTyping is export {
   has %.attribute-types;
   has %.attribute-defaults;
+  has %.virtual-attributes;   # declared attributes with no backing column
 
   method attribute(Str:D $name, $type = Nil, :$default) {
     my $resolved = do given $type {
@@ -26,7 +27,18 @@ role ModelTyping is export {
     %!attribute-types{$name}    = $resolved if $resolved.defined;
     %!attribute-defaults{$name} = $default  if $default.defined;
 
+    # An attribute that maps to no column is virtual: give it a slot so it can
+    # be read and written like any other, but keep it out of the persisted set.
+    unless self.fields.first({ .name eq $name }) {
+      %!virtual-attributes{$name} = True;
+      self.attrs{$name} = Any unless self.attrs{$name}:exists;
+    }
+
     self;
+  }
+
+  method is-virtual-attribute(Str:D $name --> Bool) {
+    %!virtual-attributes{$name}:exists;
   }
 
   method serialize(Str:D $name, $coder) {
@@ -35,11 +47,18 @@ role ModelTyping is export {
   }
 
   # Cast declared attributes once an instance is built. DB-loaded records use
-  # `deserialize`; freshly-built records apply defaults then `cast`.
+  # `deserialize`; freshly-built records apply defaults then `cast`. A virtual
+  # attribute has no column value, so it also takes its default on load.
   method apply-attribute-types {
     return self unless %!attribute-types || %!attribute-defaults;
 
     if self.was-found-from-db {
+      for %!attribute-defaults.kv -> $name, $def {
+        next unless self.is-virtual-attribute($name);
+        next if self.attrs{$name}.defined;
+        self.attrs{$name} = $def ~~ Callable ?? $def.() !! $def;
+      }
+
       for %!attribute-types.kv -> $name, $type {
         next unless self.attrs{$name}:exists;
         self.attrs{$name} = $type.deserialize(self.attrs{$name});
@@ -66,12 +85,14 @@ role ModelTyping is export {
   # representation. Identity when no types are declared.
   method attrs-to-persist(--> Hash) {
     my %out = self.attrs;
-    return %out unless %!attribute-types;
+    return %out unless %!attribute-types || %!virtual-attributes;
 
     for %!attribute-types.kv -> $name, $type {
       next unless %out{$name}:exists;
       %out{$name} = $type.serialize(%out{$name});
     }
+
+    %out{$_}:delete for %!virtual-attributes.keys;
 
     %out;
   }

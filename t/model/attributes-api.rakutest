@@ -1,0 +1,91 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Type;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+my $has-db  = $adapter.defined && $adapter.is-connected;
+
+if $has-db {
+  $adapter.exec('DROP TABLE IF EXISTS attr_widgets');
+  $adapter.ddl-create-table('attr_widgets', [
+    name => { :string, limit => 40 },
+    qty  => { :integer, default => 0 },
+    tags => { :text },
+  ]);
+}
+
+class AttrCsvType does AttributeType {
+  method cast($v) {
+    return $v.list if $v ~~ Positional;
+    $v.defined ?? $v.Str.split(',').grep(*.chars).list !! $v;
+  }
+  method deserialize($v) {
+    $v.defined && $v.Str.chars ?? $v.Str.split(',').grep(*.chars).list !! ();
+  }
+  method serialize($v) {
+    $v ~~ Positional ?? $v.join(',') !! $v;
+  }
+}
+
+Type.register('attr-csv', AttrCsvType.new);
+
+class AttrWidget is Model {
+  method table-name { 'attr_widgets' }
+
+  submethod BUILD {
+    self.attribute('score', 'integer', :default(10));   # virtual, typed, value default
+    self.attribute('label', :default(-> { 'tag' }));     # virtual, block default, no type
+    self.attribute('tags', 'attr-csv');                  # column type override / custom type
+  }
+}
+
+GLOBAL::<AttrWidget> := AttrWidget;
+
+END { try $adapter.exec('DROP TABLE IF EXISTS attr_widgets') if $has-db }
+
+if $has-db {
+  AttrWidget.destroy-all;
+
+  # a virtual attribute applies its value default
+  my $w = AttrWidget.create({ name => 'a' });
+  is $w.score, 10, 'a virtual attribute applies its value default';
+
+  # a block default is evaluated
+  is $w.label, 'tag', 'a virtual attribute applies its block default';
+
+  # a supplied value overrides the default and is cast by the declared type
+  my $w2 = AttrWidget.create({ name => 'b', score => '42' });
+  is $w2.score, 42, 'a supplied value overrides the default and is cast';
+  ok $w2.score ~~ Int, 'the virtual attribute is cast to its declared type';
+
+  # a virtual attribute is writable
+  $w2.score = 7;
+  is $w2.score, 7, 'a virtual attribute is writable';
+
+  # a virtual attribute is recognised by has-attribute
+  ok $w.has-attribute('score'), 'has-attribute recognises a virtual attribute';
+
+  # a virtual attribute is NOT persisted: the insert succeeds and a reload
+  # falls back to the default rather than the stored value
+  my $w3 = AttrWidget.create({ name => 'c', score => 99 });
+  is AttrWidget.find($w3.id).score, 10, 'a virtual attribute is not persisted';
+
+  # a custom type overrides a column's coercion and round-trips
+  my $w4 = AttrWidget.create({ name => 'd', tags => ['x', 'y', 'z'] });
+  my $raw-tags = $adapter.exec("SELECT tags FROM attr_widgets WHERE id = {$w4.id}")[0][0];
+  $raw-tags = $raw-tags.decode if $raw-tags ~~ Blob;
+  is $raw-tags, 'x,y,z', 'a custom type serialises to the column';
+  is AttrWidget.find($w4.id).tags.sort.list, ('x', 'y', 'z'),
+    'a custom type deserialises from the column';
+} else {
+  plan 1;
+  skip 'no database connection available';
+}
+
+done-testing;
