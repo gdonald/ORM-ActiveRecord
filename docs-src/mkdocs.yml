@@ -19,6 +19,8 @@ nav:
     - Serialization: models/serialization.md
     - Callbacks: models/callbacks.md
     - Inheritance: models/inheritance.md
+    - Tokens & secure data: models/secure-tokens.md
+    - Encryption: models/encryption.md
     - Transactions: models/transactions.md
   - Validations:
     - Data: validations/data.md

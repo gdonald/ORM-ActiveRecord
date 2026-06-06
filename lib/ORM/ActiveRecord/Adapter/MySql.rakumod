@@ -120,7 +120,7 @@ class MySqlAdapter is SqlAdapter is export {
   }
 
   method coerce-read($value is copy, Str :$type) {
-    return $value without $value.defined;
+    return $value without $value;
     return $value unless $type.defined;
     # DBDish::mysql returns variable-length text columns (varchar/text/etc.)
     # as Buf rather than Str; decode at the boundary so downstream logic

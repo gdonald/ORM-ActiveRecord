@@ -62,6 +62,22 @@ is export
     @!fields = self.db.get-fields(:$!table).map({ Field.new(:name($_[0]), :type($_[1])) });
     for self!normalize-assoc-params($params).kv -> $k, $v { $!params{$k} = $v }
     self!apply-sti-default-scope;
+    self!encrypt-query-values;
+  }
+
+  # Replace a search value on a deterministically-encrypted column with its
+  # ciphertext, so `Model.where(:ssn('123'))` matches the stored value.
+  method !encrypt-query-values {
+    return unless $!class.^can('encrypted-deterministic-attrs');
+    my %deterministic = $!class.encrypted-deterministic-attrs.Set;
+    return unless %deterministic;
+
+    for $!params.keys -> $column {
+      next unless %deterministic{$column};
+      $!params{$column} = $!params{$column} ~~ Positional
+        ?? $!params{$column}.map({ $!class.encrypt-value($column, $_) }).list
+        !! $!class.encrypt-value($column, $!params{$column});
+    }
   }
 
   # A subclass finder restricts to its own STI type values; the base sees all

@@ -16,6 +16,7 @@ use ORM::ActiveRecord::Validations::Validator;
 use ORM::ActiveRecord::Validations::Validators;
 use ORM::ActiveRecord::Model::Attributes;
 use ORM::ActiveRecord::Model::Bulk;
+use ORM::ActiveRecord::Model::Encryption;
 use ORM::ActiveRecord::Model::Enum;
 use ORM::ActiveRecord::Model::Typing;
 use ORM::ActiveRecord::Model::Callbacks;
@@ -24,6 +25,7 @@ use ORM::ActiveRecord::Model::DirtyTracking;
 use ORM::ActiveRecord::Model::Finders;
 use ORM::ActiveRecord::Model::Inheritance;
 use ORM::ActiveRecord::Model::RawSql;
+use ORM::ActiveRecord::Model::Secure;
 use ORM::ActiveRecord::Model::Relations;
 use ORM::ActiveRecord::Model::Serialization;
 use ORM::ActiveRecord::Model::StatePredicates;
@@ -34,12 +36,14 @@ class Model
   does ModelAttributes
   does ModelBulk
   does ModelCallbacks
+  does ModelEncryption
   does ModelEnum
   does ModelCloning
   does ModelDirtyTracking
   does ModelFinders
   does ModelInheritance
   does ModelRawSql
+  does ModelSecure
   does ModelRelations
   does ModelSerialization
   does ModelStatePredicates
@@ -1150,6 +1154,8 @@ class Model
     my $do-create = -> {
       return False unless self.do-before-creates;
       self.apply-sti-type;
+      self.apply-secure-tokens;
+      self.apply-secure-password;
       %!attrs<id> = $!id = $!db.create-object(self);
       self.apply-counter-cache-on-create;
       self.apply-touch-on-belongs-to;
@@ -1158,6 +1164,7 @@ class Model
     };
     my $do-update = -> {
       return False unless self.do-before-updates;
+      self.apply-secure-password;
       if $locking {
         my %types = @!fields.map({ .name => .type }).Hash;
         my $affected = $!db.update-records(

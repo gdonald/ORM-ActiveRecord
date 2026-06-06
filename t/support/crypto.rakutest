@@ -1,0 +1,52 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Support::Crypto;
+
+sub hex(Blob:D $b --> Str) { $b.list».fmt('%02x').join }
+
+# HMAC-SHA256, RFC 4231 test case 1
+is hex(hmac-sha256(Blob.new(0x0b xx 20), 'Hi There'.encode)),
+  'b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7',
+  'HMAC-SHA256 matches RFC 4231 test case 1';
+
+# HMAC-SHA256, RFC 4231 test case 2
+is hex(hmac-sha256('Jefe'.encode, 'what do ya want for nothing?'.encode)),
+  '5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843',
+  'HMAC-SHA256 matches RFC 4231 test case 2';
+
+# PBKDF2-HMAC-SHA256 known vectors
+is hex(pbkdf2-sha256('password'.encode, 'salt'.encode, 1, 32)),
+  '120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b',
+  'PBKDF2-HMAC-SHA256 matches the 1-iteration vector';
+
+is hex(pbkdf2-sha256('password'.encode, 'salt'.encode, 2, 32)),
+  'ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43',
+  'PBKDF2-HMAC-SHA256 matches the 2-iteration vector';
+
+# base64url round-trips arbitrary bytes
+my $bytes = Blob.new(0, 1, 2, 250, 251, 252, 253, 254, 255);
+is hex(b64url-decode(b64url-encode($bytes))), hex($bytes), 'base64url round-trips bytes';
+
+ok b64url-encode($bytes) !~~ /<[+/=]>/, 'base64url output has no +, /, or = characters';
+
+# random tokens are url-safe and distinct
+my $t1 = urlsafe-token;
+my $t2 = urlsafe-token;
+isnt $t1, $t2, 'two random tokens differ';
+ok $t1 ~~ /^ <[A..Za..z0..9\-_]>+ $/, 'a random token is url-safe';
+
+# AES-256-CBC round-trips
+my $key = derive-key('a secret');
+my $iv  = random-bytes(16);
+my $plain = 'sensitive value 🔒'.encode('utf-8');
+is hex(aes256-decrypt($key, $iv, aes256-encrypt($key, $iv, $plain))), hex($plain),
+  'AES-256-CBC round-trips a value';
+
+# constant-time comparison
+ok  constant-time-eq('abc'.encode, 'abc'.encode), 'constant-time-eq is true for equal blobs';
+nok constant-time-eq('abc'.encode, 'abd'.encode), 'constant-time-eq is false for differing blobs';
+nok constant-time-eq('abc'.encode, 'ab'.encode),  'constant-time-eq is false for different lengths';
+
+done-testing;

@@ -1,0 +1,93 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Support::Secrets;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+secret-key-base('test-secret-key-base-12345');
+
+my $adapter = DB.shared.adapter;
+my $has-db  = $adapter.defined && $adapter.is-connected;
+
+if $has-db {
+  $adapter.exec('DROP TABLE IF EXISTS _secure_users');
+  $adapter.ddl-create-table('_secure_users', [
+    email           => { :string, limit => 120 },
+    auth_token      => { :string, limit => 64 },
+    password_digest => { :string, limit => 255 },
+  ]);
+}
+
+class SecureUser is Model {
+  method table-name { '_secure_users' }
+
+  submethod BUILD {
+    self.has-secure-token('auth_token');
+    self.has-secure-password(:iterations(1000));
+    self.generates-token-for('password-reset', :expires-in(900), { .password_digest // '' });
+  }
+}
+
+GLOBAL::<SecureUser> := SecureUser;
+
+END { try $adapter.exec('DROP TABLE IF EXISTS _secure_users') if $has-db }
+
+# secure-token helper is url-safe
+ok SecureUser.secure-token ~~ /^ <[A..Za..z0..9\-_]>+ $/, 'secure-token returns a url-safe token';
+
+if $has-db {
+  SecureUser.destroy-all;
+
+  # has-secure-token: generated on create, persisted
+  my $u = SecureUser.create({ email => 'a@example.com' });
+  ok ($u.auth_token // '').chars >= 20, 'has-secure-token populates the column on create';
+  is SecureUser.find($u.id).auth_token, $u.auth_token, 'the secure token is persisted';
+
+  # a supplied token is not overwritten
+  my $fixed = SecureUser.create({ email => 'b@example.com', auth_token => 'fixed-token-value' });
+  is $fixed.auth_token, 'fixed-token-value', 'a supplied token is kept';
+
+  # regenerate replaces and persists
+  my $old = $u.auth_token;
+  $u.regenerate-secure-token('auth_token');
+  isnt $u.auth_token, $old, 'regenerate-secure-token changes the token';
+  is SecureUser.find($u.id).auth_token, $u.auth_token, 'the regenerated token is persisted';
+
+  # has-secure-password
+  my $p = SecureUser.create({ email => 'c@example.com', password => 'correct horse' });
+  ok ($p.attrs<password_digest> // '').starts-with('pbkdf2-sha256$'), 'the password is stored as a pbkdf2 digest';
+  ok $p.has-attribute('password'), 'password is a (virtual) attribute';
+  my $reloaded = SecureUser.find($p.id);
+  ok  $reloaded.authenticate('correct horse'), 'authenticate succeeds with the right password';
+  nok $reloaded.authenticate('wrong'), 'authenticate fails with the wrong password';
+
+  # signed-id round-trips with a purpose
+  my $token = $p.signed-id(:purpose('unsubscribe'));
+  is SecureUser.find-signed($token, :purpose('unsubscribe')).id, $p.id, 'find-signed returns the record';
+  nok SecureUser.find-signed($token, :purpose('other')), 'find-signed rejects a wrong purpose';
+  nok SecureUser.find-signed($token ~ 'x', :purpose('unsubscribe')), 'find-signed rejects a tampered token';
+
+  # expiry
+  my $expired = $p.signed-id(:purpose('unsubscribe'), :expires-in(-10));
+  nok SecureUser.find-signed($expired, :purpose('unsubscribe')), 'find-signed rejects an expired token';
+
+  # find-signed-or-die
+  dies-ok { SecureUser.find-signed-or-die('not-a-token', :purpose('unsubscribe')) },
+    'find-signed-or-die throws on an invalid token';
+
+  # generates-token-for invalidates when the embedded value changes
+  my $reset = $p.generate-token-for('password-reset');
+  is SecureUser.find-by-token-for('password-reset', $reset).id, $p.id, 'find-by-token-for returns the record';
+
+  $p.password = 'a new password';
+  $p.save;
+  nok SecureUser.find-by-token-for('password-reset', $reset),
+    'a token-for is invalidated once the embedded value changes';
+} else {
+  skip 'database-backed secure tokens', 16;
+}
+
+done-testing;

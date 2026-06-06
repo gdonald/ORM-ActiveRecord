@@ -1,0 +1,87 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Support::Secrets;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+encryption-keys('key-one');
+
+my $adapter = DB.shared.adapter;
+my $has-db  = $adapter.defined && $adapter.is-connected;
+
+if $has-db {
+  $adapter.exec('DROP TABLE IF EXISTS _vaults');
+  $adapter.ddl-create-table('_vaults', [
+    ssn   => { :text },
+    notes => { :text },
+    email => { :text },
+    name  => { :string, limit => 40 },
+  ]);
+}
+
+class Vault is Model {
+  method table-name { '_vaults' }
+
+  submethod BUILD {
+    self.encrypts('ssn', :deterministic);
+    self.encrypts('notes');
+    self.encrypts('email', :deterministic, :downcase);
+  }
+}
+
+GLOBAL::<Vault> := Vault;
+
+END { try $adapter.exec('DROP TABLE IF EXISTS _vaults') if $has-db }
+
+sub raw(Str:D $col, Int:D $id) {
+  my $v = $adapter.exec("SELECT $col FROM _vaults WHERE id = $id")[0][0];
+  $v ~~ Blob ?? $v.decode !! $v;
+}
+
+if $has-db {
+  # encryption at rest + deterministic + queryable
+  Vault.destroy-all;
+  my $v = Vault.create({ ssn => '123-45-6789', notes => 'secret', name => 'a' });
+  isnt raw('ssn', $v.id), '123-45-6789', 'the column is encrypted at rest';
+  is Vault.find($v.id).ssn, '123-45-6789', 'the value decrypts on read';
+
+  my $v2 = Vault.create({ ssn => '123-45-6789', name => 'b' });
+  is raw('ssn', $v2.id), raw('ssn', $v.id), 'deterministic encryption yields equal ciphertext';
+  is Vault.where({ ssn => '123-45-6789' }).all.elems, 2, 'a deterministic column is queryable by plaintext';
+
+  # random IV
+  Vault.destroy-all;
+  my $a = Vault.create({ notes => 'same note', name => 'a' });
+  my $b = Vault.create({ notes => 'same note', name => 'b' });
+  isnt raw('notes', $a.id), raw('notes', $b.id), 'random encryption yields different ciphertext for equal plaintext';
+  is Vault.find($a.id).notes, 'same note', 'a randomly-encrypted column decrypts';
+
+  # downcase normalisation
+  Vault.destroy-all;
+  my $e = Vault.create({ email => 'Foo@Bar.COM', name => 'a' });
+  is Vault.find($e.id).email, 'foo@bar.com', 'downcase normalises before encrypting';
+  is Vault.where({ email => 'FOO@BAR.COM' }).all.elems, 1, 'a downcased column is queryable case-insensitively';
+
+  # key rotation: old data decrypts after a new primary key is prepended
+  Vault.destroy-all;
+  my $r = Vault.create({ ssn => '999-99-9999', name => 'a' });
+  encryption-keys('key-two', 'key-one');
+  is Vault.find($r.id).ssn, '999-99-9999', 'data keeps decrypting after key rotation';
+  encryption-keys('key-one');
+
+  # backfill existing plaintext
+  Vault.destroy-all;
+  $adapter.exec("INSERT INTO _vaults (ssn, name) VALUES ('plain-ssn', 'legacy')");
+  Vault.encrypt-existing;
+  my $row = Vault.where({ name => 'legacy' }).first;
+  isnt raw('ssn', $row.id), 'plain-ssn', 'encrypt-existing encrypts a plaintext value';
+  is $row.ssn, 'plain-ssn', 'a backfilled value decrypts to the original';
+} else {
+  plan 1;
+  skip 'no database connection available';
+}
+
+done-testing;
