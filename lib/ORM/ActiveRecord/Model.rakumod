@@ -24,6 +24,7 @@ use ORM::ActiveRecord::Model::Cloning;
 use ORM::ActiveRecord::Model::DirtyTracking;
 use ORM::ActiveRecord::Model::Finders;
 use ORM::ActiveRecord::Model::Inheritance;
+use ORM::ActiveRecord::Model::Normalization;
 use ORM::ActiveRecord::Model::RawSql;
 use ORM::ActiveRecord::Model::Secure;
 use ORM::ActiveRecord::Model::Relations;
@@ -42,6 +43,7 @@ class Model
   does ModelDirtyTracking
   does ModelFinders
   does ModelInheritance
+  does ModelNormalization
   does ModelRawSql
   does ModelSecure
   does ModelRelations
@@ -1142,6 +1144,7 @@ class Model
     die X::FrozenRecord.new(model => self.WHAT.^name)   if $!is-destroyed;
     return True if self.is-suppressed;
     self.apply-autosave-on-belongs-to;
+    self.apply-normalizations;
     return False if $validate && !self.is-valid;
     self.update-foreign-keys;
 

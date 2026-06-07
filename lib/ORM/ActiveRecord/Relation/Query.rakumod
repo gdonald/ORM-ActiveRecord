@@ -62,7 +62,23 @@ is export
     @!fields = self.db.get-fields(:$!table).map({ Field.new(:name($_[0]), :type($_[1])) });
     for self!normalize-assoc-params($params).kv -> $k, $v { $!params{$k} = $v }
     self!apply-sti-default-scope;
+    self!normalize-query-values;
     self!encrypt-query-values;
+  }
+
+  # Run a normalised column's normaliser over its search value, so a lookup
+  # matches the stored (normalised) value.
+  method !normalize-query-values {
+    return unless $!class.^can('normalized-attrs');
+    my %normalized = $!class.normalized-attrs.Set;
+    return unless %normalized;
+
+    for $!params.keys -> $column {
+      next unless %normalized{$column};
+      $!params{$column} = $!params{$column} ~~ Positional
+        ?? $!params{$column}.map({ $!class.normalize-value-for($column, $_) }).list
+        !! $!class.normalize-value-for($column, $!params{$column});
+    }
   }
 
   # Replace a search value on a deterministically-encrypted column with its
