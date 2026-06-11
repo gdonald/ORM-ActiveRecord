@@ -165,3 +165,53 @@ my $none  = User.where({fname => 'Zelda'}).pick('fname');   # Any
 User.exists;                       # True if the table has any rows
 User.exists({fname => 'Greg'});    # True if at least one match
 ```
+
+## Composite primary keys
+
+A model whose rows are identified by more than one column declares it with
+`primary-key`, passing the key columns in order. This pairs with a table whose
+DDL declares the same composite key (see the migrations guide).
+
+```perl6
+class ShopWidget is Model {
+  method table-name { 'shop_widgets' }
+}
+
+ShopWidget.primary-key('shop_id', 'id');
+
+ShopWidget.primary-key;                  # ('shop_id', 'id')
+ShopWidget.has-composite-primary-key;    # True
+User.primary-key;                        # 'id'
+```
+
+`find` takes the key as a tuple, in the declared column order, and raises
+`X::RecordNotFound` when no row matches:
+
+```perl6
+my $widget = ShopWidget.find([1, 1]);    # WHERE shop_id = 1 AND id = 1
+```
+
+`update`, `save`, and `destroy` locate the row by every key column, so two
+rows that share an `id` under different `shop_id` values stay distinct:
+
+```perl6
+ShopWidget.find([1, 1]).update({quantity => 99});   # only shop 1's row changes
+ShopWidget.find([2, 1]).destroy;                     # only shop 2's row is removed
+```
+
+### query-constraints
+
+`query-constraints` keeps `id` as the lookup key for `find` but scopes every
+write (`update`, `destroy`, `reload`) by the listed columns. Use it when `id`
+is unique only within a tenant or shard rather than globally:
+
+```perl6
+class TenantNote is Model {
+  method table-name { 'tenant_notes' }
+}
+
+TenantNote.query-constraints('tenant_id', 'id');
+
+my $note = TenantNote.find-by({tenant_id => 1, id => 1});
+$note.update({body => 'edited'});   # WHERE tenant_id = 1 AND id = 1
+```

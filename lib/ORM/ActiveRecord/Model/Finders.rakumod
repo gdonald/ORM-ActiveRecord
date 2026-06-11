@@ -6,6 +6,20 @@ use ORM::ActiveRecord::Support::Utils;
 
 role ModelFinders is export {
   method find(*@rest) {
+    my @pk = self.primary-keys;
+
+    if @pk.elems > 1 || @pk[0] ne 'id' {
+      my @vals = @rest.elems == 1 && @rest[0] ~~ Positional ?? @rest[0].list !! @rest.list;
+      die X::RecordNotFound.new(:model(Utils.base-name(self.WHAT.^name)))
+        unless @vals.elems == @pk.elems;
+
+      my %where = (@pk Z=> @vals).hash;
+      my $obj = self.where(%where).first;
+      die X::RecordNotFound.new(:model(Utils.base-name(self.WHAT.^name)), :id(@vals.join(',')))
+        without $obj;
+      return $obj;
+    }
+
     my Int $id = 0;
     $id = @rest[0] if @rest.elems == 1 && @rest[0].isa(Int);
     my $obj = self.new(:$id);

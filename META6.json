@@ -42,6 +42,7 @@
     "ORM::ActiveRecord::Model::Finders": "lib/ORM/ActiveRecord/Model/Finders.rakumod",
     "ORM::ActiveRecord::Model::Inheritance": "lib/ORM/ActiveRecord/Model/Inheritance.rakumod",
     "ORM::ActiveRecord::Model::Normalization": "lib/ORM/ActiveRecord/Model/Normalization.rakumod",
+    "ORM::ActiveRecord::Model::PrimaryKey": "lib/ORM/ActiveRecord/Model/PrimaryKey.rakumod",
     "ORM::ActiveRecord::Model::Secure": "lib/ORM/ActiveRecord/Model/Secure.rakumod",
     "ORM::ActiveRecord::Model::RawSql": "lib/ORM/ActiveRecord/Model/RawSql.rakumod",
     "ORM::ActiveRecord::Model::Relations": "lib/ORM/ActiveRecord/Model/Relations.rakumod",

@@ -434,8 +434,10 @@ role SqlBuilders is export {
     my $table = Utils.table-name($obj);
     my %attrs = $obj.attrs-to-persist;
     my %types = self!types-from-fields($obj);
-    my $id = $obj.id;
-    my $stmt = self.build-update(:$table, :%attrs, :%types, :$id);
+
+    my $stmt = $obj.WHAT.default-id-locating
+      ?? self.build-update(:$table, :%attrs, :%types, :id($obj.id))
+      !! self.build-update-where(:$table, :%attrs, :%types, :where($obj.primary-key-where));
 
     self.exec-stmt($stmt);
   }

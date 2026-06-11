@@ -25,6 +25,7 @@ use ORM::ActiveRecord::Model::DirtyTracking;
 use ORM::ActiveRecord::Model::Finders;
 use ORM::ActiveRecord::Model::Inheritance;
 use ORM::ActiveRecord::Model::Normalization;
+use ORM::ActiveRecord::Model::PrimaryKey;
 use ORM::ActiveRecord::Model::RawSql;
 use ORM::ActiveRecord::Model::Secure;
 use ORM::ActiveRecord::Model::Relations;
@@ -44,6 +45,7 @@ class Model
   does ModelFinders
   does ModelInheritance
   does ModelNormalization
+  does ModelPrimaryKey
   does ModelRawSql
   does ModelSecure
   does ModelRelations
@@ -1028,9 +1030,18 @@ class Model
     for $attrs.keys { %!attrs«$_» = $attrs«$_» }
   }
 
+  method primary-key-where(--> Hash) {
+    my %where;
+    for self.WHAT.locating-columns -> $col {
+      %where{$col} = $col eq 'id' ?? $!id !! %!attrs{$col};
+    }
+    %where;
+  }
+
   method get-attrs(:$id) {
     my @fields = @!fields;
-    %!attrs = $!db.get-record(:@fields, table => self.table-name, where => :$id);
+    my %where = self.WHAT.default-id-locating ?? (id => $id).Hash !! self.primary-key-where;
+    %!attrs = $!db.get-record(:@fields, table => self.table-name, :%where);
     self.update-db-attrs;
   }
 
@@ -1159,7 +1170,9 @@ class Model
       self.apply-sti-type;
       self.apply-secure-tokens;
       self.apply-secure-password;
-      %!attrs<id> = $!id = $!db.create-object(self);
+      my $supplied = (%!attrs<id> // 0).Int;
+      my $generated = $!db.create-object(self);
+      %!attrs<id> = $!id = $supplied > 0 ?? $supplied !! $generated;
       self.apply-counter-cache-on-create;
       self.apply-touch-on-belongs-to;
       self.do-after-creates;
@@ -1170,11 +1183,14 @@ class Model
       self.apply-secure-password;
       if $locking {
         my %types = @!fields.map({ .name => .type }).Hash;
+        my %where = self.WHAT.default-id-locating
+          ?? %( id => $!id, $lock-col => $prev-lock )
+          !! %( |self.primary-key-where, $lock-col => $prev-lock );
         my $affected = $!db.update-records(
           :table(self.table-name),
           :attrs(self.attrs-to-persist),
           :%types,
-          :where({ id => $!id, $lock-col => $prev-lock }),
+          :%where,
         );
         if $affected == 0 {
           die X::StaleObjectError.new(model => self.WHAT.^name);
@@ -1284,7 +1300,9 @@ class Model
     for @!fields -> $f { %types{$f.name} = $f.type if %attrs{$f.name}:exists }
 
     my $table = self.table-name;
-    my $stmt = $!db.build-update(:$table, :id($!id), :%attrs, :%types);
+    my $stmt = self.WHAT.default-id-locating
+      ?? $!db.build-update(:$table, :id($!id), :%attrs, :%types)
+      !! $!db.build-update-where(:$table, :%attrs, :%types, :where(self.primary-key-where));
     $!db.exec-stmt($stmt);
 
     for %attrs.kv -> $key, $val {
@@ -1752,7 +1770,7 @@ class Model
     die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!is-readonly;
     return False unless $!id;
     my $table = Utils.table-name(self);
-    my %where = id => $!id;
+    my %where = self.WHAT.default-id-locating ?? (id => $!id).Hash !! self.primary-key-where;
     $!db.delete-records(:$table, :%where);
     $!id = 0;
     %!attrs<id> = 0;

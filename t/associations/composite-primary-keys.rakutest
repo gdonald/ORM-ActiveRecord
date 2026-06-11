@@ -1,0 +1,81 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+use Models::User;
+use Models::ShopWidget;
+use Models::TenantNote;
+use Test;
+
+plan 15;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+DB.shared.delete-records(:table('shop_widgets'), :where({}));
+DB.shared.delete-records(:table('tenant_notes'), :where({}));
+
+# declaration
+
+is-deeply ShopWidget.primary-key, ('shop_id', 'id'),
+  'a composite primary key reports both columns in order';
+ok ShopWidget.has-composite-primary-key,
+  'a model with two key columns has a composite primary key';
+is User.primary-key, 'id',
+  'an ordinary model keeps the single id primary key';
+nok User.has-composite-primary-key,
+  'an ordinary model does not have a composite primary key';
+
+# the two shops share the same id value, so only both columns identify a row
+
+ShopWidget.create({shop_id => 1, id => 1, name => 'a', quantity => 10});
+ShopWidget.create({shop_id => 2, id => 1, name => 'b', quantity => 20});
+
+my $first = ShopWidget.find([1, 1]);
+is $first.attrs<name>, 'a',
+  'find by a composite key tuple locates the row matching both columns';
+is $first.attrs<shop_id>, 1,
+  'the located row carries its own shop_id';
+
+my $second = ShopWidget.find([2, 1]);
+is $second.attrs<name>, 'b',
+  'the same id under a different shop is a different row';
+
+dies-ok { ShopWidget.find([9, 9]) },
+  'find raises when no row matches the composite key';
+
+# updates target one row by all key columns
+
+$first.update({quantity => 99});
+is ShopWidget.find([1, 1]).attrs<quantity>, 99,
+  'an update lands on the targeted composite-key row';
+is ShopWidget.find([2, 1]).attrs<quantity>, 20,
+  'an update leaves the same-id row in the other shop untouched';
+
+# destroy targets one row by all key columns
+
+$first.destroy;
+dies-ok { ShopWidget.find([1, 1]) },
+  'destroy removes the targeted composite-key row';
+is ShopWidget.find([2, 1]).attrs<name>, 'b',
+  'destroy leaves the same-id row in the other shop in place';
+
+# query-constraints scopes writes by extra columns while id stays the key
+
+TenantNote.create({tenant_id => 1, id => 1, body => 'x'});
+TenantNote.create({tenant_id => 2, id => 1, body => 'y'});
+
+my $note = TenantNote.find-by({tenant_id => 1, id => 1});
+$note.update({body => 'x2'});
+
+is TenantNote.find-by({tenant_id => 1, id => 1}).attrs<body>, 'x2',
+  'query-constraints update lands on the row matching every constraint column';
+is TenantNote.find-by({tenant_id => 2, id => 1}).attrs<body>, 'y',
+  'query-constraints update leaves the same-id row in the other tenant untouched';
+
+$note.destroy;
+is TenantNote.find-by({tenant_id => 2, id => 1}).attrs<body>, 'y',
+  'query-constraints destroy leaves the same-id row in the other tenant in place';
+
+DB.shared.delete-records(:table('shop_widgets'), :where({}));
+DB.shared.delete-records(:table('tenant_notes'), :where({}));

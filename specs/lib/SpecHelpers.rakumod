@@ -72,6 +72,8 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   restexcowners
   singletons
   members
+  shop_widgets
+  tenant_notes
   users
 >;
 

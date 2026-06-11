@@ -283,8 +283,8 @@ self.create-table: 'order_lines', [
 
 The key columns are emitted in the order given.
 
-> These options shape the table DDL only. Model-level support for composite and
-> renamed primary keys (finders, `self.primary-key = ...`) is tracked separately.
+> These options shape the table DDL. A model maps onto a composite key with
+> `primary-key`; see the composite primary keys section of the finders guide.
 
 ## Join tables
 
