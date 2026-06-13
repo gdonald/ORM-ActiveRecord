@@ -74,6 +74,9 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   members
   shop_widgets
   tenant_notes
+  bench_tools
+  signboards
+  workshops
   users
 >;
 

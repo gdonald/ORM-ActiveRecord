@@ -48,15 +48,18 @@ class Migrate is export {
   method reset(:@args = [], :$in = $*IN, :$out = $*OUT --> List) {
     my $assume-yes = (@args.first({ $_ eq '--yes' || $_ eq '-y' }).defined)
                      || (%*ENV<AR_ASSUME_YES> // '') eq '1';
+    my $quiet = (@args.first({ $_ eq '--quiet' || $_ eq '-q' }).defined);
 
     my @tables = $!db.get-table-names.list;
     unless @tables.elems {
-      $out.say('Nothing to drop — no tables present.');
+      $out.say('Nothing to drop — no tables present.') unless $quiet;
       return ();
     }
 
-    $out.say('About to DROP these tables:');
-    $out.say('  ' ~ $_) for @tables;
+    unless $quiet {
+      $out.say('About to DROP these tables:');
+      $out.say('  ' ~ $_) for @tables;
+    }
     unless $assume-yes {
       $out.print('Proceed? [Y/n] ');
       $out.flush;
@@ -68,7 +71,7 @@ class Migrate is export {
     }
 
     my @dropped = $!db.ddl-drop-all-tables.list;
-    $out.say(green('Dropped ' ~ @dropped.elems ~ ' table' ~ (@dropped.elems == 1 ?? '' !! 's') ~ '.'));
+    $out.say(green('Dropped ' ~ @dropped.elems ~ ' table' ~ (@dropped.elems == 1 ?? '' !! 's') ~ '.')) unless $quiet;
     @dropped;
   }
 

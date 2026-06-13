@@ -1035,6 +1035,67 @@ class Article is Model {
 
 Per-field parent errors are not merged — Rails' `validates_associated` rolls up to one summary message, and that is what `validate => True` does here.
 
+## Nested Attributes
+
+`accepts-nested-attributes-for` lets a parent take a hash (or array of hashes) of attributes for an association and create, update, or destroy the associated records as part of the parent's own save. Declare it after the association, naming the association and any options.
+
+```perl6
+class Workshop is Model {
+  submethod BUILD {
+    self.has-many: tools     => class-name => 'Tool';
+    self.has-one:  signboard => class-name => 'Signboard';
+
+    self.accepts-nested-attributes-for: 'tools',
+      allow-destroy => True,
+      limit         => 5,
+      reject-if     => -> %a { (%a<name> // '').trim eq '' };
+
+    self.accepts-nested-attributes-for: 'signboard',
+      update-only => True;
+  }
+}
+```
+
+Pass the nested records under a `<association>-attributes` key. A `has-many` takes an array of record hashes; a `has-one` takes a single record hash. New entries are built with the parent foreign key filled in, and they save inside the parent's transaction so a failure rolls the whole graph back.
+
+```perl6
+my $shop = Workshop.create({
+  name => 'Main',
+  tools-attributes => [
+    { name => 'hammer', level => 1 },
+    { name => 'saw',    level => 2 },
+  ],
+});
+```
+
+An entry that carries an `id` updates that existing child instead of building a new one.
+
+```perl6
+$shop.update({
+  tools-attributes => [
+    { id => $tool-id, name => 'mallet', level => 7 },
+  ],
+});
+```
+
+The options:
+
+- `allow-destroy` — when `True`, an entry whose `_destroy` flag is truthy (`1`, `True`, `'true'`) destroys the named child. When off, the flag is ignored.
+- `reject-if` — a predicate `-> %attrs { ... }`; entries it returns true for are skipped.
+- `limit` — a maximum entry count for a `has-many`; exceeding it raises.
+- `update-only` — for a `has-one`, always update the existing child in place rather than building a replacement.
+
+A nested child is validated as part of the parent. If any child is invalid, the parent is invalid and nothing is written, and the parent records an `<association> is invalid` error.
+
+```perl6
+my $bad = Workshop.create({
+  name => 'Bad',
+  signboard-attributes => { slogan => '' },   # Signboard validates slogan
+});
+$bad.id;              # 0 — not saved
+$bad.errors.errors;   # carries the invalid-association error
+```
+
 ## Strict Loading
 
 `strict-loading => True` on any association causes lazy access to raise `X::StrictLoadingViolationError`. Use it to surface N+1 patterns.

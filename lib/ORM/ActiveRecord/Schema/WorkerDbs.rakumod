@@ -112,6 +112,30 @@ sub migrate-one(Str $conn, %base, Int $i, Int $count --> Bool) {
   True;
 }
 
+# Drop every table in one connection's database for worker index $i (or the
+# base database when $i is undefined), so a following migrate rebuilds from a
+# clean slate. Always non-interactive and quiet — this is a test-env operation.
+sub reset-one(Str $conn, %base, Int $i, Int $count --> Bool) {
+  my %cfg = $i.defined ?? apply-worker-suffix(%base, $i) !! %base;
+  return True if sqlite-name(%cfg) eq ':memory:';
+
+  temp %*ENV;
+  if $i.defined {
+    %*ENV<BEHAVE_WORKER_INDEX> = $i.Str;
+    %*ENV<BEHAVE_WORKER_COUNT> = $count.Str;
+  } else {
+    %*ENV<BEHAVE_WORKER_INDEX>:delete;
+    %*ENV<BEHAVE_WORKER_COUNT>:delete;
+  }
+  %*ENV<DISABLE-SQL-LOG> = 'True';
+
+  DB.set-shared(Nil, name => $conn);
+  Migrate.new(connection => $conn).reset(args => ['--yes', '--quiet']);
+  DB.set-shared(Nil, name => $conn);
+
+  True;
+}
+
 sub each-target(&body, Bool :$parallel, Str :$path, Str :$env, Int :$count) {
   # Clear any inherited worker overlay so base configs read cleanly.
   temp %*ENV;
@@ -144,6 +168,14 @@ sub migrate-test-databases(Bool :$parallel = False,
                            Str  :$path = 'config/application.json',
                            Str  :$env  = $parallel ?? 'test' !! current-env('development')) is export {
   each-target(-> $conn, %base, $i, $n { migrate-one($conn, %base, $i, $n) },
+              :$parallel, :$path, :$env, :$count);
+}
+
+sub reset-test-databases(Bool :$parallel = False,
+                         Int  :$count,
+                         Str  :$path = 'config/application.json',
+                         Str  :$env  = $parallel ?? 'test' !! current-env('development')) is export {
+  each-target(-> $conn, %base, $i, $n { reset-one($conn, %base, $i, $n) },
               :$parallel, :$path, :$env, :$count);
 }
 

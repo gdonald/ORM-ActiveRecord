@@ -1,0 +1,124 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::DB;
+use Models::Workshop;
+use Models::Tool;
+use Models::Signboard;
+use Test;
+
+plan 14;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub clean {
+  DB.shared.delete-records(:table('bench_tools'), :where({}));
+  DB.shared.delete-records(:table('signboards'),  :where({}));
+  DB.shared.delete-records(:table('workshops'),   :where({}));
+}
+
+sub tool-count(Int $wid) { Tool.where({workshop_id => $wid}).all.elems }
+sub sign-count(Int $wid) { Signboard.where({workshop_id => $wid}).all.elems }
+
+clean;
+
+# has-many: build new children from an array of attribute hashes
+
+my $shop = Workshop.create({
+  name => 'Main',
+  tools-attributes => [
+    { name => 'hammer', level => 1 },
+    { name => 'saw',    level => 2 },
+  ],
+});
+
+is tool-count($shop.id), 2,
+  'a has-many nested array builds one child per entry';
+is Tool.where({workshop_id => $shop.id}).all.sort({ .attrs<name> })[0].attrs<workshop_id>, $shop.id,
+  'each built child carries the parent foreign key';
+
+# reject-if drops blank entries
+
+my $rshop = Workshop.create({
+  name => 'Rejects',
+  tools-attributes => [
+    { name => 'plane', level => 1 },
+    { name => '',      level => 9 },
+  ],
+});
+
+is tool-count($rshop.id), 1,
+  'reject-if skips entries the predicate rejects';
+
+# limit caps the number of nested records
+
+dies-ok {
+  Workshop.create({
+    name => 'TooMany',
+    tools-attributes => (^6).map({ %( name => "t$_", level => $_ ) }).list,
+  });
+}, 'exceeding the nested limit raises';
+
+# update existing children by id
+
+my $first-tool = Tool.where({workshop_id => $shop.id}).all.sort({ .attrs<name> })[0];
+
+$shop.update({
+  tools-attributes => [
+    { id => $first-tool.id, name => 'mallet', level => 7 },
+  ],
+});
+
+my $renamed = Tool.find($first-tool.id);
+is $renamed.attrs<name>, 'mallet',
+  'a nested entry with an id updates the existing child';
+is $renamed.attrs<level>, 7,
+  'the update applies every supplied column';
+is tool-count($shop.id), 2,
+  'updating an existing child does not create a duplicate';
+
+# _destroy removes a child when allow-destroy is on
+
+$shop.update({
+  tools-attributes => [
+    { id => $first-tool.id, _destroy => 1 },
+  ],
+});
+
+is tool-count($shop.id), 1,
+  '_destroy removes the child when allow-destroy is enabled';
+nok Tool.where({ id => $first-tool.id }).exists,
+  'the destroyed child is gone from the table';
+
+# has-one nested: build, then update-only updates in place
+
+my $oshop = Workshop.create({
+  name => 'Signed',
+  signboard-attributes => { slogan => 'open' },
+});
+
+is sign-count($oshop.id), 1,
+  'a has-one nested hash builds the single child';
+is Workshop.find($oshop.id).signboard.attrs<slogan>, 'open',
+  'the built has-one child carries its attributes';
+
+$oshop.update({
+  signboard-attributes => { slogan => 'closed' },
+});
+
+is sign-count($oshop.id), 1,
+  'update-only reuses the existing has-one child instead of adding one';
+is Workshop.find($oshop.id).signboard.attrs<slogan>, 'closed',
+  'update-only updates the existing has-one child';
+
+# an invalid nested child blocks the parent save
+
+my $bad = Workshop.create({
+  name => 'Bad',
+  signboard-attributes => { slogan => '' },
+});
+
+ok $bad.id == 0 && $bad.errors.errors.elems > 0,
+  'an invalid nested child makes the parent invalid and unsaved';
+
+clean;

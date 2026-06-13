@@ -67,6 +67,8 @@ class Model
   has %.has-ones;
   has %.habtms;
   has %.belongs-tos;
+  has %.nested-config;
+  has @.nested-pending is rw;
 
   has Int $.id is rw;
   has @.fields of Field;
@@ -1154,6 +1156,7 @@ class Model
     die X::ReadOnlyRecord.new(model => self.WHAT.^name) if $!is-readonly;
     die X::FrozenRecord.new(model => self.WHAT.^name)   if $!is-destroyed;
     return True if self.is-suppressed;
+    self.extract-nested-attributes;
     self.apply-autosave-on-belongs-to;
     self.apply-normalizations;
     return False if $validate && !self.is-valid;
@@ -1224,12 +1227,19 @@ class Model
 
       self.do-after-saves;
       self.update-db-attrs;
+      self.apply-nested-pending;
       %!previous-changes = %snapshot;
       %!will-change = ();
       $!was-new-record = $was-new;
       $!db.register-txn-callback(self, $was-new ?? 'create' !! 'update');
       True;
     };
+
+    if @!nested-pending.elems {
+      my $result = False;
+      $!db.transaction({ $result = self.run-around-chain('save', $inner-save) });
+      return $result;
+    }
 
     self.run-around-chain('save', $inner-save);
   }
@@ -1427,6 +1437,7 @@ class Model
     my $ctx = $context // $!validation-context // ($!id == 0 ?? 'create' !! 'update');
     $!validators.validate($!db, self, :context($ctx));
     self.validate-belongs-tos;
+    self.validate-nested-pending;
     self.do-after-validations;
     $!errors.errors.elems.so;
   }
@@ -1504,6 +1515,152 @@ class Model
       next unless $should;
       $record.save;
     }
+  }
+
+  # ---- nested attributes ----
+
+  method accepts-nested-attributes-for(*@names, *%opts) {
+    for @names -> $name {
+      %!nested-config{~$name} = %opts;
+    }
+    self;
+  }
+
+  method nested-truthy($value --> Bool) {
+    return False without $value;
+    given $value {
+      when Bool { return $value }
+      when Numeric { return $value != 0 }
+      default {
+        my $s = (~$value).trim.lc;
+        return False if $s eq '' | '0' | 'false' | 'f' | 'no' | 'off';
+        return True;
+      }
+    }
+  }
+
+  method extract-nested-attributes {
+    @!nested-pending = [];
+    for %!nested-config.kv -> $name, %opts {
+      my $key = $name ~ '-attributes';
+      next unless %!attrs{$key}:exists;
+      my $raw = %!attrs{$key};
+      %!attrs{$key}:delete;
+      self.build-nested-pending($name, %opts, $raw);
+    }
+  }
+
+  method build-nested-pending(Str:D $name, %opts, $raw) {
+    my Bool $is-many = %!has-manys{$name}:exists;
+    my Bool $is-one  = %!has-ones{$name}:exists;
+    return unless $is-many || $is-one;
+
+    my $spec  = $is-many ?? %!has-manys{$name} !! %!has-ones{$name};
+    my $class = self.assoc-class-from-spec($spec);
+    return if $class === Mu;
+
+    if $is-many {
+      my @entries = $raw ~~ Positional ?? $raw.list !! ($raw,);
+
+      if %opts<limit>:exists {
+        my $limit = %opts<limit>.Int;
+        die "accepts-nested-attributes-for $name: too many records (limit $limit)"
+          if @entries.elems > $limit;
+      }
+
+      for @entries -> $entry {
+        self.nested-op($name, $spec, $class, %opts, $entry.hash, :many);
+      }
+    } else {
+      self.nested-op($name, $spec, $class, %opts, $raw.hash, :!many);
+    }
+  }
+
+  method nested-op(Str:D $name, $spec, $class, %opts, %entry, Bool:D :$many) {
+    my Bool $allow-destroy = so %opts<allow-destroy>;
+    my Bool $update-only   = so %opts<update-only>;
+    my Bool $marked = $allow-destroy && self.nested-truthy(%entry<_destroy>);
+
+    my $id = (%entry<id> // 0).Int;
+
+    my %clean;
+    for %entry.kv -> $k, $v { %clean{$k} = $v unless $k eq '_destroy' }
+
+    my $existing = $many ?? Nil !! self.nested-existing-one($name);
+
+    if $marked {
+      my $target;
+      if $id { $target = $class.find($id) }
+      elsif $existing.defined { $target = $existing }
+      return without $target;
+      @!nested-pending.push: %( :action<destroy>, :record($target), :assoc($name) );
+      return;
+    }
+
+    if %opts<reject-if>:exists {
+      my $pred = %opts<reject-if>;
+      return if self.nested-rejected($pred, %clean);
+    }
+
+    %clean<id>:delete;
+
+    if $existing.defined && $update-only {
+      self.nested-assign($existing, %clean, $spec, $class);
+      @!nested-pending.push: %( :action<update>, :record($existing), :assoc($name), :$spec );
+    }
+    elsif $id {
+      my $rec = $class.find($id);
+      self.nested-assign($rec, %clean, $spec, $class);
+      @!nested-pending.push: %( :action<update>, :record($rec), :assoc($name), :$spec );
+    }
+    else {
+      my $rec = $class.build(%clean);
+      self.attach-inverse-single($rec, $spec, $class);
+      @!nested-pending.push: %( :action<create>, :record($rec), :assoc($name), :$spec );
+    }
+  }
+
+  method nested-assign($rec, %clean, $spec, $class) {
+    for %clean.kv -> $k, $v { $rec.write-attribute($k, $v) }
+    self.attach-inverse-single($rec, $spec, $class);
+  }
+
+  method nested-existing-one(Str:D $name) {
+    return Nil if $!id == 0;
+    my $child = self."$name"();
+    $child.defined ?? $child !! Nil;
+  }
+
+  method nested-rejected($pred, %clean --> Bool) {
+    return False without $pred;
+    so $pred(%clean);
+  }
+
+  method validate-nested-pending {
+    for @!nested-pending -> %op {
+      next if %op<action> eq 'destroy';
+      my $rec = %op<record>;
+      next if $rec.is-valid;
+      $!errors.add(%op<assoc>, 'invalid', message => 'is invalid');
+    }
+  }
+
+  method apply-nested-pending {
+    for @!nested-pending -> %op {
+      my $rec = %op<record>;
+      given %op<action> {
+        when 'destroy' { $rec.destroy }
+        default {
+          my $spec = %op<spec>;
+          my $fkey = self.assoc-fkey-from-spec($spec, Utils.base-name(self.fkey-name));
+          my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
+          my $pkey-val = $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
+          $rec.write-attribute($fkey, $pkey-val);
+          $rec.save or die X::RecordInvalid.new(:record($rec), :messages($rec.errors.errors.map(*.message).list));
+        }
+      }
+    }
+    @!nested-pending = [];
   }
 
   method validate(Str:D $name, Hash:D $params) {

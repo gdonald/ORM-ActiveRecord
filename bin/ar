@@ -13,10 +13,11 @@ use ORM::ActiveRecord::Support::Version;
 #   check            report whether every expected database exists and is
 #                    migrated; exit non-zero if not (run no migrations).
 #   up[:N] down[:N]  migrate up / down (optionally N steps).
-#   reset [--yes]    drop every table.
-# Add --parallel to createdb/migrate/check to target the test environment's
-# parallel databases. The worker count comes from config (the env's `parallel`
-# key) unless `--parallel=N` gives it explicitly.
+#   reset [--yes]    drop every table (add --quiet to silence the listing).
+# Add --parallel to createdb/migrate/check/reset to target the test
+# environment's parallel databases. The worker count comes from config (the
+# env's `parallel` key) unless `--parallel=N` gives it explicitly. A parallel
+# reset is non-interactive, so it requires --yes.
 sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
   if $version {
     say "ar (ORM::ActiveRecord) {ORM::ActiveRecord::Support::Version::version()}";
@@ -39,6 +40,19 @@ sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
     when 'createdb' { create-test-databases(parallel => $par, :$count) }
     when 'migrate'  { migrate-test-databases(parallel => $par, :$count) }
     when 'check'    { exit check-command(parallel => $par, :$count) }
+    when 'reset'    {
+      if $par {
+        my $yes = @cmd.first({ $_ eq '--yes' || $_ eq '-y' }).defined
+                  || (%*ENV<AR_ASSUME_YES> // '') eq '1';
+        unless $yes {
+          $*ERR.say: 'reset --parallel drops every worker test database; pass --yes to confirm.';
+          exit 2;
+        }
+        reset-test-databases(parallel => True, :$count);
+      } else {
+        Migrate.new(args => @cmd).run;
+      }
+    }
     default         { Migrate.new(args => @cmd).run }
   }
 }
@@ -69,9 +83,10 @@ sub USAGE {
     ar up[:N] | down[:N]   migrate up / down (optionally N steps)
     ar reset [--yes]       drop every table (use --yes to skip the prompt)
 
-    ar createdb --parallel   create the test env's parallel databases
-    ar migrate  --parallel   migrate the test env's parallel databases
-    ar check    --parallel   check the test env's parallel databases
+    ar createdb --parallel       create the test env's parallel databases
+    ar migrate  --parallel       migrate the test env's parallel databases
+    ar check    --parallel       check the test env's parallel databases
+    ar reset    --parallel --yes drop every table in the parallel databases
     (the worker count comes from config: the test env's `parallel` key)
 
     ar --version           print the installed version

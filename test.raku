@@ -306,9 +306,16 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
   %*ENV<DATABASE_URL> = $url;
   %*ENV<AR_ENV> = 'test';
 
-  my $migrate = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-  'raku', '-Ilib', 'bin/ar';
-  return $migrate.exitcode unless $migrate.exitcode == 0;
+  # Start each run from a clean, fully-migrated schema: ensure the database
+  # exists, drop every table, then migrate up. Resetting (not a bare migrate)
+  # is what lets a changed migration take effect, since a migration is only
+  # ever applied once.
+  for ('createdb', 'reset', 'migrate') -> $cmd {
+    my @argv = 'raku', '-Ilib', 'bin/ar', $cmd;
+    @argv.append: '--yes', '--quiet' if $cmd eq 'reset';
+    my $proc = run :env(%*ENV, DISABLE-SQL-LOG => 'True'), |@argv;
+    return $proc.exitcode unless $proc.exitcode == 0;
+  }
 
   if $run-prove6 {
     my $prove = run 'prove6', '-Ilib', 't';
@@ -324,13 +331,12 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
     # can't collide across files) with a recycled 0..N-1 slot. The worker count
     # is passed to `ar` explicitly (`--parallel=N`) so it matches behave's
     # `--parallel=N` even when there is no config file to read it from.
-    my $created = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-    'raku', '-Ilib', 'bin/ar', 'createdb', "--parallel=$parallel";
-    return $created.exitcode unless $created.exitcode == 0;
-
-    my $migrated = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-    'raku', '-Ilib', 'bin/ar', 'migrate', "--parallel=$parallel";
-    return $migrated.exitcode unless $migrated.exitcode == 0;
+    for ('createdb', 'reset', 'migrate') -> $cmd {
+      my @argv = 'raku', '-Ilib', 'bin/ar', $cmd, "--parallel=$parallel";
+      @argv.append: '--yes', '--quiet' if $cmd eq 'reset';
+      my $proc = run :env(%*ENV, DISABLE-SQL-LOG => 'True'), |@argv;
+      return $proc.exitcode unless $proc.exitcode == 0;
+    }
 
     # Pre-flight: confirm every expected worker database exists and is migrated
     # before launching any specs (one clean failure beats per-worker errors).
