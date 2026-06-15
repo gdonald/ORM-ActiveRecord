@@ -77,6 +77,8 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   bench_tools
   signboards
   workshops
+  notices
+  parcels
   users
 >;
 

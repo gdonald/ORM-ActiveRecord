@@ -19,6 +19,7 @@ nav:
     - Normalisation: models/normalization.md
     - Serialization: models/serialization.md
     - Callbacks: models/callbacks.md
+    - Soft deletes: models/discard.md
     - Inheritance: models/inheritance.md
     - Tokens & secure data: models/secure-tokens.md
     - Encryption: models/encryption.md

@@ -1,0 +1,72 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use Discard::Models;
+use Test;
+
+plan 18;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Notice.destroy-all;
+Parcel.destroy-all;
+
+my $notice = Notice.create({name => 'sale'});
+$notice.discard;
+ok $notice.is-discarded, 'discard marks the record as discarded';
+ok $notice.deleted_at, 'discard sets the configured timestamp column';
+nok $notice.discard, 'discard returns False when already discarded';
+ok Notice.with-discarded.count == 1, 'discard leaves the row in the table';
+
+$notice.undiscard;
+ok $notice.is-kept, 'undiscard clears the discarded state';
+nok $notice.deleted_at.defined, 'undiscard clears the timestamp column';
+nok $notice.undiscard, 'undiscard returns False when not discarded';
+
+Notice.destroy-all;
+
+my $kept = Notice.create({name => 'kept'});
+my $gone = Notice.create({name => 'gone'});
+$gone.discard;
+ok Notice.kept.count == 1, 'kept returns only the undiscarded rows';
+ok Notice.discarded.count == 1, 'discarded returns only the discarded rows';
+ok Notice.with-discarded.count == 2, 'with-discarded returns every row';
+
+Notice.destroy-all;
+
+Notice.create({name => 'one'});
+Notice.create({name => 'two'});
+Notice.discard-all;
+ok Notice.discarded.count == 2, 'discard-all discards every kept row';
+Notice.undiscard-all;
+ok Notice.kept.count == 2, 'undiscard-all restores every discarded row';
+
+Notice.destroy-all;
+
+@Discard::Models::discard-events = [];
+my $cb = Notice.create({name => 'sale'});
+$cb.discard;
+ok @Discard::Models::discard-events eqv ['before-discard', 'after-discard'],
+  'fires before-discard and after-discard in order';
+
+@Discard::Models::discard-events = [];
+$cb.undiscard;
+ok @Discard::Models::discard-events eqv ['after-undiscard'],
+  'fires after-undiscard on undiscard';
+
+my $locked = Locked.create({name => 'sale'});
+$locked.discard;
+nok $locked.is-discarded, 'aborts discard when before-discard returns False';
+
+Notice.destroy-all;
+Parcel.destroy-all;
+
+my $pkept = Parcel.create({name => 'kept'});
+my $pgone = Parcel.create({name => 'gone'});
+$pgone.discard;
+ok Parcel.all.elems == 1, 'default scope hides discarded rows';
+ok Parcel.with-discarded.count == 2, 'with-discarded reveals discarded rows';
+ok Parcel.discarded.count == 1, 'discarded reveals discarded rows';
+
+Notice.destroy-all;
+Parcel.destroy-all;

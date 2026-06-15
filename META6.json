@@ -36,6 +36,7 @@
     "ORM::ActiveRecord::Model::Bulk": "lib/ORM/ActiveRecord/Model/Bulk.rakumod",
     "ORM::ActiveRecord::Model::Callbacks": "lib/ORM/ActiveRecord/Model/Callbacks.rakumod",
     "ORM::ActiveRecord::Model::Cloning": "lib/ORM/ActiveRecord/Model/Cloning.rakumod",
+    "ORM::ActiveRecord::Model::Discard": "lib/ORM/ActiveRecord/Model/Discard.rakumod",
     "ORM::ActiveRecord::Model::DirtyTracking": "lib/ORM/ActiveRecord/Model/DirtyTracking.rakumod",
     "ORM::ActiveRecord::Model::Encryption": "lib/ORM/ActiveRecord/Model/Encryption.rakumod",
     "ORM::ActiveRecord::Model::Enum": "lib/ORM/ActiveRecord/Model/Enum.rakumod",

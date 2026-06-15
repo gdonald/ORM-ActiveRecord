@@ -62,6 +62,7 @@ is export
     @!fields = self.db.get-fields(:$!table).map({ Field.new(:name($_[0]), :type($_[1])) });
     for self!normalize-assoc-params($params).kv -> $k, $v { $!params{$k} = $v }
     self!apply-sti-default-scope;
+    self!apply-discard-default-scope;
     self!normalize-query-values;
     self!encrypt-query-values;
   }
@@ -106,6 +107,19 @@ is export
     my $column = $!class.inheritance-column;
     return if $!params{$column}:exists;
     $!params{$column} = $!class.sti-scope-names;
+  }
+
+  # A soft-delete model that opts into the default scope hides discarded rows
+  # (the timestamp column IS NULL) unless the query already filters that column.
+  # `with-discarded` / `unscope` lift the filter.
+  method !apply-discard-default-scope {
+    return unless $!class.^can('soft-delete-default-scope-column');
+
+    my $column = $!class.soft-delete-default-scope-column;
+    return unless $column.defined;
+    return if $!params{$column}:exists;
+
+    $!params{$column} = Nil;
   }
 
   method where-values           is rw { $!params }

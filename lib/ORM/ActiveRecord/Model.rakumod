@@ -21,6 +21,7 @@ use ORM::ActiveRecord::Model::Enum;
 use ORM::ActiveRecord::Model::Typing;
 use ORM::ActiveRecord::Model::Callbacks;
 use ORM::ActiveRecord::Model::Cloning;
+use ORM::ActiveRecord::Model::Discard;
 use ORM::ActiveRecord::Model::DirtyTracking;
 use ORM::ActiveRecord::Model::Finders;
 use ORM::ActiveRecord::Model::Inheritance;
@@ -41,6 +42,7 @@ class Model
   does ModelEncryption
   does ModelEnum
   does ModelCloning
+  does ModelDiscard
   does ModelDirtyTracking
   does ModelFinders
   does ModelInheritance
@@ -98,6 +100,11 @@ class Model
 
   has @.before-destroys;
   has @.after-destroys;
+
+  has @.before-discards;
+  has @.after-discards;
+  has @.before-undiscards;
+  has @.after-undiscards;
 
   has @.before-validations;
   has @.after-validations;

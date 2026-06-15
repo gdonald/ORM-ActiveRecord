@@ -12,7 +12,7 @@ class CallbackEntry is export {
 
 role ModelCallbacks is export {
 
-  my @EVENTS = <save create update destroy validation initialize find touch>;
+  my @EVENTS = <save create update destroy discard undiscard validation initialize find touch>;
 
   method !cb-pluralize(Str:D $event --> Str) {
     return $event ~ 'es' if $event ~~ /<[sxz]> $ | 'ch' $ | 'sh' $/;
@@ -216,6 +216,11 @@ role ModelCallbacks is export {
   multi method around-update(*@handlers, *%opts)  { self!cb-add('update',  'around', @handlers, %opts, 'around') }
   multi method around-destroy(*@handlers, *%opts) { self!cb-add('destroy', 'around', @handlers, %opts, 'around') }
 
+  multi method before-discard(*@handlers, *%opts)   { self!cb-add('discard',   'before', @handlers, %opts) }
+  multi method after-discard(*@handlers, *%opts)    { self!cb-add('discard',   'after',  @handlers, %opts) }
+  multi method before-undiscard(*@handlers, *%opts) { self!cb-add('undiscard', 'before', @handlers, %opts) }
+  multi method after-undiscard(*@handlers, *%opts)  { self!cb-add('undiscard', 'after',  @handlers, %opts) }
+
   multi method before-validation(*@handlers, *%opts) { self!cb-add('validation', 'before', @handlers, %opts) }
   multi method after-validation(*@handlers, *%opts)  { self!cb-add('validation', 'after',  @handlers, %opts) }
 
@@ -232,6 +237,11 @@ role ModelCallbacks is export {
   method do-after-creates  { self.run-callback-chain('create',  'after') }
   method do-after-updates  { self.run-callback-chain('update',  'after') }
   method do-after-destroys { self.run-callback-chain('destroy', 'after') }
+
+  method do-before-discards   (--> Bool) { self.run-callback-chain('discard',   'before') }
+  method do-after-discards               { self.run-callback-chain('discard',   'after') }
+  method do-before-undiscards (--> Bool) { self.run-callback-chain('undiscard', 'before') }
+  method do-after-undiscards             { self.run-callback-chain('undiscard', 'after') }
 
   method do-before-validations (--> Bool) { self.run-callback-chain('validation', 'before') }
   method do-after-validations          { self.run-callback-chain('validation', 'after') }
