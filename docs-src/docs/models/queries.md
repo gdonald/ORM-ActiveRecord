@@ -37,7 +37,7 @@ User.where.not({id => [1, 2, 3]}).all;       # NOT IN (...)
 
 ## JSON / JSONB predicate operators
 
-For [`:json` / `:jsonb` columns](migrations.md#column-types), pass a
+For [`:json` / `:jsonb` columns](../migrations.md#column-types), pass a
 `JsonPredicate` as the value to query inside the document. Import it with
 `use ORM::ActiveRecord::Relation::Query::Json;`.
 
