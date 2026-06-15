@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../relations/">
+        <link rel="prev" href="../callbacks/">
       
       
-        <link rel="next" href="../joins/">
+        <link rel="next" href="../inheritance/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Queries - ORM::ActiveRecord</title>
+        <title>Soft deletes - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#queries" class="md-skip">
+        <a href="#soft-deletes-discard" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Queries
+              Soft deletes
             
           </span>
         </div>
@@ -434,37 +434,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Queries
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../queries/" class="md-nav__link">
         
   
   
@@ -480,125 +453,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#where-shorthands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where shorthands
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#wherenot" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where.not
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#json-jsonb-predicate-operators" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON / JSONB predicate operators
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#wheremissing-and-whereassociated" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where.missing and where.associated
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#excluding" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        excluding
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#or-and-and" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        or and and
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#merge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        merge
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rewhere" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        rewhere
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#unscope" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        unscope
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -916,10 +770,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../discard/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft deletes
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -935,6 +816,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#discarding-and-restoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discarding and restoring
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scopes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scopes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bulk-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bulk operations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Callbacks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#default-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1360,10 +1316,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#where-shorthands" class="md-nav__link">
+  <a href="#discarding-and-restoring" class="md-nav__link">
     <span class="md-ellipsis">
       
-        where shorthands
+        Discarding and restoring
       
     </span>
   </a>
@@ -1371,10 +1327,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#wherenot" class="md-nav__link">
+  <a href="#scopes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        where.not
+        Scopes
       
     </span>
   </a>
@@ -1382,10 +1338,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#json-jsonb-predicate-operators" class="md-nav__link">
+  <a href="#bulk-operations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        JSON / JSONB predicate operators
+        Bulk operations
       
     </span>
   </a>
@@ -1393,10 +1349,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#wheremissing-and-whereassociated" class="md-nav__link">
+  <a href="#callbacks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        where.missing and where.associated
+        Callbacks
       
     </span>
   </a>
@@ -1404,54 +1360,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#excluding" class="md-nav__link">
+  <a href="#default-scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        excluding
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#or-and-and" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        or and and
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#merge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        merge
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rewhere" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        rewhere
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#unscope" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        unscope
+        Default scope
       
     </span>
   </a>
@@ -1475,201 +1387,129 @@
 
 
 
-<h1 id="queries">Queries</h1>
-<p>This page covers the filtering and relation-modification vocabulary that
-builds on the basics in <a href="../relations/">Relations</a>. Everything here returns
-a new relation — the original is never mutated.</p>
-<h2 id="where-shorthands">where shorthands</h2>
-<p><code>where(%conditions)</code> accepts several value shapes:</p>
-<table>
-<thead>
-<tr>
-<th>Shape</th>
-<th>SQL emitted</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>where({col =&gt; $value})</code></td>
-<td><code>col = ?</code></td>
-</tr>
-<tr>
-<td><code>where({col =&gt; Nil})</code></td>
-<td><code>col IS NULL</code></td>
-</tr>
-<tr>
-<td><code>where({col =&gt; [a, b, c]})</code></td>
-<td><code>col IN (?, ?, ?)</code></td>
-</tr>
-<tr>
-<td><code>where({col =&gt; 1..10})</code></td>
-<td><code>col BETWEEN ? AND ?</code></td>
-</tr>
-<tr>
-<td><code>where({assoc =&gt; $instance})</code></td>
-<td><code>assoc_id = ?</code> (uses <code>$instance.id</code>)</td>
-</tr>
-</tbody>
-</table>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">age</span> =&gt; <span class="mi">18</span><span class="o">..</span><span class="mi">65</span>});
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">email</span> =&gt; <span class="nb">Nil</span>});
-<span class="n">User</span>.<span class="n">where</span>({<span class="nb">id</span> =&gt; [<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>]});
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">user</span> =&gt; <span class="nv">$alice</span>});            <span class="c1"># belongs_to :user</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="wherenot">where.not</h2>
-<p><code>where.not(%conditions)</code> adds a negated condition. <code>Nil</code>, ranges, and arrays
-work the same as the positive form.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Bob&#39;</span>}).<span class="nb">count</span>;
-<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">email</span> =&gt; <span class="nb">Nil</span>}).<span class="nb">all</span>;          <span class="c1"># IS NOT NULL</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">age</span> =&gt; <span class="mi">18</span><span class="o">..</span><span class="mi">65</span>}).<span class="nb">all</span>;         <span class="c1"># NOT BETWEEN</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="nb">id</span> =&gt; [<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>]}).<span class="nb">all</span>;       <span class="c1"># NOT IN (...)</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="json-jsonb-predicate-operators">JSON / JSONB predicate operators</h2>
-<p>For <a href="migrations.md#column-types"><code>:json</code> / <code>:jsonb</code> columns</a>, pass a
-<code>JsonPredicate</code> as the value to query inside the document. Import it with
-<code>use ORM::ActiveRecord::Relation::Query::Json;</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Path extraction (the -&gt;&gt; operator) compared as text — works on PostgreSQL,</span>
-<span class="c1"># MySQL, and SQLite:</span>
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="n">extract</span>(<span class="s">&#39;theme&#39;</span>).<span class="o">eq</span>(<span class="s">&#39;dark&#39;</span>) });
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="n">extract</span>(<span class="s">&#39;address&#39;</span>, <span class="s">&#39;city&#39;</span>).<span class="o">ne</span>(<span class="s">&#39;NYC&#39;</span>) });
-
-<span class="c1"># Containment — PostgreSQL @&gt;, MySQL JSON_CONTAINS (SQLite raises):</span>
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="nb">contains</span>({ <span class="n">theme</span> =&gt; <span class="s">&#39;dark&#39;</span> }) });
-
-<span class="c1"># Key existence — PostgreSQL jsonb_exists, MySQL JSON_CONTAINS_PATH (SQLite raises):</span>
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="n">has-key</span>(<span class="s">&#39;theme&#39;</span>) });
-</code></pre></div></td></tr></table></div>
-
-<p><code>extract(*@path)</code> walks a nested path and compares the extracted <strong>text</strong> with
-<code>.eq</code> / <code>.ne</code>. All three predicates also work under <code>where.not</code>, which negates
-the whole condition. Containment and key-existence need a <code>:jsonb</code> column on
-PostgreSQL.</p>
-<table>
-<thead>
-<tr>
-<th>Predicate</th>
-<th>PostgreSQL</th>
-<th>MySQL</th>
-<th>SQLite</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>extract(path).eq/.ne(v)</code></td>
-<td><code>col -&gt; .. -&gt;&gt; ..</code></td>
-<td><code>col -&gt;&gt; '$.path'</code></td>
-<td><code>col -&gt;&gt; '$.path'</code></td>
-</tr>
-<tr>
-<td><code>contains(data)</code></td>
-<td><code>col @&gt; ?::jsonb</code></td>
-<td><code>JSON_CONTAINS(col, ?)</code></td>
-<td>— (raises)</td>
-</tr>
-<tr>
-<td><code>has-key(key)</code></td>
-<td><code>jsonb_exists(col, ?)</code></td>
-<td><code>JSON_CONTAINS_PATH(col, 'one', ?)</code></td>
-<td>— (raises)</td>
-</tr>
-</tbody>
-</table>
-<h2 id="wheremissing-and-whereassociated">where.missing and where.associated</h2>
-<p>For relations through associations, <code>where.missing(:assoc)</code> finds records
-with no associated rows; <code>where.associated(:assoc)</code> finds those that have at
-least one. Both work over <code>belongs_to</code>, <code>has_many</code>, and <code>has_many :through</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>.<span class="n">missing</span>(:<span class="n">subscriptions</span>).<span class="nb">all</span>;       <span class="c1"># users with no subscription</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="n">associated</span>(:<span class="n">subscriptions</span>).<span class="nb">all</span>;    <span class="c1"># users with at least one</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="n">missing</span>(:<span class="n">magazines</span>).<span class="nb">all</span>;           <span class="c1"># honors :through</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>Model.associated(:assoc)</code> is a class-level shortcut for the common case.</p>
-<h2 id="excluding">excluding</h2>
-<p><code>excluding(*@records-or-ids)</code> removes specific rows from the result set,
-mirroring <code>WHERE id NOT IN (...)</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">excluding</span>(<span class="nv">$bob</span>).<span class="nb">all</span>;                          <span class="c1"># by instance</span>
-<span class="n">User</span>.<span class="n">excluding</span>(<span class="nv">$alice</span>, <span class="nv">$dave</span>).<span class="nb">all</span>;                 <span class="c1"># multiple</span>
-<span class="n">User</span>.<span class="n">excluding</span>(<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>).<span class="nb">all</span>;                       <span class="c1"># by id</span>
-</code></pre></div></td></tr></table></div>
-
-<p>It composes:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">lname</span> =&gt; <span class="s">&#39;Anderson&#39;</span>}).<span class="n">excluding</span>(<span class="nv">$alice</span>).<span class="nb">all</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="or-and-and">or and and</h2>
-<p><code>or(other_relation)</code> and <code>and(other_relation)</code> combine WHERE clauses across
-two relations. The result is a single SQL query with the conditions wrapped
-in the right boolean structure.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Alice&#39;</span>}).<span class="o">or</span>(<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Carol&#39;</span>})).<span class="nb">all</span>;
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="o">and</span>(<span class="n">User</span>.<span class="n">where</span>({<span class="n">verified</span> =&gt; <span class="nb">True</span>})).<span class="nb">all</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="merge">merge</h2>
-<p><code>merge(other_relation)</code> folds another relation's clauses into this one.
-Last-wins semantics: <code>other</code> takes precedence for <code>limit</code>, <code>offset</code>,
-<code>distinct</code>, and <code>readonly</code>. <code>where</code>, <code>order</code>, <code>joins</code>, and similar additive
-clauses are concatenated.</p>
+<h1 id="soft-deletes-discard">Soft deletes / discard</h1>
+<p><code>soft-deletes</code> turns destruction into a reversible flag. Instead of issuing a
+<code>DELETE</code>, a discarded record stamps a timestamp column and stays in the table,
+so it can be restored later.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$base</span>   = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>});
-<span class="k">my</span> <span class="nv">$sorted</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>);
-<span class="k">my</span> <span class="nv">@rows</span>   = <span class="nv">$base</span>.<span class="nb">merge</span>(<span class="nv">$sorted</span>).<span class="nb">all</span>;
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
 
-<span class="c1"># Override pagination from another relation</span>
-<span class="n">User</span>.<span class="n">limit</span>(<span class="mi">10</span>).<span class="nb">merge</span>(<span class="n">User</span>.<span class="n">limit</span>(<span class="mi">2</span>)).<span class="nb">all</span>;     <span class="c1"># uses LIMIT 2</span>
+<span class="k">class</span> <span class="n">Notice</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">soft-deletes</span>;
+  }
+}
 </code></pre></div></td></tr></table></div>
 
-<h2 id="rewhere">rewhere</h2>
-<p><code>rewhere(%conditions)</code> replaces any prior <code>where</code> conditions on the same
-columns. Useful when narrowing-then-broadening.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$q</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>, <span class="k">role</span> =&gt; <span class="s">&#39;admin&#39;</span>});
-<span class="nv">$q</span>.<span class="n">rewhere</span>({<span class="k">role</span> =&gt; <span class="s">&#39;superadmin&#39;</span>}).<span class="nb">all</span>;     <span class="c1"># active=True still, role swapped</span>
+<p>The column defaults to <code>deleted_at</code>. Pass <code>:column</code> to use another:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="n">soft-deletes</span>(:<span class="n">column</span><span class="s">&lt;discarded_at&gt;</span>);
 </code></pre></div></td></tr></table></div>
 
-<h2 id="unscope">unscope</h2>
-<p><code>unscope(:scope)</code> surgically removes a single relation dimension:</p>
+<p>The column must exist in the table and be nullable:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">unscope</span>(:<span class="n">where</span>).<span class="nb">all</span>;   <span class="c1"># drop all WHERE</span>
-<span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">order</span>).<span class="nb">all</span>;             <span class="c1"># drop ORDER BY</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">group</span>).<span class="nb">all</span>;             <span class="c1"># drop GROUP BY</span>
-<span class="n">User</span>.<span class="n">distinct</span>.<span class="n">unscope</span>(:<span class="n">distinct</span>).<span class="nb">all</span>;                <span class="c1"># drop DISTINCT</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="n">create-table:</span> <span class="s">&#39;notices&#39;</span>, [
+  <span class="nb">name</span>       =&gt; { :<span class="n">string</span>, <span class="n">limit</span> =&gt; <span class="mi">64</span> },
+  <span class="n">deleted_at</span> =&gt; { :<span class="n">datetime</span> },
+];
 </code></pre></div></td></tr></table></div>
 
-<p>You can also drop a single <code>where</code> condition by column:</p>
+<h2 id="discarding-and-restoring">Discarding and restoring</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>, <span class="k">role</span> =&gt; <span class="s">&#39;admin&#39;</span>})
-    .<span class="n">unscope</span>(<span class="n">where</span> =&gt; :<span class="n">role</span>)
-    .<span class="nb">all</span>;
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$notice</span> = <span class="n">Notice</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;sale&#39;</span>});
+
+<span class="nv">$notice</span>.<span class="n">discard</span>;        <span class="c1"># stamps deleted_at, returns True</span>
+<span class="nv">$notice</span>.<span class="n">is-discarded</span>;   <span class="c1"># True</span>
+<span class="nv">$notice</span>.<span class="n">is-kept</span>;        <span class="c1"># False</span>
+
+<span class="nv">$notice</span>.<span class="n">undiscard</span>;      <span class="c1"># clears deleted_at, returns True</span>
+<span class="nv">$notice</span>.<span class="n">is-kept</span>;        <span class="c1"># True</span>
 </code></pre></div></td></tr></table></div>
+
+<p><code>discard</code> returns <code>False</code> without touching the row when it is already
+discarded. <code>undiscard</code> returns <code>False</code> when the record is not discarded. The row
+is never removed, so <code>discard</code> and <code>undiscard</code> round-trip the same record.</p>
+<h2 id="scopes">Scopes</h2>
+<p>Three class scopes filter on the timestamp column:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Notice</span>.<span class="nb">kept</span>;            <span class="c1"># rows where the column IS NULL</span>
+<span class="n">Notice</span>.<span class="n">discarded</span>;       <span class="c1"># rows where the column IS NOT NULL</span>
+<span class="n">Notice</span>.<span class="n">with-discarded</span>;  <span class="c1"># every row, ignoring the default scope</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Each returns a relation, so the usual chaining applies
+(<code>Notice.kept.where(...).order(...)</code>).</p>
+<h2 id="bulk-operations">Bulk operations</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Notice</span>.<span class="n">discard-all</span>;     <span class="c1"># discards every kept row, returns the discarded records</span>
+<span class="n">Notice</span>.<span class="n">undiscard-all</span>;   <span class="c1"># restores every discarded row, returns the restored records</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Both run per-record, so discard callbacks fire for each row.</p>
+<h2 id="callbacks">Callbacks</h2>
+<p><code>before-discard</code>, <code>after-discard</code>, <code>before-undiscard</code>, and <code>after-undiscard</code>
+wrap the state change. A <code>before-discard</code> that returns <code>False</code> aborts the
+discard, leaving the record kept.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Notice</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">soft-deletes</span>;
+
+    <span class="nb">self</span>.<span class="o">before-</span><span class="n">discard:</span>  -&gt; { <span class="nb">self</span>.<span class="n">snapshot</span> };
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">discard:</span>   -&gt; { <span class="nb">self</span>.<span class="n">notify-archived</span> };
+    <span class="nb">self</span>.<span class="o">after-</span><span class="n">undiscard:</span> -&gt; { <span class="nb">self</span>.<span class="n">notify-restored</span> };
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<p>See <a href="../callbacks/">Callbacks</a> for the handler forms (block or method name) and
+the <code>:if</code> / <code>:unless</code> options, which apply here too.</p>
+<h2 id="default-scope">Default scope</h2>
+<p>By default the scopes are opt-in and the plain relation still returns every row.
+Pass <code>:default-scope</code> to hide discarded rows from the default relation:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Parcel</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">soft-deletes</span>(:<span class="n">column</span><span class="s">&lt;discarded_at&gt;</span>, :<span class="n">default-scope</span>);
+  }
+}
+
+<span class="n">Parcel</span>.<span class="nb">all</span>;             <span class="c1"># only kept rows</span>
+<span class="n">Parcel</span>.<span class="n">with-discarded</span>;  <span class="c1"># every row</span>
+<span class="n">Parcel</span>.<span class="n">discarded</span>;       <span class="c1"># only discarded rows</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>with-discarded</code> and <code>unscope(where =&gt; 'discarded_at')</code> lift the hidden filter
+when you need the full set. The default scope applies to relation queries
+(<code>all</code>, <code>where</code>, associations); a direct <code>find($id)</code> still locates a discarded
+row by primary key.</p>
 
 
 

@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../normalization/">
+        <link rel="prev" href="../migrations/">
       
       
-        <link rel="next" href="../callbacks/">
+        <link rel="next" href="../models/models/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Serialization - ORM::ActiveRecord</title>
+        <title>Generators - ORM::ActiveRecord</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
       
 
@@ -46,7 +46,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#identity-and-serialization" class="md-skip">
+        <a href="#generators" class="md-skip">
           Skip to content
         </a>
       
@@ -80,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Serialization
+              Generators
             
           </span>
         </div>
@@ -178,7 +178,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -196,7 +196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -223,7 +223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../adapters/" class="md-nav__link">
+      <a href="../adapters/" class="md-nav__link">
         
   
   
@@ -250,7 +250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../migrations/" class="md-nav__link">
+      <a href="../migrations/" class="md-nav__link">
         
   
   
@@ -274,10 +274,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../generators/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generators
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -293,6 +320,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#field-specs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field specs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ar-generate-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ar generate model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ar-generate-migration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ar generate migration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ar-generate-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ar generate scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ar-generate-validator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ar generate validator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ar-destroy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ar destroy
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -301,20 +414,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -335,7 +446,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -353,7 +464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../models/models/" class="md-nav__link">
         
   
   
@@ -381,7 +492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../finders/" class="md-nav__link">
+      <a href="../models/finders/" class="md-nav__link">
         
   
   
@@ -409,7 +520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../relations/" class="md-nav__link">
+      <a href="../models/relations/" class="md-nav__link">
         
   
   
@@ -437,7 +548,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+      <a href="../models/queries/" class="md-nav__link">
         
   
   
@@ -465,7 +576,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../joins/" class="md-nav__link">
+      <a href="../models/joins/" class="md-nav__link">
         
   
   
@@ -493,7 +604,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aggregation/" class="md-nav__link">
+      <a href="../models/aggregation/" class="md-nav__link">
         
   
   
@@ -521,7 +632,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../batching/" class="md-nav__link">
+      <a href="../models/batching/" class="md-nav__link">
         
   
   
@@ -549,7 +660,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../raw/" class="md-nav__link">
+      <a href="../models/raw/" class="md-nav__link">
         
   
   
@@ -577,7 +688,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inspection/" class="md-nav__link">
+      <a href="../models/inspection/" class="md-nav__link">
         
   
   
@@ -605,7 +716,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../models/persistence/" class="md-nav__link">
         
   
   
@@ -633,7 +744,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../models/types/" class="md-nav__link">
         
   
   
@@ -661,7 +772,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../enums/" class="md-nav__link">
+      <a href="../models/enums/" class="md-nav__link">
         
   
   
@@ -689,7 +800,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../normalization/" class="md-nav__link">
+      <a href="../models/normalization/" class="md-nav__link">
         
   
   
@@ -714,37 +825,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Serialization
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../models/serialization/" class="md-nav__link">
         
   
   
@@ -760,125 +844,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#to-param" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        to-param
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#to-key" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        to-key
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cache-key-cache-version-cache-key-with-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        cache-key, cache-version, cache-key-with-version
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#serializable-hash" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        serializable-hash
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#as-json" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        as-json
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#to-json" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        to-json
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#attribute-for-inspect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        attribute-for-inspect
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inspect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        inspect
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#filter-attribute" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        filter-attribute
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -891,7 +856,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callbacks/" class="md-nav__link">
+      <a href="../models/callbacks/" class="md-nav__link">
         
   
   
@@ -919,7 +884,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../discard/" class="md-nav__link">
+      <a href="../models/discard/" class="md-nav__link">
         
   
   
@@ -947,7 +912,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inheritance/" class="md-nav__link">
+      <a href="../models/inheritance/" class="md-nav__link">
         
   
   
@@ -975,7 +940,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../secure-tokens/" class="md-nav__link">
+      <a href="../models/secure-tokens/" class="md-nav__link">
         
   
   
@@ -1003,7 +968,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../encryption/" class="md-nav__link">
+      <a href="../models/encryption/" class="md-nav__link">
         
   
   
@@ -1031,7 +996,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../transactions/" class="md-nav__link">
+      <a href="../models/transactions/" class="md-nav__link">
         
   
   
@@ -1113,7 +1078,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/data/" class="md-nav__link">
+      <a href="../validations/data/" class="md-nav__link">
         
   
   
@@ -1141,7 +1106,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/conditionals/" class="md-nav__link">
+      <a href="../validations/conditionals/" class="md-nav__link">
         
   
   
@@ -1169,7 +1134,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/options/" class="md-nav__link">
+      <a href="../validations/options/" class="md-nav__link">
         
   
   
@@ -1197,7 +1162,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/i18n/" class="md-nav__link">
+      <a href="../validations/i18n/" class="md-nav__link">
         
   
   
@@ -1232,7 +1197,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../errors/" class="md-nav__link">
+      <a href="../errors/" class="md-nav__link">
         
   
   
@@ -1259,7 +1224,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../logging/" class="md-nav__link">
+      <a href="../logging/" class="md-nav__link">
         
   
   
@@ -1286,7 +1251,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../instrumentation/" class="md-nav__link">
+      <a href="../instrumentation/" class="md-nav__link">
         
   
   
@@ -1313,7 +1278,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tests/" class="md-nav__link">
+      <a href="../tests/" class="md-nav__link">
         
   
   
@@ -1360,10 +1325,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#to-param" class="md-nav__link">
+  <a href="#field-specs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        to-param
+        Field specs
       
     </span>
   </a>
@@ -1371,10 +1336,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#to-key" class="md-nav__link">
+  <a href="#ar-generate-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        to-key
+        ar generate model
       
     </span>
   </a>
@@ -1382,10 +1347,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cache-key-cache-version-cache-key-with-version" class="md-nav__link">
+  <a href="#ar-generate-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        cache-key, cache-version, cache-key-with-version
+        ar generate migration
       
     </span>
   </a>
@@ -1393,10 +1358,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#serializable-hash" class="md-nav__link">
+  <a href="#ar-generate-scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        serializable-hash
+        ar generate scope
       
     </span>
   </a>
@@ -1404,10 +1369,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#as-json" class="md-nav__link">
+  <a href="#ar-generate-validator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        as-json
+        ar generate validator
       
     </span>
   </a>
@@ -1415,43 +1380,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#to-json" class="md-nav__link">
+  <a href="#ar-destroy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        to-json
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#attribute-for-inspect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        attribute-for-inspect
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inspect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        inspect
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#filter-attribute" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        filter-attribute
+        ar destroy
       
     </span>
   </a>
@@ -1475,84 +1407,55 @@
 
 
 
-<h1 id="identity-and-serialization">Identity and serialization</h1>
-<p>A small family of methods that answer "how do I identify this record?" and
-"how do I turn it into a hash/string?" — used for URL helpers, cache keys,
-JSON APIs, and human-readable inspection.</p>
-<h2 id="to-param">to-param</h2>
-<p><code>to-param</code> returns the record's primary key as a <code>Str</code>, suitable for
-embedding in URLs. New (unsaved) records return an undefined <code>Str</code>.</p>
+<h1 id="generators">Generators</h1>
+<p><code>ar generate</code> scaffolds the files you would otherwise hand-write, and
+<code>ar destroy</code> removes what a matching <code>generate</code> produced. Both take a type
+(<code>model</code>, <code>migration</code>, <code>scope</code>, <code>validator</code>) followed by a name and optional
+field specs. <code>g</code> and <code>d</code> are short aliases.</p>
+<p>Generated files land under the current project:</p>
+<ul>
+<li>models in <code>app/models/</code></li>
+<li>validators in <code>app/validators/</code></li>
+<li>migrations in <code>db/migrate/</code>, with a timestamped filename so they sort and run
+  after the existing ones.</li>
+</ul>
+<h2 id="field-specs">Field specs</h2>
+<p>Fields are <code>name:type</code> tokens. The type defaults to <code>string</code> when omitted, and
+maps to a migration column adverb (<code>string</code>, <code>integer</code>, <code>bigint</code>, <code>boolean</code>,
+<code>decimal</code>, <code>datetime</code>, <code>text</code>, <code>uuid</code>, <code>json</code>, ...). Two extras:</p>
+<ul>
+<li><code>name:references</code> (or <code>belongs_to</code>) adds a reference column and, in a model, a
+  <code>belongs-to</code>.</li>
+<li>a trailing <code>:uniq</code> makes the column unique; a trailing <code>:index</code> adds an index.</li>
+</ul>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>title:string  price:decimal  author:references  email:string:uniq  slug:string:index
+</code></pre></div></td></tr></table></div>
+
+<h2 id="ar-generate-model">ar generate model</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar generate model Article title:string body:text author:references
+</code></pre></div></td></tr></table></div>
+
+<p>Writes <code>app/models/Article.rakumod</code>:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>});
-<span class="nv">$user</span>.<span class="n">to-param</span>;          <span class="c1"># &#39;42&#39;</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
 
-<span class="n">User</span>.<span class="nb">new</span>(:<span class="n">id</span>(<span class="mi">0</span>)).<span class="n">to-param</span>;
-<span class="c1"># undefined Str — record is not persisted yet</span>
+<span class="k">class</span> <span class="n">Article</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">author</span> =&gt; <span class="n">class-name</span> =&gt; <span class="s">&#39;Author&#39;</span>;
+  }
+}
+
+<span class="n">GLOBAL::</span><span class="s">&lt;Article&gt;</span> := <span class="n">Article</span>;
 </code></pre></div></td></tr></table></div>
 
-<h2 id="to-key">to-key</h2>
-<p><code>to-key</code> returns a list of values that identify the record — currently
-<code>[id]</code> for persisted records, <code>Nil</code> for new ones. The list shape mirrors
-Rails so future composite-key support can extend it without breaking
-callers.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">to-key</span>;            <span class="c1"># [42]</span>
-<span class="n">User</span>.<span class="nb">new</span>(:<span class="n">id</span>(<span class="mi">0</span>)).<span class="n">to-key</span>; <span class="c1"># Nil</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="cache-key-cache-version-cache-key-with-version">cache-key, cache-version, cache-key-with-version</h2>
-<p>These produce stable cache fingerprints <strong>for a single record</strong> (compare
-with the relation-level versions in <a href="../inspection/">Inspection helpers</a>).</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>cache-key                 →  &quot;users/42&quot;
-cache-version             →  &quot;2026-05-13T14:23:11Z&quot;   (record&#39;s updated_at)
-cache-key-with-version    →  &quot;users/42-2026-05-13T14:23:11Z&quot;
-</code></pre></div></td></tr></table></div>
-
-<p>For a new (unsaved) record, <code>cache-key</code> returns <code>"&lt;table&gt;/new"</code>. If the
-model has no <code>updated_at</code> column, <code>cache-version</code> is undefined and
-<code>cache-key-with-version</code> falls back to the bare <code>cache-key</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$key</span> = <span class="nv">$user</span>.<span class="n">cache-key-with-version</span>;
-
-<span class="c1"># Use it in your own cache store; the key rolls forward on every save:</span>
-<span class="nv">$cache</span>.<span class="nb">write</span>(<span class="nv">$key</span>, <span class="nv">$user</span>.<span class="n">serializable-hash</span>);
-</code></pre></div></td></tr></table></div>
-
-<p><code>Model.cache-key</code> (called on the class, not an instance) routes to
-<code>Model.all.cache-key</code> — the relation fingerprint. Instance-level keys require
-a defined record.</p>
-<h2 id="serializable-hash">serializable-hash</h2>
-<p>Returns a <code>Hash</code> of the record's attributes, ready for JSON / YAML / any
-other encoder. Options:</p>
-<table>
-<thead>
-<tr>
-<th>Option</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>:only</code></td>
-<td>Include only these attribute names</td>
-</tr>
-<tr>
-<td><code>:except</code></td>
-<td>Exclude these attribute names</td>
-</tr>
-<tr>
-<td><code>:methods</code></td>
-<td>Also call these methods and include the results</td>
-</tr>
-</tbody>
-</table>
+<p>and a create-table migration <code>db/migrate/&lt;timestamp&gt;-create-articles.raku</code>:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -1564,83 +1467,85 @@ other encoder. Options:</p>
 <span class="normal"> 9</span>
 <span class="normal">10</span>
 <span class="normal">11</span>
-<span class="normal">12</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">serializable-hash</span>;
-<span class="c1"># { id =&gt; 42, fname =&gt; &#39;Greg&#39;, lname =&gt; &#39;Donald&#39;,</span>
-<span class="c1">#   created_at =&gt; DateTime.new(...), updated_at =&gt; DateTime.new(...) }</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Schema::Migration</span>;
 
-<span class="nv">$user</span>.<span class="n">serializable-hash</span>(:<span class="n">only</span><span class="s">&lt;fname lname&gt;</span>);
-<span class="c1"># { fname =&gt; &#39;Greg&#39;, lname =&gt; &#39;Donald&#39; }</span>
+<span class="k">class</span> <span class="n">CreateArticles</span> <span class="k">is</span> <span class="n">Migration</span> {
+  <span class="k">method</span> <span class="n">up</span> {
+    <span class="nb">self</span>.<span class="n">create-table:</span> <span class="s">&#39;articles&#39;</span>, [
+      <span class="n">title</span>  =&gt; { :<span class="n">string</span> },
+      <span class="n">body</span>   =&gt; { :<span class="n">text</span> },
+      <span class="n">author</span> =&gt; { :<span class="n">reference</span> },
+    ];
+  }
 
-<span class="nv">$user</span>.<span class="n">serializable-hash</span>(:<span class="n">except</span><span class="s">&lt;created_at updated_at&gt;</span>);
-<span class="c1"># { id =&gt; 42, fname =&gt; &#39;Greg&#39;, lname =&gt; &#39;Donald&#39; }</span>
-
-<span class="nv">$user</span>.<span class="n">serializable-hash</span>(:<span class="n">only</span><span class="s">&lt;fname&gt;</span>, :<span class="n">methods</span><span class="s">&lt;fullname&gt;</span>);
-<span class="c1"># { fname =&gt; &#39;Greg&#39;, fullname =&gt; &#39;Greg Donald&#39; }</span>
+  <span class="k">method</span> <span class="n">down</span> {
+    <span class="nb">self</span>.<span class="n">drop-table:</span> <span class="s">&#39;articles&#39;</span>;
+  }
+}
 </code></pre></div></td></tr></table></div>
 
-<p><code>serializable-hash</code> does <strong>not</strong> apply <code>filter-attribute</code> redaction — it is
-the data-export hook and treats every attribute as visible. Use <code>:except</code>
-to drop sensitive fields when you build a payload.</p>
-<h2 id="as-json">as-json</h2>
-<p><code>as-json</code> is <code>serializable-hash</code> with one extra step: it walks the hash
-and stringifies <code>DateTime</code> / <code>Date</code> values so they survive JSON encoding.
-It accepts the same options as <code>serializable-hash</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">%payload</span> = <span class="nv">$user</span>.<span class="n">as-json</span>(:<span class="n">except</span><span class="s">&lt;password&gt;</span>);
-<span class="c1"># { id =&gt; 42, fname =&gt; &#39;Greg&#39;, updated_at =&gt; &#39;2026-05-13T14:23:11Z&#39;, ... }</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="to-json">to-json</h2>
-<p><code>to-json</code> is <code>as-json</code> piped through <code>JSON::Tiny::to-json</code>. Returns a JSON
-string.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">say</span> <span class="nv">$user</span>.<span class="n">to-json</span>(:<span class="n">only</span><span class="s">&lt;id fname lname&gt;</span>);
-<span class="c1"># &#39;{ &quot;id&quot; : 42, &quot;fname&quot; : &quot;Greg&quot;, &quot;lname&quot; : &quot;Donald&quot; }&#39;</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="attribute-for-inspect">attribute-for-inspect</h2>
-<p>Renders a single attribute the way <code>inspect</code> does — strings are quoted and
-truncated to 50 characters, dates are quoted as ISO strings, booleans as
-<code>True</code>/<code>False</code>, numbers bare. Filtered attributes show as <code>[FILTERED]</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">attribute-for-inspect</span>(<span class="s">&#39;fname&#39;</span>);     <span class="c1"># &#39;&quot;Greg&quot;&#39;</span>
-<span class="nv">$user</span>.<span class="n">attribute-for-inspect</span>(<span class="s">&#39;updated_at&#39;</span>); <span class="c1"># &#39;&quot;2026-05-13T14:23:11Z&quot;&#39;</span>
-<span class="nv">$user</span>.<span class="n">attribute-for-inspect</span>(<span class="s">&#39;password&#39;</span>);   <span class="c1"># &#39;[FILTERED]&#39;  (see below)</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="inspect">inspect</h2>
-<p><code>inspect</code> returns a single-line Rails-style summary of the record:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">inspect</span>;
-<span class="c1"># &#39;#&lt;User id: 42, fname: &quot;Greg&quot;, lname: &quot;Donald&quot;, active: True&gt;&#39;</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>gist</code> (the Raku stringification hook used by <code>say</code>) routes to <code>inspect</code>
-for defined instances, so <code>say $user;</code> prints the same shape.</p>
-<h2 id="filter-attribute">filter-attribute</h2>
-<p>Names of attributes that should be redacted in <code>inspect</code> /
-<code>attribute-for-inspect</code> output. Declare them in <code>BUILD</code>:</p>
+<p>The table name follows the ORM's own rule (the lower-cased class name plus <code>s</code>),
+so the model and its table always agree.</p>
+<h2 id="ar-generate-migration">ar generate migration</h2>
+<p>The migration body is inferred from the name:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">filter-attribute</span>(<span class="s">&#39;password&#39;</span>, <span class="s">&#39;ssn&#39;</span>);
-  }
-}
-
-<span class="nv">$user</span>.<span class="n">inspect</span>;
-<span class="c1"># &#39;#&lt;User id: 42, fname: &quot;Greg&quot;, password: [FILTERED], ssn: [FILTERED], ...&gt;&#39;</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>ar generate migration CreateProducts name:string price:decimal
+ar generate migration AddStockToProducts stock:integer
+ar generate migration RemovePriceFromProducts price:decimal
+ar generate migration BackfillProducts
 </code></pre></div></td></tr></table></div>
 
-<p>Filtering only affects inspection output. <code>serializable-hash</code>, <code>as-json</code>,
-and <code>to-json</code> continue to include the raw values — drop them explicitly
-with <code>:except</code> when you build a payload you do not want to leak.</p>
+<ul>
+<li><code>Create&lt;Things&gt;</code> builds a <code>create-table</code> with the fields and a <code>drop-table</code>
+  down.</li>
+<li><code>Add&lt;...&gt;To&lt;Table&gt;</code> adds the fields, and removes them on the way down.</li>
+<li><code>Remove&lt;...&gt;From&lt;Table&gt;</code> removes the fields, and restores them on the way
+  down.</li>
+<li>anything else gets an empty <code>up</code> / <code>down</code> stub to fill in.</li>
+</ul>
+<h2 id="ar-generate-scope">ar generate scope</h2>
+<p>Inserts a named scope into an existing model file:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar generate scope Article published published:True
+</code></pre></div></td></tr></table></div>
+
+<p>adds to <code>app/models/Article.rakumod</code>:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">scope:</span> <span class="s">&#39;published&#39;</span>, -&gt; { <span class="nb">self</span>.<span class="n">where</span>({ <span class="n">published</span> =&gt; <span class="nb">True</span> }) };
+    ...
+  }
+</code></pre></div></td></tr></table></div>
+
+<p>Field tokens become the <code>where</code> conditions. A numeric or <code>True</code> / <code>False</code> value
+is emitted bare; anything else is quoted.</p>
+<h2 id="ar-generate-validator">ar generate validator</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar generate validator NotEvil
+</code></pre></div></td></tr></table></div>
+
+<p>Writes <code>app/validators/NotEvilValidator.rakumod</code> with a <code>validate($record)</code>
+skeleton, ready to use with <code>self.validates-with(NotEvilValidator)</code>. <code>Validator</code>
+is appended to the name when it is not already there.</p>
+<h2 id="ar-destroy">ar destroy</h2>
+<p><code>ar destroy</code> is the inverse:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>ar destroy model Article          # remove the model and its create migration
+ar destroy migration AddStockToProducts
+ar destroy scope Article published
+ar destroy validator NotEvil
+</code></pre></div></td></tr></table></div>
+
+<p>Migrations are matched by the kebab-cased name regardless of their timestamp
+prefix, so <code>ar destroy migration CreateProducts</code> removes
+<code>&lt;timestamp&gt;-create-products.raku</code>.</p>
 
 
 
@@ -1690,10 +1595,10 @@ with <code>:except</code> when you build a payload you do not want to leak.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

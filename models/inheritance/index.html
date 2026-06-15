@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../relations/">
+        <link rel="prev" href="../discard/">
       
       
-        <link rel="next" href="../joins/">
+        <link rel="next" href="../secure-tokens/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Queries - ORM::ActiveRecord</title>
+        <title>Inheritance - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#queries" class="md-skip">
+        <a href="#single-table-inheritance" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Queries
+              Inheritance
             
           </span>
         </div>
@@ -434,37 +434,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Queries
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../queries/" class="md-nav__link">
         
   
   
@@ -480,125 +453,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#where-shorthands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where shorthands
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#wherenot" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where.not
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#json-jsonb-predicate-operators" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON / JSONB predicate operators
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#wheremissing-and-whereassociated" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where.missing and where.associated
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#excluding" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        excluding
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#or-and-and" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        or and and
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#merge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        merge
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rewhere" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        rewhere
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#unscope" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        unscope
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -944,10 +798,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../inheritance/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inheritance
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -963,6 +844,59 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setting-it-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setting it up
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-behaves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it behaves
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1360,10 +1294,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#where-shorthands" class="md-nav__link">
+  <a href="#setting-it-up" class="md-nav__link">
     <span class="md-ellipsis">
       
-        where shorthands
+        Setting it up
       
     </span>
   </a>
@@ -1371,10 +1305,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#wherenot" class="md-nav__link">
+  <a href="#how-it-behaves" class="md-nav__link">
     <span class="md-ellipsis">
       
-        where.not
+        How it behaves
       
     </span>
   </a>
@@ -1382,76 +1316,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#json-jsonb-predicate-operators" class="md-nav__link">
+  <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        JSON / JSONB predicate operators
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#wheremissing-and-whereassociated" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where.missing and where.associated
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#excluding" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        excluding
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#or-and-and" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        or and and
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#merge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        merge
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rewhere" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        rewhere
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#unscope" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        unscope
+        Configuration
       
     </span>
   </a>
@@ -1475,200 +1343,100 @@
 
 
 
-<h1 id="queries">Queries</h1>
-<p>This page covers the filtering and relation-modification vocabulary that
-builds on the basics in <a href="../relations/">Relations</a>. Everything here returns
-a new relation — the original is never mutated.</p>
-<h2 id="where-shorthands">where shorthands</h2>
-<p><code>where(%conditions)</code> accepts several value shapes:</p>
-<table>
-<thead>
-<tr>
-<th>Shape</th>
-<th>SQL emitted</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>where({col =&gt; $value})</code></td>
-<td><code>col = ?</code></td>
-</tr>
-<tr>
-<td><code>where({col =&gt; Nil})</code></td>
-<td><code>col IS NULL</code></td>
-</tr>
-<tr>
-<td><code>where({col =&gt; [a, b, c]})</code></td>
-<td><code>col IN (?, ?, ?)</code></td>
-</tr>
-<tr>
-<td><code>where({col =&gt; 1..10})</code></td>
-<td><code>col BETWEEN ? AND ?</code></td>
-</tr>
-<tr>
-<td><code>where({assoc =&gt; $instance})</code></td>
-<td><code>assoc_id = ?</code> (uses <code>$instance.id</code>)</td>
-</tr>
-</tbody>
-</table>
+<h1 id="single-table-inheritance">Single-table inheritance</h1>
+<p>Single-table inheritance (STI) stores a whole class hierarchy in one table. A
+base model owns the table; subclasses share it. A row's <code>type</code> column records
+which subclass it is, so reads come back as the right class and a subclass
+finder sees only its own rows.</p>
+<h2 id="setting-it-up">Setting it up</h2>
+<p>The base model maps to the table; subclasses inherit from it (and so inherit
+its <code>table-name</code>). The table needs a <code>type</code> column.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">age</span> =&gt; <span class="mi">18</span><span class="o">..</span><span class="mi">65</span>});
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">email</span> =&gt; <span class="nb">Nil</span>});
-<span class="n">User</span>.<span class="n">where</span>({<span class="nb">id</span> =&gt; [<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>]});
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">user</span> =&gt; <span class="nv">$alice</span>});            <span class="c1"># belongs_to :user</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Vehicle</span> <span class="k">is</span> <span class="n">Model</span> { <span class="k">method</span> <span class="n">table-name</span> { <span class="s">&#39;vehicles&#39;</span> } }
+<span class="k">class</span> <span class="n">Car</span>        <span class="k">is</span> <span class="n">Vehicle</span> { }
+<span class="k">class</span> <span class="n">Motorcycle</span> <span class="k">is</span> <span class="n">Vehicle</span> { }
+<span class="k">class</span> <span class="n">SportsCar</span>  <span class="k">is</span> <span class="n">Car</span>     { }
 </code></pre></div></td></tr></table></div>
 
-<h2 id="wherenot">where.not</h2>
-<p><code>where.not(%conditions)</code> adds a negated condition. <code>Nil</code>, ranges, and arrays
-work the same as the positive form.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Bob&#39;</span>}).<span class="nb">count</span>;
-<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">email</span> =&gt; <span class="nb">Nil</span>}).<span class="nb">all</span>;          <span class="c1"># IS NOT NULL</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">age</span> =&gt; <span class="mi">18</span><span class="o">..</span><span class="mi">65</span>}).<span class="nb">all</span>;         <span class="c1"># NOT BETWEEN</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="nb">id</span> =&gt; [<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>]}).<span class="nb">all</span>;       <span class="c1"># NOT IN (...)</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="json-jsonb-predicate-operators">JSON / JSONB predicate operators</h2>
-<p>For <a href="migrations.md#column-types"><code>:json</code> / <code>:jsonb</code> columns</a>, pass a
-<code>JsonPredicate</code> as the value to query inside the document. Import it with
-<code>use ORM::ActiveRecord::Relation::Query::Json;</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Path extraction (the -&gt;&gt; operator) compared as text — works on PostgreSQL,</span>
-<span class="c1"># MySQL, and SQLite:</span>
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="n">extract</span>(<span class="s">&#39;theme&#39;</span>).<span class="o">eq</span>(<span class="s">&#39;dark&#39;</span>) });
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="n">extract</span>(<span class="s">&#39;address&#39;</span>, <span class="s">&#39;city&#39;</span>).<span class="o">ne</span>(<span class="s">&#39;NYC&#39;</span>) });
-
-<span class="c1"># Containment — PostgreSQL @&gt;, MySQL JSON_CONTAINS (SQLite raises):</span>
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="nb">contains</span>({ <span class="n">theme</span> =&gt; <span class="s">&#39;dark&#39;</span> }) });
-
-<span class="c1"># Key existence — PostgreSQL jsonb_exists, MySQL JSON_CONTAINS_PATH (SQLite raises):</span>
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="n">has-key</span>(<span class="s">&#39;theme&#39;</span>) });
-</code></pre></div></td></tr></table></div>
-
-<p><code>extract(*@path)</code> walks a nested path and compares the extracted <strong>text</strong> with
-<code>.eq</code> / <code>.ne</code>. All three predicates also work under <code>where.not</code>, which negates
-the whole condition. Containment and key-existence need a <code>:jsonb</code> column on
-PostgreSQL.</p>
-<table>
-<thead>
-<tr>
-<th>Predicate</th>
-<th>PostgreSQL</th>
-<th>MySQL</th>
-<th>SQLite</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>extract(path).eq/.ne(v)</code></td>
-<td><code>col -&gt; .. -&gt;&gt; ..</code></td>
-<td><code>col -&gt;&gt; '$.path'</code></td>
-<td><code>col -&gt;&gt; '$.path'</code></td>
-</tr>
-<tr>
-<td><code>contains(data)</code></td>
-<td><code>col @&gt; ?::jsonb</code></td>
-<td><code>JSON_CONTAINS(col, ?)</code></td>
-<td>— (raises)</td>
-</tr>
-<tr>
-<td><code>has-key(key)</code></td>
-<td><code>jsonb_exists(col, ?)</code></td>
-<td><code>JSON_CONTAINS_PATH(col, 'one', ?)</code></td>
-<td>— (raises)</td>
-</tr>
-</tbody>
-</table>
-<h2 id="wheremissing-and-whereassociated">where.missing and where.associated</h2>
-<p>For relations through associations, <code>where.missing(:assoc)</code> finds records
-with no associated rows; <code>where.associated(:assoc)</code> finds those that have at
-least one. Both work over <code>belongs_to</code>, <code>has_many</code>, and <code>has_many :through</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>.<span class="n">missing</span>(:<span class="n">subscriptions</span>).<span class="nb">all</span>;       <span class="c1"># users with no subscription</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="n">associated</span>(:<span class="n">subscriptions</span>).<span class="nb">all</span>;    <span class="c1"># users with at least one</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="n">missing</span>(:<span class="n">magazines</span>).<span class="nb">all</span>;           <span class="c1"># honors :through</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>Model.associated(:assoc)</code> is a class-level shortcut for the common case.</p>
-<h2 id="excluding">excluding</h2>
-<p><code>excluding(*@records-or-ids)</code> removes specific rows from the result set,
-mirroring <code>WHERE id NOT IN (...)</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">excluding</span>(<span class="nv">$bob</span>).<span class="nb">all</span>;                          <span class="c1"># by instance</span>
-<span class="n">User</span>.<span class="n">excluding</span>(<span class="nv">$alice</span>, <span class="nv">$dave</span>).<span class="nb">all</span>;                 <span class="c1"># multiple</span>
-<span class="n">User</span>.<span class="n">excluding</span>(<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>).<span class="nb">all</span>;                       <span class="c1"># by id</span>
-</code></pre></div></td></tr></table></div>
-
-<p>It composes:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">lname</span> =&gt; <span class="s">&#39;Anderson&#39;</span>}).<span class="n">excluding</span>(<span class="nv">$alice</span>).<span class="nb">all</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="or-and-and">or and and</h2>
-<p><code>or(other_relation)</code> and <code>and(other_relation)</code> combine WHERE clauses across
-two relations. The result is a single SQL query with the conditions wrapped
-in the right boolean structure.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Alice&#39;</span>}).<span class="o">or</span>(<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Carol&#39;</span>})).<span class="nb">all</span>;
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="o">and</span>(<span class="n">User</span>.<span class="n">where</span>({<span class="n">verified</span> =&gt; <span class="nb">True</span>})).<span class="nb">all</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="merge">merge</h2>
-<p><code>merge(other_relation)</code> folds another relation's clauses into this one.
-Last-wins semantics: <code>other</code> takes precedence for <code>limit</code>, <code>offset</code>,
-<code>distinct</code>, and <code>readonly</code>. <code>where</code>, <code>order</code>, <code>joins</code>, and similar additive
-clauses are concatenated.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$base</span>   = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>});
-<span class="k">my</span> <span class="nv">$sorted</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>);
-<span class="k">my</span> <span class="nv">@rows</span>   = <span class="nv">$base</span>.<span class="nb">merge</span>(<span class="nv">$sorted</span>).<span class="nb">all</span>;
-
-<span class="c1"># Override pagination from another relation</span>
-<span class="n">User</span>.<span class="n">limit</span>(<span class="mi">10</span>).<span class="nb">merge</span>(<span class="n">User</span>.<span class="n">limit</span>(<span class="mi">2</span>)).<span class="nb">all</span>;     <span class="c1"># uses LIMIT 2</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># migration</span>
+<span class="nb">self</span>.<span class="n">create-table:</span> <span class="s">&#39;vehicles&#39;</span>, [
+  <span class="nb">type</span>   =&gt; { :<span class="n">string</span>, <span class="n">limit</span> =&gt; <span class="mi">32</span> },
+  <span class="nb">name</span>   =&gt; { :<span class="n">string</span>, <span class="n">limit</span> =&gt; <span class="mi">64</span> },
+  <span class="n">wheels</span> =&gt; { :<span class="n">integer</span>, <span class="k">default</span> =&gt; <span class="mi">0</span> },
+];
 </code></pre></div></td></tr></table></div>
 
-<h2 id="rewhere">rewhere</h2>
-<p><code>rewhere(%conditions)</code> replaces any prior <code>where</code> conditions on the same
-columns. Useful when narrowing-then-broadening.</p>
+<p>A plain <code>type</code> column does not by itself make a model STI: a model with no
+model superclass and no model subclasses is never treated as STI, so an
+ordinary <code>type</code> attribute keeps working.</p>
+<h2 id="how-it-behaves">How it behaves</h2>
+<p><strong>Writes</strong> populate the type column with the saving class:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Car</span>.<span class="n">create</span>({ <span class="nb">name</span> =&gt; <span class="s">&#39;Civic&#39;</span>, <span class="n">wheels</span> =&gt; <span class="mi">4</span> });   <span class="c1"># type = &#39;Car&#39;</span>
+</code></pre></div></td></tr></table></div>
+
+<p><strong>Reads</strong> dispatch each row to the class named by its type column:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Vehicle</span>.<span class="nb">all</span>.<span class="n">perform</span>;     <span class="c1"># a Car and a Motorcycle, each its own class</span>
+</code></pre></div></td></tr></table></div>
+
+<p><strong>Subclass finders</strong> scope to the subclass and its descendants; the base sees
+everything:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$q</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>, <span class="k">role</span> =&gt; <span class="s">&#39;admin&#39;</span>});
-<span class="nv">$q</span>.<span class="n">rewhere</span>({<span class="k">role</span> =&gt; <span class="s">&#39;superadmin&#39;</span>}).<span class="nb">all</span>;     <span class="c1"># active=True still, role swapped</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Car</span>.<span class="nb">all</span>.<span class="n">perform</span>;         <span class="c1"># Cars and SportsCars</span>
+<span class="n">Vehicle</span>.<span class="nb">all</span>.<span class="n">perform</span>;     <span class="c1"># every row</span>
 </code></pre></div></td></tr></table></div>
 
-<h2 id="unscope">unscope</h2>
-<p><code>unscope(:scope)</code> surgically removes a single relation dimension:</p>
+<p><code>becomes(Subclass)</code> re-casts an instance to another class in the hierarchy
+keeping the same record; <code>becomes-bang</code> also rewrites the type column.</p>
+<h2 id="configuration">Configuration</h2>
+<p>Configure a hierarchy by calling these class methods after the class
+definition. A setter takes a value; with no argument the method is a getter.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>inheritance-column('kind')</code></td>
+<td>Use a different column name (default <code>type</code>).</td>
+</tr>
+<tr>
+<td><code>abstract-class(True)</code></td>
+<td>Mark a class abstract: it owns no table and the first concrete class below it is the STI root.</td>
+</tr>
+<tr>
+<td><code>sti-name('automobile')</code></td>
+<td>Override the value stored for this class.</td>
+</tr>
+<tr>
+<td><code>store-full-sti-class(False)</code></td>
+<td>Store the short (namespace-stripped) class name.</td>
+</tr>
+</tbody>
+</table>
+<p><code>inheritance-column</code> and <code>store-full-sti-class</code> are inherited by subclasses;
+<code>abstract-class</code> and <code>sti-name</code> apply to the class they are set on.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">unscope</span>(:<span class="n">where</span>).<span class="nb">all</span>;   <span class="c1"># drop all WHERE</span>
-<span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">order</span>).<span class="nb">all</span>;             <span class="c1"># drop ORDER BY</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">group</span>).<span class="nb">all</span>;             <span class="c1"># drop GROUP BY</span>
-<span class="n">User</span>.<span class="n">distinct</span>.<span class="n">unscope</span>(:<span class="n">distinct</span>).<span class="nb">all</span>;                <span class="c1"># drop DISTINCT</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Account</span> <span class="k">is</span> <span class="n">Model</span> { <span class="k">method</span> <span class="n">table-name</span> { <span class="s">&#39;accounts&#39;</span> } }
+<span class="n">Account</span>.<span class="n">inheritance-column</span>(<span class="s">&#39;kind&#39;</span>);
+<span class="n">Account</span>.<span class="n">abstract-class</span>(<span class="nb">False</span>);
 </code></pre></div></td></tr></table></div>
 
-<p>You can also drop a single <code>where</code> condition by column:</p>
+<p><code>descends-from-active-record</code> is true for the STI root (and for abstract
+classes) and false for an STI subclass:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>, <span class="k">role</span> =&gt; <span class="s">&#39;admin&#39;</span>})
-    .<span class="n">unscope</span>(<span class="n">where</span> =&gt; :<span class="n">role</span>)
-    .<span class="nb">all</span>;
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Vehicle</span>.<span class="n">descends-from-active-record</span>;    <span class="c1"># True</span>
+<span class="n">Car</span>.<span class="n">descends-from-active-record</span>;        <span class="c1"># False</span>
 </code></pre></div></td></tr></table></div>
 
 

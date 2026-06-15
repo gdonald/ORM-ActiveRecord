@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../queries/">
+        <link rel="prev" href="../logging/">
       
       
-        <link rel="next" href="../aggregation/">
+        <link rel="next" href="../tests/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Joins - ORM::ActiveRecord</title>
+        <title>Instrumentation - ORM::ActiveRecord</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
       
 
@@ -46,7 +46,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#joins" class="md-skip">
+        <a href="#instrumentation" class="md-skip">
           Skip to content
         </a>
       
@@ -80,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Joins
+              Instrumentation
             
           </span>
         </div>
@@ -178,7 +178,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -196,7 +196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -223,7 +223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../adapters/" class="md-nav__link">
+      <a href="../adapters/" class="md-nav__link">
         
   
   
@@ -250,7 +250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../migrations/" class="md-nav__link">
+      <a href="../migrations/" class="md-nav__link">
         
   
   
@@ -277,7 +277,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../generators/" class="md-nav__link">
+      <a href="../generators/" class="md-nav__link">
         
   
   
@@ -301,20 +301,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -335,7 +333,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -353,7 +351,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../models/models/" class="md-nav__link">
         
   
   
@@ -381,7 +379,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../finders/" class="md-nav__link">
+      <a href="../models/finders/" class="md-nav__link">
         
   
   
@@ -409,7 +407,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../relations/" class="md-nav__link">
+      <a href="../models/relations/" class="md-nav__link">
         
   
   
@@ -437,7 +435,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+      <a href="../models/queries/" class="md-nav__link">
         
   
   
@@ -462,37 +460,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Joins
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../models/joins/" class="md-nav__link">
         
   
   
@@ -508,103 +479,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#by-association-name" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        By association name
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#nested-associations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Nested associations
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#raw-sql" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Raw SQL
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#left-outer-joins" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        left-outer-joins
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#filtering-on-a-joined-table" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Filtering on a joined table
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        references
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#distinct-under-joins" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        distinct under joins
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -617,7 +491,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aggregation/" class="md-nav__link">
+      <a href="../models/aggregation/" class="md-nav__link">
         
   
   
@@ -645,7 +519,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../batching/" class="md-nav__link">
+      <a href="../models/batching/" class="md-nav__link">
         
   
   
@@ -673,7 +547,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../raw/" class="md-nav__link">
+      <a href="../models/raw/" class="md-nav__link">
         
   
   
@@ -701,7 +575,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inspection/" class="md-nav__link">
+      <a href="../models/inspection/" class="md-nav__link">
         
   
   
@@ -729,7 +603,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../models/persistence/" class="md-nav__link">
         
   
   
@@ -757,7 +631,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../models/types/" class="md-nav__link">
         
   
   
@@ -785,7 +659,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../enums/" class="md-nav__link">
+      <a href="../models/enums/" class="md-nav__link">
         
   
   
@@ -813,7 +687,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../normalization/" class="md-nav__link">
+      <a href="../models/normalization/" class="md-nav__link">
         
   
   
@@ -841,7 +715,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../serialization/" class="md-nav__link">
+      <a href="../models/serialization/" class="md-nav__link">
         
   
   
@@ -869,7 +743,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callbacks/" class="md-nav__link">
+      <a href="../models/callbacks/" class="md-nav__link">
         
   
   
@@ -897,7 +771,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../discard/" class="md-nav__link">
+      <a href="../models/discard/" class="md-nav__link">
         
   
   
@@ -925,7 +799,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inheritance/" class="md-nav__link">
+      <a href="../models/inheritance/" class="md-nav__link">
         
   
   
@@ -953,7 +827,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../secure-tokens/" class="md-nav__link">
+      <a href="../models/secure-tokens/" class="md-nav__link">
         
   
   
@@ -981,7 +855,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../encryption/" class="md-nav__link">
+      <a href="../models/encryption/" class="md-nav__link">
         
   
   
@@ -1009,7 +883,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../transactions/" class="md-nav__link">
+      <a href="../models/transactions/" class="md-nav__link">
         
   
   
@@ -1091,7 +965,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/data/" class="md-nav__link">
+      <a href="../validations/data/" class="md-nav__link">
         
   
   
@@ -1119,7 +993,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/conditionals/" class="md-nav__link">
+      <a href="../validations/conditionals/" class="md-nav__link">
         
   
   
@@ -1147,7 +1021,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/options/" class="md-nav__link">
+      <a href="../validations/options/" class="md-nav__link">
         
   
   
@@ -1175,7 +1049,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/i18n/" class="md-nav__link">
+      <a href="../validations/i18n/" class="md-nav__link">
         
   
   
@@ -1210,7 +1084,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../errors/" class="md-nav__link">
+      <a href="../errors/" class="md-nav__link">
         
   
   
@@ -1237,7 +1111,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../logging/" class="md-nav__link">
+      <a href="../logging/" class="md-nav__link">
         
   
   
@@ -1261,10 +1135,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../instrumentation/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instrumentation
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1280,6 +1181,76 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#notifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Notifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Events
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging-queries-with-timing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging queries with timing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#query-log-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query-log tags
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1291,7 +1262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tests/" class="md-nav__link">
+      <a href="../tests/" class="md-nav__link">
         
   
   
@@ -1338,10 +1309,38 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#by-association-name" class="md-nav__link">
+  <a href="#notifications" class="md-nav__link">
     <span class="md-ellipsis">
       
-        By association name
+        Notifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Notifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Events
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging-queries-with-timing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging queries with timing
       
     </span>
   </a>
@@ -1349,65 +1348,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#nested-associations" class="md-nav__link">
+  <a href="#query-log-tags" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nested associations
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#raw-sql" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Raw SQL
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#left-outer-joins" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        left-outer-joins
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#filtering-on-a-joined-table" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Filtering on a joined table
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        references
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#distinct-under-joins" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        distinct under joins
+        Query-log tags
       
     </span>
   </a>
@@ -1431,79 +1375,113 @@
 
 
 
-<h1 id="joins">Joins</h1>
-<p><code>joins</code> and <code>left-outer-joins</code> add SQL <code>JOIN</code> clauses to a relation. They
-accept several forms:</p>
-<h2 id="by-association-name">By association name</h2>
-<p>Pass an association name (defined via <code>has-many</code> / <code>belongs-to</code>):</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Subscription</span>.<span class="n">joins</span>(<span class="s">&#39;user&#39;</span>).<span class="nb">count</span>;            <span class="c1"># belongs_to side</span>
-<span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>).<span class="nb">count</span>;            <span class="c1"># has_many side</span>
-<span class="n">User</span>.<span class="n">joins</span>(:<span class="n">magazines</span>).<span class="nb">count</span>;                <span class="c1"># has_many :through</span>
-</code></pre></div></td></tr></table></div>
-
-<p>The join condition (<code>subscriptions.user_id = users.id</code>, etc.) is derived from
-the association definition.</p>
-<h2 id="nested-associations">Nested associations</h2>
-<p>A nested-hash form follows multi-level associations:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>(:<span class="n">magazine</span>)).<span class="nb">count</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>This emits a join through <code>subscriptions</code> then <code>magazines</code>.</p>
-<h2 id="raw-sql">Raw SQL</h2>
-<p>For one-offs that don't map to an association, pass a literal join clause:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$raw</span> = <span class="s">&#39;INNER JOIN subscriptions ON subscriptions.user_id = users.id&#39;</span>;
-<span class="n">User</span>.<span class="n">joins</span>(<span class="nv">$raw</span>).<span class="nb">count</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="left-outer-joins">left-outer-joins</h2>
-<p><code>left-outer-joins</code> keeps rows from the base table even when no related row
-exists. Useful for "find users with or without subscriptions".</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">left-outer-joins</span>(:<span class="n">subscriptions</span>).<span class="nb">count</span>;            <span class="c1"># all users</span>
-<span class="n">User</span>.<span class="n">left-outer-joins</span>(:<span class="n">subscriptions</span>).<span class="n">distinct</span>.<span class="nb">count</span>;   <span class="c1"># all users, deduped</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="filtering-on-a-joined-table">Filtering on a joined table</h2>
-<p>Once you've joined, <code>where</code> accepts a nested hash to filter on the joined
-table's columns.</p>
+<h1 id="instrumentation">Instrumentation</h1>
+<p>ORM::ActiveRecord publishes events as it works: every query, every model load,
+and every transaction. Subscribe to those events to time queries, trace slow
+ones, or feed your own metrics. A built-in log subscriber and a query-log
+tagger are provided on top of the same mechanism.</p>
+<h2 id="notifications">Notifications</h2>
+<p><code>Notifications</code> is a small pub/sub. A subscriber registers a callback for a
+named event and receives the event's payload (a Hash):</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Subscription</span>.<span class="n">joins</span>(:<span class="n">user</span>).<span class="n">where</span>({<span class="n">users</span> =&gt; {<span class="n">fname</span> =&gt; <span class="s">&#39;Alice&#39;</span>}}).<span class="nb">all</span>;
-<span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>(:<span class="n">magazine</span>))
-    .<span class="n">where</span>({<span class="n">magazines</span> =&gt; {<span class="n">title</span> =&gt; <span class="s">&#39;Mad&#39;</span>}})
-    .<span class="n">distinct</span>
-    .<span class="nb">all</span>;
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Instrumentation::Notifications</span>;
+
+<span class="k">my</span> <span class="nv">$id</span> = <span class="n">Notifications</span>.<span class="n">subscribe</span>(<span class="s">&#39;sql.active_record&#39;</span>, -&gt; <span class="nv">%payload</span> {
+  <span class="nb">say</span> <span class="s">&quot;{%payload&lt;name&gt;} ran in {(%payload&lt;duration&gt; * 1000).round(0.1)}ms&quot;</span>;
+});
+
+<span class="c1"># later</span>
+<span class="n">Notifications</span>.<span class="n">unsubscribe</span>(<span class="nv">$id</span>);
 </code></pre></div></td></tr></table></div>
 
-<p>A bare column name in <code>where</code> after a join still resolves to the base table:</p>
+<p><code>instrument(event, payload, &amp;block)</code> runs a block, times it, and notifies
+subscribers with the elapsed seconds merged into the payload as <code>duration</code>. It
+returns the block's value, and still fires the event (with the error in the
+payload) when the block throws. <code>notify(event, payload)</code> fires an instantaneous
+event with no timing.</p>
+<h3 id="events">Events</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Payload keys</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sql.active_record</code></td>
+<td><code>sql</code>, <code>binds</code>, <code>cached</code>, <code>name</code>, <code>duration</code></td>
+</tr>
+<tr>
+<td><code>instantiation.active_record</code></td>
+<td><code>class-name</code>, <code>record-count</code></td>
+</tr>
+<tr>
+<td><code>start_transaction.active_record</code></td>
+<td><code>isolation</code></td>
+</tr>
+<tr>
+<td><code>transaction.active_record</code></td>
+<td><code>outcome</code> (<code>commit</code> / <code>rollback</code>), <code>duration</code></td>
+</tr>
+</tbody>
+</table>
+<p>A <code>sql.active_record</code> event fires for every executed query; a query served from
+the query cache fires one with <code>cached =&gt; True</code>. <code>instantiation.active_record</code>
+fires once per result set loaded into model objects.</p>
+<h2 id="logging-queries-with-timing">Logging queries with timing</h2>
+<p><code>LogSubscriber</code> attaches to <code>sql.active_record</code> and logs queries with their
+timing. By default it logs only slow queries; pass <code>:log-all</code> to log every one:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>).<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Alice&#39;</span>}).<span class="n">distinct</span>.<span class="nb">count</span>;
-<span class="c1"># WHERE users.fname = &#39;Alice&#39;</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Instrumentation::LogSubscriber</span>;
+
+<span class="n">LogSubscriber</span>.<span class="n">attach</span>(<span class="n">slow-threshold</span> =&gt; <span class="mf">0.5</span>);   <span class="c1"># log queries at or over 500ms</span>
+<span class="c1"># ...</span>
+<span class="n">LogSubscriber</span>.<span class="n">detach</span>;
 </code></pre></div></td></tr></table></div>
 
-<h2 id="references">references</h2>
-<p><code>references(*@table-names)</code> is a hint that named tables will be filtered or
-ordered against. It pre-declares the join targets without altering row counts
-itself, which matters when combining with eager loading (where the difference
-between <code>preload</code> and <code>eager_load</code> depends on whether you reference the
-joined table elsewhere).</p>
+<p><code>slow-threshold</code> is in seconds. A query whose duration reaches the threshold is
+logged as <code>SLOW (Nms) &lt;sql&gt;</code> at warning level. Setting <code>slow_query_threshold</code> in
+a connection block attaches the subscriber automatically.</p>
+<h2 id="query-log-tags">Query-log tags</h2>
+<p><code>QueryLogs</code> appends a SQL comment carrying contextual tags to each query, so a
+slow-query log or database tool can trace a statement back to the code that
+issued it. A tag value may be a literal or a <code>Callable</code> resolved when the
+comment is built, which is how request-scoped values are injected:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">references</span>(<span class="s">&#39;posts&#39;</span>).<span class="nb">count</span>;
-<span class="n">User</span>.<span class="n">references</span>(<span class="s">&#39;posts&#39;</span>, <span class="s">&#39;comments&#39;</span>);
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Instrumentation::QueryLogs</span>;
+
+<span class="n">QueryLogs</span>.<span class="n">enable</span>;
+<span class="n">QueryLogs</span>.<span class="n">set-tags</span>([
+  <span class="n">application</span> =&gt; <span class="s">&#39;storefront&#39;</span>,
+  <span class="n">controller</span>  =&gt; { <span class="vg">$*REQUEST</span>.<span class="n">controller</span> },   <span class="c1"># resolved per query</span>
+]);
+
+<span class="c1"># SELECT * FROM orders /*application:storefront,controller:checkout*/</span>
 </code></pre></div></td></tr></table></div>
 
-<h2 id="distinct-under-joins">distinct under joins</h2>
-<p>A <code>joins</code> on a <code>has_many</code> returns one row per join row, so deduping with
-<code>distinct</code> is common when counting base records.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>).<span class="nb">count</span>;             <span class="c1"># = total subscription count</span>
-<span class="n">User</span>.<span class="n">joins</span>(:<span class="n">subscriptions</span>).<span class="n">distinct</span>.<span class="nb">count</span>;    <span class="c1"># = users with &gt;= 1 subscription</span>
-</code></pre></div></td></tr></table></div>
+<p><code>add-tag(name, value)</code> appends a single tag, <code>clear-tags</code> empties them, and
+<code>disable</code> turns tagging off. Setting <code>query_log_tags</code> in a connection block
+enables tagging; a JSON object value is loaded as static tags.</p>
+<p>The comment is appended only to the SQL sent to the driver. The query cache
+still keys on the untagged SQL, so tags do not cause cache misses. A <code>*/</code> in a
+tag value is stripped so it cannot terminate the comment early.</p>
 
 
 
@@ -1553,10 +1531,10 @@ joined table elsewhere).</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

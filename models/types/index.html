@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../relations/">
+        <link rel="prev" href="../persistence/">
       
       
-        <link rel="next" href="../joins/">
+        <link rel="next" href="../enums/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Queries - ORM::ActiveRecord</title>
+        <title>Attribute types - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#queries" class="md-skip">
+        <a href="#attribute-types" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Queries
+              Attribute types
             
           </span>
         </div>
@@ -434,37 +434,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Queries
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../queries/" class="md-nav__link">
         
   
   
@@ -480,125 +453,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#where-shorthands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where shorthands
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#wherenot" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where.not
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#json-jsonb-predicate-operators" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON / JSONB predicate operators
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#wheremissing-and-whereassociated" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        where.missing and where.associated
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#excluding" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        excluding
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#or-and-and" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        or and and
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#merge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        merge
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rewhere" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        rewhere
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#unscope" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        unscope
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -776,10 +630,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attribute types
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -795,6 +676,103 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#custom-attribute-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom attribute types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serialized-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serialized columns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#store-accessors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Store accessors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaults" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defaults
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overriding-a-columns-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overriding a column's type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#virtual-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Virtual attributes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-type-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The type registry
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1360,10 +1338,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#where-shorthands" class="md-nav__link">
+  <a href="#custom-attribute-types" class="md-nav__link">
     <span class="md-ellipsis">
       
-        where shorthands
+        Custom attribute types
       
     </span>
   </a>
@@ -1371,10 +1349,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#wherenot" class="md-nav__link">
+  <a href="#serialized-columns" class="md-nav__link">
     <span class="md-ellipsis">
       
-        where.not
+        Serialized columns
       
     </span>
   </a>
@@ -1382,10 +1360,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#json-jsonb-predicate-operators" class="md-nav__link">
+  <a href="#store-accessors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        JSON / JSONB predicate operators
+        Store accessors
       
     </span>
   </a>
@@ -1393,10 +1371,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#wheremissing-and-whereassociated" class="md-nav__link">
+  <a href="#defaults" class="md-nav__link">
     <span class="md-ellipsis">
       
-        where.missing and where.associated
+        Defaults
       
     </span>
   </a>
@@ -1404,10 +1382,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#excluding" class="md-nav__link">
+  <a href="#overriding-a-columns-type" class="md-nav__link">
     <span class="md-ellipsis">
       
-        excluding
+        Overriding a column's type
       
     </span>
   </a>
@@ -1415,10 +1393,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#or-and-and" class="md-nav__link">
+  <a href="#virtual-attributes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        or and and
+        Virtual attributes
       
     </span>
   </a>
@@ -1426,32 +1404,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#merge" class="md-nav__link">
+  <a href="#the-type-registry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        merge
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rewhere" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        rewhere
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#unscope" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        unscope
+        The type registry
       
     </span>
   </a>
@@ -1475,67 +1431,40 @@
 
 
 
-<h1 id="queries">Queries</h1>
-<p>This page covers the filtering and relation-modification vocabulary that
-builds on the basics in <a href="../relations/">Relations</a>. Everything here returns
-a new relation — the original is never mutated.</p>
-<h2 id="where-shorthands">where shorthands</h2>
-<p><code>where(%conditions)</code> accepts several value shapes:</p>
+<h1 id="attribute-types">Attribute types</h1>
+<p>On top of the adapter's column-type coercion, models can declare a per-attribute
+<strong>type</strong> — a small casting layer that converts values at three points:</p>
 <table>
 <thead>
 <tr>
-<th>Shape</th>
-<th>SQL emitted</th>
+<th>Hook</th>
+<th>Direction</th>
+<th>When</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>where({col =&gt; $value})</code></td>
-<td><code>col = ?</code></td>
+<td><code>cast</code></td>
+<td>user input → Raku</td>
+<td><code>build</code> / <code>assign-attributes</code></td>
 </tr>
 <tr>
-<td><code>where({col =&gt; Nil})</code></td>
-<td><code>col IS NULL</code></td>
+<td><code>deserialize</code></td>
+<td>DB value → Raku</td>
+<td>reading a record from the DB</td>
 </tr>
 <tr>
-<td><code>where({col =&gt; [a, b, c]})</code></td>
-<td><code>col IN (?, ?, ?)</code></td>
-</tr>
-<tr>
-<td><code>where({col =&gt; 1..10})</code></td>
-<td><code>col BETWEEN ? AND ?</code></td>
-</tr>
-<tr>
-<td><code>where({assoc =&gt; $instance})</code></td>
-<td><code>assoc_id = ?</code> (uses <code>$instance.id</code>)</td>
+<td><code>serialize</code></td>
+<td>Raku → DB value</td>
+<td>saving a record</td>
 </tr>
 </tbody>
 </table>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">age</span> =&gt; <span class="mi">18</span><span class="o">..</span><span class="mi">65</span>});
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">email</span> =&gt; <span class="nb">Nil</span>});
-<span class="n">User</span>.<span class="n">where</span>({<span class="nb">id</span> =&gt; [<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>]});
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">user</span> =&gt; <span class="nv">$alice</span>});            <span class="c1"># belongs_to :user</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="wherenot">where.not</h2>
-<p><code>where.not(%conditions)</code> adds a negated condition. <code>Nil</code>, ranges, and arrays
-work the same as the positive form.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Bob&#39;</span>}).<span class="nb">count</span>;
-<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">email</span> =&gt; <span class="nb">Nil</span>}).<span class="nb">all</span>;          <span class="c1"># IS NOT NULL</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">age</span> =&gt; <span class="mi">18</span><span class="o">..</span><span class="mi">65</span>}).<span class="nb">all</span>;         <span class="c1"># NOT BETWEEN</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="nb">id</span> =&gt; [<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>]}).<span class="nb">all</span>;       <span class="c1"># NOT IN (...)</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="json-jsonb-predicate-operators">JSON / JSONB predicate operators</h2>
-<p>For <a href="migrations.md#column-types"><code>:json</code> / <code>:jsonb</code> columns</a>, pass a
-<code>JsonPredicate</code> as the value to query inside the document. Import it with
-<code>use ORM::ActiveRecord::Relation::Query::Json;</code>.</p>
+<p>Declare types in the model's <code>submethod BUILD</code>, alongside associations and
+scopes. Import the type system with <code>use ORM::ActiveRecord::Type;</code>.</p>
+<h2 id="custom-attribute-types">Custom attribute types</h2>
+<p>A type is any object that does the <code>AttributeType</code> role. Override the hooks you
+need (each defaults to identity; <code>deserialize</code> defaults to <code>cast</code>):</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -1545,130 +1474,169 @@ work the same as the positive form.</p>
 <span class="normal"> 7</span>
 <span class="normal"> 8</span>
 <span class="normal"> 9</span>
-<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Path extraction (the -&gt;&gt; operator) compared as text — works on PostgreSQL,</span>
-<span class="c1"># MySQL, and SQLite:</span>
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="n">extract</span>(<span class="s">&#39;theme&#39;</span>).<span class="o">eq</span>(<span class="s">&#39;dark&#39;</span>) });
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="n">extract</span>(<span class="s">&#39;address&#39;</span>, <span class="s">&#39;city&#39;</span>).<span class="o">ne</span>(<span class="s">&#39;NYC&#39;</span>) });
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Type</span>;
 
-<span class="c1"># Containment — PostgreSQL @&gt;, MySQL JSON_CONTAINS (SQLite raises):</span>
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="nb">contains</span>({ <span class="n">theme</span> =&gt; <span class="s">&#39;dark&#39;</span> }) });
+<span class="c1"># A Raku list &lt;-&gt; comma-separated text column.</span>
+<span class="k">class</span> <span class="n">CsvType</span> <span class="k">does</span> <span class="n">AttributeType</span> {
+  <span class="k">method</span> <span class="n">cast</span>(<span class="nv">$v</span>)        { <span class="nv">$v</span> ~~ <span class="nb">Positional</span> ?? <span class="nv">$v</span>.<span class="n">list</span> !! (<span class="nv">$v</span> // <span class="s">&#39;&#39;</span>).<span class="nb">split</span>(<span class="s">&#39;,&#39;</span>).<span class="n">list</span> }
+  <span class="k">method</span> <span class="n">deserialize</span>(<span class="nv">$v</span>) { (<span class="nv">$v</span> // <span class="s">&#39;&#39;</span>).<span class="nb">split</span>(<span class="s">&#39;,&#39;</span>).<span class="n">list</span> }
+  <span class="k">method</span> <span class="n">serialize</span>(<span class="nv">$v</span>)   { <span class="nv">$v</span> ~~ <span class="nb">Positional</span> ?? <span class="nv">$v</span>.<span class="nb">join</span>(<span class="s">&#39;,&#39;</span>) !! <span class="nv">$v</span> }
+}
 
-<span class="c1"># Key existence — PostgreSQL jsonb_exists, MySQL JSON_CONTAINS_PATH (SQLite raises):</span>
-<span class="n">User</span>.<span class="n">where</span>({ <span class="n">prefs</span> =&gt; <span class="n">JsonPredicate</span>.<span class="n">has-key</span>(<span class="s">&#39;theme&#39;</span>) });
+<span class="k">class</span> <span class="n">Post</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">attribute</span>(<span class="s">&#39;tags&#39;</span>, <span class="n">CsvType</span>.<span class="nb">new</span>);     <span class="c1"># `tags` is a text column</span>
+  }
+}
+
+<span class="k">my</span> <span class="nv">$p</span> = <span class="n">Post</span>.<span class="n">create</span>({ <span class="n">tags</span> =&gt; <span class="s">&lt;ruby raku perl&gt;</span> });
+<span class="n">Post</span>.<span class="n">find</span>(<span class="nv">$p</span>.<span class="nb">id</span>).<span class="n">tags</span>;       <span class="c1"># (&#39;ruby&#39;, &#39;raku&#39;, &#39;perl&#39;)</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>extract(*@path)</code> walks a nested path and compares the extracted <strong>text</strong> with
-<code>.eq</code> / <code>.ne</code>. All three predicates also work under <code>where.not</code>, which negates
-the whole condition. Containment and key-existence need a <code>:jsonb</code> column on
-PostgreSQL.</p>
-<table>
-<thead>
-<tr>
-<th>Predicate</th>
-<th>PostgreSQL</th>
-<th>MySQL</th>
-<th>SQLite</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>extract(path).eq/.ne(v)</code></td>
-<td><code>col -&gt; .. -&gt;&gt; ..</code></td>
-<td><code>col -&gt;&gt; '$.path'</code></td>
-<td><code>col -&gt;&gt; '$.path'</code></td>
-</tr>
-<tr>
-<td><code>contains(data)</code></td>
-<td><code>col @&gt; ?::jsonb</code></td>
-<td><code>JSON_CONTAINS(col, ?)</code></td>
-<td>— (raises)</td>
-</tr>
-<tr>
-<td><code>has-key(key)</code></td>
-<td><code>jsonb_exists(col, ?)</code></td>
-<td><code>JSON_CONTAINS_PATH(col, 'one', ?)</code></td>
-<td>— (raises)</td>
-</tr>
-</tbody>
-</table>
-<h2 id="wheremissing-and-whereassociated">where.missing and where.associated</h2>
-<p>For relations through associations, <code>where.missing(:assoc)</code> finds records
-with no associated rows; <code>where.associated(:assoc)</code> finds those that have at
-least one. Both work over <code>belongs_to</code>, <code>has_many</code>, and <code>has_many :through</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>.<span class="n">missing</span>(:<span class="n">subscriptions</span>).<span class="nb">all</span>;       <span class="c1"># users with no subscription</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="n">associated</span>(:<span class="n">subscriptions</span>).<span class="nb">all</span>;    <span class="c1"># users with at least one</span>
-<span class="n">User</span>.<span class="n">where</span>.<span class="n">missing</span>(:<span class="n">magazines</span>).<span class="nb">all</span>;           <span class="c1"># honors :through</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>Model.associated(:assoc)</code> is a class-level shortcut for the common case.</p>
-<h2 id="excluding">excluding</h2>
-<p><code>excluding(*@records-or-ids)</code> removes specific rows from the result set,
-mirroring <code>WHERE id NOT IN (...)</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">excluding</span>(<span class="nv">$bob</span>).<span class="nb">all</span>;                          <span class="c1"># by instance</span>
-<span class="n">User</span>.<span class="n">excluding</span>(<span class="nv">$alice</span>, <span class="nv">$dave</span>).<span class="nb">all</span>;                 <span class="c1"># multiple</span>
-<span class="n">User</span>.<span class="n">excluding</span>(<span class="mi">1</span>, <span class="mi">2</span>, <span class="mi">3</span>).<span class="nb">all</span>;                       <span class="c1"># by id</span>
-</code></pre></div></td></tr></table></div>
-
-<p>It composes:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">lname</span> =&gt; <span class="s">&#39;Anderson&#39;</span>}).<span class="n">excluding</span>(<span class="nv">$alice</span>).<span class="nb">all</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="or-and-and">or and and</h2>
-<p><code>or(other_relation)</code> and <code>and(other_relation)</code> combine WHERE clauses across
-two relations. The result is a single SQL query with the conditions wrapped
-in the right boolean structure.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Alice&#39;</span>}).<span class="o">or</span>(<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Carol&#39;</span>})).<span class="nb">all</span>;
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="o">and</span>(<span class="n">User</span>.<span class="n">where</span>({<span class="n">verified</span> =&gt; <span class="nb">True</span>})).<span class="nb">all</span>;
-</code></pre></div></td></tr></table></div>
-
-<h2 id="merge">merge</h2>
-<p><code>merge(other_relation)</code> folds another relation's clauses into this one.
-Last-wins semantics: <code>other</code> takes precedence for <code>limit</code>, <code>offset</code>,
-<code>distinct</code>, and <code>readonly</code>. <code>where</code>, <code>order</code>, <code>joins</code>, and similar additive
-clauses are concatenated.</p>
+<h2 id="serialized-columns">Serialized columns</h2>
+<p><code>serialize</code> stores a structured Raku value in a text column through a <em>coder</em>.
+<code>JsonCoder</code> is built in; any object with <code>.dump</code> / <code>.load</code> works as a custom
+coder:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$base</span>   = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>});
-<span class="k">my</span> <span class="nv">$sorted</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>);
-<span class="k">my</span> <span class="nv">@rows</span>   = <span class="nv">$base</span>.<span class="nb">merge</span>(<span class="nv">$sorted</span>).<span class="nb">all</span>;
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">serialize</span>(<span class="s">&#39;prefs&#39;</span>, <span class="n">JsonCoder</span>.<span class="nb">new</span>);   <span class="c1"># `prefs` is a text column</span>
+  }
+}
 
-<span class="c1"># Override pagination from another relation</span>
-<span class="n">User</span>.<span class="n">limit</span>(<span class="mi">10</span>).<span class="nb">merge</span>(<span class="n">User</span>.<span class="n">limit</span>(<span class="mi">2</span>)).<span class="nb">all</span>;     <span class="c1"># uses LIMIT 2</span>
+<span class="k">my</span> <span class="nv">$u</span> = <span class="n">User</span>.<span class="n">create</span>({ <span class="n">prefs</span> =&gt; { <span class="n">theme</span> =&gt; <span class="s">&#39;dark&#39;</span>, <span class="n">density</span> =&gt; <span class="s">&#39;compact&#39;</span> } });
+<span class="n">User</span>.<span class="n">find</span>(<span class="nv">$u</span>.<span class="nb">id</span>).<span class="n">prefs</span><span class="s">&lt;theme&gt;</span>;     <span class="c1"># &#39;dark&#39;</span>
 </code></pre></div></td></tr></table></div>
 
-<h2 id="rewhere">rewhere</h2>
-<p><code>rewhere(%conditions)</code> replaces any prior <code>where</code> conditions on the same
-columns. Useful when narrowing-then-broadening.</p>
+<p><code>YamlCoder</code> stores the value as YAML; import it from
+<code>ORM::ActiveRecord::Type::Yaml</code>:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$q</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>, <span class="k">role</span> =&gt; <span class="s">&#39;admin&#39;</span>});
-<span class="nv">$q</span>.<span class="n">rewhere</span>({<span class="k">role</span> =&gt; <span class="s">&#39;superadmin&#39;</span>}).<span class="nb">all</span>;     <span class="c1"># active=True still, role swapped</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Type::Yaml</span>;
+
+<span class="nb">self</span>.<span class="n">serialize</span>(<span class="s">&#39;prefs&#39;</span>, <span class="n">YamlCoder</span>.<span class="nb">new</span>);
 </code></pre></div></td></tr></table></div>
 
-<h2 id="unscope">unscope</h2>
-<p><code>unscope(:scope)</code> surgically removes a single relation dimension:</p>
+<p>A custom coder is any object with <code>.dump($value)</code> (Raku → string) and
+<code>.load($string)</code> (string → Raku):</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">unscope</span>(:<span class="n">where</span>).<span class="nb">all</span>;   <span class="c1"># drop all WHERE</span>
-<span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">order</span>).<span class="nb">all</span>;             <span class="c1"># drop ORDER BY</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">group</span>).<span class="nb">all</span>;             <span class="c1"># drop GROUP BY</span>
-<span class="n">User</span>.<span class="n">distinct</span>.<span class="n">unscope</span>(:<span class="n">distinct</span>).<span class="nb">all</span>;                <span class="c1"># drop DISTINCT</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">PipeCoder</span> {
+  <span class="k">method</span> <span class="n">dump</span>(<span class="nv">$v</span>) { <span class="nv">$v</span> ~~ <span class="nb">Positional</span> ?? <span class="nv">$v</span>.<span class="nb">join</span>(<span class="s">&#39;|&#39;</span>) !! <span class="nv">$v</span> }
+  <span class="k">method</span> <span class="n">load</span>(<span class="nv">$s</span>) { (<span class="nv">$s</span> // <span class="s">&#39;&#39;</span>).<span class="nb">split</span>(<span class="s">&#39;|&#39;</span>).<span class="n">list</span> }
+}
+
+<span class="nb">self</span>.<span class="n">serialize</span>(<span class="s">&#39;tags&#39;</span>, <span class="n">PipeCoder</span>.<span class="nb">new</span>);
 </code></pre></div></td></tr></table></div>
 
-<p>You can also drop a single <code>where</code> condition by column:</p>
+<h2 id="store-accessors">Store accessors</h2>
+<p><code>store</code> serializes a column and exposes named accessors that read and write
+keys inside the stored hash. It defaults to <code>JsonCoder</code>; pass <code>coder</code> for
+another:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Account</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">store</span>(<span class="s">&#39;prefs&#39;</span>, <span class="n">accessors</span> =&gt; [<span class="s">&#39;theme&#39;</span>, <span class="s">&#39;locale&#39;</span>]);
+  }
+}
+
+<span class="k">my</span> <span class="nv">$a</span> = <span class="n">Account</span>.<span class="n">create</span>({ <span class="n">prefs</span> =&gt; { <span class="n">theme</span> =&gt; <span class="s">&#39;dark&#39;</span>, <span class="n">locale</span> =&gt; <span class="s">&#39;en&#39;</span> } });
+<span class="nv">$a</span>.<span class="n">theme</span>;            <span class="c1"># &#39;dark&#39;</span>
+<span class="nv">$a</span>.<span class="n">theme</span> = <span class="s">&#39;light&#39;</span>;  <span class="c1"># writes prefs&lt;theme&gt;</span>
+<span class="nv">$a</span>.<span class="n">save</span>;
+</code></pre></div></td></tr></table></div>
+
+<p><code>store-accessor</code> adds accessors to an already-serialized column after the fact:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="n">serialize</span>(<span class="s">&#39;settings&#39;</span>, <span class="n">YamlCoder</span>.<span class="nb">new</span>);
+<span class="nb">self</span>.<span class="n">store-accessor</span>(<span class="s">&#39;settings&#39;</span>, <span class="s">&#39;sound&#39;</span>);
+</code></pre></div></td></tr></table></div>
+
+<h2 id="defaults">Defaults</h2>
+<p><code>attribute</code> takes a <code>default</code> — a plain value or a block evaluated per new
+record. The default applies only when the attribute is not supplied:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>, <span class="k">role</span> =&gt; <span class="s">&#39;admin&#39;</span>})
-    .<span class="n">unscope</span>(<span class="n">where</span> =&gt; :<span class="n">role</span>)
-    .<span class="nb">all</span>;
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Widget</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">attribute</span>(<span class="s">&#39;level&#39;</span>, :<span class="n">default</span>(<span class="mi">5</span>));
+    <span class="nb">self</span>.<span class="n">attribute</span>(<span class="s">&#39;token&#39;</span>, :<span class="n">default</span>(-&gt; { <span class="n">SecureToken</span>.<span class="n">generate</span> }));
+  }
+}
+
+<span class="n">Widget</span>.<span class="n">build</span>({}).<span class="nb">level</span>;            <span class="c1"># 5</span>
+<span class="n">Widget</span>.<span class="n">build</span>({ <span class="nb">level</span> =&gt; <span class="mi">9</span> }).<span class="nb">level</span> <span class="c1"># 9 — supplied value wins</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="overriding-a-columns-type">Overriding a column's type</h2>
+<p>When the attribute name matches a column, the declared type replaces the
+adapter's default coercion for that column (the <code>CsvType</code> example above
+overrides a text column). Everything else about the column is unchanged.</p>
+<h2 id="virtual-attributes">Virtual attributes</h2>
+<p>An attribute whose name matches no column is <strong>virtual</strong>: it is read, written,
+typed, and defaulted like any other attribute, but it is left out of every
+<code>INSERT</code> and <code>UPDATE</code>. Use it for derived or transient state.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Widget</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">attribute</span>(<span class="s">&#39;score&#39;</span>, <span class="s">&#39;integer&#39;</span>, :<span class="n">default</span>(<span class="mi">10</span>));   <span class="c1"># no `score` column</span>
+  }
+}
+
+<span class="k">my</span> <span class="nv">$w</span> = <span class="n">Widget</span>.<span class="n">create</span>({ <span class="nb">name</span> =&gt; <span class="s">&#39;a&#39;</span>, <span class="n">score</span> =&gt; <span class="mi">99</span> });
+<span class="nv">$w</span>.<span class="n">score</span>;                       <span class="c1"># 99 (in memory, cast to Int)</span>
+<span class="n">Widget</span>.<span class="n">find</span>(<span class="nv">$w</span>.<span class="nb">id</span>).<span class="n">score</span>;       <span class="c1"># 10 — not persisted, so it falls back to the default</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="the-type-registry">The type registry</h2>
+<p>Built-in types are registered under names (<code>integer</code>, <code>string</code>, <code>boolean</code>,
+<code>float</code>, <code>decimal</code>, <code>datetime</code>). Register your own and reference it by name:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Type</span>.<span class="n">register</span>(<span class="s">&#39;csv&#39;</span>, <span class="n">CsvType</span>.<span class="nb">new</span>);
+<span class="n">Type</span>.<span class="nb">lookup</span>(<span class="s">&#39;csv&#39;</span>);                <span class="c1"># the CsvType instance</span>
+<span class="n">Type</span>.<span class="n">is-registered</span>(<span class="s">&#39;integer&#39;</span>);     <span class="c1"># True</span>
+
+<span class="nb">self</span>.<span class="n">attribute</span>(<span class="s">&#39;tags&#39;</span>, <span class="s">&#39;csv&#39;</span>);     <span class="c1"># resolve a registered type by name</span>
 </code></pre></div></td></tr></table></div>
 
 
