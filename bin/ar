@@ -4,6 +4,7 @@ use v6.d;
 BEGIN %*ENV<ORM_LOG_FILE> //= 'log/error.log' if 'log'.IO.d;
 use ORM::ActiveRecord::Schema::Migrate;
 use ORM::ActiveRecord::Schema::WorkerDbs;
+use ORM::ActiveRecord::Schema::Generator;
 use ORM::ActiveRecord::Support::Version;
 
 # Subcommands:
@@ -37,6 +38,8 @@ sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
   }
 
   given @cmd[0] // 'migrate' {
+    when 'generate' | 'g' { exit run-generate(@cmd[1 .. *]) }
+    when 'destroy'  | 'd' { exit run-destroy(@cmd[1 .. *]) }
     when 'createdb' { create-test-databases(parallel => $par, :$count) }
     when 'migrate'  { migrate-test-databases(parallel => $par, :$count) }
     when 'check'    { exit check-command(parallel => $par, :$count) }
@@ -71,6 +74,77 @@ sub check-command(Bool :$parallel, Int :$count --> Int) {
   1;
 }
 
+sub announce(Str:D $verb, @paths) {
+  say "      $verb  $_" for @paths;
+}
+
+sub run-generate(@args --> Int) {
+  my $kind = @args[0];
+  my @rest = @args[1 .. *].grep(*.defined);
+  my $gen  = Generator.new;
+
+  given $kind {
+    when 'model' {
+      return missing('generate model NAME [field:type ...]') unless @rest.elems;
+      announce('create', $gen.generate-model(@rest[0], @rest[1 .. *].grep(*.defined)));
+    }
+    when 'migration' {
+      return missing('generate migration NAME [field:type ...]') unless @rest.elems;
+      announce('create', $gen.generate-migration(@rest[0], @rest[1 .. *].grep(*.defined)));
+    }
+    when 'scope' {
+      return missing('generate scope MODEL NAME [field:value ...]') unless @rest.elems >= 2;
+      announce('create', $gen.generate-scope(@rest[0], @rest[1], @rest[2 .. *].grep(*.defined)));
+    }
+    when 'validator' {
+      return missing('generate validator NAME') unless @rest.elems;
+      announce('create', $gen.generate-validator(@rest[0]));
+    }
+    default {
+      $*ERR.say: "ar generate: unknown type '{$kind // ''}' (model | migration | scope | validator)";
+      return 2;
+    }
+  }
+
+  0;
+}
+
+sub run-destroy(@args --> Int) {
+  my $kind = @args[0];
+  my @rest = @args[1 .. *].grep(*.defined);
+  my $gen  = Generator.new;
+
+  given $kind {
+    when 'model' {
+      return missing('destroy model NAME') unless @rest.elems;
+      announce('remove', $gen.destroy-model(@rest[0]));
+    }
+    when 'migration' {
+      return missing('destroy migration NAME') unless @rest.elems;
+      announce('remove', $gen.destroy-migration(@rest[0]));
+    }
+    when 'scope' {
+      return missing('destroy scope MODEL NAME') unless @rest.elems >= 2;
+      announce('remove', $gen.destroy-scope(@rest[0], @rest[1]));
+    }
+    when 'validator' {
+      return missing('destroy validator NAME') unless @rest.elems;
+      announce('remove', $gen.destroy-validator(@rest[0]));
+    }
+    default {
+      $*ERR.say: "ar destroy: unknown type '{$kind // ''}' (model | migration | scope | validator)";
+      return 2;
+    }
+  }
+
+  0;
+}
+
+sub missing(Str:D $usage --> Int) {
+  $*ERR.say: "ar: missing arguments — usage: ar $usage";
+  2;
+}
+
 sub USAGE {
   print q:to/HELP/;
   ar — ORM::ActiveRecord migration & database tool
@@ -82,6 +156,13 @@ sub USAGE {
     ar check               report whether the database(s) exist and are migrated
     ar up[:N] | down[:N]   migrate up / down (optionally N steps)
     ar reset [--yes]       drop every table (use --yes to skip the prompt)
+
+    ar generate model NAME [field:type ...]      model + create-table migration
+    ar generate migration NAME [field:type ...]  a migration (Create/Add/Remove inferred)
+    ar generate scope MODEL NAME [field:value]   insert a scope into a model
+    ar generate validator NAME                   a custom validator class
+    ar destroy TYPE NAME                          remove what `generate` created
+    (field types: string, integer, datetime, references, ... ; modifiers :uniq :index)
 
     ar createdb --parallel       create the test env's parallel databases
     ar migrate  --parallel       migrate the test env's parallel databases

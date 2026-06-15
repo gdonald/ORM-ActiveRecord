@@ -1,0 +1,44 @@
+
+use v6.d;
+use lib 'lib';
+use MONKEY-SEE-NO-EVAL;
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Generator;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+plan 4;
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub column-names($name) {
+  $adapter.get-fields(table => $name).map({ $_[0] }).list;
+}
+
+try { $adapter.ddl-drop-table('_gen_widgets') if table-exists('_gen_widgets') }
+
+my $gen = Generator.new;
+my $source = $gen.render-create-migration('CreateGenWidgets', '_gen_widgets', ['name:string', 'qty:integer']);
+
+my $migration = EVAL $source;
+
+$migration.new.up;
+ok table-exists('_gen_widgets'), 'a generated create migration creates the table when run';
+
+my @cols = column-names('_gen_widgets');
+ok @cols.grep({ $_ eq 'name' }).elems, 'the generated migration creates the declared string column';
+ok @cols.grep({ $_ eq 'qty' }).elems,  'the generated migration creates the declared integer column';
+
+$migration.new.down;
+nok table-exists('_gen_widgets'), 'the generated migration down drops the table';

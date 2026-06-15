@@ -16,5 +16,23 @@ ok ar-output('--version') ~~ /\d+ '.' \d+/,              'ar --version prints a 
 ok ar-output('--help').contains('Usage:'),               'ar --help shows usage';
 ok ar-output('--help').contains('createdb'),             'ar --help documents the createdb subcommand';
 ok ar-output('--help').contains('migrate'),              'ar --help documents the migrate subcommand';
+ok ar-output('--help').contains('generate'),             'ar --help documents the generate subcommand';
+ok ar-output('--help').contains('destroy'),              'ar --help documents the destroy subcommand';
+
+my $repo = $*CWD;
+my $tmp  = $*TMPDIR.add('ar-cli-generate-' ~ $*PID);
+$tmp.mkdir;
+LEAVE { run 'rm', '-rf', $tmp.Str }
+
+my $proc = run 'raku', '-I', $repo.add('lib').Str, $repo.add('bin/ar').Str,
+  'generate', 'migration', 'CreateThings', 'name:string',
+  :cwd($tmp.Str), :out, :err;
+$proc.out.slurp(:close);
+$proc.err.slurp(:close);
+
+my @migrations = $tmp.add('db/migrate').d
+  ?? $tmp.add('db/migrate').dir.grep(*.basename.ends-with('-create-things.raku')).list
+  !! ();
+ok @migrations.elems == 1, 'ar generate migration writes a migration file under db/migrate';
 
 done-testing;

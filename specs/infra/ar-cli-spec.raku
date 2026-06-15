@@ -32,4 +32,34 @@ describe 'ar --help', {
   it 'documents the migrate subcommand', {
     expect(ar-output('--help').contains('migrate')).to.be-truthy;
   }
+
+  it 'documents the generate subcommand', {
+    expect(ar-output('--help').contains('generate')).to.be-truthy;
+  }
+
+  it 'documents the destroy subcommand', {
+    expect(ar-output('--help').contains('destroy')).to.be-truthy;
+  }
+}
+
+describe 'ar generate migration', {
+  it 'writes a migration file under db/migrate', {
+    my $repo = $*CWD;
+    my $tmp  = $*TMPDIR.add('ar-cli-generate-' ~ $*PID);
+    $tmp.mkdir;
+
+    LEAVE { run 'rm', '-rf', $tmp.Str }
+
+    my $proc = run 'raku', '-I', $repo.add('lib').Str, $repo.add('bin/ar').Str,
+      'generate', 'migration', 'CreateThings', 'name:string',
+      :cwd($tmp.Str), :out, :err;
+    $proc.out.slurp(:close);
+    $proc.err.slurp(:close);
+
+    my @migrations = $tmp.add('db/migrate').d
+      ?? $tmp.add('db/migrate').dir.grep(*.basename.ends-with('-create-things.raku')).list
+      !! ();
+
+    expect(@migrations.elems).to.eq(1);
+  }
 }

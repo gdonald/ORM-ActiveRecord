@@ -1,0 +1,87 @@
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Schema::Generator;
+use Test;
+
+plan 31;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $tmp = $*TMPDIR.add('ar-generator-' ~ $*PID);
+$tmp.mkdir;
+LEAVE { run 'rm', '-rf', $tmp.Str }
+
+my $gen = Generator.new(:root($tmp.Str), :stamp('20260615120000'));
+
+# naming helpers
+is $gen.classize('blog_post'), 'BlogPost', 'classize underscores to PascalCase';
+is $gen.classize('user'),      'User',     'classize lower to PascalCase';
+is $gen.kebabize('AddEmailToUsers'), 'add-email-to-users', 'kebabize camel to kebab';
+is $gen.tableize('Person'),    'persons',  'tableize matches the ORM naive plural rule';
+
+# model rendering
+my $model = $gen.render-model('User', ['name:string', 'role:references']);
+ok $model.contains('class User is Model'),                          'model renders the class';
+ok $model.contains('submethod BUILD'),                             'model renders a BUILD block';
+ok $model.contains("self.belongs-to: role => class-name => 'Role'"), 'reference field becomes belongs-to';
+ok $model.contains('GLOBAL::<User> := User;'),                     'model registers the class in GLOBAL';
+
+# create-table migration rendering
+my $create = $gen.render-migration('CreateWidgets', ['name:string', 'price:decimal', 'slug:string:uniq']);
+ok $create.contains('class CreateWidgets is Migration'),  'create migration renders the class';
+ok $create.contains("self.create-table: 'widgets'"),      'create migration calls create-table';
+ok $create.contains(':string'),                           'create migration emits the string column';
+ok $create.contains('unique => True'),                    'uniq modifier becomes an inline unique';
+ok $create.contains("self.drop-table: 'widgets'"),        'create migration down drops the table';
+
+# add-column migration rendering
+my $add = $gen.render-migration('AddEmailToUsers', ['email:string']);
+ok $add.contains('class AddEmailToUsers is Migration'),        'add migration renders the class';
+ok $add.contains("self.add-column: 'users', :email => \{ :string \}"), 'add migration adds the column';
+ok $add.contains("self.remove-column: 'users', :email;"),      'add migration down removes the column';
+
+# remove-column migration rendering
+my $remove = $gen.render-migration('RemovePriceFromWidgets', ['price:decimal']);
+ok $remove.contains("self.remove-column: 'widgets', :price;"),  'remove migration removes the column';
+ok $remove.contains("self.add-column: 'widgets', :price"),      'remove migration down restores the column';
+
+# empty migration rendering
+my $empty = $gen.render-migration('Frobnicate', []);
+ok $empty.contains('class Frobnicate is Migration'),  'unrecognised name renders an empty stub';
+
+# validator rendering
+my $validator = $gen.render-validator('NotEvil');
+ok $validator.contains('class NotEvilValidator is export'),  'validator appends Validator to the class name';
+ok $validator.contains('method validate($record)'),         'validator renders a validate method';
+
+# scope line rendering
+my $scope = $gen.render-scope-line('active', ['published:True']);
+ok $scope.contains("self.scope: 'active'"),  'scope line names the scope';
+ok $scope.contains('published => True'),     'scope line builds the where conditions';
+
+# generate model writes both files
+my @model-paths = $gen.generate-model('Account', ['name:string']);
+ok $tmp.add('app/models/Account.rakumod').e,                       'generate-model writes the model file';
+ok $tmp.add('db/migrate/20260615120000-create-accounts.raku').e,   'generate-model writes the create migration';
+
+# generate migration writes one file
+$gen.generate-migration('AddTokenToAccounts', ['token:string']);
+ok $tmp.add('db/migrate/20260615120000-add-token-to-accounts.raku').e, 'generate-migration writes a migration file';
+
+# generate scope edits the model
+$gen.generate-scope('Account', 'recent', []);
+ok $tmp.add('app/models/Account.rakumod').slurp.contains("self.scope: 'recent'"), 'generate-scope inserts the scope';
+
+# generate validator writes a file
+$gen.generate-validator('Strong');
+ok $tmp.add('app/validators/StrongValidator.rakumod').e, 'generate-validator writes the validator file';
+
+# destroy removes what generate created
+$gen.destroy-scope('Account', 'recent');
+nok $tmp.add('app/models/Account.rakumod').slurp.contains("self.scope: 'recent'"), 'destroy-scope removes the scope';
+
+$gen.destroy-model('Account');
+nok $tmp.add('app/models/Account.rakumod').e, 'destroy-model removes the model file';
+
+$gen.destroy-validator('Strong');
+nok $tmp.add('app/validators/StrongValidator.rakumod').e, 'destroy-validator removes the validator file';
