@@ -74,6 +74,7 @@
     "ORM::ActiveRecord::Support::Crypto": "lib/ORM/ActiveRecord/Support/Crypto.rakumod",
     "ORM::ActiveRecord::Support::DatabaseUrl": "lib/ORM/ActiveRecord/Support/DatabaseUrl.rakumod",
     "ORM::ActiveRecord::Support::Environment": "lib/ORM/ActiveRecord/Support/Environment.rakumod",
+    "ORM::ActiveRecord::Support::I18n": "lib/ORM/ActiveRecord/Support/I18n.rakumod",
     "ORM::ActiveRecord::Schema::DbReady": "lib/ORM/ActiveRecord/Schema/DbReady.rakumod",
     "ORM::ActiveRecord::Schema::WorkerDbs": "lib/ORM/ActiveRecord/Schema/WorkerDbs.rakumod",
     "ORM::ActiveRecord::Support::Log": "lib/ORM/ActiveRecord/Support/Log.rakumod",

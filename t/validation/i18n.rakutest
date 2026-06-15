@@ -1,0 +1,86 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::Support::I18n;
+use Validation::I18n;
+use Test;
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub load-french {
+  I18n.store('fr', {
+    errors => {
+      messages => {
+        blank          => 'doit être rempli',
+        'too-long'     => 'est trop long (maximum {count} caractères)',
+        'greater-than' => 'doit être supérieur à {count}',
+        taken          => '{model} existe déjà',
+      },
+    },
+    activerecord => {
+      errors => {
+        models => {
+          recital => {
+            attributes => {
+              name => { blank => 'le nom est obligatoire' },
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+Recital.destroy-all;
+I18n.reset;
+load-french;
+I18n.set-locale('fr');
+
+my $r = Recital.build({name => 'ok', max_score => 0});
+$r.is-invalid;
+ok $r.errors.max_score[0] eq 'doit être supérieur à 1',
+  'resolves a message-level template for the error type';
+
+$r = Recital.build({name => '', max_score => 5});
+$r.is-invalid;
+ok $r.errors.name[0] eq 'le nom est obligatoire',
+  'prefers a model-and-attribute-specific template';
+
+$r = Recital.build({name => 'abcd', max_score => 5});
+$r.is-invalid;
+ok $r.errors.name[0] eq 'est trop long (maximum 3 caractères)',
+  'interpolates the count token in a length template';
+
+$r = Recital.build({name => 'ok', max_score => 5});
+$r.errors.add('name', 'blank');
+ok $r.errors.name[0] eq 'le nom est obligatoire',
+  'errors.add resolves the template from the locale store';
+
+$r = Recital.build({name => 'ok', max_score => 5});
+$r.errors.add('name', 'taken');
+ok $r.errors.name[0] eq 'Recital existe déjà',
+  'errors.add interpolates the model token';
+
+my $message;
+I18n.with-locale('fr', {
+  my $rec = Recital.build({name => '', max_score => 5});
+  $rec.is-invalid;
+  $message = $rec.errors.name[0];
+});
+ok $message eq 'le nom est obligatoire',
+  'with-locale uses the temporary locale inside the block';
+
+I18n.set-locale('en');
+I18n.with-locale('fr', sub { });
+ok I18n.locale eq 'en',
+  'with-locale restores the previous locale after the block';
+
+$r = Recital.build({name => 'ok', max_score => 0});
+$r.is-invalid;
+ok $r.errors.max_score[0] eq 'more than 1 required',
+  'falls back to the built-in template under the default locale';
+
+Recital.destroy-all;
+I18n.reset;

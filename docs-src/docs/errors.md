@@ -180,6 +180,11 @@ $record.errors.add('email', 'must be valid');                         # type=inv
 $record.errors.add('age',   'greater-than', count => 0);              # interpolates {count}
 ```
 
+When no explicit `message` is given, `add` resolves the template through the
+active locale before falling back to the built-in default, and interpolates the
+`{model}`, `{attribute}`, `{value}`, and `{count}` tokens (plus any extra option
+passed to `add`). See [Messages & locales](validations/i18n.md).
+
 Pre-built `Error` instances (for example, when copying errors from one record
 to another) can be appended with `import`:
 

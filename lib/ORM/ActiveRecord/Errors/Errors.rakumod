@@ -1,9 +1,13 @@
 
 use ORM::ActiveRecord::Errors::Error;
 use ORM::ActiveRecord::Schema::Field;
+use ORM::ActiveRecord::Support::Message;
+use ORM::ActiveRecord::Support::I18n;
+use ORM::ActiveRecord::Support::Utils;
 
 class Errors {
   has Error @.errors;
+  has Str   $.model-name = '';
 
   my %DEFAULT-TEMPLATES =
     blank                       => 'must be present',
@@ -43,7 +47,9 @@ class Errors {
       $type     = 'invalid';
     }
 
-    my $template = $message // %DEFAULT-TEMPLATES{$type} // 'is invalid';
+    my $model    = $!model-name ?? Utils.base-name($!model-name).lc !! Str;
+    my $located  = I18n.error-template(:$type, :$model, :$attribute);
+    my $template = $message // $located // %DEFAULT-TEMPLATES{$type} // 'is invalid';
     my $msg      = self!interpolate($template, $attribute, %options);
     my $field    = Field.new(:name($attribute), :type('attribute'));
 
@@ -180,17 +186,9 @@ class Errors {
   }
 
   method !interpolate(Str:D $template, Str:D $attribute, %options --> Str) {
-    my $out = $template;
+    my %tokens = attribute => $attribute, |%options;
+    %tokens<model> = Utils.base-name($!model-name) if $!model-name;
 
-    $out = $out.subst(/\{attribute\}/, $attribute, :g);
-
-    for %options.kv -> $k, $v {
-      next unless $v.defined;
-
-      my $token = '{' ~ $k ~ '}';
-      $out = $out.subst($token, ~$v, :g);
-    }
-
-    $out;
+    Message.interpolate($template, %tokens);
   }
 }

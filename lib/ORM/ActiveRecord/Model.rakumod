@@ -128,7 +128,7 @@ class Model
 
   submethod BUILD(Int:D :$!id, :%!record) {
     $!db = self.db;
-    $!errors = Errors.new;
+    $!errors = Errors.new(:model-name(self.^name));
     $!validators = Validators.new;
 
     self.WHAT.register-sti;
@@ -1432,7 +1432,7 @@ class Model
   }
 
   method is-invalid(Str :$context) {
-    $!errors = Errors.new;
+    $!errors = Errors.new(:model-name(self.^name));
     self.do-before-validations;
     my $ctx = $context // $!validation-context // ($!id == 0 ?? 'create' !! 'update');
     $!validators.validate($!db, self, :context($ctx));
@@ -1493,8 +1493,7 @@ class Model
 
       my $field = self.get-field($name);
       next unless $field;
-      my $template = 'must exist';
-      my $message = Message.build(:$template, :obj(self), :$field);
+      my $message = Message.build(:default('must exist'), :type<required>, :obj(self), :$field);
       my $e = Error.new(:$field, :$message, :type<blank>);
       $!errors.push($e);
     }

@@ -266,8 +266,7 @@ class Validators is export {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && !$obj."$field.name()"() {
-      my $template = $msg || 'must be present';
-      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      my $message = Message.build(:override($msg), :default('must be present'), :type<blank>, :$obj, :$field, :$as);
       self.record-error(:$obj, :$field, :$message, :$strict, :type<blank>);
     }
   }
@@ -285,29 +284,25 @@ class Validators is export {
 
     if $if() && !$unless() && $validate-on && $max && $chars > $max {
       my $value = "$max";
-      my $template = $msg || 'only {value} characters allowed';
-      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      my $message = Message.build(:override($msg), :default('only {value} characters allowed'), :type<too-long>, :$obj, :$field, :$value, :$as, :interpolations({:count($max)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<too-long>, :options(:count($max)));
     }
 
     if $if() && !$unless() && $validate-on && $min && $chars < $min {
       my $value = "$min";
-      my $template = $msg || 'at least {value} characters required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      my $message = Message.build(:override($msg), :default('at least {value} characters required'), :type<too-short>, :$obj, :$field, :$value, :$as, :interpolations({:count($min)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<too-short>, :options(:count($min)));
     }
 
     if $if() && !$unless() && $validate-on && $is && $chars != $is {
       my $value = "$is";
-      my $template = $msg || 'exactly {value} characters required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      my $message = Message.build(:override($msg), :default('exactly {value} characters required'), :type<wrong-length>, :$obj, :$field, :$value, :$as, :interpolations({:count($is)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<wrong-length>, :options(:count($is)));
     }
 
     if $if() && !$unless() && $validate-on && $in && $chars !~~ $in {
       my $value = "{$in.min} to {$in.max}";
-      my $template = $msg || '{value} characters required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      my $message = Message.build(:override($msg), :default('{value} characters required'), :type<wrong-length>, :$obj, :$field, :$value, :$as);
       self.record-error(:$obj, :$field, :$message, :$strict, :type<wrong-length>);
     }
   }
@@ -316,8 +311,7 @@ class Validators is export {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     unless $if() && !$unless() && $validate-on && $obj."$field.name()"() {
-      my $template = $msg || 'must be accepted';
-      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      my $message = Message.build(:override($msg), :default('must be accepted'), :type<accepted>, :$obj, :$field, :$as);
       self.record-error(:$obj, :$field, :$message, :$strict, :type<accepted>);
     }
   }
@@ -326,8 +320,7 @@ class Validators is export {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && $obj."{$field.name()}_confirmation"() ~~ Empty || $obj."{$field.name()}_confirmation"() !~~ $obj."$field.name()"() {
-      my $template = $msg || 'must be confirmed';
-      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      my $message = Message.build(:override($msg), :default('must be confirmed'), :type<confirmation>, :$obj, :$field, :$as);
       self.record-error(:$obj, :$field, :$message, :$strict, :type<confirmation>);
     }
   }
@@ -336,8 +329,7 @@ class Validators is export {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && !$obj."$field.name()"() || $obj."$field.name()"() (elem) $exclusion<in> {
-      my $template = $msg || 'is invalid';
-      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      my $message = Message.build(:override($msg), :default('is invalid'), :type<exclusion>, :$obj, :$field, :$as);
       self.record-error(:$obj, :$field, :$message, :$strict, :type<exclusion>);
     }
   }
@@ -346,8 +338,7 @@ class Validators is export {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && $obj."$field.name()"() ~~ Empty || (not $obj."$field.name()"() (elem) $inclusion<in>) {
-      my $template = $msg || 'is invalid';
-      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      my $message = Message.build(:override($msg), :default('is invalid'), :type<inclusion>, :$obj, :$field, :$as);
       self.record-error(:$obj, :$field, :$message, :$strict, :type<inclusion>);
     }
   }
@@ -356,8 +347,7 @@ class Validators is export {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && $obj."$field.name()"() !~~ $format<with> {
-      my $template = $msg || 'is invalid';
-      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      my $message = Message.build(:override($msg), :default('is invalid'), :type<invalid>, :$obj, :$field, :$as);
       self.record-error(:$obj, :$field, :$message, :$strict, :type<invalid>);
     }
   }
@@ -375,36 +365,31 @@ class Validators is export {
 
     if $if() && !$unless() && $validate-on && $gt && $number <= $gt {
       my $value = "$gt";
-      my $template = $msg || 'more than {value} required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      my $message = Message.build(:override($msg), :default('more than {value} required'), :type<greater-than>, :$obj, :$field, :$value, :$as, :interpolations({:count($gt)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<greater-than>, :options(:count($gt)));
     }
 
     if $if() && !$unless() && $validate-on && $gte && $number < $gte {
       my $value = "$gte";
-      my $template = $msg || '{value} or more required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      my $message = Message.build(:override($msg), :default('{value} or more required'), :type<greater-than-or-equal-to>, :$obj, :$field, :$value, :$as, :interpolations({:count($gte)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<greater-than-or-equal-to>, :options(:count($gte)));
     }
 
     if $if() && !$unless() && $validate-on && $lt && $number >= $lt {
       my $value = "$lt";
-      my $template = $msg || 'less than {value} required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      my $message = Message.build(:override($msg), :default('less than {value} required'), :type<less-than>, :$obj, :$field, :$value, :$as, :interpolations({:count($lt)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<less-than>, :options(:count($lt)));
     }
 
     if $if() && !$unless() && $validate-on && $lte && $number > $lte {
       my $value = "$lte";
-      my $template = $msg || '{value} or less required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      my $message = Message.build(:override($msg), :default('{value} or less required'), :type<less-than-or-equal-to>, :$obj, :$field, :$value, :$as, :interpolations({:count($lte)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<less-than-or-equal-to>, :options(:count($lte)));
     }
 
     if $if() && !$unless() && $validate-on && $in && $number !~~ $in {
       my $value = "{$in.min} to {$in.max}";
-      my $template = $msg || '{value} required';
-      my $message = Message.build(:$template, :$obj, :$field, :$value, :$as);
+      my $message = Message.build(:override($msg), :default('{value} required'), :type<inclusion>, :$obj, :$field, :$value, :$as);
       self.record-error(:$obj, :$field, :$message, :$strict, :type<inclusion>);
     }
   }
@@ -463,8 +448,7 @@ class Validators is export {
       my $label = $opts{$op} ~~ Str && $obj.has-attribute($opts{$op})
         ?? $opts{$op}
         !! "$resolved";
-      my $template = $msg || %templates{$op};
-      my $message = Message.build(:$template, :$obj, :$field, :value($label), :$as);
+      my $message = Message.build(:override($msg), :default(%templates{$op}), :type(%type-for{$op}), :$obj, :$field, :value($label), :$as, :interpolations({:count($label)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type(%type-for{$op}), :options(:count($label)));
     }
   }
@@ -514,8 +498,7 @@ class Validators is export {
 
     if $bad {
       my $field = $obj.get-field($name) // Field.new(:$name, :type('association'));
-      my $template = $msg || 'is invalid';
-      my $message = Message.build(:$template, :$obj, :$field, :$as);
+      my $message = Message.build(:override($msg), :default('is invalid'), :type<invalid>, :$obj, :$field, :$as);
       self.record-error(:$obj, :$field, :$message, :$strict, :type<invalid>);
     }
   }

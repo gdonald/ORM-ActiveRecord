@@ -27,6 +27,7 @@ nav:
     - Data: validations/data.md
     - Conditionals: validations/conditionals.md
     - Options: validations/options.md
+    - Messages & locales: validations/i18n.md
   - Errors: errors.md
   - Logging: logging.md
   - Instrumentation: instrumentation.md
