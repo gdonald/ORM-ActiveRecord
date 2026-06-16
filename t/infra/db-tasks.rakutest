@@ -1,0 +1,133 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use DBIish;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::DbTasks;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'no sqlite driver available';
+  exit 0;
+}
+
+plan 20;
+
+# Act on the unsuffixed base database regardless of any inherited worker overlay.
+temp %*ENV;
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+my $stamp  = "{$*PID}-{(now * 1e6).Int}";
+my $dbfile = $*TMPDIR.add("dbtasks-$stamp.sqlite3").Str;
+my $migdir = $*TMPDIR.add("dbtasks-mig-$stamp");
+my $seeds  = $*TMPDIR.add("dbtasks-seeds-$stamp.raku").Str;
+my $null   = open '/dev/null', :w;
+
+$migdir.mkdir;
+
+LEAVE {
+  $null.close;
+  $dbfile.IO.unlink if $dbfile.IO.e;
+  $seeds.IO.unlink if $seeds.IO.e;
+  run 'rm', '-rf', $migdir.Str;
+}
+
+sub migration(Str:D $table, Str:D $class) {
+  qq:to/RAKU/;
+  use ORM::ActiveRecord::Schema::Migration;
+
+  class $class is Migration \{
+    method up \{ self.create-table: '$table', [ name => \{ :string, limit => 32 \} ] \}
+    method down \{ self.drop-table: '$table' \}
+  \}
+  RAKU
+}
+
+$migdir.add('001-create-widgets.raku').spurt(migration('widgets', 'CreateWidgets'));
+$migdir.add('002-create-gadgets.raku').spurt(migration('gadgets', 'CreateGadgets'));
+$migdir.add('003-create-gizmos.raku').spurt(migration('gizmos',  'CreateGizmos'));
+
+# Seeds use raw SQL (no class declaration) so the file can be EVAL'd repeatedly.
+$seeds.IO.spurt: q:to/SEEDS/;
+use ORM::ActiveRecord::DB;
+DB.shared.exec("INSERT INTO widgets (name) VALUES ('seeded')");
+SEEDS
+
+temp %*ENV<DATABASE_URL> = "sqlite:$dbfile";
+DB.set-shared(Nil);
+
+my $tasks = DbTasks.new(:migration-path($migdir.Str), :$seeds, :out($null), :err($null));
+
+sub tables(--> Set) {
+  my $h = DBIish.connect('SQLite', :database($dbfile));
+  LEAVE { $h.dispose if $h.defined }
+  $h.execute("SELECT name FROM sqlite_master WHERE type = 'table'").allrows.map(*[0]).Set;
+}
+
+sub widget-count(--> Int) {
+  my $h = DBIish.connect('SQLite', :database($dbfile));
+  LEAVE { $h.dispose if $h.defined }
+  $h.execute("SELECT COUNT(*) FROM widgets").row[0].Int;
+}
+
+$tasks.create;
+ok $dbfile.IO.e, 'db:create creates the database';
+
+$tasks.migrate;
+ok tables(){'widgets'} && tables(){'gadgets'} && tables(){'gizmos'},
+  'db:migrate applies every pending migration';
+is $tasks.version, '003', 'db:version reports the latest applied version';
+
+ok $tasks.status.grep({ .<status> eq 'up' }).elems == 3,
+  'db:migrate:status shows every migration up';
+
+$tasks.rollback(step => 1);
+nok tables(){'gizmos'}, 'db:rollback STEP=1 reverts the last migration';
+is $tasks.version, '002', 'the version drops after a rollback';
+
+$tasks.redo(step => 1);
+is $tasks.version, '002', 'db:migrate:redo round-trips to the same version';
+
+$tasks.migrate-up('003');
+ok tables(){'gizmos'}, 'db:migrate:up VERSION runs a single migration up';
+
+$tasks.migrate-down('003');
+nok tables(){'gizmos'}, 'db:migrate:down VERSION runs a single migration down';
+
+$tasks.migrate-to('001');
+ok tables(){'widgets'} && !tables(){'gadgets'}, 'db:migrate VERSION rolls back to a target';
+ok $tasks.abort-if-pending == 1, 'abort_if_pending_migrations exits non-zero when behind';
+
+$tasks.migrate-to('003');
+ok $tasks.abort-if-pending == 0, 'abort_if_pending_migrations exits zero when current';
+
+my $before = widget-count();
+$tasks.seed;
+is widget-count() - $before, 1, 'db:seed runs the seeds file';
+
+$tasks.drop;
+nok $dbfile.IO.e, 'db:drop removes the database';
+
+$tasks.setup;
+ok tables(){'gizmos'}, 'db:setup creates and migrates the database';
+is widget-count(), 1, 'db:setup runs the seeds';
+
+$tasks.reset;
+is widget-count(), 1, 'db:reset rebuilds and re-seeds the database';
+
+$tasks.drop;
+$tasks.prepare;
+ok tables(){'gizmos'}, 'db:prepare creates and migrates a new database';
+is widget-count(), 1, 'db:prepare seeds a newly created database';
+
+$tasks.prepare;
+is widget-count(), 1, 'db:prepare does not re-seed an existing database';

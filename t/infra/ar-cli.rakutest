@@ -18,6 +18,7 @@ ok ar-output('--help').contains('createdb'),             'ar --help documents th
 ok ar-output('--help').contains('migrate'),              'ar --help documents the migrate subcommand';
 ok ar-output('--help').contains('generate'),             'ar --help documents the generate subcommand';
 ok ar-output('--help').contains('destroy'),              'ar --help documents the destroy subcommand';
+ok ar-output('--help').contains('db:migrate'),           'ar --help documents the db: tasks';
 
 my $repo = $*CWD;
 my $tmp  = $*TMPDIR.add('ar-cli-generate-' ~ $*PID);

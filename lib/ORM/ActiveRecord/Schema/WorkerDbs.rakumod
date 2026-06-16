@@ -73,6 +73,56 @@ sub ensure-database(%cfg --> Bool) {
   }
 }
 
+sub drop-sqlite(%cfg --> Bool) {
+  my $path = sqlite-name(%cfg);
+  return True if $path eq ':memory:';
+  $path.IO.unlink if $path.IO.e;
+  True;
+}
+
+sub drop-pg(%cfg --> Bool) {
+  my $name = db-name(%cfg);
+  return False unless $name;
+
+  my $h = DBIish.connect('Pg',
+    host     => %cfg<host>     // 'localhost',
+    port     => (%cfg<port>    // 5432).Int,
+    user     => %cfg<user>     // '',
+    password => %cfg<password> // '',
+    database => 'postgres',
+  );
+  LEAVE { $h.dispose if $h.defined }
+
+  $h.do("DROP DATABASE IF EXISTS \"$name\"");
+  True;
+}
+
+sub drop-mysql(%cfg --> Bool) {
+  my $name = db-name(%cfg);
+  return False unless $name;
+
+  my $h = DBIish.connect('mysql',
+    host     => %cfg<host>     // '127.0.0.1',
+    port     => (%cfg<port>    // 3306).Int,
+    user     => %cfg<user>     // 'root',
+    password => %cfg<password> // '',
+  );
+  LEAVE { $h.dispose if $h.defined }
+
+  $h.do("DROP DATABASE IF EXISTS `$name`");
+  True;
+}
+
+sub drop-database(%cfg --> Bool) {
+  my $adapter = (%cfg<adapter> // 'pg').lc;
+  given $adapter {
+    when 'sqlite' | 'sqlite3'             { drop-sqlite(%cfg) }
+    when 'pg' | 'postgres' | 'postgresql' { drop-pg(%cfg) }
+    when 'mysql' | 'mysql2' | 'mariadb'   { drop-mysql(%cfg) }
+    default { die "drop-db: unsupported adapter '$adapter'" }
+  }
+}
+
 # Create one connection's database for worker index $i (or the base database
 # when $i is undefined).
 sub create-one(Str $conn, %base, Int $i --> Bool) {
@@ -82,6 +132,23 @@ sub create-one(Str $conn, %base, Int $i --> Bool) {
   unless $ok {
     my $err = $!.defined ?? $!.message !! 'database could not be created';
     note "create-db: skipping $conn worker {$i // 'base'} ({db-name(%cfg) || sqlite-name(%cfg)}): $err";
+    return False;
+  }
+
+  True;
+}
+
+# Drop one connection's database for worker index $i (or the base database when
+# $i is undefined). The inverse of create-one.
+sub drop-one(Str $conn, %base, Int $i --> Bool) {
+  my %cfg = $i.defined ?? apply-worker-suffix(%base, $i) !! %base;
+
+  DB.set-shared(Nil, name => $conn);
+
+  my $ok = try { drop-database(%cfg) };
+  unless $ok {
+    my $err = $!.defined ?? $!.message !! 'database could not be dropped';
+    note "drop-db: skipping $conn worker {$i // 'base'} ({db-name(%cfg) || sqlite-name(%cfg)}): $err";
     return False;
   }
 
@@ -168,6 +235,14 @@ sub migrate-test-databases(Bool :$parallel = False,
                            Str  :$path = 'config/application.json',
                            Str  :$env  = $parallel ?? 'test' !! current-env('development')) is export {
   each-target(-> $conn, %base, $i, $n { migrate-one($conn, %base, $i, $n) },
+              :$parallel, :$path, :$env, :$count);
+}
+
+sub drop-test-databases(Bool :$parallel = False,
+                        Int  :$count,
+                        Str  :$path = 'config/application.json',
+                        Str  :$env  = $parallel ?? 'test' !! current-env('development')) is export {
+  each-target(-> $conn, %base, $i, $n { drop-one($conn, %base, $i) },
               :$parallel, :$path, :$env, :$count);
 }
 

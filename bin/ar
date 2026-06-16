@@ -5,6 +5,7 @@ BEGIN %*ENV<ORM_LOG_FILE> //= 'log/error.log' if 'log'.IO.d;
 use ORM::ActiveRecord::Schema::Migrate;
 use ORM::ActiveRecord::Schema::WorkerDbs;
 use ORM::ActiveRecord::Schema::Generator;
+use ORM::ActiveRecord::Schema::DbTasks;
 use ORM::ActiveRecord::Support::Version;
 
 # Subcommands:
@@ -40,6 +41,7 @@ sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
   given @cmd[0] // 'migrate' {
     when 'generate' | 'g' { exit run-generate(@cmd[1 .. *]) }
     when 'destroy'  | 'd' { exit run-destroy(@cmd[1 .. *]) }
+    when /^ 'db:' / { exit run-db-task(@cmd) }
     when 'createdb' { create-test-databases(parallel => $par, :$count) }
     when 'migrate'  { migrate-test-databases(parallel => $par, :$count) }
     when 'check'    { exit check-command(parallel => $par, :$count) }
@@ -141,8 +143,53 @@ sub run-destroy(@args --> Int) {
 }
 
 sub missing(Str:D $usage --> Int) {
-  $*ERR.say: "ar: missing arguments — usage: ar $usage";
+  $*ERR.say: "ar: missing arguments - usage: ar $usage";
   2;
+}
+
+sub run-db-task(@cmd --> Int) {
+  my $task = @cmd[0].substr(3);    # strip the leading 'db:'
+
+  my %opts;
+  for @cmd[1 .. *] -> $arg {
+    %opts{$0.Str.uc} = $1.Str if $arg ~~ /^ (<-[=]>+) '=' (.*) $/;
+  }
+
+  my $tasks = DbTasks.new;
+
+  given $task {
+    when 'create'  { $tasks.create }
+    when 'drop'    { $tasks.drop }
+    when 'reset'   { $tasks.reset }
+    when 'setup'   { $tasks.setup }
+    when 'seed'    { $tasks.seed }
+    when 'prepare' { $tasks.prepare }
+    when 'version' { $tasks.version }
+    when 'rollback' { $tasks.rollback(step => (%opts<STEP> // 1).Int) }
+    when 'migrate' {
+      %opts<VERSION>.defined ?? $tasks.migrate-to(%opts<VERSION>) !! $tasks.migrate;
+    }
+    when 'migrate:up' {
+      return missing('db:migrate:up VERSION=NNN') unless %opts<VERSION>.defined;
+      $tasks.migrate-up(%opts<VERSION>);
+    }
+    when 'migrate:down' {
+      return missing('db:migrate:down VERSION=NNN') unless %opts<VERSION>.defined;
+      $tasks.migrate-down(%opts<VERSION>);
+    }
+    when 'migrate:status' { $tasks.status }
+    when 'migrate:redo'   { $tasks.redo(step => (%opts<STEP> // 1).Int) }
+    when 'abort_if_pending_migrations' | 'abort-if-pending-migrations' {
+      return $tasks.abort-if-pending;
+    }
+    when 'test:prepare' | 'test:load_schema' | 'test:load-schema' { $tasks.test-prepare }
+    default {
+      $*ERR.say: "ar: unknown task 'db:$task'";
+      return 2;
+    }
+  }
+
+  0;
 }
 
 sub USAGE {
@@ -163,6 +210,18 @@ sub USAGE {
     ar generate validator NAME                   a custom validator class
     ar destroy TYPE NAME                          remove what `generate` created
     (field types: string, integer, datetime, references, ... ; modifiers :uniq :index)
+
+    ar db:create | db:drop | db:reset | db:setup  create / drop / reset / set up the database
+    ar db:seed | db:prepare                       run db/seeds.raku / create+migrate+seed-if-new
+    ar db:migrate [VERSION=NNN]                    migrate up (or to a target version)
+    ar db:migrate:up VERSION=NNN                   run one migration's up
+    ar db:migrate:down VERSION=NNN                 run one migration's down
+    ar db:migrate:status                           list each migration as up / down
+    ar db:migrate:redo [STEP=N]                    roll back then re-apply N migrations
+    ar db:rollback [STEP=N]                        roll back the last N migrations
+    ar db:version                                  print the current schema version
+    ar db:abort_if_pending_migrations             exit non-zero if migrations are pending
+    ar db:test:prepare                             create + migrate the test database
 
     ar createdb --parallel       create the test env's parallel databases
     ar migrate  --parallel       migrate the test env's parallel databases

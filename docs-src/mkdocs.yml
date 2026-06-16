@@ -4,6 +4,7 @@ nav:
   - Adapters: adapters.md
   - Migrations: migrations.md
   - Generators: generators.md
+  - Database tasks: db-tasks.md
   - Models:
     - Info: models/models.md
     - Finders: models/finders.md

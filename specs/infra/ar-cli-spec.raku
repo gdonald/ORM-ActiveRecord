@@ -40,6 +40,10 @@ describe 'ar --help', {
   it 'documents the destroy subcommand', {
     expect(ar-output('--help').contains('destroy')).to.be-truthy;
   }
+
+  it 'documents the db: tasks', {
+    expect(ar-output('--help').contains('db:migrate')).to.be-truthy;
+  }
 }
 
 describe 'ar generate migration', {

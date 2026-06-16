@@ -117,35 +117,133 @@ class Migrate is export {
       my $last = self.last;
       next unless $action ~~ 'down' && $version == $last || $action ~~ 'up' && $version > $last;
 
-      # Migration progress goes to stdout, which behave parses as JSON events
-      # under --parallel; stay quiet when SQL logging is disabled (specs/tests).
-      unless %*ENV<DISABLE-SQL-LOG> {
-        say '';
-        say $action ~~ 'up' ?? green('↑ ' ~ $path ~ ' ↑') !! red('↓ ' ~ $path ~ ' ↓');
-      }
-
-      my $migration = self!load-migration($path);
-      my $instance  = $migration.new;
-      my $wrap      = self.wraps-in-transaction($instance);
-
-      $!db.begin if $wrap;
-
-      try {
-        CATCH {
-          when X::IrreversibleMigration {
-            say 'Irreversible migration detected in ' ~ $path;
-            Exception.new.throw;
-          }
-        }
-
-        $instance."$action"();
-      }
-
-      $action ~~ 'up' ?? self.add(:$version) !! self.rm(:$version);
-      $!db.commit if $wrap;
+      self.run-migration-file($path, $version, $action);
 
       $cnt++;
     }
+  }
+
+  # Run a single migration file's up or down and record it in the migrations
+  # table. Shared by the sequential `migrate`, by targeted version runs, and by
+  # migrate-to.
+  method run-migration-file(Str:D $path, Str:D $version, Str:D $action) {
+    # Migration progress goes to stdout, which behave parses as JSON events
+    # under --parallel; stay quiet when SQL logging is disabled (specs/tests).
+    unless %*ENV<DISABLE-SQL-LOG> {
+      say '';
+      say $action ~~ 'up' ?? green('↑ ' ~ $path ~ ' ↑') !! red('↓ ' ~ $path ~ ' ↓');
+    }
+
+    my $migration = self!load-migration($path);
+    my $instance  = $migration.new;
+    my $wrap      = self.wraps-in-transaction($instance);
+
+    $!db.begin if $wrap;
+
+    try {
+      CATCH {
+        when X::IrreversibleMigration {
+          say 'Irreversible migration detected in ' ~ $path;
+          Exception.new.throw;
+        }
+      }
+
+      $instance."$action"();
+    }
+
+    $action ~~ 'up' ?? self.add(:$version) !! self.rm(:$version);
+    $!db.commit if $wrap;
+  }
+
+  # Every migration file as { version, name, path }, sorted by version.
+  method migration-files(--> List) {
+    my @out;
+    for self.files($!migration-path).sort -> $path {
+      next unless IO::Path.new($path).basename ~~ /^$<version>=(\d+) '-' $<name>=(.*) \.raku/;
+      @out.push: %( version => $<version>.Str, name => $<name>.Str, path => $path );
+    }
+    @out.List;
+  }
+
+  # Versions recorded as applied in the migrations table.
+  method applied-versions(--> List) {
+    return () unless self.migrations-table-exists;
+    $!db.exec('SELECT version FROM migrations').map({ ~$_[0] }).List;
+  }
+
+  # Highest applied version (the original string, leading zeros preserved), or
+  # '' when nothing has run.
+  method current-version(--> Str) {
+    my @versions = self.applied-versions;
+    return '' unless @versions;
+    @versions.max(*.Int).Str;
+  }
+
+  # File versions not yet recorded as applied.
+  method pending-versions(--> List) {
+    my %applied = self.applied-versions.map(* => True);
+    self.migration-files.grep({ !%applied{.<version>} }).map(*.<version>).List;
+  }
+
+  method is-pending(--> Bool) { so self.pending-versions.elems }
+
+  # One row per migration file: { version, name, status } where status is
+  # 'up' (applied) or 'down' (pending).
+  method status-rows(--> List) {
+    self.check-migrations-table;
+    my %applied = self.applied-versions.map(* => True);
+    self.migration-files.map(-> %file {
+      %( version => %file<version>, name => %file<name>,
+         status  => (%applied{%file<version>} ?? 'up' !! 'down') )
+    }).List;
+  }
+
+  # Run one migration's up or down by version. Returns False (a no-op) when the
+  # target is already in the requested state.
+  method run-version(Str:D $version, Str:D $action --> Bool) {
+    self.check-migrations-table;
+
+    my $file = self.migration-files.first({ .<version> eq $version });
+    die "no migration with version $version" unless $file;
+
+    my %applied = self.applied-versions.map(* => True);
+    return False if $action eq 'up'   &&  %applied{$version};
+    return False if $action eq 'down' && !%applied{$version};
+
+    self.run-migration-file($file<path>, $version, $action);
+    True;
+  }
+
+  # Bring the schema to exactly $target: apply every pending migration at or
+  # below it, then roll back every applied migration above it. Target '0' rolls
+  # everything back.
+  method migrate-to(Str:D $target --> Int) {
+    self.check-migrations-table;
+
+    my @files = self.migration-files;
+    die "no migration with version $target"
+      unless $target eq '0' || @files.first({ .<version> eq $target });
+
+    my %applied = self.applied-versions.map(* => True);
+    my $cnt = 0;
+
+    for @files.grep({ .<version>.Int <= $target.Int && !%applied{.<version>} }) -> %file {
+      self.run-migration-file(%file<path>, %file<version>, 'up');
+      $cnt++;
+    }
+
+    for @files.reverse.grep({ .<version>.Int > $target.Int && %applied{.<version>} }) -> %file {
+      self.run-migration-file(%file<path>, %file<version>, 'down');
+      $cnt++;
+    }
+
+    $cnt;
+  }
+
+  method migrate-redo(Int:D $step = 1) {
+    self.check-migrations-table;
+    self.migrate(['down', $step]);
+    self.migrate(['up', $step]);
   }
 
   # A migration runs inside a BEGIN/COMMIT unless it opts out via
