@@ -1,0 +1,66 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Support::Runtime;
+
+plan 14;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $runtime = Runtime.new;
+
+# runner
+is $runtime.run-code('6 * 7'), 42, 'run-code evaluates inline code';
+
+my $script = $*TMPDIR.add("runner-{$*PID}.raku").Str;
+$script.IO.spurt("21 + 21\n");
+LEAVE { $script.IO.unlink if $script.IO.e }
+is $runtime.run-script($script), 42, 'run-script evaluates a file';
+
+# console
+my @console = $runtime.console-command(includes => <lib app/models>);
+is @console[0], 'raku', 'console-command launches raku';
+ok @console.grep({ $_ eq '-Ilib' }).elems, 'console-command puts lib on the include path';
+ok @console.grep({ $_ eq '-Iapp/models' }).elems, 'console-command puts app/models on the include path';
+
+# dbconsole client command
+my %sqlite = $runtime.client-command({ adapter => 'sqlite', name => 'db/dev.sqlite3' });
+is %sqlite<argv>, ['sqlite3', 'db/dev.sqlite3'], 'client-command builds the sqlite3 invocation';
+
+my %pg = $runtime.client-command({ adapter => 'pg', host => 'db.example', port => 5433, user => 'app', password => 'secret', name => 'app_dev' });
+is %pg<argv>[0], 'psql', 'client-command builds the psql invocation';
+is %pg<env><PGPASSWORD>, 'secret', 'client-command passes the password through PGPASSWORD';
+
+my %mysql = $runtime.client-command({ adapter => 'mysql', user => 'root', name => 'app_dev' });
+is %mysql<argv>[0], 'mysql', 'client-command builds the mysql invocation';
+
+# notes
+my $notes-dir = $*TMPDIR.add("notes-{$*PID}-{(now * 1e6).Int}");
+$notes-dir.mkdir;
+LEAVE { run 'rm', '-rf', $notes-dir.Str }
+$notes-dir.add('a.rakumod').spurt: qq:to/SRC/;
+# TODO: wire this up
+my \$x = 1;  # FIXME later
+my \$y = 2;
+SRC
+
+my @notes = $runtime.scan-notes([$notes-dir.Str]);
+is @notes.elems, 2, 'scan-notes finds every annotation';
+is @notes.first({ .<tag> eq 'TODO' })<text>, 'wire this up', 'scan-notes captures the tag text';
+ok @notes.first({ .<tag> eq 'FIXME' }).defined, 'scan-notes recognises multiple tags';
+
+# stats
+my $code-dir = $*TMPDIR.add("stats-{$*PID}-{(now * 1e6).Int}");
+my $mig-dir  = $*TMPDIR.add("stats-mig-{$*PID}-{(now * 1e6).Int}");
+$code-dir.mkdir;
+$mig-dir.mkdir;
+LEAVE { run 'rm', '-rf', $code-dir.Str; run 'rm', '-rf', $mig-dir.Str }
+
+$code-dir.add('user.rakumod').spurt("class User is Model \{\n\}\n");
+$code-dir.add('helper.rakumod').spurt("# a comment\n\nmy \$x = 1;\n");
+$mig-dir.add('001-create-users.raku').spurt('');
+$mig-dir.add('002-create-pets.raku').spurt('');
+
+my %stats = $runtime.compute-stats(code-dirs => [$code-dir.Str], migrate-dir => $mig-dir.Str);
+is %stats<models>, 1, 'compute-stats counts model declarations';
+is %stats<migrations>, 2, 'compute-stats counts migration files';

@@ -5,6 +5,7 @@ nav:
   - Migrations: migrations.md
   - Generators: generators.md
   - Database tasks: db-tasks.md
+  - Runtime tasks: runtime.md
   - Models:
     - Info: models/models.md
     - Finders: models/finders.md

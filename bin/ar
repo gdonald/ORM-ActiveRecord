@@ -6,6 +6,7 @@ use ORM::ActiveRecord::Schema::Migrate;
 use ORM::ActiveRecord::Schema::WorkerDbs;
 use ORM::ActiveRecord::Schema::Generator;
 use ORM::ActiveRecord::Schema::DbTasks;
+use ORM::ActiveRecord::Support::Runtime;
 use ORM::ActiveRecord::Support::Version;
 
 # Subcommands:
@@ -41,6 +42,11 @@ sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
   given @cmd[0] // 'migrate' {
     when 'generate' | 'g' { exit run-generate(@cmd[1 .. *]) }
     when 'destroy'  | 'd' { exit run-destroy(@cmd[1 .. *]) }
+    when 'console'   { run-console }
+    when 'runner'    { exit run-runner(@cmd[1 .. *]) }
+    when 'dbconsole' { run-dbconsole }
+    when 'notes'     { run-notes }
+    when 'stats'     { run-stats }
     when /^ 'db:' / { exit run-db-task(@cmd) }
     when 'createdb' { create-test-databases(parallel => $par, :$count) }
     when 'migrate'  { migrate-test-databases(parallel => $par, :$count) }
@@ -147,6 +153,48 @@ sub missing(Str:D $usage --> Int) {
   2;
 }
 
+sub run-console {
+  exit run(|Runtime.new.console-command).exitcode;
+}
+
+sub run-runner(@args --> Int) {
+  my $target = @args[0];
+  return missing('runner FILE | "CODE"') unless $target.defined;
+
+  my $runtime = Runtime.new;
+  $target.IO.e ?? $runtime.run-script($target) !! $runtime.run-code($target);
+  0;
+}
+
+sub run-dbconsole {
+  my %command = Runtime.new.dbconsole-command;
+  %*ENV{.key} = .value for %command<env>.pairs;
+  exit run(|%command<argv>).exitcode;
+}
+
+sub run-notes {
+  my @roots = <lib bin app db t>.grep(*.IO.e);
+  my @notes = Runtime.new.scan-notes(@roots);
+
+  unless @notes.elems {
+    say 'No annotations found.';
+    return;
+  }
+
+  for @notes -> %note {
+    say sprintf('%-8s %s:%d  %s', %note<tag>, %note<file>, %note<line>, %note<text>);
+  }
+}
+
+sub run-stats {
+  my %stats = Runtime.new.compute-stats;
+  say "Files:      %stats<files>";
+  say "Lines:      %stats<lines>";
+  say "Code lines: %stats<code>";
+  say "Models:     %stats<models>";
+  say "Migrations: %stats<migrations>";
+}
+
 sub run-db-task(@cmd --> Int) {
   my $task = @cmd[0].substr(3);    # strip the leading 'db:'
 
@@ -230,6 +278,12 @@ sub USAGE {
     ar db:schema:dump | db:schema:load            dump / load db/schema.raku
     ar db:structure:dump                           dump raw DDL to db/structure.sql
     ar db:schema:cache:dump | :clear              dump / remove db/schema_cache.yml
+
+    ar console                                     a Raku REPL with the project on the include path
+    ar runner FILE | "CODE"                        run a script or inline code against the app
+    ar dbconsole                                   open the database client with the app credentials
+    ar notes                                       list TODO / FIXME / OPTIMIZE / HACK / XXX annotations
+    ar stats                                       count files, lines, models, and migrations
 
     ar createdb --parallel       create the test env's parallel databases
     ar migrate  --parallel       migrate the test env's parallel databases

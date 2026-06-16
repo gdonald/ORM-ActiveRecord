@@ -48,6 +48,20 @@ describe 'ar --help', {
   it 'documents the schema tasks', {
     expect(ar-output('--help').contains('db:schema:dump')).to.be-truthy;
   }
+
+  it 'documents the runtime tasks', {
+    expect(ar-output('--help').contains('runner')).to.be-truthy;
+  }
+}
+
+describe 'ar runtime tasks', {
+  it 'runs inline code', {
+    expect(ar-output('runner', 'say 13 + 29').contains('42')).to.be-truthy;
+  }
+
+  it 'reports stats', {
+    expect(ar-output('stats').contains('Migrations:')).to.be-truthy;
+  }
 }
 
 describe 'ar generate migration', {

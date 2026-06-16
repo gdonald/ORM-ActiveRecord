@@ -83,6 +83,7 @@
     "ORM::ActiveRecord::Schema::WorkerDbs": "lib/ORM/ActiveRecord/Schema/WorkerDbs.rakumod",
     "ORM::ActiveRecord::Support::Log": "lib/ORM/ActiveRecord/Support/Log.rakumod",
     "ORM::ActiveRecord::Support::Message": "lib/ORM/ActiveRecord/Support/Message.rakumod",
+    "ORM::ActiveRecord::Support::Runtime": "lib/ORM/ActiveRecord/Support/Runtime.rakumod",
     "ORM::ActiveRecord::Support::Secrets": "lib/ORM/ActiveRecord/Support/Secrets.rakumod",
     "ORM::ActiveRecord::Support::Spell": "lib/ORM/ActiveRecord/Support/Spell.rakumod",
     "ORM::ActiveRecord::Support::TestSkip": "lib/ORM/ActiveRecord/Support/TestSkip.rakumod",

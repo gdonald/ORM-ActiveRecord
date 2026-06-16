@@ -20,6 +20,10 @@ ok ar-output('--help').contains('generate'),             'ar --help documents th
 ok ar-output('--help').contains('destroy'),              'ar --help documents the destroy subcommand';
 ok ar-output('--help').contains('db:migrate'),           'ar --help documents the db: tasks';
 ok ar-output('--help').contains('db:schema:dump'),       'ar --help documents the schema tasks';
+ok ar-output('--help').contains('runner'),               'ar --help documents the runtime tasks';
+
+ok ar-output('runner', 'say 13 + 29').contains('42'),    'ar runner evaluates inline code';
+ok ar-output('stats').contains('Migrations:'),           'ar stats reports counts';
 
 my $repo = $*CWD;
 my $tmp  = $*TMPDIR.add('ar-cli-generate-' ~ $*PID);
