@@ -102,6 +102,12 @@ SchemaCache.new(adapter => $adapter).dump(path => $cache-path);
 my $from-file = SchemaCache.new.load(path => $cache-path);
 ok '_si_things' (elem) $from-file.table-names, 'schema cache round-trips through a dumped file';
 
+my $yaml-path = $cache-path ~ '.yml';
+SchemaCache.new(adapter => $adapter).dump-yaml(path => $yaml-path);
+my $from-yaml = SchemaCache.new.load-yaml(path => $yaml-path);
+ok '_si_things' (elem) $from-yaml.table-names, 'schema cache round-trips through a YAML file';
+try { $yaml-path.IO.unlink }
+
 cleanup-tables;
 try { $cache-path.IO.unlink }
 

@@ -44,6 +44,10 @@ describe 'ar --help', {
   it 'documents the db: tasks', {
     expect(ar-output('--help').contains('db:migrate')).to.be-truthy;
   }
+
+  it 'documents the schema tasks', {
+    expect(ar-output('--help').contains('db:schema:dump')).to.be-truthy;
+  }
 }
 
 describe 'ar generate migration', {

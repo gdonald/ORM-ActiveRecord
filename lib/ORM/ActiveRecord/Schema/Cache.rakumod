@@ -1,5 +1,6 @@
 
 use JSON::Tiny;
+use YAMLish;
 use ORM::ActiveRecord::DB;
 
 # A snapshot of the database schema (tables → columns / indexes / constraints,
@@ -47,6 +48,26 @@ class SchemaCache is export {
 
   method load(Str:D :$path) {
     self.deserialize($path.IO.slurp);
+  }
+
+  method serialize-yaml(--> Str) {
+    self.build unless %!data;
+    save-yaml(%!data);
+  }
+
+  method dump-yaml(Str:D :$path --> Str) {
+    my $yaml = self.serialize-yaml;
+    $path.IO.spurt($yaml);
+    $yaml;
+  }
+
+  method deserialize-yaml(Str:D $yaml) {
+    %!data = load-yaml($yaml);
+    self;
+  }
+
+  method load-yaml(Str:D :$path) {
+    self.deserialize-yaml($path.IO.slurp);
   }
 
   method table-names {

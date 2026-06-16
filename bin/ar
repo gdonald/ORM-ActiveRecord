@@ -179,6 +179,11 @@ sub run-db-task(@cmd --> Int) {
     }
     when 'migrate:status' { $tasks.status }
     when 'migrate:redo'   { $tasks.redo(step => (%opts<STEP> // 1).Int) }
+    when 'schema:dump'        { say '      create  ' ~ $tasks.schema-dump }
+    when 'schema:load'        { $tasks.schema-load }
+    when 'structure:dump'     { say '      create  ' ~ $tasks.structure-dump }
+    when 'schema:cache:dump'  { say '      create  ' ~ $tasks.schema-cache-dump }
+    when 'schema:cache:clear' { $tasks.schema-cache-clear }
     when 'abort_if_pending_migrations' | 'abort-if-pending-migrations' {
       return $tasks.abort-if-pending;
     }
@@ -222,6 +227,9 @@ sub USAGE {
     ar db:version                                  print the current schema version
     ar db:abort_if_pending_migrations             exit non-zero if migrations are pending
     ar db:test:prepare                             create + migrate the test database
+    ar db:schema:dump | db:schema:load            dump / load db/schema.raku
+    ar db:structure:dump                           dump raw DDL to db/structure.sql
+    ar db:schema:cache:dump | :clear              dump / remove db/schema_cache.yml
 
     ar createdb --parallel       create the test env's parallel databases
     ar migrate  --parallel       migrate the test env's parallel databases

@@ -1,0 +1,122 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use DBIish;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::DbTasks;
+use ORM::ActiveRecord::Schema::Cache;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'no sqlite driver available';
+  exit 0;
+}
+
+plan 18;
+
+temp %*ENV;
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+my $st      = "{$*PID}-{(now * 1e6).Int}";
+my $dbfile  = $*TMPDIR.add("schema-$st.sqlite3").Str;
+my $migdir  = $*TMPDIR.add("schema-mig-$st");
+my $schema  = $*TMPDIR.add("schema-$st.raku").Str;
+my $struct  = $*TMPDIR.add("structure-$st.sql").Str;
+my $cache   = $*TMPDIR.add("schema-cache-$st.yml").Str;
+
+$migdir.mkdir;
+
+LEAVE {
+  $dbfile.IO.unlink if $dbfile.IO.e;
+  $schema.IO.unlink if $schema.IO.e;
+  $struct.IO.unlink if $struct.IO.e;
+  $cache.IO.unlink  if $cache.IO.e;
+  run 'rm', '-rf', $migdir.Str;
+}
+
+$migdir.add('001-create-people.raku').spurt: q:to/RAKU/;
+use ORM::ActiveRecord::Schema::Migration;
+class CreatePeople is Migration {
+  method up {
+    self.create-table: 'people', [ name => { :string, limit => 32 }, age => { :integer } ];
+    self.add-index: 'people', 'name';
+  }
+  method down { self.drop-table: 'people' }
+}
+RAKU
+
+$migdir.add('002-create-pets.raku').spurt: q:to/RAKU/;
+use ORM::ActiveRecord::Schema::Migration;
+class CreatePets is Migration {
+  method up { self.create-table: 'pets', [ name => { :string, limit => 32 } ] }
+  method down { self.drop-table: 'pets' }
+}
+RAKU
+
+temp %*ENV<DATABASE_URL> = "sqlite:$dbfile";
+DB.set-shared(Nil);
+
+my $tasks = DbTasks.new(:migration-path($migdir.Str));
+
+sub tables(--> Set) {
+  my $h = DBIish.connect('SQLite', :database($dbfile));
+  LEAVE { $h.dispose if $h.defined }
+  $h.execute("SELECT name FROM sqlite_master WHERE type = 'table'").allrows.map(*[0]).Set;
+}
+
+sub columns(Str:D $table --> Set) {
+  my $h = DBIish.connect('SQLite', :database($dbfile));
+  LEAVE { $h.dispose if $h.defined }
+  $h.execute("PRAGMA table_info('$table')").allrows.map(*[1]).Set;
+}
+
+$tasks.create;
+$tasks.migrate;
+
+# schema:dump
+$tasks.schema-dump(path => $schema);
+my $dump = $schema.IO.slurp;
+
+ok $dump.contains('class Schema is Migration'),  'schema:dump emits a Schema migration class';
+ok $dump.contains("self.create-table: 'people'"), 'schema:dump renders the people table';
+ok $dump.contains(':text'),                       'schema:dump maps the string column (TEXT on SQLite)';
+ok $dump.contains(':integer'),                    'schema:dump maps the integer column';
+ok $dump.contains("self.add-index: 'people'"),    'schema:dump renders the index';
+ok $dump.contains("self.create-table: 'pets'"),   'schema:dump renders the pets table';
+ok $dump.contains('<001 002>'),                   'schema:dump records the applied versions';
+ok $dump.contains("self.drop-table: 'people'"),   'schema:dump renders a reversing down';
+
+# structure:dump
+$tasks.structure-dump(path => $struct);
+my $sql = $struct.IO.slurp;
+
+ok $sql.contains('CREATE TABLE'),            'structure:dump emits raw CREATE TABLE statements';
+ok $sql.contains('people') && $sql.contains('pets'), 'structure:dump includes every table';
+ok $sql.contains('INSERT INTO migrations'),  'structure:dump records applied versions as inserts';
+
+# schema:cache:dump / load / clear
+$tasks.schema-cache-dump(path => $cache);
+ok $cache.IO.e, 'schema:cache:dump writes the cache file';
+
+my $loaded = SchemaCache.new.load-yaml(path => $cache);
+ok 'people' (elem) $loaded.table-names, 'the schema cache round-trips through YAML';
+
+$tasks.schema-cache-clear(path => $cache);
+nok $cache.IO.e, 'schema:cache:clear removes the cache file';
+
+# schema:load — purge then rebuild from the dumped schema
+$tasks.schema-load(path => $schema);
+
+ok tables(){'people'}, 'schema:load recreates the people table';
+ok tables(){'pets'},   'schema:load recreates the pets table';
+ok columns('people'){'age'}, 'schema:load restores the table columns';
+is $tasks.version, '002', 'schema:load records the schema version';

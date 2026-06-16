@@ -138,5 +138,13 @@ group 'schema introspection', :order<defined>, {
       my $loaded = SchemaCache.new.load(path => $cache-path);
       expect('_si_things' (elem) $loaded.table-names).to.be-truthy;
     }
+
+    it 'round-trips through a YAML file', {
+      my $yaml-path = $cache-path ~ '.yml';
+      SchemaCache.new(adapter => $adapter).dump-yaml(path => $yaml-path);
+      my $loaded = SchemaCache.new.load-yaml(path => $yaml-path);
+      LEAVE { try { $yaml-path.IO.unlink } }
+      expect('_si_things' (elem) $loaded.table-names).to.be-truthy;
+    }
   }
 }
