@@ -11,6 +11,7 @@ use ORM::ActiveRecord::Support::WorkerDb;
 use ORM::ActiveRecord::Support::Environment;
 use ORM::ActiveRecord::Instrumentation::QueryLogs;
 use ORM::ActiveRecord::Instrumentation::LogSubscriber;
+use ORM::ActiveRecord::Support::Log;
 
 class DB is export {
   my %shared;
@@ -165,8 +166,24 @@ class DB is export {
       $adapter.advisory-locks = self!config-bool($_);
     }
 
-    with (%config<slow_query_threshold> // %config<slow-query-threshold>) {
-      LogSubscriber.attach(slow-threshold => .Num);
+    with (%config<logging>) -> $log {
+      if $log ~~ Associative {
+        Log.configure(
+          |(level  => .Str               with $log<level>),
+          |(format => .Str               with ($log<format> // $log<formatter>)),
+          |(colour => self!config-bool($_) with ($log<color> // $log<colour>)),
+        );
+      }
+    }
+
+    my $slow    = %config<slow_query_threshold> // %config<slow-query-threshold>;
+    my $log-all = %config<log_queries>          // %config<log-queries>;
+
+    if $slow.defined || $log-all.defined {
+      LogSubscriber.attach(
+        |(slow-threshold => .Num with $slow),
+        log-all => ($log-all.defined && self!config-bool($log-all)),
+      );
     }
 
     with (%config<query_log_tags> // %config<query-log-tags>) -> $tags {

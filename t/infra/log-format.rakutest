@@ -1,0 +1,59 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use JSON::Tiny;
+use ORM::ActiveRecord::Support::Log;
+
+plan 10;
+
+%*ENV<DISABLE-SQL-LOG>:delete;
+
+my @captured;
+Log.reset;
+Log.set-sink(-> $line, $level { @captured.push: %( :$line, :$level ) });
+
+LEAVE { Log.reset }
+
+sub last-line { @captured.tail<line> }
+
+# bound values in the query log
+Log.set-colour(False);
+@captured = [];
+Log.query(sql => 'INSERT INTO users (name) VALUES (?)', ms => 5, binds => ['Ada']);
+ok last-line.contains('(5ms)'),            'query log includes the timing';
+ok last-line.contains("[binds: 'Ada']"),   'query log includes the bound values';
+
+# numeric and null binds render distinctly
+@captured = [];
+Log.query(sql => 'SELECT 1', ms => 1, binds => [7, Any]);
+ok last-line.contains('7, NULL'),          'binds render numbers bare and undefined as NULL';
+
+# colour toggle
+@captured = [];
+Log.set-colour(True);
+Log.query(sql => 'SELECT 1', ms => 1);
+ok last-line.contains("\e["),              'colour on emits ANSI escapes';
+
+@captured = [];
+Log.set-colour(False);
+Log.query(sql => 'SELECT 1', ms => 1);
+nok last-line.contains("\e["),             'colour off emits plain text';
+
+# JSON formatter
+@captured = [];
+Log.set-format('json');
+Log.query(sql => 'SELECT 1', ms => 3, binds => ['x']);
+my %entry = from-json(last-line);
+is %entry<kind>, 'query',                  'json formatter tags the entry kind';
+is %entry<ms>, 3,                          'json formatter carries the timing';
+is %entry<binds>[0], 'x',                  'json formatter carries the binds';
+
+# level gating
+Log.set-format('text');
+Log.set-level('warn');
+@captured = [];
+Log.query(sql => 'SELECT 1', ms => 1, slow => False);
+is @captured.elems, 0,                     'a level above the entry suppresses normal queries';
+
+Log.query(sql => 'SELECT 1', ms => 9000, slow => True);
+is @captured.elems, 1,                     'a slow query still logs at the warn level';

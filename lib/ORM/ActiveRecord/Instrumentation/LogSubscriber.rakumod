@@ -44,7 +44,7 @@ class LogSubscriber is export {
 
   method !log(%payload, Bool :$slow) {
     my $ms = ((%payload<duration> // 0) * 1000).round(0.1);
-    Log.query(sql => %payload<sql> // '', :$ms, :$slow);
+    Log.query(sql => %payload<sql> // '', :$ms, :$slow, binds => (%payload<binds> // []).list);
   }
 
   method reset {
