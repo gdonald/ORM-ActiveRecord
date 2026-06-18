@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../types/">
+        <link rel="prev" href="../db-tasks/">
       
       
-        <link rel="next" href="../normalization/">
+        <link rel="next" href="../models/models/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Enums - ORM::ActiveRecord</title>
+        <title>Runtime tasks - ORM::ActiveRecord</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
       
 
@@ -46,7 +46,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#enums" class="md-skip">
+        <a href="#runtime-tasks" class="md-skip">
           Skip to content
         </a>
       
@@ -80,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Enums
+              Runtime tasks
             
           </span>
         </div>
@@ -178,7 +178,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -196,7 +196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -223,7 +223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../adapters/" class="md-nav__link">
+      <a href="../adapters/" class="md-nav__link">
         
   
   
@@ -250,7 +250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../migrations/" class="md-nav__link">
+      <a href="../migrations/" class="md-nav__link">
         
   
   
@@ -277,7 +277,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../generators/" class="md-nav__link">
+      <a href="../generators/" class="md-nav__link">
         
   
   
@@ -304,7 +304,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../db-tasks/" class="md-nav__link">
+      <a href="../db-tasks/" class="md-nav__link">
         
   
   
@@ -328,10 +328,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../runtime/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime tasks
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -347,6 +374,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ar-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ar console
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ar-runner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ar runner
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ar-dbconsole" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ar dbconsole
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ar-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ar notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ar-stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ar stats
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -355,20 +457,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
@@ -389,7 +489,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -407,7 +507,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../models/models/" class="md-nav__link">
         
   
   
@@ -435,7 +535,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../finders/" class="md-nav__link">
+      <a href="../models/finders/" class="md-nav__link">
         
   
   
@@ -463,7 +563,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../relations/" class="md-nav__link">
+      <a href="../models/relations/" class="md-nav__link">
         
   
   
@@ -491,7 +591,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+      <a href="../models/queries/" class="md-nav__link">
         
   
   
@@ -519,7 +619,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../joins/" class="md-nav__link">
+      <a href="../models/joins/" class="md-nav__link">
         
   
   
@@ -547,7 +647,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aggregation/" class="md-nav__link">
+      <a href="../models/aggregation/" class="md-nav__link">
         
   
   
@@ -575,7 +675,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../batching/" class="md-nav__link">
+      <a href="../models/batching/" class="md-nav__link">
         
   
   
@@ -603,7 +703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../raw/" class="md-nav__link">
+      <a href="../models/raw/" class="md-nav__link">
         
   
   
@@ -631,7 +731,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inspection/" class="md-nav__link">
+      <a href="../models/inspection/" class="md-nav__link">
         
   
   
@@ -659,7 +759,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../models/persistence/" class="md-nav__link">
         
   
   
@@ -687,7 +787,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../models/types/" class="md-nav__link">
         
   
   
@@ -712,37 +812,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Enums
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../models/enums/" class="md-nav__link">
         
   
   
@@ -758,81 +831,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#declaring" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Declaring
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reading-and-writing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reading and writing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#predicates-and-the-bang-setter" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Predicates and the bang setter
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#class-scopes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Class scopes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inspecting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Inspecting
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -845,7 +843,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../normalization/" class="md-nav__link">
+      <a href="../models/normalization/" class="md-nav__link">
         
   
   
@@ -873,7 +871,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../serialization/" class="md-nav__link">
+      <a href="../models/serialization/" class="md-nav__link">
         
   
   
@@ -901,7 +899,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callbacks/" class="md-nav__link">
+      <a href="../models/callbacks/" class="md-nav__link">
         
   
   
@@ -929,7 +927,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../discard/" class="md-nav__link">
+      <a href="../models/discard/" class="md-nav__link">
         
   
   
@@ -957,7 +955,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inheritance/" class="md-nav__link">
+      <a href="../models/inheritance/" class="md-nav__link">
         
   
   
@@ -985,7 +983,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../secure-tokens/" class="md-nav__link">
+      <a href="../models/secure-tokens/" class="md-nav__link">
         
   
   
@@ -1013,7 +1011,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../encryption/" class="md-nav__link">
+      <a href="../models/encryption/" class="md-nav__link">
         
   
   
@@ -1041,7 +1039,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../transactions/" class="md-nav__link">
+      <a href="../models/transactions/" class="md-nav__link">
         
   
   
@@ -1123,7 +1121,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/data/" class="md-nav__link">
+      <a href="../validations/data/" class="md-nav__link">
         
   
   
@@ -1151,7 +1149,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/conditionals/" class="md-nav__link">
+      <a href="../validations/conditionals/" class="md-nav__link">
         
   
   
@@ -1179,7 +1177,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/options/" class="md-nav__link">
+      <a href="../validations/options/" class="md-nav__link">
         
   
   
@@ -1207,7 +1205,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/i18n/" class="md-nav__link">
+      <a href="../validations/i18n/" class="md-nav__link">
         
   
   
@@ -1242,7 +1240,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../errors/" class="md-nav__link">
+      <a href="../errors/" class="md-nav__link">
         
   
   
@@ -1269,7 +1267,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../logging/" class="md-nav__link">
+      <a href="../logging/" class="md-nav__link">
         
   
   
@@ -1296,7 +1294,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../instrumentation/" class="md-nav__link">
+      <a href="../instrumentation/" class="md-nav__link">
         
   
   
@@ -1323,7 +1321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tests/" class="md-nav__link">
+      <a href="../tests/" class="md-nav__link">
         
   
   
@@ -1370,10 +1368,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#declaring" class="md-nav__link">
+  <a href="#ar-console" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Declaring
+        ar console
       
     </span>
   </a>
@@ -1381,10 +1379,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading-and-writing" class="md-nav__link">
+  <a href="#ar-runner" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reading and writing
+        ar runner
       
     </span>
   </a>
@@ -1392,10 +1390,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#predicates-and-the-bang-setter" class="md-nav__link">
+  <a href="#ar-dbconsole" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Predicates and the bang setter
+        ar dbconsole
       
     </span>
   </a>
@@ -1403,10 +1401,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#class-scopes" class="md-nav__link">
+  <a href="#ar-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Class scopes
+        ar notes
       
     </span>
   </a>
@@ -1414,10 +1412,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#inspecting" class="md-nav__link">
+  <a href="#ar-stats" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Inspecting
+        ar stats
       
     </span>
   </a>
@@ -1441,72 +1439,67 @@
 
 
 
-<h1 id="enums">Enums</h1>
-<p>An enum maps a column's stored value to a set of symbolic names. The column
-holds the backing value (an integer or a string); the model works in terms of
-the names.</p>
-<h2 id="declaring">Declaring</h2>
-<p>Declare an enum in the model's <code>submethod BUILD</code>, alongside attributes,
-validations, and associations. The first argument is the column; the second
-maps each symbolic name to its backing value.</p>
+<h1 id="runtime-tasks">Runtime tasks</h1>
+<p>The <code>ar</code> runtime subcommands run code against the app, open a database client,
+and report on the source tree.</p>
+<h2 id="ar-console">ar console</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar console
+</code></pre></div></td></tr></table></div>
+
+<p>Starts a Raku REPL with the project's <code>lib</code>, <code>app/models</code>, and <code>app/validators</code>
+directories on the include path (the ones that exist). <code>use</code> the ORM and your
+models to poke at data:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>&gt; <span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
+&gt; <span class="k">use</span> <span class="n">Models::User</span>;
+&gt; <span class="n">Models::User</span>.<span class="nb">count</span>;
+</code></pre></div></td></tr></table></div>
+
+<h2 id="ar-runner">ar runner</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>ar runner script.raku
+ar runner &quot;Models::User.where({ active =&gt; True }).count.say&quot;
+</code></pre></div></td></tr></table></div>
+
+<p>Runs a script file or inline code. The first argument is treated as a file when
+it exists on disk, otherwise as code to evaluate. The database connection is
+resolved lazily from config, so models work without any setup. Inline code does
+not auto-print, so call <code>.say</code> (or <code>say ...</code>) when you want output.</p>
+<h2 id="ar-dbconsole">ar dbconsole</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar dbconsole
+</code></pre></div></td></tr></table></div>
+
+<p>Opens the native client for the active environment's primary connection with
+the configured credentials: <code>sqlite3</code> for SQLite, <code>psql</code> for PostgreSQL (the
+password is passed via <code>PGPASSWORD</code>), and <code>mysql</code> for MySQL.</p>
+<h2 id="ar-notes">ar notes</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar notes
+</code></pre></div></td></tr></table></div>
+
+<p>Scans the source tree (<code>lib</code>, <code>bin</code>, <code>app</code>, <code>db</code>, <code>t</code>) for annotation comments
+and lists them with file and line:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>TODO     lib/foo.rakumod:42  revisit this once the cache lands
+FIXME    app/models/user.rakumod:18  handle the nil case
+</code></pre></div></td></tr></table></div>
+
+<p>The recognised tags are <code>TODO</code>, <code>FIXME</code>, <code>OPTIMIZE</code>, <code>HACK</code>, and <code>XXX</code>.</p>
+<h2 id="ar-stats">ar stats</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar stats
+</code></pre></div></td></tr></table></div>
+
+<p>Counts source files, total lines, code lines (non-blank, non-comment), model
+declarations, and migrations:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nb">Order</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">method</span> <span class="n">table-name</span> { <span class="s">&#39;orders&#39;</span> }
-
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">enum:</span> <span class="s">&#39;status&#39;</span>, { <span class="n">active</span> =&gt; <span class="mi">0</span>, <span class="n">archived</span> =&gt; <span class="mi">9</span> };
-    <span class="nb">self</span>.<span class="n">enum:</span> <span class="s">&#39;state&#39;</span>,  { <span class="nb">open</span> =&gt; <span class="s">&#39;open&#39;</span>, <span class="nb">closed</span> =&gt; <span class="s">&#39;closed&#39;</span> };
-  }
-}
-</code></pre></div></td></tr></table></div>
-
-<p>Backing values may be integers or strings, and the integers need not be
-contiguous. A column with no enum keeps its raw value.</p>
-<h2 id="reading-and-writing">Reading and writing</h2>
-<p>The reader returns the symbolic name; the column stores the backing value:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$order</span> = <span class="nb">Order</span>.<span class="n">create</span>({ <span class="nb">status</span> =&gt; <span class="s">&#39;active&#39;</span> });
-<span class="nv">$order</span>.<span class="nb">status</span>;          <span class="c1"># &#39;active&#39;</span>
-<span class="c1"># the orders.status column holds 0</span>
-</code></pre></div></td></tr></table></div>
-
-<p>Assigning either a name or a backing value normalises to the name in memory:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">Order</span>.<span class="n">create</span>({ <span class="nb">status</span> =&gt; <span class="mi">9</span> }).<span class="nb">status</span>;    <span class="c1"># &#39;archived&#39;</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="predicates-and-the-bang-setter">Predicates and the bang setter</h2>
-<p>Each value gets a predicate and a setter. The predicate <code>is-&lt;value&gt;</code> reports
-whether that value is current. The setter <code>&lt;value&gt;-bang</code> assigns the value and
-saves the record.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$order</span>.<span class="n">is-active</span>;       <span class="c1"># True</span>
-<span class="nv">$order</span>.<span class="n">is-archived</span>;     <span class="c1"># False</span>
-
-<span class="nv">$order</span>.<span class="n">archived-bang</span>;   <span class="c1"># sets status to &#39;archived&#39; and saves</span>
-</code></pre></div></td></tr></table></div>
-
-<p>The bang suffix replaces Rails' <code>status!</code> (Raku method names cannot end in <code>!</code>).</p>
-<h2 id="class-scopes">Class scopes</h2>
-<p>Each value adds a class scope returning a relation filtered to that value:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">Order</span>.<span class="n">active</span>.<span class="nb">all</span>;       <span class="c1"># orders whose status is active</span>
-<span class="nb">Order</span>.<span class="n">archived</span>.<span class="nb">all</span>;
-<span class="nb">Order</span>.<span class="nb">closed</span>.<span class="nb">all</span>;       <span class="c1"># works for text-backed enums too</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="inspecting">Inspecting</h2>
-<p><code>enum-values('status')</code> lists the symbolic names declared for a column.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">Order</span>.<span class="n">enum-values</span>(<span class="s">&#39;status&#39;</span>);    <span class="c1"># (&#39;active&#39;, &#39;archived&#39;)</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code>Files:      85
+Lines:      14553
+Code lines: 11814
+Models:     12
+Migrations: 57
 </code></pre></div></td></tr></table></div>
 
 
@@ -1557,10 +1550,10 @@ saves the record.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

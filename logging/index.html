@@ -303,6 +303,60 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../db-tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -312,10 +366,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -333,8 +387,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -926,10 +980,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -947,8 +1001,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1182,6 +1236,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#structured-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structured configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sql-log-with-timing-and-bound-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQL log with timing and bound values
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#disabling-sql-logging" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1292,6 +1368,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#structured-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structured configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sql-log-with-timing-and-bound-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQL log with timing and bound values
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#disabling-sql-logging" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1352,6 +1450,71 @@ and <code>ERROR</code>-level messages will be appended to that file:</p>
   elsewhere (LSP, CI checkout from a parent dir, etc.) skips it cleanly.
   Export a different value before invoking <code>ar</code> to override.</li>
 </ul>
+<h2 id="structured-configuration">Structured configuration</h2>
+<p><code>Support::Log</code> has a small configuration layer over the SQL log: a minimum
+level, a text-or-JSON formatter, an ANSI colour toggle, and a pluggable sink.
+The defaults reproduce the original colourised text routed through Log::Async.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Support::Log</span>;
+
+<span class="n">Log</span>.<span class="n">set-level</span>(<span class="s">&#39;warn&#39;</span>);     <span class="c1"># only warn / error entries emit (slow queries are warn)</span>
+<span class="n">Log</span>.<span class="n">set-format</span>(<span class="s">&#39;json&#39;</span>);    <span class="c1"># one JSON object per line instead of coloured text</span>
+<span class="n">Log</span>.<span class="n">set-colour</span>(<span class="nb">False</span>);     <span class="c1"># plain text (e.g. when writing to a file)</span>
+<span class="n">Log</span>.<span class="n">set-sink</span>(-&gt; <span class="nv">$line</span>, <span class="nv">$level</span> { <span class="vg">$*ERR</span>.<span class="nb">say</span>(<span class="nv">$line</span>) });   <span class="c1"># route lines anywhere</span>
+<span class="n">Log</span>.<span class="n">reset</span>;                 <span class="c1"># back to the defaults</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>configure</code> sets several at once and is what the config file drives:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Log</span>.<span class="n">configure</span>(<span class="nb">level</span> =&gt; <span class="s">&#39;info&#39;</span>, <span class="nb">format</span> =&gt; <span class="s">&#39;json&#39;</span>, <span class="n">colour</span> =&gt; <span class="nb">False</span>);
+</code></pre></div></td></tr></table></div>
+
+<p>In <code>config/application.json</code>, a <code>logging</code> object on a connection applies the
+same settings at boot:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;development&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;primary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;postgres&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;myapp_dev&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;logging&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;info&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;format&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;color&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;log_queries&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;slow_query_threshold&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+
+<p>The JSON formatter emits one object per line, which a structured-log collector
+can ingest directly:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="s2">&quot;query&quot;</span><span class="p">,</span><span class="nt">&quot;level&quot;</span><span class="p">:</span><span class="s2">&quot;info&quot;</span><span class="p">,</span><span class="nt">&quot;sql&quot;</span><span class="p">:</span><span class="s2">&quot;SELECT * FROM users WHERE id = ?&quot;</span><span class="p">,</span><span class="nt">&quot;ms&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">&quot;slow&quot;</span><span class="p">:</span><span class="kc">false</span><span class="p">,</span><span class="nt">&quot;binds&quot;</span><span class="p">:[</span><span class="s2">&quot;7&quot;</span><span class="p">]}</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="sql-log-with-timing-and-bound-values">SQL log with timing and bound values</h2>
+<p>Slow queries (at or over <code>slow_query_threshold</code>) are always logged with their
+duration. Set <code>log_queries: true</code> (or call <code>LogSubscriber.attach(:log-all)</code>) to
+log <strong>every</strong> query, each with its timing and the bound parameter values:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>(3ms) SELECT * FROM users WHERE id = ? [binds: 7]
+SLOW (812ms) UPDATE orders SET state = ? WHERE id = ? [binds: &#39;shipped&#39;, 42]
+</code></pre></div></td></tr></table></div>
+
+<p>Bound values render with numbers bare, strings quoted, and <code>NULL</code> for an
+undefined value. See <a href="../instrumentation/">Instrumentation</a> for the underlying
+<code>sql.active_record</code> event and the <code>LogSubscriber</code> that formats these lines.</p>
 <h2 id="disabling-sql-logging">Disabling SQL logging</h2>
 <p>Adapters emit each query at <code>INFO</code> level. To silence them, set:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">export</span><span class="w"> </span>DISABLE-SQL-LOG<span class="o">=</span><span class="m">1</span>

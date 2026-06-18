@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../types/">
+        <link rel="prev" href="../generators/">
       
       
-        <link rel="next" href="../normalization/">
+        <link rel="next" href="../runtime/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Enums - ORM::ActiveRecord</title>
+        <title>Database tasks - ORM::ActiveRecord</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
       
 
@@ -46,7 +46,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#enums" class="md-skip">
+        <a href="#database-tasks" class="md-skip">
           Skip to content
         </a>
       
@@ -80,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Enums
+              Database tasks
             
           </span>
         </div>
@@ -178,7 +178,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -196,7 +196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -223,7 +223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../adapters/" class="md-nav__link">
+      <a href="../adapters/" class="md-nav__link">
         
   
   
@@ -250,7 +250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../migrations/" class="md-nav__link">
+      <a href="../migrations/" class="md-nav__link">
         
   
   
@@ -277,7 +277,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../generators/" class="md-nav__link">
+      <a href="../generators/" class="md-nav__link">
         
   
   
@@ -301,10 +301,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../db-tasks/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database tasks
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -320,6 +347,103 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migrating" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migrating
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspecting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspecting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#seeding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seeding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test database
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-dump-and-load" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema dump and load
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema cache
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -331,7 +455,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../runtime/" class="md-nav__link">
+      <a href="../runtime/" class="md-nav__link">
         
   
   
@@ -355,20 +479,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
@@ -389,7 +511,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -407,7 +529,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../models/models/" class="md-nav__link">
         
   
   
@@ -435,7 +557,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../finders/" class="md-nav__link">
+      <a href="../models/finders/" class="md-nav__link">
         
   
   
@@ -463,7 +585,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../relations/" class="md-nav__link">
+      <a href="../models/relations/" class="md-nav__link">
         
   
   
@@ -491,7 +613,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+      <a href="../models/queries/" class="md-nav__link">
         
   
   
@@ -519,7 +641,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../joins/" class="md-nav__link">
+      <a href="../models/joins/" class="md-nav__link">
         
   
   
@@ -547,7 +669,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aggregation/" class="md-nav__link">
+      <a href="../models/aggregation/" class="md-nav__link">
         
   
   
@@ -575,7 +697,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../batching/" class="md-nav__link">
+      <a href="../models/batching/" class="md-nav__link">
         
   
   
@@ -603,7 +725,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../raw/" class="md-nav__link">
+      <a href="../models/raw/" class="md-nav__link">
         
   
   
@@ -631,7 +753,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inspection/" class="md-nav__link">
+      <a href="../models/inspection/" class="md-nav__link">
         
   
   
@@ -659,7 +781,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../models/persistence/" class="md-nav__link">
         
   
   
@@ -687,7 +809,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../models/types/" class="md-nav__link">
         
   
   
@@ -712,37 +834,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Enums
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../models/enums/" class="md-nav__link">
         
   
   
@@ -758,81 +853,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#declaring" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Declaring
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reading-and-writing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reading and writing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#predicates-and-the-bang-setter" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Predicates and the bang setter
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#class-scopes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Class scopes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inspecting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Inspecting
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -845,7 +865,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../normalization/" class="md-nav__link">
+      <a href="../models/normalization/" class="md-nav__link">
         
   
   
@@ -873,7 +893,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../serialization/" class="md-nav__link">
+      <a href="../models/serialization/" class="md-nav__link">
         
   
   
@@ -901,7 +921,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callbacks/" class="md-nav__link">
+      <a href="../models/callbacks/" class="md-nav__link">
         
   
   
@@ -929,7 +949,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../discard/" class="md-nav__link">
+      <a href="../models/discard/" class="md-nav__link">
         
   
   
@@ -957,7 +977,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inheritance/" class="md-nav__link">
+      <a href="../models/inheritance/" class="md-nav__link">
         
   
   
@@ -985,7 +1005,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../secure-tokens/" class="md-nav__link">
+      <a href="../models/secure-tokens/" class="md-nav__link">
         
   
   
@@ -1013,7 +1033,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../encryption/" class="md-nav__link">
+      <a href="../models/encryption/" class="md-nav__link">
         
   
   
@@ -1041,7 +1061,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../transactions/" class="md-nav__link">
+      <a href="../models/transactions/" class="md-nav__link">
         
   
   
@@ -1123,7 +1143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/data/" class="md-nav__link">
+      <a href="../validations/data/" class="md-nav__link">
         
   
   
@@ -1151,7 +1171,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/conditionals/" class="md-nav__link">
+      <a href="../validations/conditionals/" class="md-nav__link">
         
   
   
@@ -1179,7 +1199,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/options/" class="md-nav__link">
+      <a href="../validations/options/" class="md-nav__link">
         
   
   
@@ -1207,7 +1227,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/i18n/" class="md-nav__link">
+      <a href="../validations/i18n/" class="md-nav__link">
         
   
   
@@ -1242,7 +1262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../errors/" class="md-nav__link">
+      <a href="../errors/" class="md-nav__link">
         
   
   
@@ -1269,7 +1289,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../logging/" class="md-nav__link">
+      <a href="../logging/" class="md-nav__link">
         
   
   
@@ -1296,7 +1316,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../instrumentation/" class="md-nav__link">
+      <a href="../instrumentation/" class="md-nav__link">
         
   
   
@@ -1323,7 +1343,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tests/" class="md-nav__link">
+      <a href="../tests/" class="md-nav__link">
         
   
   
@@ -1370,10 +1390,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#declaring" class="md-nav__link">
+  <a href="#lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Declaring
+        Lifecycle
       
     </span>
   </a>
@@ -1381,32 +1401,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading-and-writing" class="md-nav__link">
+  <a href="#migrating" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reading and writing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#predicates-and-the-bang-setter" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Predicates and the bang setter
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#class-scopes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Class scopes
+        Migrating
       
     </span>
   </a>
@@ -1418,6 +1416,50 @@
     <span class="md-ellipsis">
       
         Inspecting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#seeding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seeding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test database
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-dump-and-load" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema dump and load
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema cache
       
     </span>
   </a>
@@ -1441,73 +1483,122 @@
 
 
 
-<h1 id="enums">Enums</h1>
-<p>An enum maps a column's stored value to a set of symbolic names. The column
-holds the backing value (an integer or a string); the model works in terms of
-the names.</p>
-<h2 id="declaring">Declaring</h2>
-<p>Declare an enum in the model's <code>submethod BUILD</code>, alongside attributes,
-validations, and associations. The first argument is the column; the second
-maps each symbolic name to its backing value.</p>
+<h1 id="database-tasks">Database tasks</h1>
+<p>The <code>ar db:*</code> tasks manage the database lifecycle: creating and dropping it,
+running and inspecting migrations, and seeding. They act on the active
+environment's configured connections (all of them for a multi-database setup);
+migration-state tasks report on the primary connection.</p>
+<h2 id="lifecycle">Lifecycle</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:create     # create the configured database(s)
+ar db:drop       # drop the configured database(s)
+ar db:setup      # create + migrate + seed
+ar db:reset      # drop + create + migrate + seed
+ar db:prepare    # create, migrate, and seed only when the database is new
+</code></pre></div></td></tr></table></div>
+
+<p><code>db:create</code> and <code>db:drop</code> operate on the database itself (the file for SQLite,
+the <code>CREATE DATABASE</code> / <code>DROP DATABASE</code> for PostgreSQL and MySQL). <code>db:setup</code>
+and <code>db:reset</code> are the full rebuild paths; <code>db:prepare</code> is the idempotent one
+that seeds a freshly created database but leaves an existing one untouched.</p>
+<h2 id="migrating">Migrating</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nb">Order</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">method</span> <span class="n">table-name</span> { <span class="s">&#39;orders&#39;</span> }
-
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">enum:</span> <span class="s">&#39;status&#39;</span>, { <span class="n">active</span> =&gt; <span class="mi">0</span>, <span class="n">archived</span> =&gt; <span class="mi">9</span> };
-    <span class="nb">self</span>.<span class="n">enum:</span> <span class="s">&#39;state&#39;</span>,  { <span class="nb">open</span> =&gt; <span class="s">&#39;open&#39;</span>, <span class="nb">closed</span> =&gt; <span class="s">&#39;closed&#39;</span> };
-  }
-}
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span><span class="w">                 </span>#<span class="w"> </span><span class="nv">apply</span><span class="w"> </span><span class="nv">every</span><span class="w"> </span><span class="nv">pending</span><span class="w"> </span><span class="nv">migration</span>
+<span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span><span class="mi">20260615120000</span>
+<span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span>:<span class="nv">up</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span>...<span class="w">   </span>#<span class="w"> </span><span class="nv">run</span><span class="w"> </span><span class="nv">one</span><span class="w"> </span><span class="nv">migration</span><span class="err">&#39;s up</span>
+<span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span>:<span class="nv">down</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span>...<span class="w"> </span>#<span class="w"> </span><span class="nv">run</span><span class="w"> </span><span class="nv">one</span><span class="w"> </span><span class="nv">migration</span><span class="err">&#39;s down</span>
+<span class="err">ar db:rollback                 # roll back the last migration</span>
+<span class="err">ar db:rollback STEP=3          # roll back the last 3</span>
+<span class="err">ar db:migrate:redo             # roll back then re-apply (STEP=N supported)</span>
 </code></pre></div></td></tr></table></div>
 
-<p>Backing values may be integers or strings, and the integers need not be
-contiguous. A column with no enum keeps its raw value.</p>
-<h2 id="reading-and-writing">Reading and writing</h2>
-<p>The reader returns the symbolic name; the column stores the backing value:</p>
+<p><code>db:migrate VERSION=NNN</code> brings the schema to exactly that version: it applies
+every pending migration at or below the target and rolls back every applied
+migration above it. <code>VERSION=0</code> rolls everything back.</p>
+<h2 id="inspecting">Inspecting</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$order</span> = <span class="nb">Order</span>.<span class="n">create</span>({ <span class="nb">status</span> =&gt; <span class="s">&#39;active&#39;</span> });
-<span class="nv">$order</span>.<span class="nb">status</span>;          <span class="c1"># &#39;active&#39;</span>
-<span class="c1"># the orders.status column holds 0</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:version                       # the highest applied version
+ar db:migrate:status                # each migration as up / down
+ar db:abort_if_pending_migrations   # exit non-zero if any migration is pending
 </code></pre></div></td></tr></table></div>
 
-<p>Assigning either a name or a backing value normalises to the name in memory:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">Order</span>.<span class="n">create</span>({ <span class="nb">status</span> =&gt; <span class="mi">9</span> }).<span class="nb">status</span>;    <span class="c1"># &#39;archived&#39;</span>
+<p><code>db:migrate:status</code> prints one line per migration:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>up    20260101120000  create-users
+up    20260102090000  add-email-to-users
+down  20260615120000  create-widgets
 </code></pre></div></td></tr></table></div>
 
-<h2 id="predicates-and-the-bang-setter">Predicates and the bang setter</h2>
-<p>Each value gets a predicate and a setter. The predicate <code>is-&lt;value&gt;</code> reports
-whether that value is current. The setter <code>&lt;value&gt;-bang</code> assigns the value and
-saves the record.</p>
+<p><code>db:abort_if_pending_migrations</code> is the guard to put in front of a deploy or a
+test run: it exits <code>1</code> (and lists the pending versions) when the schema is
+behind, and <code>0</code> otherwise.</p>
+<h2 id="seeding">Seeding</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:seed
+</code></pre></div></td></tr></table></div>
+
+<p>Runs <code>db/seeds.raku</code>, an ordinary Raku script that uses the ORM to insert
+records. It runs in the CLI process against the active connection, so it loads
+its own models:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$order</span>.<span class="n">is-active</span>;       <span class="c1"># True</span>
-<span class="nv">$order</span>.<span class="n">is-archived</span>;     <span class="c1"># False</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">lib</span> <span class="s">&#39;app/models&#39;</span>;
+<span class="k">use</span> <span class="n">Models::User</span>;
 
-<span class="nv">$order</span>.<span class="n">archived-bang</span>;   <span class="c1"># sets status to &#39;archived&#39; and saves</span>
+<span class="n">Models::User</span>.<span class="n">create</span>({ <span class="n">fname</span> =&gt; <span class="s">&#39;Ada&#39;</span>,   <span class="n">lname</span> =&gt; <span class="s">&#39;Lovelace&#39;</span> });
+<span class="n">Models::User</span>.<span class="n">create</span>({ <span class="n">fname</span> =&gt; <span class="s">&#39;Alan&#39;</span>,  <span class="n">lname</span> =&gt; <span class="s">&#39;Turing&#39;</span> });
 </code></pre></div></td></tr></table></div>
 
-<p>The bang suffix replaces Rails' <code>status!</code> (Raku method names cannot end in <code>!</code>).</p>
-<h2 id="class-scopes">Class scopes</h2>
-<p>Each value adds a class scope returning a relation filtered to that value:</p>
+<p><code>db:setup</code>, <code>db:reset</code>, and a new-database <code>db:prepare</code> all run the seeds as
+their last step.</p>
+<h2 id="test-database">Test database</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">test</span><span class="p">:</span><span class="n">prepare</span><span class="w">        </span><span class="c1"># create + migrate the test database</span>
+<span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">test</span><span class="p">:</span><span class="n">load_schema</span><span class="w">    </span><span class="c1"># alias of db:test:prepare</span>
+</code></pre></div></td></tr></table></div>
+
+<p>These ready the <code>test</code> environment's database. For the parallel test setup (the
+per-worker databases behave uses), <code>ar createdb --parallel</code> and
+<code>ar migrate --parallel</code> create and migrate every worker copy.</p>
+<h2 id="schema-dump-and-load">Schema dump and load</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">Order</span>.<span class="n">active</span>.<span class="nb">all</span>;       <span class="c1"># orders whose status is active</span>
-<span class="nb">Order</span>.<span class="n">archived</span>.<span class="nb">all</span>;
-<span class="nb">Order</span>.<span class="nb">closed</span>.<span class="nb">all</span>;       <span class="c1"># works for text-backed enums too</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">schema</span><span class="p">:</span><span class="n">dump</span><span class="w">     </span><span class="c1"># introspect the database into db/schema.raku</span>
+<span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">schema</span><span class="p">:</span><span class="nb">load</span><span class="w">     </span><span class="c1"># purge, then rebuild the database from db/schema.raku</span>
+<span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">structure</span><span class="p">:</span><span class="n">dump</span><span class="w">  </span><span class="c1"># dump the raw DDL to db/structure.sql</span>
 </code></pre></div></td></tr></table></div>
 
-<h2 id="inspecting">Inspecting</h2>
-<p><code>enum-values('status')</code> lists the symbolic names declared for a column.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">Order</span>.<span class="n">enum-values</span>(<span class="s">&#39;status&#39;</span>);    <span class="c1"># (&#39;active&#39;, &#39;archived&#39;)</span>
+<p><code>db/schema.raku</code> is a <code>Migration</code> subclass that recreates the tables with the
+migration DSL, plus the list of applied versions. It is portable across
+adapters, but lossy: column limits, defaults, and foreign keys are not
+recoverable through the introspection API and are omitted. <code>db:schema:load</code>
+drops every table and re-runs the dumped <code>up</code>, then records the schema's
+versions so the app sees the migrations as applied (the fast alternative to
+replaying every migration).</p>
+<p><code>db:structure:dump</code> writes the exact, database-specific DDL: the
+<code>sqlite_master</code> statements on SQLite, and <code>pg_dump --schema-only</code> /
+<code>mysqldump --no-data</code> on PostgreSQL and MySQL. Use it when the schema relies on
+features the portable dump cannot represent.</p>
+<h2 id="schema-cache">Schema cache</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:schema:cache:dump   # write db/schema_cache.yml
+ar db:schema:cache:clear  # remove db/schema_cache.yml
 </code></pre></div></td></tr></table></div>
+
+<p>The schema cache is a YAML snapshot of every table's columns, indexes,
+constraints, and sequences, so an app can skip live introspection at boot. Load
+it with <code>SchemaCache.load-yaml(:path)</code>.</p>
 
 
 
@@ -1557,10 +1648,10 @@ saves the record.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
