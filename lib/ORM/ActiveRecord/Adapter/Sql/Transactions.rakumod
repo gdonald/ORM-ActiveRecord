@@ -72,6 +72,25 @@ role SqlTransactions is export {
     self!run-savepoint($name, &block);
   }
 
+  # Open a transaction that stays open until `force-rollback`. This is the basis
+  # for the transactional-test wrapper: a test runs inside it and is discarded
+  # at teardown. Because the depth is set, nested model transactions join or
+  # take savepoints rather than issuing a second BEGIN.
+  method open-transaction(Str :$isolation) {
+    return if $!txn-depth > 0;
+    self.begin-sql(:$isolation);
+    $!txn-depth  = 1;
+    $!sp-counter = 0;
+    $!txn-start  = now;
+    self!push-txn-frame;
+  }
+
+  method force-rollback {
+    return unless $!txn-depth > 0;
+    self.rollback;
+    self.reset-txn-state;
+  }
+
   method !run-outer(&block) {
     my $result;
     my $rolled-back = False;

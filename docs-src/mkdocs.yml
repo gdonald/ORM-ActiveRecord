@@ -36,6 +36,7 @@ nav:
   - Logging: logging.md
   - Instrumentation: instrumentation.md
   - Tests: tests.md
+  - Test helpers: test-helpers.md
 theme:
   name: 'material'
 markdown_extensions:

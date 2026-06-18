@@ -1,0 +1,109 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use DBIish;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Testing::Fixtures;
+use ORM::ActiveRecord::Testing::DatabaseCleaner;
+use ORM::ActiveRecord::Testing::Transaction;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'no sqlite driver available';
+  exit 0;
+}
+
+plan 12;
+
+temp %*ENV;
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+my $stamp   = "{$*PID}-{(now * 1e6).Int}";
+my $dbfile  = $*TMPDIR.add("helpers-$stamp.sqlite3").Str;
+my $fixdir  = $*TMPDIR.add("helpers-fix-$stamp");
+$fixdir.mkdir;
+
+LEAVE {
+  $dbfile.IO.unlink if $dbfile.IO.e;
+  run 'rm', '-rf', $fixdir.Str;
+}
+
+$fixdir.add('authors.yml').spurt: q:to/YML/;
+alice:
+  name: Alice
+  admin: <%= True %>
+bob:
+  name: Bob
+YML
+
+$fixdir.add('posts.yml').spurt: q:to/YML/;
+hello:
+  title: Hello World
+  author: alice
+YML
+
+temp %*ENV<DATABASE_URL> = "sqlite:$dbfile";
+DB.set-shared(Nil);
+
+my $adapter = DB.shared.adapter;
+$adapter.ddl-create-table('authors', [ name => { :string, limit => 32 }, admin => { :boolean } ]);
+$adapter.ddl-create-table('posts',   [ title => { :string, limit => 64 }, author_id => { :integer } ]);
+
+sub query($sql) {
+  my $h = DBIish.connect('SQLite', :database($dbfile));
+  LEAVE { $h.dispose if $h.defined }
+  $h.execute($sql).allrows.map(*.Array).eager;
+}
+
+# --- fixture loader ---
+my $fx = Fixtures.new(dir => $fixdir.Str).load;
+
+ok query("SELECT count(*) FROM authors")[0][0] == 2, 'fixtures insert each labelled row';
+ok query("SELECT count(*) FROM posts")[0][0] == 1,   'fixtures load every file in the directory';
+
+is $fx.id('authors', 'alice'), Fixtures.new.identify('alice'),
+  'a fixture id is derived deterministically from its label';
+
+ok query("SELECT id FROM authors WHERE name = 'Alice'")[0][0] == $fx.id('authors', 'alice'),
+  'the deterministic id is the row id actually inserted';
+
+ok query("SELECT admin FROM authors WHERE name = 'Alice'")[0][0] == 1,
+  'ERB-style interpolation evaluates <%= ... %> before parsing';
+
+# --- references between files ---
+ok query("SELECT author_id FROM posts WHERE title = 'Hello World'")[0][0] == $fx.id('authors', 'alice'),
+  'a belongs-to reference resolves to the referenced label id';
+
+# --- database cleaner: deletion ---
+my $cleaner = DatabaseCleaner.new;
+$cleaner.clean(strategy => 'deletion');
+ok query("SELECT count(*) FROM authors")[0][0] == 0, 'the deletion strategy empties every table';
+ok query("SELECT count(*) FROM posts")[0][0] == 0,   'the deletion strategy spares no table';
+
+# --- database cleaner: truncation (DELETE on sqlite) ---
+$adapter.exec("INSERT INTO authors (id, name) VALUES (1, 'Temp')");
+$cleaner.clean(strategy => 'truncation');
+ok query("SELECT count(*) FROM authors")[0][0] == 0, 'the truncation strategy empties every table';
+
+# --- transactional wrapper ---
+with-rollback {
+  $adapter.exec("INSERT INTO authors (id, name) VALUES (42, 'Rolled')");
+  ok query("SELECT count(*) FROM authors WHERE id = 42")[0][0] == 0,
+    'rows written inside the wrapper are not yet visible to a separate connection';
+};
+ok query("SELECT count(*) FROM authors WHERE id = 42")[0][0] == 0,
+  'the transactional wrapper rolls back everything written inside it';
+
+# --- cleaning(:transaction) rolls back ---
+$cleaner.cleaning({ $adapter.exec("INSERT INTO authors (id, name) VALUES (7, 'Inside')") }, strategy => 'transaction');
+ok query("SELECT count(*) FROM authors WHERE id = 7")[0][0] == 0,
+  'cleaning with the transaction strategy rolls the block back';
