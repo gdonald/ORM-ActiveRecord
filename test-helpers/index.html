@@ -9,10 +9,8 @@
       
       
       
-        <link rel="prev" href="../generators/">
+        <link rel="prev" href="../tests/">
       
-      
-        <link rel="next" href="../runtime/">
       
       
         
@@ -23,7 +21,7 @@
     
     
       
-        <title>Database tasks - ORM::ActiveRecord</title>
+        <title>Test helpers - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +62,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#database-tasks" class="md-skip">
+        <a href="#test-helpers" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Database tasks
+              Test helpers
             
           </span>
         </div>
@@ -301,37 +299,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Database tasks
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../db-tasks/" class="md-nav__link">
         
   
   
@@ -347,103 +318,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#lifecycle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Lifecycle
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#migrating" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Migrating
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inspecting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Inspecting
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#seeding" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Seeding
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#test-database" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Test database
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#schema-dump-and-load" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Schema dump and load
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#schema-cache" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Schema cache
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1367,10 +1241,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../test-helpers/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test helpers
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1386,6 +1287,87 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#transactional-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transactional tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixtures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixtures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fixtures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#interpolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpolation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references-between-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References between files
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#database-cleaner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Database cleaner
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1417,10 +1399,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#lifecycle" class="md-nav__link">
+  <a href="#transactional-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Lifecycle
+        Transactional tests
       
     </span>
   </a>
@@ -1428,65 +1410,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#migrating" class="md-nav__link">
+  <a href="#fixtures" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Migrating
+        Fixtures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fixtures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#interpolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpolation
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#inspecting" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#references-between-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Inspecting
+        References between files
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#seeding" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Seeding
-      
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#test-database" class="md-nav__link">
+  <a href="#database-cleaner" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Test database
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#schema-dump-and-load" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Schema dump and load
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#schema-cache" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Schema cache
+        Database cleaner
       
     </span>
   </a>
@@ -1510,122 +1476,122 @@
 
 
 
-<h1 id="database-tasks">Database tasks</h1>
-<p>The <code>ar db:*</code> tasks manage the database lifecycle: creating and dropping it,
-running and inspecting migrations, and seeding. They act on the active
-environment's configured connections (all of them for a multi-database setup);
-migration-state tasks report on the primary connection.</p>
-<h2 id="lifecycle">Lifecycle</h2>
+<h1 id="test-helpers">Test helpers</h1>
+<p>Three helpers under <code>ORM::ActiveRecord::Testing</code> keep test data isolated and
+easy to set up: a transactional wrapper, a YAML fixture loader, and a database
+cleaner.</p>
+<h2 id="transactional-tests">Transactional tests</h2>
+<p>Wrapping each example in a transaction that is rolled back at teardown leaves
+the database untouched between tests, with no <code>DELETE</code> or <code>TRUNCATE</code>. Nested
+model transactions join the open one (via savepoints), so a test's own
+<code>transaction { ... }</code> still behaves.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Testing::Transaction</span>;
+
+<span class="o">before-</span><span class="n">each</span> { <span class="n">begin-transactional-test</span> }
+<span class="o">after-</span><span class="n">each</span>  { <span class="n">rollback-transactional-test</span> }
+</code></pre></div></td></tr></table></div>
+
+<p>Or wrap a single body:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">with-rollback</span> {
+  <span class="n">User</span>.<span class="n">create</span>({ <span class="n">fname</span> =&gt; <span class="s">&#39;Ada&#39;</span> });
+  <span class="n">expect</span>(<span class="n">User</span>.<span class="nb">count</span>).<span class="nb">to</span>.<span class="o">eq</span>(<span class="mi">1</span>);
+};   <span class="c1"># the row is gone here</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>begin-transactional-test</code> accepts an <code>:isolation</code> level
+(<code>READ COMMITTED</code>, <code>REPEATABLE READ</code>, ...).</p>
+<h2 id="fixtures">Fixtures</h2>
+<p>Fixtures are YAML files, one per table (the filename is the table name). Each
+top-level key is a <em>label</em>; its id is derived deterministically from the label,
+so references resolve across files regardless of load order.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:create     # create the configured database(s)
-ar db:drop       # drop the configured database(s)
-ar db:setup      # create + migrate + seed
-ar db:reset      # drop + create + migrate + seed
-ar db:prepare    # create, migrate, and seed only when the database is new
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># authors.yml</span>
+<span class="nt">alice</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Alice</span>
+<span class="w">  </span><span class="nt">admin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;%= True %&gt;</span>
+<span class="nt">bob</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Bob</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>db:create</code> and <code>db:drop</code> operate on the database itself (the file for SQLite,
-the <code>CREATE DATABASE</code> / <code>DROP DATABASE</code> for PostgreSQL and MySQL). <code>db:setup</code>
-and <code>db:reset</code> are the full rebuild paths; <code>db:prepare</code> is the idempotent one
-that seeds a freshly created database but leaves an existing one untouched.</p>
-<h2 id="migrating">Migrating</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># articles.yml</span>
+<span class="nt">hello</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Hello World</span>
+<span class="w">  </span><span class="nt">author</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">alice</span><span class="w">          </span><span class="c1"># belongs-to: author_id = identify(&#39;alice&#39;)</span>
+</code></pre></div></td></tr></table></div>
+
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span><span class="w">                 </span>#<span class="w"> </span><span class="nv">apply</span><span class="w"> </span><span class="nv">every</span><span class="w"> </span><span class="nv">pending</span><span class="w"> </span><span class="nv">migration</span>
-<span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span><span class="mi">20260615120000</span>
-<span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span>:<span class="nv">up</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span>...<span class="w">   </span>#<span class="w"> </span><span class="nv">run</span><span class="w"> </span><span class="nv">one</span><span class="w"> </span><span class="nv">migration</span><span class="err">&#39;s up</span>
-<span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span>:<span class="nv">down</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span>...<span class="w"> </span>#<span class="w"> </span><span class="nv">run</span><span class="w"> </span><span class="nv">one</span><span class="w"> </span><span class="nv">migration</span><span class="err">&#39;s down</span>
-<span class="err">ar db:rollback                 # roll back the last migration</span>
-<span class="err">ar db:rollback STEP=3          # roll back the last 3</span>
-<span class="err">ar db:migrate:redo             # roll back then re-apply (STEP=N supported)</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Testing::Fixtures</span>;
+
+<span class="k">my</span> <span class="nv">$fx</span> = <span class="n">Fixtures</span>.<span class="nb">new</span>(<span class="nb">dir</span> =&gt; <span class="s">&#39;test/fixtures&#39;</span>).<span class="n">load</span>;
+
+<span class="nv">$fx</span>.<span class="nb">id</span>(<span class="s">&#39;authors&#39;</span>, <span class="s">&#39;alice&#39;</span>);        <span class="c1"># the deterministic id</span>
+<span class="nv">$fx</span>.<span class="n">record</span>(<span class="s">&#39;articles&#39;</span>, <span class="s">&#39;hello&#39;</span>);   <span class="c1"># the inserted row hash</span>
+<span class="nv">$fx</span>.<span class="n">labels</span>(<span class="s">&#39;authors&#39;</span>);             <span class="c1"># (&#39;alice&#39;, &#39;bob&#39;)</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>db:migrate VERSION=NNN</code> brings the schema to exactly that version: it applies
-every pending migration at or below the target and rolls back every applied
-migration above it. <code>VERSION=0</code> rolls everything back.</p>
-<h2 id="inspecting">Inspecting</h2>
+<p>Loading deletes the table's existing rows first, so it is repeatable.</p>
+<h3 id="interpolation">Interpolation</h3>
+<p><code>&lt;%= expr %&gt;</code> in a value is replaced by the stringified result of the Raku
+expression before the YAML is parsed — the equivalent of Rails' ERB fixtures.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:version                       # the highest applied version
-ar db:migrate:status                # each migration as up / down
-ar db:abort_if_pending_migrations   # exit non-zero if any migration is pending
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">created_at</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;%= DateTime.now %&gt;</span>
+<span class="nt">admin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;%= True %&gt;</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>db:migrate:status</code> prints one line per migration:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>up    20260101120000  create-users
-up    20260102090000  add-email-to-users
-down  20260615120000  create-widgets
+<h3 id="references-between-files">References between files</h3>
+<p>A key that is not a column but whose <code>&lt;key&gt;_id</code> <em>is</em> a column is treated as a
+<code>belongs-to</code> reference: the value names another fixture's label, and the loader
+sets <code>&lt;key&gt;_id</code> to that label's deterministic id. Because the id comes from the
+label alone, the referenced file need not be loaded first (or at all).</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Fixtures</span>.<span class="nb">new</span>.<span class="n">identify</span>(<span class="s">&#39;alice&#39;</span>);    <span class="c1"># the same id &#39;author: alice&#39; resolves to</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>db:abort_if_pending_migrations</code> is the guard to put in front of a deploy or a
-test run: it exits <code>1</code> (and lists the pending versions) when the schema is
-behind, and <code>0</code> otherwise.</p>
-<h2 id="seeding">Seeding</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:seed
-</code></pre></div></td></tr></table></div>
-
-<p>Runs <code>db/seeds.raku</code>, an ordinary Raku script that uses the ORM to insert
-records. It runs in the CLI process against the active connection, so it loads
-its own models:</p>
+<h2 id="database-cleaner">Database cleaner</h2>
+<p>When you are not using the transactional wrapper, clean explicitly:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">lib</span> <span class="s">&#39;app/models&#39;</span>;
-<span class="k">use</span> <span class="n">Models::User</span>;
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Testing::DatabaseCleaner</span>;
 
-<span class="n">Models::User</span>.<span class="n">create</span>({ <span class="n">fname</span> =&gt; <span class="s">&#39;Ada&#39;</span>,   <span class="n">lname</span> =&gt; <span class="s">&#39;Lovelace&#39;</span> });
-<span class="n">Models::User</span>.<span class="n">create</span>({ <span class="n">fname</span> =&gt; <span class="s">&#39;Alan&#39;</span>,  <span class="n">lname</span> =&gt; <span class="s">&#39;Turing&#39;</span> });
+<span class="k">my</span> <span class="nv">$cleaner</span> = <span class="n">DatabaseCleaner</span>.<span class="nb">new</span>;
+
+<span class="nv">$cleaner</span>.<span class="n">clean</span>;                          <span class="c1"># deletion (DELETE FROM every table)</span>
+<span class="nv">$cleaner</span>.<span class="n">clean</span>(<span class="n">strategy</span> =&gt; <span class="s">&#39;truncation&#39;</span>);<span class="c1"># TRUNCATE / reset identities</span>
 </code></pre></div></td></tr></table></div>
 
-<p><code>db:setup</code>, <code>db:reset</code>, and a new-database <code>db:prepare</code> all run the seeds as
-their last step.</p>
-<h2 id="test-database">Test database</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">test</span><span class="p">:</span><span class="n">prepare</span><span class="w">        </span><span class="c1"># create + migrate the test database</span>
-<span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">test</span><span class="p">:</span><span class="n">load_schema</span><span class="w">    </span><span class="c1"># alias of db:test:prepare</span>
-</code></pre></div></td></tr></table></div>
-
-<p>These ready the <code>test</code> environment's database. For the parallel test setup (the
-per-worker databases behave uses), <code>ar createdb --parallel</code> and
-<code>ar migrate --parallel</code> create and migrate every worker copy.</p>
-<h2 id="schema-dump-and-load">Schema dump and load</h2>
+<p><code>truncation</code> issues <code>TRUNCATE ... RESTART IDENTITY CASCADE</code> on PostgreSQL,
+disables foreign-key checks around <code>TRUNCATE</code> on MySQL, and falls back to
+<code>DELETE</code> (plus clearing <code>sqlite_sequence</code>) on SQLite.</p>
+<p>The <code>transaction</code> strategy runs a block and rolls it back, like the wrapper:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">schema</span><span class="p">:</span><span class="n">dump</span><span class="w">     </span><span class="c1"># introspect the database into db/schema.raku</span>
-<span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">schema</span><span class="p">:</span><span class="nb">load</span><span class="w">     </span><span class="c1"># purge, then rebuild the database from db/schema.raku</span>
-<span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">structure</span><span class="p">:</span><span class="n">dump</span><span class="w">  </span><span class="c1"># dump the raw DDL to db/structure.sql</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$cleaner</span>.<span class="n">cleaning</span>({
+  <span class="c1"># writes here are discarded</span>
+}, <span class="n">strategy</span> =&gt; <span class="s">&#39;transaction&#39;</span>);
 </code></pre></div></td></tr></table></div>
 
-<p><code>db/schema.raku</code> is a <code>Migration</code> subclass that recreates the tables with the
-migration DSL, plus the list of applied versions. It is portable across
-adapters, but lossy: column limits, defaults, and foreign keys are not
-recoverable through the introspection API and are omitted. <code>db:schema:load</code>
-drops every table and re-runs the dumped <code>up</code>, then records the schema's
-versions so the app sees the migrations as applied (the fast alternative to
-replaying every migration).</p>
-<p><code>db:structure:dump</code> writes the exact, database-specific DDL: the
-<code>sqlite_master</code> statements on SQLite, and <code>pg_dump --schema-only</code> /
-<code>mysqldump --no-data</code> on PostgreSQL and MySQL. Use it when the schema relies on
-features the portable dump cannot represent.</p>
-<h2 id="schema-cache">Schema cache</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:schema:cache:dump   # write db/schema_cache.yml
-ar db:schema:cache:clear  # remove db/schema_cache.yml
-</code></pre></div></td></tr></table></div>
-
-<p>The schema cache is a YAML snapshot of every table's columns, indexes,
-constraints, and sequences, so an app can skip live introspection at boot. Load
-it with <code>SchemaCache.load-yaml(:path)</code>.</p>
+<p>The <code>migrations</code> table is never touched. Pass <code>except =&gt; &lt;migrations other&gt;</code> to
+spare more tables.</p>
 
 
 
