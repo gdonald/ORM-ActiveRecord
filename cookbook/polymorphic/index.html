@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../joins/">
+        <link rel="prev" href="../through-associations/">
       
       
-        <link rel="next" href="../batching/">
+        <link rel="next" href="../single-table-inheritance/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Aggregation - ORM::ActiveRecord</title>
+        <title>Polymorphic associations - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#aggregation-and-selection" class="md-skip">
+        <a href="#polymorphic-associations" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Aggregation
+              Polymorphic associations
             
           </span>
         </div>
@@ -382,20 +382,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -416,7 +414,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -434,7 +432,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../../models/models/" class="md-nav__link">
         
   
   
@@ -462,7 +460,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../finders/" class="md-nav__link">
+      <a href="../../models/finders/" class="md-nav__link">
         
   
   
@@ -490,7 +488,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../relations/" class="md-nav__link">
+      <a href="../../models/relations/" class="md-nav__link">
         
   
   
@@ -518,7 +516,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+      <a href="../../models/queries/" class="md-nav__link">
         
   
   
@@ -546,7 +544,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../joins/" class="md-nav__link">
+      <a href="../../models/joins/" class="md-nav__link">
         
   
   
@@ -571,37 +569,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Aggregation
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../models/aggregation/" class="md-nav__link">
         
   
   
@@ -617,125 +588,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#distinct" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        distinct
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sum-average-minimum-maximum" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        sum, average, minimum, maximum
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#calculate" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        calculate
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#count" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        count
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#group-and-having" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        group and having
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pluck-of-sql-expressions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        pluck of SQL expressions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#from" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        from
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#readonly" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        readonly
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#extending" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        extending
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -748,7 +600,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../batching/" class="md-nav__link">
+      <a href="../../models/batching/" class="md-nav__link">
         
   
   
@@ -776,7 +628,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../raw/" class="md-nav__link">
+      <a href="../../models/raw/" class="md-nav__link">
         
   
   
@@ -804,7 +656,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inspection/" class="md-nav__link">
+      <a href="../../models/inspection/" class="md-nav__link">
         
   
   
@@ -832,7 +684,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../../models/persistence/" class="md-nav__link">
         
   
   
@@ -860,7 +712,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../../models/types/" class="md-nav__link">
         
   
   
@@ -888,7 +740,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../enums/" class="md-nav__link">
+      <a href="../../models/enums/" class="md-nav__link">
         
   
   
@@ -916,7 +768,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../normalization/" class="md-nav__link">
+      <a href="../../models/normalization/" class="md-nav__link">
         
   
   
@@ -944,7 +796,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../serialization/" class="md-nav__link">
+      <a href="../../models/serialization/" class="md-nav__link">
         
   
   
@@ -972,7 +824,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callbacks/" class="md-nav__link">
+      <a href="../../models/callbacks/" class="md-nav__link">
         
   
   
@@ -1000,7 +852,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../discard/" class="md-nav__link">
+      <a href="../../models/discard/" class="md-nav__link">
         
   
   
@@ -1028,7 +880,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inheritance/" class="md-nav__link">
+      <a href="../../models/inheritance/" class="md-nav__link">
         
   
   
@@ -1056,7 +908,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../secure-tokens/" class="md-nav__link">
+      <a href="../../models/secure-tokens/" class="md-nav__link">
         
   
   
@@ -1084,7 +936,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../encryption/" class="md-nav__link">
+      <a href="../../models/encryption/" class="md-nav__link">
         
   
   
@@ -1112,7 +964,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../transactions/" class="md-nav__link">
+      <a href="../../models/transactions/" class="md-nav__link">
         
   
   
@@ -1310,18 +1162,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
         
           
           <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
@@ -1342,7 +1196,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1360,7 +1214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/through-associations/" class="md-nav__link">
+      <a href="../through-associations/" class="md-nav__link">
         
   
   
@@ -1385,10 +1239,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../cookbook/polymorphic/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polymorphic associations
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1404,6 +1285,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assigning-different-parent-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assigning different parent types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-inverse-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The inverse collection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-parents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional parents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#eager-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Eager loading
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1416,7 +1372,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/single-table-inheritance/" class="md-nav__link">
+      <a href="../single-table-inheritance/" class="md-nav__link">
         
   
   
@@ -1444,7 +1400,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/custom-validators/" class="md-nav__link">
+      <a href="../custom-validators/" class="md-nav__link">
         
   
   
@@ -1472,7 +1428,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/transactions/" class="md-nav__link">
+      <a href="../transactions/" class="md-nav__link">
         
   
   
@@ -1500,7 +1456,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/eager-loading/" class="md-nav__link">
+      <a href="../eager-loading/" class="md-nav__link">
         
   
   
@@ -1690,10 +1646,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#distinct" class="md-nav__link">
+  <a href="#setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        distinct
+        Setup
       
     </span>
   </a>
@@ -1701,10 +1657,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sum-average-minimum-maximum" class="md-nav__link">
+  <a href="#assigning-different-parent-types" class="md-nav__link">
     <span class="md-ellipsis">
       
-        sum, average, minimum, maximum
+        Assigning different parent types
       
     </span>
   </a>
@@ -1712,10 +1668,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#calculate" class="md-nav__link">
+  <a href="#the-inverse-collection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        calculate
+        The inverse collection
       
     </span>
   </a>
@@ -1723,10 +1679,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#count" class="md-nav__link">
+  <a href="#optional-parents" class="md-nav__link">
     <span class="md-ellipsis">
       
-        count
+        Optional parents
       
     </span>
   </a>
@@ -1734,54 +1690,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#group-and-having" class="md-nav__link">
+  <a href="#eager-loading" class="md-nav__link">
     <span class="md-ellipsis">
       
-        group and having
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pluck-of-sql-expressions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        pluck of SQL expressions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#from" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        from
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#readonly" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        readonly
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#extending" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        extending
+        Eager loading
       
     </span>
   </a>
@@ -1805,189 +1717,141 @@
 
 
 
-<h1 id="aggregation-and-selection">Aggregation and Selection</h1>
-<p>Beyond filtering, relations expose set-shaping operations: deduplication,
-grouping, subquery sources, and per-relation flags.</p>
-<h2 id="distinct">distinct</h2>
-<p><code>distinct</code> adds <code>SELECT DISTINCT</code>. Applies across all selected columns.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">distinct</span>.<span class="nb">count</span>;                        <span class="c1"># = total user count</span>
-<span class="n">User</span>.<span class="n">select</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">distinct</span>.<span class="n">pluck</span>(<span class="s">&#39;lname&#39;</span>);
-<span class="n">User</span>.<span class="n">select</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">distinct</span>.<span class="nb">count</span>;        <span class="c1"># = number of unique lnames</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>distinct(False)</code> clears the flag again. <code>unscope(:distinct)</code> does the same.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">select</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">distinct</span>.<span class="n">distinct</span>(<span class="nb">False</span>).<span class="n">pluck</span>(<span class="s">&#39;lname&#39;</span>);
-<span class="n">User</span>.<span class="n">distinct</span>.<span class="n">unscope</span>(:<span class="n">distinct</span>);
-</code></pre></div></td></tr></table></div>
-
-<h2 id="sum-average-minimum-maximum">sum, average, minimum, maximum</h2>
-<p>These return a scalar across the relation. NULLs are ignored; <code>sum</code> on an
-empty relation returns <code>0</code>, and the others return <code>Nil</code>.</p>
+<h1 id="polymorphic-associations">Polymorphic associations</h1>
+<p>A polymorphic <code>belongs-to</code> can point at more than one kind of parent. A picture
+is <code>imageable</code> — it might belong to a user or to a post. The row stores both the
+id and the parent's type.</p>
+<h2 id="setup">Setup</h2>
+<p>The child declares a polymorphic <code>belongs-to</code>:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Game</span>.<span class="nb">sum</span>(<span class="s">&#39;year&#39;</span>);                              <span class="c1"># 7503</span>
-<span class="n">Game</span>.<span class="n">minimum</span>(<span class="s">&#39;year&#39;</span>);                          <span class="c1"># 1500</span>
-<span class="n">Game</span>.<span class="n">maximum</span>(<span class="s">&#39;year&#39;</span>);                          <span class="c1"># 2200</span>
-<span class="n">Game</span>.<span class="n">average</span>(<span class="s">&#39;year&#39;</span>);                          <span class="c1"># mean as Numeric</span>
-
-<span class="n">Game</span>.<span class="n">where</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;Chess&#39;</span>}).<span class="nb">sum</span>(<span class="s">&#39;year&#39;</span>);     <span class="c1"># honors WHERE</span>
-<span class="n">Game</span>.<span class="nb">none</span>.<span class="nb">sum</span>(<span class="s">&#39;year&#39;</span>);                         <span class="c1"># 0</span>
-<span class="n">Game</span>.<span class="nb">none</span>.<span class="n">maximum</span>(<span class="s">&#39;year&#39;</span>);                     <span class="c1"># Nil</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Picture</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">imageable</span> =&gt; :<span class="n">polymorphic</span>;
+  }
+}
 </code></pre></div></td></tr></table></div>
 
-<p>When the relation has <code>joins</code>, bare column names are auto-qualified with the
-base table. Pass <code>"games.year"</code> or any other qualified form explicitly to
-override.</p>
-<h2 id="calculate">calculate</h2>
-<p><code>calculate($op, $col?)</code> dispatches to the right aggregate by name. <code>$op</code> is
-case-insensitive and accepts <code>sum</code>, <code>avg</code>/<code>average</code>, <code>min</code>/<code>minimum</code>,
-<code>max</code>/<code>maximum</code>, and <code>count</code>. <code>count</code> is the only operation where <code>$col</code> is
-optional.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Game</span>.<span class="n">calculate</span>(<span class="s">&#39;sum&#39;</span>,     <span class="s">&#39;year&#39;</span>);             <span class="c1"># = Game.sum(&#39;year&#39;)</span>
-<span class="n">Game</span>.<span class="n">calculate</span>(<span class="s">&#39;average&#39;</span>, <span class="s">&#39;year&#39;</span>);             <span class="c1"># = Game.average(&#39;year&#39;)</span>
-<span class="n">Game</span>.<span class="n">calculate</span>(<span class="s">&#39;count&#39;</span>);                       <span class="c1"># = Game.count</span>
-<span class="n">Game</span>.<span class="n">where</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;Chess&#39;</span>}).<span class="n">calculate</span>(<span class="s">&#39;max&#39;</span>, <span class="s">&#39;year&#39;</span>);
-</code></pre></div></td></tr></table></div>
-
-<h2 id="count">count</h2>
-<p><code>count</code> returns an <code>Int</code> for an ungrouped relation. With a column, it
-counts non-NULL rows; combined with <code>distinct</code>, it counts distinct
-non-NULLs.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Game</span>.<span class="nb">count</span>;                                    <span class="c1"># all rows</span>
-<span class="n">Game</span>.<span class="nb">count</span>(<span class="s">&#39;year&#39;</span>);                            <span class="c1"># rows where year IS NOT NULL</span>
-<span class="n">Game</span>.<span class="n">distinct</span>.<span class="nb">count</span>(<span class="s">&#39;name&#39;</span>);                   <span class="c1"># COUNT(DISTINCT name)</span>
-</code></pre></div></td></tr></table></div>
-
-<p>For a grouped relation, see below.</p>
-<h2 id="group-and-having">group and having</h2>
-<p><code>group(*@cols)</code> adds <code>GROUP BY</code>. <code>having(...)</code> adds a <code>HAVING</code> clause. The
-raw form accepts a SQL fragment with positional binds; the hash form is
-Rails-style and works on aggregates or grouped columns.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Hash of group value =&gt; count (Rails-aligned)</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="nb">count</span>;
-<span class="c1"># { Anderson =&gt; 2, Brown =&gt; 1, Carter =&gt; 1 }</span>
-
-<span class="c1"># Filter groups: raw fragment, parameterised</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">having</span>(<span class="s">&#39;count(*) &gt; ?&#39;</span>, <span class="mi">1</span>).<span class="nb">count</span>;       <span class="c1"># { Anderson =&gt; 2 }</span>
-
-<span class="c1"># Filter groups: hash form using an aggregate expression as the key</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">having</span>({ <span class="s">&#39;count(*)&#39;</span> =&gt; <span class="mi">2</span>..* }).<span class="nb">count</span>;  <span class="c1"># { Anderson =&gt; 2 }</span>
-</code></pre></div></td></tr></table></div>
-
-<p>Other aggregates on a grouped relation return a hash keyed by the group
-value:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Game</span>.<span class="n">group</span>(<span class="s">&#39;name&#39;</span>).<span class="nb">sum</span>(<span class="s">&#39;year&#39;</span>);
-<span class="c1"># { Chess =&gt; 3200, Go =&gt; 2200, Poker =&gt; 1810, Magic =&gt; 1993 }</span>
-
-<span class="n">Game</span>.<span class="n">group</span>(<span class="s">&#39;name&#39;</span>).<span class="n">maximum</span>(<span class="s">&#39;year&#39;</span>);            <span class="c1"># per-group max</span>
-<span class="n">Game</span>.<span class="n">group</span>(<span class="s">&#39;name&#39;</span>).<span class="n">minimum</span>(<span class="s">&#39;year&#39;</span>);            <span class="c1"># per-group min</span>
-<span class="n">Game</span>.<span class="n">group</span>(<span class="s">&#39;name&#39;</span>).<span class="n">average</span>(<span class="s">&#39;year&#39;</span>);            <span class="c1"># per-group mean</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>regroup(*@cols)</code> replaces any prior <code>group</code> clause. <code>unscope(:group)</code> and
-<code>unscope(:having)</code> drop the respective clause.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">regroup</span>(<span class="s">&#39;fname&#39;</span>);           <span class="c1"># only fname grouping remains</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">group</span>).<span class="nb">all</span>;        <span class="c1"># plain SELECT</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="pluck-of-sql-expressions">pluck of SQL expressions</h2>
-<p><code>pluck</code> accepts a bare column name or an arbitrary SQL expression. An entry
-is treated as an expression (no auto-qualification) when it contains a
-parenthesis, a dot, or whitespace.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Game</span>.<span class="n">pluck</span>(<span class="s">&#39;UPPER(name)&#39;</span>);                     <span class="c1"># [&#39;CHESS&#39;, &#39;GO&#39;, ...]</span>
-<span class="n">Game</span>.<span class="n">pluck</span>(<span class="s">&#39;games.year&#39;</span>);                      <span class="c1"># already qualified</span>
-<span class="n">Game</span>.<span class="n">pluck</span>(<span class="s">&#39;LOWER(name)&#39;</span>, <span class="s">&#39;year&#39;</span>);             <span class="c1"># multi-column</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="from">from</h2>
-<p><code>from($source [, $alias])</code> replaces the implicit <code>FROM table_name</code>. Use it
-for subqueries or aliased base tables.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="nb">from</span>(<span class="s">&#39;users&#39;</span>).<span class="nb">count</span>;
-<span class="n">User</span>.<span class="nb">from</span>(<span class="s">&#39;(SELECT * FROM users WHERE lname != ?) users&#39;</span>, <span class="s">&#39;Brown&#39;</span>).<span class="nb">all</span>;
-
-<span class="k">my</span> <span class="nv">$q</span> = <span class="n">User</span>.<span class="nb">from</span>(<span class="s">&#39;users AS u&#39;</span>, <span class="s">&#39;u&#39;</span>);
-<span class="nv">$q</span>.<span class="n">from-alias</span>;                                    <span class="c1"># &#39;u&#39;</span>
-<span class="nv">$q</span>.<span class="n">from-source</span>;                                   <span class="c1"># &#39;users AS u&#39;</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>unscope(:from)</code> resets to the default table.</p>
-<h2 id="readonly">readonly</h2>
-<p>A <code>readonly</code> relation produces records that refuse to <code>save</code> / <code>update</code> /
-<code>destroy</code>. Useful when a query crosses join tables and the records should not
-be persisted back.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@users</span>    = <span class="n">User</span>.<span class="nb">readonly</span>.<span class="nb">all</span>;          <span class="c1"># @users[0].save throws</span>
-<span class="k">my</span> <span class="nv">@writable</span> = <span class="n">User</span>.<span class="nb">readonly</span>.<span class="n">unscope</span>(:<span class="n">readonly</span>).<span class="nb">all</span>;
-</code></pre></div></td></tr></table></div>
-
-<p><code>merge</code> propagates the flag:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="nb">all</span>.<span class="nb">merge</span>(<span class="n">User</span>.<span class="nb">readonly</span>).<span class="n">readonly-value</span>;     <span class="c1"># True</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="extending">extending</h2>
-<p><code>extending(*@modules)</code> mixes additional methods into the relation. Useful
-for paginators or custom finders local to a query chain.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">role</span> <span class="n">Pagination</span> {
-  <span class="k">method</span> <span class="n">page</span>(<span class="nb">Int</span> <span class="nv">$n</span>, <span class="nb">Int</span> :<span class="nv">$per</span> = <span class="mi">25</span>) {
-    <span class="nb">self</span>.<span class="n">limit</span>(<span class="nv">$per</span>).<span class="nb">offset</span>((<span class="nv">$n</span> - <span class="mi">1</span>) * <span class="nv">$per</span>);
+<p>Each possible parent declares the inverse <code>has-many</code> with <code>as</code> naming the
+polymorphic role:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">pictures</span> =&gt; %(<span class="n">class-name</span> =&gt; <span class="s">&#39;Picture&#39;</span>, <span class="n">as</span> =&gt; <span class="s">&#39;imageable&#39;</span>);
   }
 }
 
-<span class="k">my</span> <span class="nv">@page1</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">extending</span>(<span class="n">Pagination</span>).<span class="n">page</span>(<span class="mi">1</span>).<span class="nb">all</span>;
-<span class="k">my</span> <span class="nv">@page2</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">extending</span>(<span class="n">Pagination</span>).<span class="n">page</span>(<span class="mi">2</span>).<span class="nb">all</span>;
+<span class="k">class</span> <span class="n">Post</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">has-many:</span> <span class="n">pictures</span> =&gt; %(<span class="n">class-name</span> =&gt; <span class="s">&#39;Picture&#39;</span>, <span class="n">as</span> =&gt; <span class="s">&#39;imageable&#39;</span>);
+  }
+}
 </code></pre></div></td></tr></table></div>
 
-<p>You can pass multiple modules; their methods compose in declaration order.</p>
+<p>The <code>:polymorphic</code> column option creates both <code>imageable_id</code> and
+<code>imageable_type</code>:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="n">create-table:</span> <span class="s">&#39;pictures&#39;</span>, [
+  <span class="nb">name</span>      =&gt; { :<span class="n">string</span>, <span class="n">limit</span> =&gt; <span class="mi">80</span> },
+  <span class="n">imageable</span> =&gt; { :<span class="n">reference</span>, :<span class="n">polymorphic</span> },
+];
+</code></pre></div></td></tr></table></div>
+
+<h2 id="assigning-different-parent-types">Assigning different parent types</h2>
+<p>Pass the parent record to the polymorphic attribute; the loader records its type:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">role</span> <span class="n">NameOnly</span> {
-  <span class="k">method</span> <span class="n">names</span> { <span class="nb">self</span>.<span class="n">pluck</span>(<span class="s">&#39;fname&#39;</span>) }
-}
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Greg&#39;</span>, <span class="n">lname</span> =&gt; <span class="s">&#39;Donald&#39;</span>});
+<span class="k">my</span> <span class="nv">$post</span> = <span class="n">Post</span>.<span class="n">create</span>({<span class="n">title</span> =&gt; <span class="s">&#39;Hello&#39;</span>});
 
-<span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">extending</span>(<span class="n">Pagination</span>, <span class="n">NameOnly</span>).<span class="n">page</span>(<span class="mi">1</span>).<span class="n">names</span>;
+<span class="k">my</span> <span class="nv">$avatar</span> = <span class="n">Picture</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;avatar.png&#39;</span>, <span class="n">imageable</span> =&gt; <span class="nv">$user</span>});
+<span class="k">my</span> <span class="nv">$hero</span>   = <span class="n">Picture</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;hero.png&#39;</span>,   <span class="n">imageable</span> =&gt; <span class="nv">$post</span>});
+
+<span class="nv">$avatar</span>.<span class="n">attrs</span><span class="s">&lt;imageable_id&gt;</span>;     <span class="c1"># $user.id</span>
+<span class="nv">$avatar</span>.<span class="n">attrs</span><span class="s">&lt;imageable_type&gt;</span>;   <span class="c1"># &#39;User&#39;</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Reading the association back resolves to the right class:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$picture</span> = <span class="n">Picture</span>.<span class="n">find</span>(<span class="nv">$avatar</span>.<span class="nb">id</span>);
+<span class="nv">$picture</span>.<span class="n">imageable</span>.<span class="nb">WHAT</span> === <span class="n">User</span>;   <span class="c1"># True</span>
+<span class="nv">$picture</span>.<span class="n">imageable</span>.<span class="nb">id</span>;              <span class="c1"># $user.id</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="the-inverse-collection">The inverse collection</h2>
+<p>Each parent sees only its own children, filtered by <code>imageable_type</code>:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">pictures</span>.<span class="nb">elems</span>;
+<span class="nv">$user</span>.<span class="n">pictures</span>.<span class="nb">grep</span>({ .<span class="n">attrs</span><span class="s">&lt;imageable_type&gt;</span> <span class="o">eq</span> <span class="s">&#39;User&#39;</span> }).<span class="nb">elems</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>Reassigning the parent moves the row between collections:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$avatar</span>.<span class="n">update</span>({<span class="n">imageable</span> =&gt; <span class="nv">$post</span>});
+
+<span class="n">User</span>.<span class="n">find</span>(<span class="nv">$user</span>.<span class="nb">id</span>).<span class="n">pictures</span>.<span class="nb">elems</span>;   <span class="c1"># one fewer</span>
+<span class="n">Post</span>.<span class="n">find</span>(<span class="nv">$post</span>.<span class="nb">id</span>).<span class="n">pictures</span>.<span class="nb">elems</span>;   <span class="c1"># one more</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="optional-parents">Optional parents</h2>
+<p>Declare <code>:optional</code> to allow a child with no parent:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Attachment</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">submethod</span> <span class="nb">BUILD</span> {
+    <span class="nb">self</span>.<span class="n">belongs-to:</span> <span class="n">attachable</span> =&gt; %(:<span class="n">polymorphic</span>, :<span class="n">optional</span>);
+  }
+}
+</code></pre></div></td></tr></table></div>
+
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$bare</span> = <span class="n">Attachment</span>.<span class="n">create</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;unattached.txt&#39;</span>});
+<span class="nv">$bare</span>.<span class="n">attachable</span>.<span class="nb">defined</span>;          <span class="c1"># False</span>
+<span class="nv">$bare</span>.<span class="n">attrs</span><span class="s">&lt;attachable_id&gt;</span>;        <span class="c1"># 0</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="eager-loading">Eager loading</h2>
+<p><code>preload</code> resolves a polymorphic <code>belongs-to</code> by grouping per type:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@atts</span> = <span class="n">Attachment</span>.<span class="n">where</span>({}).<span class="n">preload</span>(:<span class="n">attachable</span>).<span class="nb">all</span>;
+<span class="nv">$atts</span>[<span class="mi">0</span>].<span class="n">attachable</span>.<span class="nb">WHAT</span>;          <span class="c1"># User or Post, already loaded</span>
+</code></pre></div></td></tr></table></div>
+
+<p>The polymorphic <code>has-many</code> preloads too, each parent getting only its own rows:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@users</span> = <span class="n">User</span>.<span class="n">where</span>({}).<span class="n">preload</span>(:<span class="n">pictures</span>).<span class="nb">all</span>;
+<span class="nv">@users</span>[<span class="mi">0</span>].<span class="n">pictures</span>.<span class="nb">elems</span>;          <span class="c1"># no extra query</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Nested preloads work from a polymorphic parent — load attachments, their
+parents, and each parent's pictures:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@atts</span> = <span class="n">Attachment</span>.<span class="n">where</span>({}).<span class="n">preload</span>(<span class="n">attachable</span> =&gt; :<span class="n">pictures</span>).<span class="nb">all</span>;
+<span class="nv">$atts</span>[<span class="mi">0</span>].<span class="n">attachable</span>.<span class="n">pictures</span>.<span class="nb">elems</span>;
 </code></pre></div></td></tr></table></div>
 
 

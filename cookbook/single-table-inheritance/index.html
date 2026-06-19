@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../joins/">
+        <link rel="prev" href="../polymorphic/">
       
       
-        <link rel="next" href="../batching/">
+        <link rel="next" href="../custom-validators/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Aggregation - ORM::ActiveRecord</title>
+        <title>Single-table inheritance - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#aggregation-and-selection" class="md-skip">
+        <a href="#single-table-inheritance" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Aggregation
+              Single-table inheritance
             
           </span>
         </div>
@@ -382,20 +382,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -416,7 +414,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -434,7 +432,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../../models/models/" class="md-nav__link">
         
   
   
@@ -462,7 +460,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../finders/" class="md-nav__link">
+      <a href="../../models/finders/" class="md-nav__link">
         
   
   
@@ -490,7 +488,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../relations/" class="md-nav__link">
+      <a href="../../models/relations/" class="md-nav__link">
         
   
   
@@ -518,7 +516,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+      <a href="../../models/queries/" class="md-nav__link">
         
   
   
@@ -546,7 +544,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../joins/" class="md-nav__link">
+      <a href="../../models/joins/" class="md-nav__link">
         
   
   
@@ -571,37 +569,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Aggregation
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../models/aggregation/" class="md-nav__link">
         
   
   
@@ -617,125 +588,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#distinct" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        distinct
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sum-average-minimum-maximum" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        sum, average, minimum, maximum
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#calculate" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        calculate
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#count" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        count
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#group-and-having" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        group and having
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pluck-of-sql-expressions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        pluck of SQL expressions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#from" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        from
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#readonly" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        readonly
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#extending" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        extending
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -748,7 +600,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../batching/" class="md-nav__link">
+      <a href="../../models/batching/" class="md-nav__link">
         
   
   
@@ -776,7 +628,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../raw/" class="md-nav__link">
+      <a href="../../models/raw/" class="md-nav__link">
         
   
   
@@ -804,7 +656,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inspection/" class="md-nav__link">
+      <a href="../../models/inspection/" class="md-nav__link">
         
   
   
@@ -832,7 +684,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../../models/persistence/" class="md-nav__link">
         
   
   
@@ -860,7 +712,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../../models/types/" class="md-nav__link">
         
   
   
@@ -888,7 +740,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../enums/" class="md-nav__link">
+      <a href="../../models/enums/" class="md-nav__link">
         
   
   
@@ -916,7 +768,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../normalization/" class="md-nav__link">
+      <a href="../../models/normalization/" class="md-nav__link">
         
   
   
@@ -944,7 +796,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../serialization/" class="md-nav__link">
+      <a href="../../models/serialization/" class="md-nav__link">
         
   
   
@@ -972,7 +824,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callbacks/" class="md-nav__link">
+      <a href="../../models/callbacks/" class="md-nav__link">
         
   
   
@@ -1000,7 +852,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../discard/" class="md-nav__link">
+      <a href="../../models/discard/" class="md-nav__link">
         
   
   
@@ -1028,7 +880,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inheritance/" class="md-nav__link">
+      <a href="../../models/inheritance/" class="md-nav__link">
         
   
   
@@ -1056,7 +908,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../secure-tokens/" class="md-nav__link">
+      <a href="../../models/secure-tokens/" class="md-nav__link">
         
   
   
@@ -1084,7 +936,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../encryption/" class="md-nav__link">
+      <a href="../../models/encryption/" class="md-nav__link">
         
   
   
@@ -1112,7 +964,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../transactions/" class="md-nav__link">
+      <a href="../../models/transactions/" class="md-nav__link">
         
   
   
@@ -1310,18 +1162,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
         
           
           <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
@@ -1342,7 +1196,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1360,7 +1214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/through-associations/" class="md-nav__link">
+      <a href="../through-associations/" class="md-nav__link">
         
   
   
@@ -1388,7 +1242,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/polymorphic/" class="md-nav__link">
+      <a href="../polymorphic/" class="md-nav__link">
         
   
   
@@ -1413,10 +1267,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../cookbook/single-table-inheritance/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Single-table inheritance
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1432,6 +1313,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#saving-and-reading-back" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Saving and reading back
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#changing-a-rows-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changing a row's class
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tuning-the-column-and-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tuning the column and names
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1444,7 +1389,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/custom-validators/" class="md-nav__link">
+      <a href="../custom-validators/" class="md-nav__link">
         
   
   
@@ -1472,7 +1417,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/transactions/" class="md-nav__link">
+      <a href="../transactions/" class="md-nav__link">
         
   
   
@@ -1500,7 +1445,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/eager-loading/" class="md-nav__link">
+      <a href="../eager-loading/" class="md-nav__link">
         
   
   
@@ -1690,10 +1635,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#distinct" class="md-nav__link">
+  <a href="#setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        distinct
+        Setup
       
     </span>
   </a>
@@ -1701,10 +1646,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sum-average-minimum-maximum" class="md-nav__link">
+  <a href="#saving-and-reading-back" class="md-nav__link">
     <span class="md-ellipsis">
       
-        sum, average, minimum, maximum
+        Saving and reading back
       
     </span>
   </a>
@@ -1712,10 +1657,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#calculate" class="md-nav__link">
+  <a href="#changing-a-rows-class" class="md-nav__link">
     <span class="md-ellipsis">
       
-        calculate
+        Changing a row's class
       
     </span>
   </a>
@@ -1723,65 +1668,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#count" class="md-nav__link">
+  <a href="#tuning-the-column-and-names" class="md-nav__link">
     <span class="md-ellipsis">
       
-        count
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#group-and-having" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        group and having
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pluck-of-sql-expressions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        pluck of SQL expressions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#from" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        from
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#readonly" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        readonly
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#extending" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        extending
+        Tuning the column and names
       
     </span>
   </a>
@@ -1805,189 +1695,84 @@
 
 
 
-<h1 id="aggregation-and-selection">Aggregation and Selection</h1>
-<p>Beyond filtering, relations expose set-shaping operations: deduplication,
-grouping, subquery sources, and per-relation flags.</p>
-<h2 id="distinct">distinct</h2>
-<p><code>distinct</code> adds <code>SELECT DISTINCT</code>. Applies across all selected columns.</p>
+<h1 id="single-table-inheritance">Single-table inheritance</h1>
+<p>One table holds several related classes, told apart by a <code>type</code> column. A
+<code>Vehicle</code> table stores cars and motorcycles; each row remembers which class it
+is and comes back as that class.</p>
+<p>See <a href="../../models/inheritance/">Inheritance</a> for the full reference; this is a
+working walkthrough.</p>
+<h2 id="setup">Setup</h2>
+<p>Give the table a discriminator column (<code>type</code> by default) and the columns every
+subclass shares:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">distinct</span>.<span class="nb">count</span>;                        <span class="c1"># = total user count</span>
-<span class="n">User</span>.<span class="n">select</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">distinct</span>.<span class="n">pluck</span>(<span class="s">&#39;lname&#39;</span>);
-<span class="n">User</span>.<span class="n">select</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">distinct</span>.<span class="nb">count</span>;        <span class="c1"># = number of unique lnames</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="n">create-table:</span> <span class="s">&#39;vehicles&#39;</span>, [
+  <span class="nb">type</span>   =&gt; { :<span class="n">string</span>, <span class="n">limit</span> =&gt; <span class="mi">32</span> },
+  <span class="nb">name</span>   =&gt; { :<span class="n">string</span>, <span class="n">limit</span> =&gt; <span class="mi">64</span> },
+  <span class="n">wheels</span> =&gt; { :<span class="n">integer</span>, <span class="k">default</span> =&gt; <span class="mi">0</span> },
+];
 </code></pre></div></td></tr></table></div>
 
-<p><code>distinct(False)</code> clears the flag again. <code>unscope(:distinct)</code> does the same.</p>
+<p>The base maps to the table; subclasses just inherit:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">select</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">distinct</span>.<span class="n">distinct</span>(<span class="nb">False</span>).<span class="n">pluck</span>(<span class="s">&#39;lname&#39;</span>);
-<span class="n">User</span>.<span class="n">distinct</span>.<span class="n">unscope</span>(:<span class="n">distinct</span>);
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Vehicle</span> <span class="k">is</span> <span class="n">Model</span> { <span class="k">method</span> <span class="n">table-name</span> { <span class="s">&#39;vehicles&#39;</span> } }
+<span class="k">class</span> <span class="n">Car</span>        <span class="k">is</span> <span class="n">Vehicle</span> { }
+<span class="k">class</span> <span class="n">Motorcycle</span> <span class="k">is</span> <span class="n">Vehicle</span> { }
+<span class="k">class</span> <span class="n">SportsCar</span>  <span class="k">is</span> <span class="n">Car</span>     { }
 </code></pre></div></td></tr></table></div>
 
-<h2 id="sum-average-minimum-maximum">sum, average, minimum, maximum</h2>
-<p>These return a scalar across the relation. NULLs are ignored; <code>sum</code> on an
-empty relation returns <code>0</code>, and the others return <code>Nil</code>.</p>
+<h2 id="saving-and-reading-back">Saving and reading back</h2>
+<p>Creating through a subclass stamps the <code>type</code> column:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$car</span> = <span class="n">Car</span>.<span class="n">create</span>({ <span class="nb">name</span> =&gt; <span class="s">&#39;Civic&#39;</span>, <span class="n">wheels</span> =&gt; <span class="mi">4</span> });
+<span class="nv">$car</span>.<span class="n">attrs</span><span class="s">&lt;type&gt;</span>;                <span class="c1"># Car.sti-name</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Querying the base returns each row as its own subclass:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Game</span>.<span class="nb">sum</span>(<span class="s">&#39;year&#39;</span>);                              <span class="c1"># 7503</span>
-<span class="n">Game</span>.<span class="n">minimum</span>(<span class="s">&#39;year&#39;</span>);                          <span class="c1"># 1500</span>
-<span class="n">Game</span>.<span class="n">maximum</span>(<span class="s">&#39;year&#39;</span>);                          <span class="c1"># 2200</span>
-<span class="n">Game</span>.<span class="n">average</span>(<span class="s">&#39;year&#39;</span>);                          <span class="c1"># mean as Numeric</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Car</span>.<span class="n">create</span>({ <span class="nb">name</span> =&gt; <span class="s">&#39;Civic&#39;</span>, <span class="n">wheels</span> =&gt; <span class="mi">4</span> });
+<span class="n">Motorcycle</span>.<span class="n">create</span>({ <span class="nb">name</span> =&gt; <span class="s">&#39;Harley&#39;</span>, <span class="n">wheels</span> =&gt; <span class="mi">2</span> });
 
-<span class="n">Game</span>.<span class="n">where</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;Chess&#39;</span>}).<span class="nb">sum</span>(<span class="s">&#39;year&#39;</span>);     <span class="c1"># honors WHERE</span>
-<span class="n">Game</span>.<span class="nb">none</span>.<span class="nb">sum</span>(<span class="s">&#39;year&#39;</span>);                         <span class="c1"># 0</span>
-<span class="n">Game</span>.<span class="nb">none</span>.<span class="n">maximum</span>(<span class="s">&#39;year&#39;</span>);                     <span class="c1"># Nil</span>
+<span class="k">my</span> <span class="nv">@all</span> = <span class="n">Vehicle</span>.<span class="nb">all</span>.<span class="n">perform</span>;
+<span class="nv">@all</span>.<span class="nb">grep</span>(* ~~ <span class="n">Car</span>).<span class="nb">elems</span>;          <span class="c1"># 1</span>
+<span class="nv">@all</span>.<span class="nb">grep</span>(* ~~ <span class="n">Motorcycle</span>).<span class="nb">elems</span>;   <span class="c1"># 1</span>
 </code></pre></div></td></tr></table></div>
 
-<p>When the relation has <code>joins</code>, bare column names are auto-qualified with the
-base table. Pass <code>"games.year"</code> or any other qualified form explicitly to
-override.</p>
-<h2 id="calculate">calculate</h2>
-<p><code>calculate($op, $col?)</code> dispatches to the right aggregate by name. <code>$op</code> is
-case-insensitive and accepts <code>sum</code>, <code>avg</code>/<code>average</code>, <code>min</code>/<code>minimum</code>,
-<code>max</code>/<code>maximum</code>, and <code>count</code>. <code>count</code> is the only operation where <code>$col</code> is
-optional.</p>
+<p>A subclass finder is scoped to its own type:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Car</span>.<span class="nb">all</span>.<span class="n">perform</span>.<span class="nb">elems</span>;   <span class="c1"># 1 — only the Civic</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="changing-a-rows-class">Changing a row's class</h2>
+<p><code>becomes-bang</code> rewrites the <code>type</code> column to another subclass:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$moto</span> = <span class="n">Car</span>.<span class="n">create</span>({ <span class="nb">name</span> =&gt; <span class="s">&#39;x&#39;</span>, <span class="n">wheels</span> =&gt; <span class="mi">4</span> }).<span class="n">becomes-bang</span>(<span class="n">Motorcycle</span>);
+<span class="nv">$moto</span>.<span class="n">attrs</span><span class="s">&lt;type&gt;</span>;   <span class="c1"># Motorcycle.sti-name</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="tuning-the-column-and-names">Tuning the column and names</h2>
+<p>Each knob is a class-level setter (with a matching getter):</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Game</span>.<span class="n">calculate</span>(<span class="s">&#39;sum&#39;</span>,     <span class="s">&#39;year&#39;</span>);             <span class="c1"># = Game.sum(&#39;year&#39;)</span>
-<span class="n">Game</span>.<span class="n">calculate</span>(<span class="s">&#39;average&#39;</span>, <span class="s">&#39;year&#39;</span>);             <span class="c1"># = Game.average(&#39;year&#39;)</span>
-<span class="n">Game</span>.<span class="n">calculate</span>(<span class="s">&#39;count&#39;</span>);                       <span class="c1"># = Game.count</span>
-<span class="n">Game</span>.<span class="n">where</span>({<span class="nb">name</span> =&gt; <span class="s">&#39;Chess&#39;</span>}).<span class="n">calculate</span>(<span class="s">&#39;max&#39;</span>, <span class="s">&#39;year&#39;</span>);
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Gizmo</span>.<span class="n">inheritance-column</span>(<span class="s">&#39;kind&#39;</span>);       <span class="c1"># use a different discriminator column</span>
+<span class="n">Tool</span>.<span class="n">abstract-class</span>(<span class="nb">True</span>);              <span class="c1"># abstract base; first concrete subclass is the root</span>
+<span class="n">Motorcycle</span>.<span class="n">sti-name</span>(<span class="s">&#39;moto&#39;</span>);            <span class="c1"># store a custom value instead of the class name</span>
+<span class="n">Catalog</span>.<span class="n">store-full-sti-class</span>(<span class="nb">False</span>);    <span class="c1"># store the short, namespace-stripped name</span>
 </code></pre></div></td></tr></table></div>
 
-<h2 id="count">count</h2>
-<p><code>count</code> returns an <code>Int</code> for an ungrouped relation. With a column, it
-counts non-NULL rows; combined with <code>distinct</code>, it counts distinct
-non-NULLs.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Game</span>.<span class="nb">count</span>;                                    <span class="c1"># all rows</span>
-<span class="n">Game</span>.<span class="nb">count</span>(<span class="s">&#39;year&#39;</span>);                            <span class="c1"># rows where year IS NOT NULL</span>
-<span class="n">Game</span>.<span class="n">distinct</span>.<span class="nb">count</span>(<span class="s">&#39;name&#39;</span>);                   <span class="c1"># COUNT(DISTINCT name)</span>
-</code></pre></div></td></tr></table></div>
-
-<p>For a grouped relation, see below.</p>
-<h2 id="group-and-having">group and having</h2>
-<p><code>group(*@cols)</code> adds <code>GROUP BY</code>. <code>having(...)</code> adds a <code>HAVING</code> clause. The
-raw form accepts a SQL fragment with positional binds; the hash form is
-Rails-style and works on aggregates or grouped columns.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Hash of group value =&gt; count (Rails-aligned)</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="nb">count</span>;
-<span class="c1"># { Anderson =&gt; 2, Brown =&gt; 1, Carter =&gt; 1 }</span>
-
-<span class="c1"># Filter groups: raw fragment, parameterised</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">having</span>(<span class="s">&#39;count(*) &gt; ?&#39;</span>, <span class="mi">1</span>).<span class="nb">count</span>;       <span class="c1"># { Anderson =&gt; 2 }</span>
-
-<span class="c1"># Filter groups: hash form using an aggregate expression as the key</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">having</span>({ <span class="s">&#39;count(*)&#39;</span> =&gt; <span class="mi">2</span>..* }).<span class="nb">count</span>;  <span class="c1"># { Anderson =&gt; 2 }</span>
-</code></pre></div></td></tr></table></div>
-
-<p>Other aggregates on a grouped relation return a hash keyed by the group
-value:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Game</span>.<span class="n">group</span>(<span class="s">&#39;name&#39;</span>).<span class="nb">sum</span>(<span class="s">&#39;year&#39;</span>);
-<span class="c1"># { Chess =&gt; 3200, Go =&gt; 2200, Poker =&gt; 1810, Magic =&gt; 1993 }</span>
-
-<span class="n">Game</span>.<span class="n">group</span>(<span class="s">&#39;name&#39;</span>).<span class="n">maximum</span>(<span class="s">&#39;year&#39;</span>);            <span class="c1"># per-group max</span>
-<span class="n">Game</span>.<span class="n">group</span>(<span class="s">&#39;name&#39;</span>).<span class="n">minimum</span>(<span class="s">&#39;year&#39;</span>);            <span class="c1"># per-group min</span>
-<span class="n">Game</span>.<span class="n">group</span>(<span class="s">&#39;name&#39;</span>).<span class="n">average</span>(<span class="s">&#39;year&#39;</span>);            <span class="c1"># per-group mean</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>regroup(*@cols)</code> replaces any prior <code>group</code> clause. <code>unscope(:group)</code> and
-<code>unscope(:having)</code> drop the respective clause.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">regroup</span>(<span class="s">&#39;fname&#39;</span>);           <span class="c1"># only fname grouping remains</span>
-<span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">unscope</span>(:<span class="n">group</span>).<span class="nb">all</span>;        <span class="c1"># plain SELECT</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="pluck-of-sql-expressions">pluck of SQL expressions</h2>
-<p><code>pluck</code> accepts a bare column name or an arbitrary SQL expression. An entry
-is treated as an expression (no auto-qualification) when it contains a
-parenthesis, a dot, or whitespace.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Game</span>.<span class="n">pluck</span>(<span class="s">&#39;UPPER(name)&#39;</span>);                     <span class="c1"># [&#39;CHESS&#39;, &#39;GO&#39;, ...]</span>
-<span class="n">Game</span>.<span class="n">pluck</span>(<span class="s">&#39;games.year&#39;</span>);                      <span class="c1"># already qualified</span>
-<span class="n">Game</span>.<span class="n">pluck</span>(<span class="s">&#39;LOWER(name)&#39;</span>, <span class="s">&#39;year&#39;</span>);             <span class="c1"># multi-column</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="from">from</h2>
-<p><code>from($source [, $alias])</code> replaces the implicit <code>FROM table_name</code>. Use it
-for subqueries or aliased base tables.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="nb">from</span>(<span class="s">&#39;users&#39;</span>).<span class="nb">count</span>;
-<span class="n">User</span>.<span class="nb">from</span>(<span class="s">&#39;(SELECT * FROM users WHERE lname != ?) users&#39;</span>, <span class="s">&#39;Brown&#39;</span>).<span class="nb">all</span>;
-
-<span class="k">my</span> <span class="nv">$q</span> = <span class="n">User</span>.<span class="nb">from</span>(<span class="s">&#39;users AS u&#39;</span>, <span class="s">&#39;u&#39;</span>);
-<span class="nv">$q</span>.<span class="n">from-alias</span>;                                    <span class="c1"># &#39;u&#39;</span>
-<span class="nv">$q</span>.<span class="n">from-source</span>;                                   <span class="c1"># &#39;users AS u&#39;</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>unscope(:from)</code> resets to the default table.</p>
-<h2 id="readonly">readonly</h2>
-<p>A <code>readonly</code> relation produces records that refuse to <code>save</code> / <code>update</code> /
-<code>destroy</code>. Useful when a query crosses join tables and the records should not
-be persisted back.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">@users</span>    = <span class="n">User</span>.<span class="nb">readonly</span>.<span class="nb">all</span>;          <span class="c1"># @users[0].save throws</span>
-<span class="k">my</span> <span class="nv">@writable</span> = <span class="n">User</span>.<span class="nb">readonly</span>.<span class="n">unscope</span>(:<span class="n">readonly</span>).<span class="nb">all</span>;
-</code></pre></div></td></tr></table></div>
-
-<p><code>merge</code> propagates the flag:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="nb">all</span>.<span class="nb">merge</span>(<span class="n">User</span>.<span class="nb">readonly</span>).<span class="n">readonly-value</span>;     <span class="c1"># True</span>
-</code></pre></div></td></tr></table></div>
-
-<h2 id="extending">extending</h2>
-<p><code>extending(*@modules)</code> mixes additional methods into the relation. Useful
-for paginators or custom finders local to a query chain.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">role</span> <span class="n">Pagination</span> {
-  <span class="k">method</span> <span class="n">page</span>(<span class="nb">Int</span> <span class="nv">$n</span>, <span class="nb">Int</span> :<span class="nv">$per</span> = <span class="mi">25</span>) {
-    <span class="nb">self</span>.<span class="n">limit</span>(<span class="nv">$per</span>).<span class="nb">offset</span>((<span class="nv">$n</span> - <span class="mi">1</span>) * <span class="nv">$per</span>);
-  }
-}
-
-<span class="k">my</span> <span class="nv">@page1</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">extending</span>(<span class="n">Pagination</span>).<span class="n">page</span>(<span class="mi">1</span>).<span class="nb">all</span>;
-<span class="k">my</span> <span class="nv">@page2</span> = <span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">extending</span>(<span class="n">Pagination</span>).<span class="n">page</span>(<span class="mi">2</span>).<span class="nb">all</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>You can pass multiple modules; their methods compose in declaration order.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">role</span> <span class="n">NameOnly</span> {
-  <span class="k">method</span> <span class="n">names</span> { <span class="nb">self</span>.<span class="n">pluck</span>(<span class="s">&#39;fname&#39;</span>) }
-}
-
-<span class="n">User</span>.<span class="n">order</span>(<span class="s">&#39;id&#39;</span>).<span class="n">extending</span>(<span class="n">Pagination</span>, <span class="n">NameOnly</span>).<span class="n">page</span>(<span class="mi">1</span>).<span class="n">names</span>;
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Vehicle</span>.<span class="n">inheritance-column</span>;   <span class="c1"># &#39;type&#39;</span>
+<span class="n">Gizmo</span>.<span class="n">inheritance-column</span>;     <span class="c1"># &#39;kind&#39; (inherited by its subclasses)</span>
+<span class="n">Tool</span>.<span class="n">abstract-class</span>;          <span class="c1"># True</span>
 </code></pre></div></td></tr></table></div>
 
 

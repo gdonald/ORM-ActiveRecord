@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../raw/">
+        <link rel="prev" href="..">
       
       
-        <link rel="next" href="../persistence/">
+        <link rel="next" href="../adapters/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Inspection - ORM::ActiveRecord</title>
+        <title>Coming from Rails - ORM::ActiveRecord</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
       
 
@@ -46,7 +46,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#inspection-helpers" class="md-skip">
+        <a href="#coming-from-rails" class="md-skip">
           Skip to content
         </a>
       
@@ -80,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Inspection
+              Coming from Rails
             
           </span>
         </div>
@@ -178,7 +178,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -196,7 +196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -220,10 +220,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../rails-migration/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coming from Rails
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -239,6 +266,147 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-two-naming-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two naming rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#models-and-tables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Models and tables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-and-updating" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating and updating
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#querying" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Querying
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#eager-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Eager loading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Callbacks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transactions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#higher-level-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Higher-level features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tooling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tooling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-different" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's different
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -250,7 +418,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../adapters/" class="md-nav__link">
+      <a href="../adapters/" class="md-nav__link">
         
   
   
@@ -277,7 +445,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../migrations/" class="md-nav__link">
+      <a href="../migrations/" class="md-nav__link">
         
   
   
@@ -304,7 +472,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../generators/" class="md-nav__link">
+      <a href="../generators/" class="md-nav__link">
         
   
   
@@ -331,7 +499,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../db-tasks/" class="md-nav__link">
+      <a href="../db-tasks/" class="md-nav__link">
         
   
   
@@ -358,7 +526,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../runtime/" class="md-nav__link">
+      <a href="../runtime/" class="md-nav__link">
         
   
   
@@ -382,20 +550,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -416,7 +582,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -434,7 +600,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../models/models/" class="md-nav__link">
         
   
   
@@ -462,7 +628,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../finders/" class="md-nav__link">
+      <a href="../models/finders/" class="md-nav__link">
         
   
   
@@ -490,7 +656,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../relations/" class="md-nav__link">
+      <a href="../models/relations/" class="md-nav__link">
         
   
   
@@ -518,7 +684,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../queries/" class="md-nav__link">
+      <a href="../models/queries/" class="md-nav__link">
         
   
   
@@ -546,7 +712,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../joins/" class="md-nav__link">
+      <a href="../models/joins/" class="md-nav__link">
         
   
   
@@ -574,7 +740,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aggregation/" class="md-nav__link">
+      <a href="../models/aggregation/" class="md-nav__link">
         
   
   
@@ -602,7 +768,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../batching/" class="md-nav__link">
+      <a href="../models/batching/" class="md-nav__link">
         
   
   
@@ -630,7 +796,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../raw/" class="md-nav__link">
+      <a href="../models/raw/" class="md-nav__link">
         
   
   
@@ -655,37 +821,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Inspection
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../models/inspection/" class="md-nav__link">
         
   
   
@@ -701,70 +840,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#to-sql" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        to-sql
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#explain" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        explain
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#relation-predicates" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Relation predicates
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cache-key-cache-version-cache-key-with-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        cache-key, cache-version, cache-key-with-version
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -777,7 +852,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../models/persistence/" class="md-nav__link">
         
   
   
@@ -805,7 +880,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../models/types/" class="md-nav__link">
         
   
   
@@ -833,7 +908,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../enums/" class="md-nav__link">
+      <a href="../models/enums/" class="md-nav__link">
         
   
   
@@ -861,7 +936,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../normalization/" class="md-nav__link">
+      <a href="../models/normalization/" class="md-nav__link">
         
   
   
@@ -889,7 +964,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../serialization/" class="md-nav__link">
+      <a href="../models/serialization/" class="md-nav__link">
         
   
   
@@ -917,7 +992,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callbacks/" class="md-nav__link">
+      <a href="../models/callbacks/" class="md-nav__link">
         
   
   
@@ -945,7 +1020,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../discard/" class="md-nav__link">
+      <a href="../models/discard/" class="md-nav__link">
         
   
   
@@ -973,7 +1048,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../inheritance/" class="md-nav__link">
+      <a href="../models/inheritance/" class="md-nav__link">
         
   
   
@@ -1001,7 +1076,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../secure-tokens/" class="md-nav__link">
+      <a href="../models/secure-tokens/" class="md-nav__link">
         
   
   
@@ -1029,7 +1104,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../encryption/" class="md-nav__link">
+      <a href="../models/encryption/" class="md-nav__link">
         
   
   
@@ -1057,7 +1132,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../transactions/" class="md-nav__link">
+      <a href="../models/transactions/" class="md-nav__link">
         
   
   
@@ -1139,7 +1214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/data/" class="md-nav__link">
+      <a href="../validations/data/" class="md-nav__link">
         
   
   
@@ -1167,7 +1242,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/conditionals/" class="md-nav__link">
+      <a href="../validations/conditionals/" class="md-nav__link">
         
   
   
@@ -1195,7 +1270,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/options/" class="md-nav__link">
+      <a href="../validations/options/" class="md-nav__link">
         
   
   
@@ -1223,7 +1298,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validations/i18n/" class="md-nav__link">
+      <a href="../validations/i18n/" class="md-nav__link">
         
   
   
@@ -1305,7 +1380,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/through-associations/" class="md-nav__link">
+      <a href="../cookbook/through-associations/" class="md-nav__link">
         
   
   
@@ -1333,7 +1408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/polymorphic/" class="md-nav__link">
+      <a href="../cookbook/polymorphic/" class="md-nav__link">
         
   
   
@@ -1361,7 +1436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/single-table-inheritance/" class="md-nav__link">
+      <a href="../cookbook/single-table-inheritance/" class="md-nav__link">
         
   
   
@@ -1389,7 +1464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/custom-validators/" class="md-nav__link">
+      <a href="../cookbook/custom-validators/" class="md-nav__link">
         
   
   
@@ -1417,7 +1492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/transactions/" class="md-nav__link">
+      <a href="../cookbook/transactions/" class="md-nav__link">
         
   
   
@@ -1445,7 +1520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/eager-loading/" class="md-nav__link">
+      <a href="../cookbook/eager-loading/" class="md-nav__link">
         
   
   
@@ -1480,7 +1555,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../errors/" class="md-nav__link">
+      <a href="../errors/" class="md-nav__link">
         
   
   
@@ -1507,7 +1582,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../logging/" class="md-nav__link">
+      <a href="../logging/" class="md-nav__link">
         
   
   
@@ -1534,7 +1609,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../instrumentation/" class="md-nav__link">
+      <a href="../instrumentation/" class="md-nav__link">
         
   
   
@@ -1561,7 +1636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tests/" class="md-nav__link">
+      <a href="../tests/" class="md-nav__link">
         
   
   
@@ -1588,7 +1663,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../test-helpers/" class="md-nav__link">
+      <a href="../test-helpers/" class="md-nav__link">
         
   
   
@@ -1635,10 +1710,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#to-sql" class="md-nav__link">
+  <a href="#the-two-naming-rules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        to-sql
+        The two naming rules
       
     </span>
   </a>
@@ -1646,10 +1721,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#explain" class="md-nav__link">
+  <a href="#models-and-tables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        explain
+        Models and tables
       
     </span>
   </a>
@@ -1657,10 +1732,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#relation-predicates" class="md-nav__link">
+  <a href="#creating-and-updating" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Relation predicates
+        Creating and updating
       
     </span>
   </a>
@@ -1668,10 +1743,87 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cache-key-cache-version-cache-key-with-version" class="md-nav__link">
+  <a href="#querying" class="md-nav__link">
     <span class="md-ellipsis">
       
-        cache-key, cache-version, cache-key-with-version
+        Querying
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#eager-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Eager loading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Callbacks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transactions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#higher-level-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Higher-level features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tooling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tooling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-different" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's different
       
     </span>
   </a>
@@ -1695,113 +1847,377 @@
 
 
 
-<h1 id="inspection-helpers">Inspection helpers</h1>
-<p>A small family of methods for asking <em>about</em> a relation rather than running
-it. They live on both <code>Model</code> (where they apply to <code>Model.all</code>) and on a
-<code>Query</code> relation so they compose with <code>where</code>, <code>order</code>, etc.</p>
-<h2 id="to-sql">to-sql</h2>
-<p><code>to-sql</code> returns the SQL string that the relation would execute, with
-adapter-specific placeholders (<code>$N</code> for PostgreSQL, <code>?</code> for SQLite and
-MySQL) left in. Bind values are not inlined.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">say</span> <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">annotate</span>(<span class="s">&#39;debug&#39;</span>).<span class="n">to-sql</span>;
-</code></pre></div></td></tr></table></div>
-
-<p>See <a href="../raw/">Raw SQL and CTEs</a> for the full set of escape hatches.</p>
-<h2 id="explain">explain</h2>
-<p><code>explain</code> runs <code>EXPLAIN</code> against the underlying SELECT and returns the plan
-rows joined by newlines. SQLite uses <code>EXPLAIN QUERY PLAN</code>; PostgreSQL and
-MySQL use plain <code>EXPLAIN</code>.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">say</span> <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">order</span>(<span class="s">&#39;lname&#39;</span>).<span class="n">explain</span>;
-<span class="nb">say</span> <span class="n">User</span>.<span class="n">explain</span>;                  <span class="c1"># whole-table plan</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>explain</code> does not materialize the relation — it only EXPLAINs the SQL it
-would run, so it is cheap on large tables.</p>
-<h2 id="relation-predicates">Relation predicates</h2>
+<h1 id="coming-from-rails">Coming from Rails</h1>
+<p>ORM::ActiveRecord ports Active Record to Raku concept-for-concept. If you know
+Rails, most of what you know carries over once you adjust for two Raku rules
+about method names.</p>
+<h2 id="the-two-naming-rules">The two naming rules</h2>
+<p>Raku method names cannot end in <code>!</code> or <code>?</code>, and the ecosystem prefers hyphens to
+underscores:</p>
+<ul>
+<li>A bang method drops the <code>!</code> and gains a <code>-bang</code> suffix: <code>save!</code> → <code>save-bang</code>.</li>
+<li>A predicate drops the <code>?</code> and gains an <code>is-</code> prefix: <code>valid?</code> → <code>is-valid</code>,
+  <code>persisted?</code> → <code>is-persisted</code>, <code>new_record?</code> → <code>is-new-record</code>.</li>
+<li>Everything else swaps <code>_</code> for <code>-</code>: <code>find_by</code> → <code>find-by</code>, <code>has_many</code> →
+  <code>has-many</code>, <code>update_all</code> → <code>update-all</code>.</li>
+</ul>
+<p>That is most of the translation. The tables below cover the rest.</p>
+<h2 id="models-and-tables">Models and tables</h2>
 <table>
 <thead>
 <tr>
-<th>Method</th>
-<th>Returns</th>
+<th>Rails</th>
+<th>ORM::ActiveRecord</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>is-any</code></td>
-<td><code>True</code> when the relation has ≥ 1 row</td>
+<td><code>class User &lt; ApplicationRecord</code></td>
+<td><code>class User is Model { }</code></td>
 </tr>
 <tr>
-<td><code>is-empty</code></td>
-<td><code>True</code> when the relation has 0 rows</td>
+<td><code>self.table_name = 'people'</code></td>
+<td><code>method table-name { 'people' }</code></td>
 </tr>
 <tr>
-<td><code>is-one</code></td>
-<td><code>True</code> when the relation has exactly 1 row</td>
+<td><code>belongs_to :author</code></td>
+<td><code>self.belongs-to: author =&gt; class-name =&gt; 'Author'</code></td>
 </tr>
 <tr>
-<td><code>is-many</code></td>
-<td><code>True</code> when the relation has &gt; 1 row</td>
+<td><code>has_many :posts</code></td>
+<td><code>self.has-many: posts =&gt; class-name =&gt; 'Post'</code></td>
 </tr>
 <tr>
-<td><code>is-none</code></td>
-<td><code>True</code> when the relation was explicitly scoped with <code>.none</code></td>
+<td><code>has_one :profile</code></td>
+<td><code>self.has-one: profile =&gt; class-name =&gt; 'Profile'</code></td>
+</tr>
+<tr>
+<td><code>has_and_belongs_to_many :tags</code></td>
+<td><code>self.has-and-belongs-to-many: tags =&gt; class-name =&gt; 'Tag'</code></td>
+</tr>
+<tr>
+<td><code>has_many :through</code></td>
+<td><code>self.has-many: magazines =&gt; %(through =&gt; :subscriptions, ...)</code></td>
 </tr>
 </tbody>
 </table>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">is-empty</span>;                                 <span class="c1"># nothing in the table?</span>
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">is-any</span>;           <span class="c1"># any active users?</span>
-<span class="n">User</span>.<span class="n">where</span>({<span class="n">email</span> =&gt; <span class="nv">$addr</span>}).<span class="n">is-one</span>;           <span class="c1"># exactly one match?</span>
-</code></pre></div></td></tr></table></div>
-
-<p><code>is-none</code> reports the <em>scope</em>, not the <em>result</em>: it is only true when the
-relation has been passed through <code>.none</code>, never just because the result set
-happens to be empty.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;Nobody&#39;</span>}).<span class="n">is-none</span>;       <span class="c1"># False — query just returns nothing</span>
-<span class="n">User</span>.<span class="nb">none</span>.<span class="n">is-none</span>;                             <span class="c1"># True  — explicitly null-scoped</span>
-</code></pre></div></td></tr></table></div>
-
-<p>A <code>.none</code>-scoped relation short-circuits every predicate without touching
-the database. <code>is-any</code>, <code>is-one</code>, and <code>is-many</code> are always <code>False</code>;
-<code>is-empty</code> is always <code>True</code>.</p>
-<h2 id="cache-key-cache-version-cache-key-with-version">cache-key, cache-version, cache-key-with-version</h2>
-<p>These produce stable cache fingerprints for a relation. The shape mirrors
-Rails:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>cache-key                 →  &quot;users/query-3f8a91c20b6e54de&quot;
-cache-version             →  &quot;12-2026-05-12T14:23:11Z&quot;
-cache-key-with-version    →  &quot;users/query-3f8a91c20b6e54de-12-2026-05-12T14:23:11Z&quot;
-</code></pre></div></td></tr></table></div>
-
-<p><code>cache-key</code> is the table name plus an FNV-1a fingerprint of the SQL the
-relation would emit (template <em>and</em> bind values). Two relations producing
-the same SQL produce the same key; changing the WHERE, ORDER, or bind
-values changes it.</p>
-<p><code>cache-version</code> summarizes the <em>result</em> of the query as
-<code>&lt;count&gt;-&lt;max(updated_at)&gt;</code>. If the model has no <code>updated_at</code> column,
-<code>cache-version</code> is undefined (<code>Str</code>) and <code>cache-key-with-version</code> falls
-back to the bare <code>cache-key</code>. On a <code>.none</code>-scoped relation, the version
-short-circuits to <code>"0"</code> without touching the database.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$key</span> = <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="n">cache-key-with-version</span>;
-
-<span class="c1"># Use it as a key in your own cache store:</span>
-<span class="k">my</span> <span class="nv">$payload</span> = <span class="nv">$cache</span>.<span class="n">fetch-or-compute</span>(<span class="nv">$key</span>, {
-  <span class="n">User</span>.<span class="n">where</span>({<span class="n">active</span> =&gt; <span class="nb">True</span>}).<span class="nb">all</span>.<span class="n">map</span>(*.<span class="n">serialize</span>);
-});
-</code></pre></div></td></tr></table></div>
-
-<p>Because <code>cache-key-with-version</code> rolls forward whenever any row in the
-relation is updated, a cache entry written under this key invalidates on the
-next read.</p>
+<p>Associations and validations are declared in <code>submethod BUILD</code>. See
+<a href="../models/models/">Models</a> and the <a href="../cookbook/through-associations/">association cookbook</a>.</p>
+<h2 id="creating-and-updating">Creating and updating</h2>
+<table>
+<thead>
+<tr>
+<th>Rails</th>
+<th>ORM::ActiveRecord</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>User.create(attrs)</code></td>
+<td><code>User.create({ ... })</code></td>
+</tr>
+<tr>
+<td><code>User.create!(attrs)</code></td>
+<td><code>User.create-bang({ ... })</code></td>
+</tr>
+<tr>
+<td><code>user.save</code> / <code>user.save!</code></td>
+<td><code>user.save</code> / <code>user.save-bang</code></td>
+</tr>
+<tr>
+<td><code>user.update(attrs)</code> / <code>update!</code></td>
+<td><code>user.update({ ... })</code> / <code>update-bang</code></td>
+</tr>
+<tr>
+<td><code>user.destroy</code> / <code>User.destroy_all</code></td>
+<td><code>user.destroy</code> / <code>User.destroy-all</code></td>
+</tr>
+<tr>
+<td><code>user.persisted?</code> / <code>new_record?</code></td>
+<td><code>user.is-persisted</code> / <code>user.is-new-record</code></td>
+</tr>
+<tr>
+<td><code>user.reload</code></td>
+<td><code>user.reload</code></td>
+</tr>
+<tr>
+<td><code>user.touch</code></td>
+<td><code>user.touch</code></td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../models/persistence/">Persistence</a>.</p>
+<h2 id="querying">Querying</h2>
+<table>
+<thead>
+<tr>
+<th>Rails</th>
+<th>ORM::ActiveRecord</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>User.find(id)</code></td>
+<td><code>User.find(id)</code></td>
+</tr>
+<tr>
+<td><code>User.find_by(name: 'x')</code></td>
+<td><code>User.find-by({ name =&gt; 'x' })</code></td>
+</tr>
+<tr>
+<td><code>User.find_by!(...)</code></td>
+<td><code>User.find-by-bang({ ... })</code></td>
+</tr>
+<tr>
+<td><code>User.where(active: true)</code></td>
+<td><code>User.where({ active =&gt; True })</code></td>
+</tr>
+<tr>
+<td><code>.where.not(...)</code></td>
+<td><code>.not({ ... })</code></td>
+</tr>
+<tr>
+<td><code>.order(:name)</code></td>
+<td><code>.order('name')</code></td>
+</tr>
+<tr>
+<td><code>.limit(10).offset(20)</code></td>
+<td><code>.limit(10).offset(20)</code></td>
+</tr>
+<tr>
+<td><code>.first</code> / <code>.last</code></td>
+<td><code>.first</code> / <code>.last</code></td>
+</tr>
+<tr>
+<td><code>.count</code> / <code>.sum(:col)</code></td>
+<td><code>.count</code> / <code>.sum('col')</code></td>
+</tr>
+<tr>
+<td><code>.pluck(:name)</code></td>
+<td><code>.pluck('name')</code></td>
+</tr>
+<tr>
+<td><code>.exists?</code></td>
+<td><code>.exists</code></td>
+</tr>
+<tr>
+<td><code>.update_all(...)</code> / <code>.delete_all</code></td>
+<td><code>.update-all(...)</code> / <code>.delete-all</code></td>
+</tr>
+</tbody>
+</table>
+<p>A relation is lazy; it runs when you call <code>.all</code> / <code>.perform</code>, iterate it, or
+ask for a count. See <a href="../models/finders/">Finders</a> and <a href="../models/queries/">Queries</a>.</p>
+<h2 id="eager-loading">Eager loading</h2>
+<table>
+<thead>
+<tr>
+<th>Rails</th>
+<th>ORM::ActiveRecord</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.preload(:posts)</code></td>
+<td><code>.preload(:posts)</code></td>
+</tr>
+<tr>
+<td><code>.includes(:posts)</code></td>
+<td><code>.includes(:posts)</code></td>
+</tr>
+<tr>
+<td><code>.eager_load(:posts)</code></td>
+<td><code>.eager-load(:posts)</code></td>
+</tr>
+<tr>
+<td><code>.references(:posts)</code></td>
+<td><code>.references(:posts)</code></td>
+</tr>
+<tr>
+<td><code>.includes(posts: :comments)</code></td>
+<td><code>.preload(posts =&gt; :comments)</code></td>
+</tr>
+</tbody>
+</table>
+<p>See the <a href="../cookbook/eager-loading/">eager-loading cookbook</a>.</p>
+<h2 id="validations">Validations</h2>
+<table>
+<thead>
+<tr>
+<th>Rails</th>
+<th>ORM::ActiveRecord</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>validates :name, presence: true</code></td>
+<td><code>self.validate: 'name', { :presence }</code></td>
+</tr>
+<tr>
+<td><code>validates :age, numericality: { ... }</code></td>
+<td><code>self.validate: 'age', { numericality =&gt; { ... } }</code></td>
+</tr>
+<tr>
+<td><code>validates_with MyValidator</code></td>
+<td><code>self.validates-with(MyValidator.new)</code></td>
+</tr>
+<tr>
+<td><code>validates_each :a, :b do ... end</code></td>
+<td><code>self.validates-each: &lt;a b&gt;, -&gt; $rec, $attr, $value { ... }</code></td>
+</tr>
+<tr>
+<td><code>record.valid?</code> / <code>invalid?</code></td>
+<td><code>record.is-valid</code> / <code>record.is-invalid</code></td>
+</tr>
+<tr>
+<td><code>record.errors.full_messages</code></td>
+<td><code>record.errors.full-messages</code></td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../validations/data/">Validations</a> and the
+<a href="../cookbook/custom-validators/">custom-validator cookbook</a>.</p>
+<h2 id="callbacks">Callbacks</h2>
+<table>
+<thead>
+<tr>
+<th>Rails</th>
+<th>ORM::ActiveRecord</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>before_save :m</code></td>
+<td><code>self.before-save: -&gt; { ... }</code> or <code>self.before-save: 'method-name'</code></td>
+</tr>
+<tr>
+<td><code>after_create</code>, <code>after_update</code>, ...</td>
+<td><code>self.after-create</code>, <code>self.after-update</code>, ...</td>
+</tr>
+<tr>
+<td><code>after_commit</code>, <code>after_rollback</code></td>
+<td><code>self.after-commit</code>, <code>self.after-rollback</code></td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../models/callbacks/">Callbacks</a>.</p>
+<h2 id="transactions">Transactions</h2>
+<table>
+<thead>
+<tr>
+<th>Rails</th>
+<th>ORM::ActiveRecord</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ActiveRecord::Base.transaction { }</code></td>
+<td><code>DB.shared.transaction({ })</code></td>
+</tr>
+<tr>
+<td><code>Model.transaction { }</code></td>
+<td><code>Model.transaction({ })</code></td>
+</tr>
+<tr>
+<td><code>requires_new: true</code></td>
+<td><code>:requires-new</code></td>
+</tr>
+<tr>
+<td><code>raise ActiveRecord::Rollback</code></td>
+<td><code>die X::Rollback.new</code></td>
+</tr>
+<tr>
+<td><code>isolation: :read_committed</code></td>
+<td><code>:isolation&lt;read_committed&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<p>See the <a href="../cookbook/transactions/">transactions cookbook</a>.</p>
+<h2 id="higher-level-features">Higher-level features</h2>
+<table>
+<thead>
+<tr>
+<th>Rails</th>
+<th>ORM::ActiveRecord</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enum status: { ... }</code></td>
+<td><code>self.enum: 'status', { ... }</code> (<a href="../models/enums/">Enums</a>)</td>
+</tr>
+<tr>
+<td><code>serialize :prefs, JSON</code></td>
+<td><code>self.serialize('prefs', JsonCoder.new)</code> (<a href="../models/types/">Attribute types</a>)</td>
+</tr>
+<tr>
+<td><code>normalizes :email, with: ...</code></td>
+<td><code>self.normalizes('email', :with(-&gt; $v { ... }))</code> (<a href="../models/normalization/">Normalisation</a>)</td>
+</tr>
+<tr>
+<td><code>encrypts :ssn</code></td>
+<td><code>self.encrypts('ssn')</code> (<a href="../models/encryption/">Encryption</a>)</td>
+</tr>
+<tr>
+<td><code>has_secure_password</code></td>
+<td><code>self.has-secure-password</code> (<a href="../models/secure-tokens/">Tokens &amp; secure data</a>)</td>
+</tr>
+<tr>
+<td>STI <code>type</code> column</td>
+<td><a href="../models/inheritance/">Single-table inheritance</a></td>
+</tr>
+<tr>
+<td>discard gem</td>
+<td><a href="../models/discard/">Soft deletes</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="tooling">Tooling</h2>
+<table>
+<thead>
+<tr>
+<th>Rails</th>
+<th>ORM::ActiveRecord</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rails db:migrate</code></td>
+<td><code>ar db:migrate</code></td>
+</tr>
+<tr>
+<td><code>rails db:rollback</code></td>
+<td><code>ar db:rollback</code></td>
+</tr>
+<tr>
+<td><code>rails db:seed</code></td>
+<td><code>ar db:seed</code></td>
+</tr>
+<tr>
+<td><code>rails g model User name:string</code></td>
+<td><code>ar generate model User name:string</code></td>
+</tr>
+<tr>
+<td><code>rails console</code> / <code>runner</code></td>
+<td><code>ar console</code> / <code>ar runner</code></td>
+</tr>
+<tr>
+<td><code>rails dbconsole</code></td>
+<td><code>ar dbconsole</code></td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../db-tasks/">Database tasks</a>, <a href="../generators/">Generators</a>, and
+<a href="../runtime/">Runtime tasks</a>.</p>
+<h2 id="whats-different">What's different</h2>
+<ul>
+<li>Hashes are passed explicitly: <code>User.where({ active =&gt; True })</code>, not bareword
+  keyword arguments.</li>
+<li><code>True</code> / <code>False</code> / <code>Nil</code> replace <code>true</code> / <code>false</code> / <code>nil</code>.</li>
+<li>A model class binds itself into <code>GLOBAL</code> (<code>GLOBAL::&lt;User&gt; := User;</code>) so that
+  associations resolve by class name — the generators emit this for you.</li>
+<li>There is no autoloading: <code>use</code> the modules and models you reference.</li>
+</ul>
 
 
 
@@ -1851,10 +2267,10 @@ next read.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
