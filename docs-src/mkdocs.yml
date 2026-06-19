@@ -1,6 +1,7 @@
 site_name: ORM::ActiveRecord
 nav:
   - Home: index.md
+  - Coming from Rails: rails-migration.md
   - Adapters: adapters.md
   - Migrations: migrations.md
   - Generators: generators.md
@@ -32,6 +33,13 @@ nav:
     - Conditionals: validations/conditionals.md
     - Options: validations/options.md
     - Messages & locales: validations/i18n.md
+  - Cookbook:
+    - Through associations: cookbook/through-associations.md
+    - Polymorphic associations: cookbook/polymorphic.md
+    - Single-table inheritance: cookbook/single-table-inheritance.md
+    - Custom validators: cookbook/custom-validators.md
+    - Transactions and savepoints: cookbook/transactions.md
+    - Eager loading: cookbook/eager-loading.md
   - Errors: errors.md
   - Logging: logging.md
   - Instrumentation: instrumentation.md
