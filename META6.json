@@ -56,6 +56,7 @@
     "ORM::ActiveRecord::Relation::Collection": "lib/ORM/ActiveRecord/Relation/Collection.rakumod",
     "ORM::ActiveRecord::Relation::Query": "lib/ORM/ActiveRecord/Relation/Query.rakumod",
     "ORM::ActiveRecord::Relation::Query::Aggregations": "lib/ORM/ActiveRecord/Relation/Query/Aggregations.rakumod",
+    "ORM::ActiveRecord::Relation::Query::Async": "lib/ORM/ActiveRecord/Relation/Query/Async.rakumod",
     "ORM::ActiveRecord::Relation::Query::Batching": "lib/ORM/ActiveRecord/Relation/Query/Batching.rakumod",
     "ORM::ActiveRecord::Relation::Query::Bulk": "lib/ORM/ActiveRecord/Relation/Query/Bulk.rakumod",
     "ORM::ActiveRecord::Relation::Query::Conditions": "lib/ORM/ActiveRecord/Relation/Query/Conditions.rakumod",

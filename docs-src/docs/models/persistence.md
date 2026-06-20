@@ -598,3 +598,13 @@ every save (insert and update).
 
 See [Migrations &raquo; Timestamps](../migrations.md#timestamps) for the
 column setup.
+
+## Mass assignment and strong parameters
+
+The persistence methods take an explicit attribute hash
+(`create({ ... })`, `update({ ... })`, `assign-attributes({ ... })`), so you
+decide exactly which attributes are written at the call site. Filtering
+untrusted request parameters before they reach the model — Rails' strong
+parameters — is a web-layer concern and is out of scope for the ORM; it belongs
+in the controller (for example in MVC::Keayl), which hands the ORM a hash it has
+already permitted.

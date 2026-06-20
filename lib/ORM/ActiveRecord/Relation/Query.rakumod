@@ -13,6 +13,7 @@ use ORM::ActiveRecord::Relation::Query::Finders;
 use ORM::ActiveRecord::Relation::Query::Bulk;
 use ORM::ActiveRecord::Relation::Query::Batching;
 use ORM::ActiveRecord::Relation::Query::Preloader;
+use ORM::ActiveRecord::Relation::Query::Async;
 
 class Query
 does QueryConditions
@@ -25,6 +26,7 @@ does QueryFinders
 does QueryBulk
 does QueryBatching
 does QueryPreloader
+does QueryAsync
 is export
 {
   has Mu $!class;
@@ -150,6 +152,7 @@ is export
   method table-of               { $!table }
 
   method db(--> DB) {
+    return $*AR-DB-OVERRIDE if $*AR-DB-OVERRIDE.defined;
     my $name = $!class.^can('connection-name') ?? $!class.connection-name !! default-connection();
     DB.shared(name => $name);
   }

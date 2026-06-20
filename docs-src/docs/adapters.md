@@ -79,6 +79,37 @@ defaults to `development`; the test suite uses `test`). When `DATABASE_URL` is
 set it overrides the active environment's `primary` connection; any other named
 connection is still resolved from `config/application.json`.
 
+### Named connections and `connects-to`
+
+An environment can hold more than one named connection. `primary` is the
+default; add others alongside it:
+
+```json
+{
+  "production": {
+    "primary":   { "adapter": "pg", "name": "ar_production" },
+    "analytics": { "adapter": "pg", "name": "ar_analytics", "host": "analytics-db" }
+  }
+}
+```
+
+A model uses `primary` unless you bind it to another connection with
+`connects-to`, declared right after the class:
+
+```perl6
+class Event is Model {
+  method table-name { 'events' }
+}
+
+Event.connects-to('analytics');
+
+Event.connection-name;     # 'analytics'
+```
+
+Each model routes its own queries through its bound connection;
+`DATABASE_URL`, when set, overrides only the active environment's `primary`, so
+other named connections still resolve from `config/application.json`.
+
 #### Connection options (PostgreSQL)
 
 A connection block (or `DATABASE_URL` query string) may carry extra

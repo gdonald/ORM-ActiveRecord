@@ -15,6 +15,7 @@ nav:
     - Joins: models/joins.md
     - Aggregation: models/aggregation.md
     - Batching: models/batching.md
+    - Async queries: models/async.md
     - Raw SQL & CTEs: models/raw.md
     - Inspection: models/inspection.md
     - Persistence: models/persistence.md

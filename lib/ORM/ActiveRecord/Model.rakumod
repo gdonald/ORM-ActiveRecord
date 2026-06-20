@@ -233,7 +233,13 @@ class Model
   }
 
   method db(--> DB) {
+    return $*AR-DB-OVERRIDE if $*AR-DB-OVERRIDE.defined;
     DB.shared(name => self.connection-name);
+  }
+
+  method rebind-db(DB:D $db) {
+    $!db = $db;
+    self;
   }
 
   method FALLBACK(Str:D $name, *@rest) is raw {

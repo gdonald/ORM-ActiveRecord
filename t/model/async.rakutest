@@ -1,0 +1,73 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use DBIish;
+use ORM::ActiveRecord::DB;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'no sqlite driver available';
+  exit 0;
+}
+
+plan 14;
+
+temp %*ENV;
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+my $dbfile = $*TMPDIR.add("async-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+LEAVE { $dbfile.IO.unlink if $dbfile.IO.e }
+
+temp %*ENV<DATABASE_URL> = "sqlite:$dbfile";
+DB.set-shared(Nil);
+
+use ORM::ActiveRecord::Model;
+
+class Gizmo is Model {
+  method table-name { 'gizmos' }
+}
+
+GLOBAL::<Gizmo> := Gizmo;
+
+DB.shared.adapter.ddl-create-table('gizmos', [ name => { :string, limit => 32 }, qty => { :integer } ]);
+Gizmo.create({ name => 'a', qty => 1 });
+Gizmo.create({ name => 'b', qty => 2 });
+Gizmo.create({ name => 'c', qty => 3 });
+
+# load-async
+my $promise = Gizmo.all.load-async;
+ok $promise ~~ Promise, 'load-async returns a Promise';
+
+my @records = await $promise;
+ok @records.elems == 3, 'load-async resolves to the records';
+
+# the loaded records are usable on the calling thread (rebound to the shared connection)
+my $first = @records.sort(*.attrs<qty>).first;
+ok $first.is-persisted, 'an async-loaded record reports as persisted';
+ok $first.reload.attrs<name> eq 'a', 'an async-loaded record can be reloaded on the main thread';
+
+# aggregations
+is (await Gizmo.all.count-async), 3,            'count-async resolves to the count';
+is (await Gizmo.where({qty => 2}).count-async), 1, 'a filtered count-async resolves correctly';
+is (await Gizmo.all.sum-async('qty')), 6,       'sum-async resolves to the sum';
+is (await Gizmo.all.average-async('qty')), 2,   'average-async resolves to the average';
+is (await Gizmo.all.minimum-async('qty')), 1,   'minimum-async resolves to the minimum';
+is (await Gizmo.all.maximum-async('qty')), 3,   'maximum-async resolves to the maximum';
+
+# pluck / ids / pick
+is (await Gizmo.all.pluck-async('name')).sort.join(','), 'a,b,c', 'pluck-async resolves to the column values';
+is (await Gizmo.all.ids-async).elems, 3,        'ids-async resolves to the ids';
+is (await Gizmo.where({qty => 3}).pick-async('name')), 'c', 'pick-async resolves to the first value';
+
+# raw SQL
+my @found = await Gizmo.find-by-sql-async('SELECT * FROM gizmos WHERE qty >= ?', 2);
+ok @found.elems == 2, 'find-by-sql-async resolves to the matching records';

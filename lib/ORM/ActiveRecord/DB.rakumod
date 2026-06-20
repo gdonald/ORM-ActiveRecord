@@ -13,6 +13,12 @@ use ORM::ActiveRecord::Instrumentation::QueryLogs;
 use ORM::ActiveRecord::Instrumentation::LogSubscriber;
 use ORM::ActiveRecord::Support::Log;
 
+# When an async query runs on a worker thread it checks out a dedicated pooled
+# connection and binds it here, so the whole call chain on that thread (the
+# SELECT and the object instantiation) uses that connection instead of the
+# shared one. Unset (undefined) on the main thread.
+PROCESS::<$AR-DB-OVERRIDE> = Nil;
+
 class DB is export {
   my %shared;
   my Bool $legacy-warned = False;

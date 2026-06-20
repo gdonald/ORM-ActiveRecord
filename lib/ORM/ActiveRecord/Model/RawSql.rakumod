@@ -12,6 +12,24 @@ role ModelRawSql is export {
     self!do-find-by-sql([$sql, |@binds]);
   }
 
+  method find-by-sql-async(|args) {
+    my $name = self.connection-name;
+
+    start {
+      my $pool = DB.shared(name => $name).pool;
+      my $conn = $pool.checkout;
+      LEAVE $pool.checkin($conn);
+
+      my $*AR-DB-OVERRIDE = DB.new(:adapter($conn), :$name);
+      my @objects = self.find-by-sql(|args);
+
+      my $shared = DB.shared(name => $name);
+      .rebind-db($shared) for @objects;
+
+      @objects;
+    }
+  }
+
   method !do-find-by-sql(@parts) {
     my $stmt = self.db.sanitize-sql(@parts);
     my @rows = self.db.exec-stmt-hash($stmt);

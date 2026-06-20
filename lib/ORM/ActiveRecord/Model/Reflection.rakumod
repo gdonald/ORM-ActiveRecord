@@ -125,6 +125,7 @@ role ModelReflection is export {
   # ---- enums ----
 
   method enums {
+    self!reflect-probe;          # ensure BUILD has registered the enum declarations
     self.enum-definitions;
   }
 

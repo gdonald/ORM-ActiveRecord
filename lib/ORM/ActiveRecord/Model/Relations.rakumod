@@ -36,6 +36,16 @@ role ModelRelations is export {
   method ids                                         { self.all.ids }
   method touch-all(*@names)                          { self.all.touch-all(|@names) }
   method pick(*@cols)                                { self.all.pick(|@cols) }
+
+  method load-async                                  { self.all.load-async }
+  method count-async(|args)                          { self.all.count-async(|args) }
+  method sum-async($col)                             { self.all.sum-async($col) }
+  method average-async($col)                         { self.all.average-async($col) }
+  method minimum-async($col)                         { self.all.minimum-async($col) }
+  method maximum-async($col)                         { self.all.maximum-async($col) }
+  method pluck-async(*@cols)                         { self.all.pluck-async(|@cols) }
+  method ids-async                                   { self.all.ids-async }
+  method pick-async(*@cols)                          { self.all.pick-async(|@cols) }
   method merge(Query:D $other)                       { self.all.merge($other) }
   method excluding(*@records)                        { self.all.excluding(|@records) }
   method missing(*@names, *%kw)                      { self.all.missing(|@names, |%kw) }
