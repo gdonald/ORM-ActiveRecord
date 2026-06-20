@@ -29,7 +29,7 @@ class Note is Model {}
 
 plan 20;
 
-my $current = configured-adapter-name() // 'pg';
+my $current = live-adapter-name($adapter) // 'pg';
 my $is-sqlite = $current eq 'sqlite';
 
 # Relation method `lock` adds FOR UPDATE.

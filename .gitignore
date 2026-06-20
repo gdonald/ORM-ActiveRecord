@@ -6,3 +6,4 @@ docs-src/site/
 log/error.log
 .fezignore
 .behave-failures
+coverage

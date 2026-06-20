@@ -9,7 +9,7 @@ use ORM::ActiveRecord::Support::TestSkip;
 
 my $adapter      = DB.shared.adapter;
 my $has-db       = $adapter.defined && $adapter.is-connected;
-my $current      = $has-db ?? configured-adapter-name(:check-config) !! Str;
+my $current      = $has-db ?? live-adapter-name($adapter) !! Str;
 my $is-sqlite    = $current.defined && $current eq 'sqlite';
 my $is-pg        = $current.defined && $current eq 'pg';
 my $skip-reason  = !$has-db

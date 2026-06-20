@@ -8,7 +8,7 @@ use ORM::ActiveRecord::Support::TestSkip;
 
 my $adapter   = DB.shared.adapter;
 my $has-db    = $adapter.defined && $adapter.is-connected;
-my $is-mysql  = ($has-db ?? configured-adapter-name() // '' !! '') eq 'mysql';
+my $is-mysql  = ($has-db ?? live-adapter-name($adapter) // '' !! '') eq 'mysql';
 
 if $has-db {
   $adapter.exec('DROP TABLE IF EXISTS exp_widgets');

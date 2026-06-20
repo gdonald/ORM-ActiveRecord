@@ -14,6 +14,20 @@ sub normalize-adapter-name(Str:D $name --> Str) is export {
   }
 }
 
+# The canonical name of a live adapter object (DB.shared.adapter), regardless of
+# how the connection was configured (DATABASE_URL or config/application.json).
+# This is the authoritative answer to "what am I actually connected to", which
+# DATABASE_URL alone cannot give for a config-driven run.
+sub live-adapter-name($adapter --> Str) is export {
+  return Str unless $adapter.defined;
+  given $adapter.^name {
+    when /'Sqlite'/ { 'sqlite' }
+    when /'Pg'/     { 'pg' }
+    when /'MySql'/  { 'mysql' }
+    default         { Str }
+  }
+}
+
 sub configured-adapter-name(Str :$config-path, Bool :$check-config = $config-path.defined --> Str) is export {
   if my $url = %*ENV<DATABASE_URL> {
     my %c = parse-database-url($url);
