@@ -28,6 +28,7 @@ use ORM::ActiveRecord::Model::Inheritance;
 use ORM::ActiveRecord::Model::Normalization;
 use ORM::ActiveRecord::Model::PrimaryKey;
 use ORM::ActiveRecord::Model::RawSql;
+use ORM::ActiveRecord::Model::Reflection;
 use ORM::ActiveRecord::Model::Secure;
 use ORM::ActiveRecord::Model::Relations;
 use ORM::ActiveRecord::Model::Serialization;
@@ -49,6 +50,7 @@ class Model
   does ModelNormalization
   does ModelPrimaryKey
   does ModelRawSql
+  does ModelReflection
   does ModelSecure
   does ModelRelations
   does ModelSerialization
@@ -78,6 +80,7 @@ class Model
   has %.attrs-db;
   has Bool $.is-readonly is rw = False;
   has Bool $.is-strict-loading is rw = False;
+  has Bool $.is-stubbed is rw = False;
   has Bool $.is-destroyed is rw = False;
   has Bool $.was-new-record is rw = False;
   has Bool $.was-persisted is rw = False;

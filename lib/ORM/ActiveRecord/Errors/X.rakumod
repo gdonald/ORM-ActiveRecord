@@ -31,6 +31,15 @@ class X::FrozenRecord is Exception is export {
   }
 }
 
+class X::StubbedRecord is Exception is export {
+  has Str $.model;
+  has Str $.operation = 'query';
+  method message {
+    my $what = $!model.defined ?? $!model !! 'Record';
+    "$what is stubbed; $!operation is not allowed";
+  }
+}
+
 class X::SoleRecordExceeded is Exception is export {
   has Str $.model;
   method message {

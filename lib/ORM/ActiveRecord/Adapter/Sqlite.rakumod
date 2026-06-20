@@ -170,6 +170,23 @@ class SqliteAdapter is SqlAdapter is export {
     @out;
   }
 
+  method column-details(Str:D :$table) {
+    my $rows = self.exec("PRAGMA table_info('$table')");
+    my @out;
+    for @$rows -> $row {
+      my $col-type = ($row[2] // '').Str.lc;
+      $col-type = 'integer' unless $col-type;
+      @out.push: %(
+        name        => $row[1].Str,
+        type        => $col-type,
+        null        => !($row[3].Int),
+        default     => ($row[4].defined ?? $row[4].Str !! Str),
+        primary-key => $row[5].Int > 0,
+      );
+    }
+    @out;
+  }
+
   method get-table-names {
     my $rows = self.exec(qq:to/SQL/);
       SELECT name FROM sqlite_master

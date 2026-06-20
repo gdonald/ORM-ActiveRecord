@@ -41,6 +41,7 @@ nav:
     - Transactions and savepoints: cookbook/transactions.md
     - Eager loading: cookbook/eager-loading.md
   - Errors: errors.md
+  - Reflection: reflection.md
   - Logging: logging.md
   - Instrumentation: instrumentation.md
   - Tests: tests.md

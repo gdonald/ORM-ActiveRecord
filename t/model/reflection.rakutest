@@ -1,0 +1,101 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use DBIish;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  my $h = DBIish.connect('SQLite', :database(':memory:'));
+  $h.dispose;
+  True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'no sqlite driver available';
+  exit 0;
+}
+
+plan 23;
+
+temp %*ENV;
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+my $dbfile = $*TMPDIR.add("reflection-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+LEAVE { $dbfile.IO.unlink if $dbfile.IO.e }
+
+temp %*ENV<DATABASE_URL> = "sqlite:$dbfile";
+DB.set-shared(Nil);
+
+use ORM::ActiveRecord::Model;
+
+class Author is Model {
+  submethod BUILD {
+    self.has-many: books => class-name => 'Book';
+    self.enum: 'role', { admin => 0, user => 1 };
+  }
+}
+
+class Book is Model {
+  submethod BUILD {
+    self.belongs-to: author => class-name => 'Author';
+    self.belongs-to: cover  => :polymorphic;
+  }
+}
+
+GLOBAL::<Author> := Author;
+GLOBAL::<Book>   := Book;
+
+my $adapter = DB.shared.adapter;
+$adapter.ddl-create-table('authors', [ name => { :string, limit => 32 }, role => { :integer } ]);
+$adapter.ddl-add-timestamps('authors');
+$adapter.ddl-create-table('books', [
+  title  => { :string, limit => 64 },
+  author => { :reference },
+  cover  => { :reference, :polymorphic },
+]);
+
+# association reflection
+is Author.association-names, ('books',), 'association-names lists declared associations';
+
+my $books-ref = Author.reflect-on-association('books');
+ok $books-ref.macro eq 'has-many',           'reflect-on-association reports the macro';
+ok $books-ref.is-collection,                 'has-many reflects as a collection';
+ok !$books-ref.is-singular,                  'has-many is not singular';
+ok $books-ref.klass === Book,                'reflection resolves the target class';
+is $books-ref.foreign-key, 'author_id',      'has-many reflects the owner foreign key';
+is $books-ref.class-name, 'Book',            'reflection reports the class name';
+
+my $author-ref = Book.reflect-on-association('author');
+ok $author-ref.macro eq 'belongs-to',        'belongs-to reflects its macro';
+ok $author-ref.is-singular,                  'belongs-to reflects as singular';
+is $author-ref.foreign-key, 'author_id',     'belongs-to reflects its foreign key';
+ok !$author-ref.polymorphic,                 'a plain belongs-to is not polymorphic';
+
+my $cover-ref = Book.reflect-on-association('cover');
+ok $cover-ref.polymorphic,                   'a polymorphic belongs-to reflects as polymorphic';
+is $cover-ref.foreign-key, 'cover_id',        'a polymorphic belongs-to keeps its id foreign key';
+
+# column / attribute reflection
+ok Author.column-names.grep({ $_ eq 'role' }).elems,    'column-names lists the columns';
+is Author.column-type('role'), 'integer',               'column-type reports the declared type';
+ok Author.column('name')<null>,                         'column metadata reports nullability';
+
+# primary key
+is Author.primary-keys, ('id',),            'primary-keys defaults to id';
+is Author.primary-key-type, 'integer',      'primary-key-type reports the id type';
+
+# enums
+is Author.enums<role><admin>, 0,            'enums exposes the name to value map';
+
+# build-stubbed
+my $stub = Author.build-stubbed({ name => 'Ada' });
+ok $stub.is-persisted,                       'a stubbed record reports as persisted';
+ok $stub.attrs<created_at>.defined,          'a stubbed record gets timestamps';
+
+throws-like { $stub.save }, X::ReadOnlyRecord, 'a stubbed record raises on save';
+throws-like { $stub.reload }, X::StubbedRecord, 'a stubbed record raises on reload';

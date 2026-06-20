@@ -28,6 +28,9 @@ role Adapter is export {
   method get-fields(Str:D :$table)  { ... }
   method get-table-names()          { ... }
 
+  # Per-column metadata: a List of Hashes with name, type, null, default.
+  method column-details(Str:D :$table --> List) { ... }
+
   # Catalog introspection beyond columns: indexes, constraints, sequences.
   # Each returns a List of Hashes (sequences: a List of names).
   method get-indexes(Str:D :$table --> List)     { ... }

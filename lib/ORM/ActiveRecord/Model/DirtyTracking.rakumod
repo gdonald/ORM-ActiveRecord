@@ -90,6 +90,7 @@ role ModelDirtyTracking is export {
   }
 
   method reload {
+    die X::StubbedRecord.new(model => self.WHAT.^name, operation => 'reload') if self.is-stubbed;
     die X::FrozenRecord.new(model => self.WHAT.^name) if self.is-destroyed;
     return self if self.id == 0;
     self.get-attrs(:id(self.id));

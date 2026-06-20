@@ -46,6 +46,7 @@
     "ORM::ActiveRecord::Model::PrimaryKey": "lib/ORM/ActiveRecord/Model/PrimaryKey.rakumod",
     "ORM::ActiveRecord::Model::Secure": "lib/ORM/ActiveRecord/Model/Secure.rakumod",
     "ORM::ActiveRecord::Model::RawSql": "lib/ORM/ActiveRecord/Model/RawSql.rakumod",
+    "ORM::ActiveRecord::Model::Reflection": "lib/ORM/ActiveRecord/Model/Reflection.rakumod",
     "ORM::ActiveRecord::Model::Relations": "lib/ORM/ActiveRecord/Model/Relations.rakumod",
     "ORM::ActiveRecord::Model::Serialization": "lib/ORM/ActiveRecord/Model/Serialization.rakumod",
     "ORM::ActiveRecord::Model::StatePredicates": "lib/ORM/ActiveRecord/Model/StatePredicates.rakumod",

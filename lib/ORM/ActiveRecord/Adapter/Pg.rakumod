@@ -191,6 +191,29 @@ class PgAdapter is SqlAdapter is export {
     self.exec-stmt($stmt);
   }
 
+  method column-details(Str:D :$table) {
+    my $type = 'character varying';
+    my @fields = <column_name data_type is_nullable column_default>.map({ Field.new(:name($_), :$type) });
+
+    my $stmt = self.build-select(
+      :@fields,
+      table => 'information_schema.columns',
+      where => { 'table_schema' => 'public', 'table_name' => $table },
+      order => <ordinal_position>.list,
+    );
+
+    my @out;
+    for self.exec-stmt($stmt) -> $row {
+      @out.push: %(
+        name    => $row[0].Str,
+        type    => $row[1].Str,
+        null    => ($row[2].Str.lc eq 'yes'),
+        default => ($row[3].defined ?? $row[3].Str !! Str),
+      );
+    }
+    @out;
+  }
+
   method ddl-drop-all-tables(--> List) {
     my @tables = self.get-table-names.list;
     self.exec("DROP TABLE IF EXISTS {$_} CASCADE") for @tables;

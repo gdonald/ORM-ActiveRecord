@@ -28,6 +28,7 @@ class SqlAdapter
   method connect()                                                  { ... }
   method bind-placeholder(Int:D $n --> Str)                         { ... }
   method get-fields(Str:D :$table)                                  { ... }
+  method column-details(Str:D :$table --> List)                     { ... }
   method get-table-names()                                          { ... }
   method get-indexes(Str:D :$table --> List)                        { ... }
   method get-constraints(Str:D :$table --> List)                    { ... }

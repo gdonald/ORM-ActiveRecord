@@ -230,6 +230,29 @@ class MySqlAdapter is SqlAdapter is export {
     @out;
   }
 
+  method column-details(Str:D :$table) {
+    my $stmt = SqlStmt.new(:adapter(self));
+    my $tph = $stmt.placeholder($table);
+    $stmt.sql = qq:to/SQL/;
+      SELECT column_name, LOWER(data_type), LOWER(column_type), is_nullable, column_default
+        FROM information_schema.columns
+       WHERE table_schema = DATABASE() AND table_name = $tph
+       ORDER BY ordinal_position
+      SQL
+    my @out;
+    for self.exec-stmt($stmt) -> $row {
+      my $data-type = self!stringify($row[1]);
+      my $col-type  = self!stringify($row[2]);
+      @out.push: %(
+        name    => self!stringify($row[0]),
+        type    => self!normalize-type($data-type, $col-type),
+        null    => (self!stringify($row[3]).lc eq 'yes'),
+        default => ($row[4].defined ?? self!stringify($row[4]) !! Str),
+      );
+    }
+    @out;
+  }
+
   # MySQL's information_schema reports types like 'int' and 'varchar'.
   # Translate them into the canonical names used by Model.init-attrs and
   # the rest of the adapter layer ('integer', 'character varying', etc.)
