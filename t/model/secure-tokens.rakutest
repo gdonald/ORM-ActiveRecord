@@ -86,6 +86,12 @@ if $has-db {
   $p.save;
   nok SecureUser.find-by-token-for('password-reset', $reset),
     'a token-for is invalidated once the embedded value changes';
+
+  # Regression: the signed-token separator must be a single character outside the
+  # base64url alphabet, so the two parts split unambiguously. The old '--'
+  # separator collided with base64url's '-' and could corrupt parsing.
+  is $p.signed-id(:purpose('separator')).split('.').elems, 2,
+    'a signed token splits into exactly two base64url parts on its . separator';
 } else {
   skip 'database-backed secure tokens', 16;
 }

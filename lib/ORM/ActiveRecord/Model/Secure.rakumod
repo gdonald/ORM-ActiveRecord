@@ -77,11 +77,13 @@ role ModelSecure is export {
   method !sign-payload(%payload --> Str) {
     my $body = b64url-encode(to-json(%payload).encode('utf-8'));
     my $sig  = b64url-encode(hmac-sha256(secret-key-base().encode('utf-8'), $body.encode('utf-8')));
-    "$body--$sig";
+    # The separator must not appear in either part. base64url uses '-', so a
+    # '--' separator collides; '.' is outside the base64url alphabet.
+    "$body.$sig";
   }
 
   method !verify-payload(Str:D $token) {
-    my @parts = $token.split('--');
+    my @parts = $token.split('.');
     return Nil unless @parts.elems == 2;
 
     my $expected = b64url-encode(hmac-sha256(secret-key-base().encode('utf-8'), @parts[0].encode('utf-8')));

@@ -108,6 +108,14 @@ group 'secure tokens, passwords, and signed ids', :order<defined>, {
     it 'throws from find-signed-or-die on an invalid token', {
       expect({ SecureUser.find-signed-or-die('nope', :purpose('unsubscribe')) }).to.raise-error;
     }
+
+    # Regression: the signed-token separator must be a single character outside
+    # the base64url alphabet, so the two parts split unambiguously. The old '--'
+    # separator collided with base64url's '-' and could corrupt parsing.
+    it 'separates the two base64url parts with a delimiter outside the alphabet', {
+      my $u = SecureUser.create({ email => 'd@x.com' });
+      expect($u.signed-id(:purpose('separator')).split('.').elems).to.eq(2);
+    }
   }
 
   context 'generates-token-for', :order<defined>, {
