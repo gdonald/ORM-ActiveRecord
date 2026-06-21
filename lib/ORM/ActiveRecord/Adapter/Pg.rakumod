@@ -121,7 +121,7 @@ class PgAdapter is SqlAdapter is export {
   }
 
   method coerce-write($value, Str :$type) {
-    return $value without $value.defined;
+    return $value without $value;
     return $value unless $type.defined;
     given $type {
       when /:i ^ bool/ {

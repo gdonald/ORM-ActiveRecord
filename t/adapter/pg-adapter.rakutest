@@ -1,0 +1,337 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Support::TestSkip;
+use ORM::ActiveRecord::Adapter;
+use ORM::ActiveRecord::Adapter::Pg;
+use ORM::ActiveRecord::Schema::Field;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+# Resolve the active primary connection the same way the ORM does: from
+# config/application.json for the current environment, with DATABASE_URL as an
+# override (and the per-worker database suffix already applied under behave
+# --parallel). So the test activates whether postgres is selected via config or
+# via DATABASE_URL.
+my %cfg = (try { DB.read-config(name => 'primary') }) // %();
+
+unless normalize-adapter-name((%cfg<adapter> // '').Str) eq 'pg' {
+  plan 1;
+  skip 'pg-only';
+  exit 0;
+}
+
+my $host     = %cfg<host>     // 'localhost';
+my $user     = %cfg<user>     // 'postgres';
+my $password = %cfg<password> // '';
+my $database = %cfg<name>     // 'ar_test';
+my $schema   = %cfg<schema>   // 'public';
+
+sub conn() {
+  PgAdapter.new(:$schema, :$host, :$database, :$user, :$password);
+}
+
+my $can-connect = try {
+  my $probe = conn();
+  $probe.disconnect;
+  True;
+} // False;
+
+unless $can-connect {
+  plan 1;
+  skip "No reachable PostgreSQL at $host (set DATABASE_URL=postgres://USER:PASS\@HOST:PORT/DB to enable)";
+  exit 0;
+}
+
+my $pg = conn();
+
+# ---- connection ----
+ok $pg.is-connected,             'connects from BUILD';
+is $pg.schema, 'public',         'reports the configured schema';
+is $pg.bind-placeholder(1), '$1', 'first bind placeholder is $1';
+is $pg.bind-placeholder(7), '$7', 'a later bind placeholder is $7';
+ok $pg.supports-advisory-locks,  'advertises advisory-lock support';
+
+# ---- coerce-read ----
+nok $pg.coerce-read(Str, type => 'boolean').defined, 'coerce-read passes an undefined value through';
+is  $pg.coerce-read('raw'), 'raw',                   'coerce-read returns a value untouched with no type';
+is  $pg.coerce-read(True, type => 'boolean'), True,  'coerce-read returns an existing Bool as-is';
+is  $pg.coerce-read('t', type => 'boolean'), True,   "coerce-read reads 't' as True";
+is  $pg.coerce-read('f', type => 'boolean'), False,  "coerce-read reads 'f' as False";
+isa-ok $pg.coerce-read('2026-05-09 12:34:56', type => 'timestamp'), DateTime,
+                                                     'coerce-read reads a timestamp string as DateTime';
+my $dt-in = DateTime.new('2026-05-09T12:34:56Z');
+ok  $pg.coerce-read($dt-in, type => 'timestamp') === $dt-in,
+                                                     'coerce-read leaves an existing DateTime untouched';
+is  $pg.coerce-read('42', type => 'integer'), 42,    'coerce-read reads an integer value as Int';
+is  $pg.coerce-read('3.5', type => 'numeric'), 3.5,  'coerce-read reads a numeric value as a number';
+is  $pg.coerce-read('keepme', type => 'jsonb'), 'keepme', 'coerce-read falls through unknown types unchanged';
+
+# ---- coerce-write ----
+nok $pg.coerce-write(Int, type => 'boolean').defined, 'coerce-write passes an undefined value through';
+is  $pg.coerce-write('yes', type => 'boolean'), True, "coerce-write writes 'yes' as True";
+is  $pg.coerce-write('no', type => 'boolean'), False, "coerce-write writes 'no' as False";
+isa-ok $pg.coerce-write('2026-05-09 12:34:56', type => 'datetime'), DateTime,
+                                                      'coerce-write writes a timestamp string as DateTime';
+is  $pg.coerce-write('verbatim', type => 'text'), 'verbatim', 'coerce-write falls through types it does not special-case';
+
+# ---- ddl column emission ----
+is $pg.ddl-column-defs('name' => { :string, limit => 10 })[0], 'name VARCHAR(10)', 'string column with length';
+is $pg.ddl-column-defs('body' => { :text })[0], 'body TEXT',                        'text column';
+is $pg.ddl-column-defs('qty' => { :integer })[0], 'qty INTEGER',                    'integer column';
+is $pg.ddl-column-defs('flag' => { :boolean })[0], 'flag BOOL',                     'boolean column as BOOL';
+is $pg.ddl-column-defs('amount' => { :decimal, precision => 8, scale => 2 })[0], 'amount NUMERIC(8, 2)', 'decimal with precision and scale';
+is $pg.ddl-column-defs('ratio' => { :float })[0], 'ratio DOUBLE PRECISION',        'float as DOUBLE PRECISION';
+is $pg.ddl-column-defs('seen_at' => { :datetime })[0], 'seen_at TIMESTAMPTZ',      'datetime as TIMESTAMPTZ';
+is $pg.ddl-column-defs('token' => { :uuid })[0], 'token UUID',                      'uuid column';
+is $pg.ddl-column-defs('blob' => { :binary, limit => 99 })[0], 'blob BYTEA',        'binary as BYTEA, limit ignored';
+is $pg.ddl-column-defs('meta' => { :jsonb })[0], 'meta JSONB',                      'jsonb column';
+is $pg.ddl-column-defs('tags' => { :integer, :array })[0], 'tags INTEGER[]',        'array column with [] suffix';
+is $pg.ddl-column-defs('req' => { :string, null => False })[0], 'req VARCHAR NOT NULL', 'NOT NULL clause when null is false';
+is $pg.ddl-column-defs('email' => { :string, unique => True })[0], 'email VARCHAR UNIQUE', 'UNIQUE clause when unique is set';
+is $pg.ddl-column-defs('status' => { :string, default => 'new' })[0], "status VARCHAR DEFAULT 'new'", 'default literal for a string default';
+is $pg.ddl-column-defs('doubled' => { :integer, as => 'qty * 2', stored => True })[0],
+   'doubled INTEGER GENERATED ALWAYS AS (qty * 2) STORED',                          'stored generated column';
+is $pg.ddl-column-defs('author' => { :reference })[0], 'author_id INTEGER',         'reference becomes an INTEGER fk column';
+is $pg.ddl-column-defs('owner' => { :reference, :polymorphic }).join(' | '),
+   'owner_id INTEGER | owner_type VARCHAR(255)',                                    'polymorphic reference expands to id and type';
+dies-ok { $pg.ddl-column-defs('x' => { :nonsense }) },                              'rejects an unknown column attribute';
+dies-ok { $pg.ddl-column-defs('x' => { :string, charset => 'utf8' }) },             'rejects charset';
+
+# ---- create-table, introspection and crud ----
+$pg.exec('DROP TABLE IF EXISTS pg_widgets CASCADE');
+$pg.ddl-create-table('pg_widgets', [
+  name   => { :string, limit => 64 },
+  qty    => { :integer, default => 0 },
+  active => { :boolean, default => True },
+  body   => { :text },
+], comment => 'widget store');
+$pg.ddl-add-timestamps('pg_widgets');
+
+my %wtypes = name => 'character varying', qty => 'integer', active => 'boolean', body => 'text';
+
+my $s1 = $pg.build-insert(table => 'pg_widgets', attrs => { name => 'alpha', qty => 3, active => True, body => 'lorem' }, types => %wtypes);
+my $id1 = $pg.exec-stmt($s1)[0][0].Int;
+my $s2 = $pg.build-insert(table => 'pg_widgets', attrs => { name => 'beta', qty => 7, active => False, body => 'ipsum' }, types => %wtypes);
+my $id2 = $pg.exec-stmt($s2)[0][0].Int;
+
+my @field-objs = $pg.get-fields(table => 'pg_widgets').map({ Field.new(name => $_[0], type => $_[1]) });
+
+ok 'pg_widgets' (elem) $pg.get-table-names.list,                                    'get-table-names lists the new table';
+is $pg.column-details(table => 'pg_widgets').grep(*<name> eq 'id').elems, 1,         'column-details sees the id column';
+is $pg.column-details(table => 'pg_widgets').first(*<name> eq 'name')<type>, 'character varying', 'column-details reports a string type';
+ok $pg.column-details(table => 'pg_widgets').first(*<name> eq 'body')<null>,         'column-details reports nullability';
+ok $pg.column-details(table => 'pg_widgets').first(*<name> eq 'qty')<default>.defined, 'column-details reports a default';
+ok $id1 > 0,                                                                        'RETURNING id is a positive integer';
+ok $id2 > $id1,                                                                     'successive inserts get distinct ids';
+
+my $row1 = $pg.get-record(table => 'pg_widgets', fields => @field-objs, where => { id => $id1 });
+is $row1<active>, True,                                                             'boolean true round-trips';
+is $row1<qty>, 3,                                                                   'integer round-trips';
+isa-ok $row1<created_at>, DateTime,                                                 'TIMESTAMPTZ default coerces to DateTime';
+my $row2 = $pg.get-record(table => 'pg_widgets', fields => @field-objs, where => { id => $id2 });
+is $row2<active>, False,                                                            'boolean false round-trips';
+
+is $pg.update-records(table => 'pg_widgets', attrs => { qty => 99 }, types => { qty => 'integer' }, where => { id => $id1 }), 1,
+                                                                                   'update-records reports the affected count';
+is $pg.update-counter-records(table => 'pg_widgets', counters => { qty => 5 }, where => { id => $id1 }), 1,
+                                                                                   'update-counter-records reports the affected count';
+
+my @new-rows;
+@new-rows.push: %( name => 'g1', qty => 1 );
+@new-rows.push: %( name => 'g2', qty => 2 );
+is $pg.insert-records(table => 'pg_widgets', rows => @new-rows).elems, 2,           'insert-records returns ids for a batch';
+
+my @up-rows;
+@up-rows.push: %( id => $id1, name => 'alpha2', qty => 11 );
+is $pg.upsert-records(table => 'pg_widgets', rows => @up-rows, unique-by => ['id']), 1,
+                                                                                   'upsert-records counts upserted rows';
+
+ok $pg.get-sequences.grep(*.contains('pg_widgets')).elems > 0,                      'get-sequences lists the table sequence';
+is $pg.get-constraints(table => 'pg_widgets').grep(*<type> eq 'primary-key').elems, 1, 'get-constraints reports the primary key';
+
+$pg.exec('CREATE INDEX idx_pg_widgets_name ON pg_widgets (name)');
+is $pg.get-indexes(table => 'pg_widgets').grep(*<name> eq 'idx_pg_widgets_name').elems, 1, 'get-indexes reports an added index';
+
+is $pg.delete-records(table => 'pg_widgets', where => { id => $id1 }), 1,           'delete-records reports the deleted count';
+
+$pg.exec('DROP TABLE IF EXISTS pg_widgets CASCADE');
+
+# ---- ddl alterations ----
+$pg.exec('DROP TABLE IF EXISTS pg_alter CASCADE');
+$pg.ddl-create-table('pg_alter', [ name => { :string, limit => 32 } ]);
+
+$pg.ddl-add-column('pg_alter', 'qty' => { :integer });
+is $pg.column-details(table => 'pg_alter').grep(*<name> eq 'qty').elems, 1,         'ddl-add-column adds a column';
+
+$pg.ddl-change-column('pg_alter', 'qty', 'string', limit => 8);
+$pg.ddl-change-column('pg_alter', 'qty', 'integer', using => 'qty::integer');
+is $pg.column-details(table => 'pg_alter').first(*<name> eq 'qty')<type>, 'integer', 'ddl-change-column changes a column type';
+
+$pg.ddl-change-column-default('pg_alter', 'qty', 7);
+ok $pg.column-details(table => 'pg_alter').first(*<name> eq 'qty')<default>.contains('7'), 'ddl-change-column-default sets a default';
+$pg.ddl-change-column-default('pg_alter', 'qty', Int);
+nok $pg.column-details(table => 'pg_alter').first(*<name> eq 'qty')<default>.defined,      'ddl-change-column-default drops a default';
+
+$pg.ddl-change-column-null('pg_alter', 'name', False);
+nok $pg.column-details(table => 'pg_alter').first(*<name> eq 'name')<null>,         'ddl-change-column-null sets NOT NULL';
+$pg.ddl-change-column-null('pg_alter', 'name', True);
+ok  $pg.column-details(table => 'pg_alter').first(*<name> eq 'name')<null>,         'ddl-change-column-null drops NOT NULL';
+
+$pg.ddl-change-column-comment('pg_alter', 'name', 'the label');
+is $pg.exec(q{SELECT d.description FROM pg_description d JOIN pg_attribute a ON a.attrelid = d.objoid AND a.attnum = d.objsubid WHERE d.objoid = 'pg_alter'::regclass AND a.attname = 'name'})[0][0].Str,
+   'the label',                                                                     'ddl-change-column-comment sets a column comment';
+
+$pg.ddl-change-table-comment('pg_alter', 'a table');
+is $pg.exec(q{SELECT obj_description('pg_alter'::regclass)})[0][0].Str, 'a table',  'ddl-change-table-comment sets a table comment';
+
+$pg.exec('DROP TABLE IF EXISTS pg_alter CASCADE');
+
+# ---- json operators ----
+is $pg.json-extract-text-sql('data', []), 'data',                                  'json-extract-text-sql returns the column for an empty path';
+is $pg.json-extract-text-sql('data', ['a', 'b', 'c']), q{data -> 'a' -> 'b' ->> 'c'}, 'json-extract-text-sql chains -> with a final ->>';
+my $jc-stmt = SqlStmt.new(:adapter($pg));
+ok $pg.json-contains-sql($jc-stmt, 'data', { a => 1 }).contains('@>'),              'json-contains-sql builds a containment predicate';
+my $jk-stmt = SqlStmt.new(:adapter($pg));
+ok $pg.json-has-key-sql($jk-stmt, 'data', 'a').contains('jsonb_exists'),            'json-has-key-sql uses jsonb_exists';
+
+# ---- advisory locks ----
+ok $pg.get-advisory-lock('ar-pg-lock'),                                             'acquires a blocking advisory lock';
+ok $pg.get-advisory-lock('ar-pg-free', timeout => 0.5),                             'acquires a lock within a timeout when free';
+$pg.get-advisory-lock('ar-pg-rel');
+ok $pg.release-advisory-lock('ar-pg-rel'),                                          'releases a held advisory lock';
+{
+  my $other = conn();
+  $other.get-advisory-lock('ar-pg-contended');
+  nok $pg.get-advisory-lock('ar-pg-contended', timeout => 0.3),                     'fails to acquire a contended lock within the timeout';
+  $other.exec('SELECT pg_advisory_unlock_all()');
+  $other.disconnect;
+}
+$pg.exec('SELECT pg_advisory_unlock_all()');
+
+# ---- extensions, enums, constraints ----
+$pg.ddl-enable-extension('pgcrypto');
+$pg.ddl-disable-extension('pgcrypto');
+is $pg.exec(q{SELECT count(*) FROM pg_extension WHERE extname = 'pgcrypto'})[0][0].Int, 0, 'enables and disables an extension';
+
+$pg.ddl-drop-enum('pg_mood', :if-exists);
+$pg.ddl-create-enum('pg_mood', ['sad', 'ok', 'happy']);
+is $pg.exec(q{SELECT count(*) FROM pg_type WHERE typname = 'pg_mood'})[0][0].Int, 1, 'creates an enum type';
+$pg.ddl-add-enum-value('pg_mood', 'meh', after => 'sad');
+is $pg.exec(q{SELECT count(*) FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname = 'pg_mood' AND e.enumlabel = 'meh'})[0][0].Int, 1, 'adds a value to an enum';
+$pg.ddl-rename-enum-value('pg_mood', 'ok', 'fine');
+is $pg.exec(q{SELECT count(*) FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname = 'pg_mood' AND e.enumlabel = 'fine'})[0][0].Int, 1, 'renames an enum value';
+$pg.ddl-drop-enum('pg_mood', :if-exists);
+
+dies-ok { $pg.ddl-create-enum('pg_empty', []) },                                    'rejects creating an enum with no values';
+dies-ok { $pg.ddl-add-enum-value('pg_x', 'v', before => 'a', after => 'b') },       'rejects an enum value with both before and after';
+
+$pg.exec('DROP TABLE IF EXISTS pg_excl CASCADE');
+$pg.exec('CREATE TABLE pg_excl (room INT, during INT4RANGE)');
+$pg.ddl-add-exclusion-constraint('pg_excl', 'during WITH &&', name => 'excl_room');
+$pg.ddl-remove-exclusion-constraint('pg_excl', name => 'excl_room');
+is $pg.get-constraints(table => 'pg_excl').grep(*<name> eq 'excl_room').elems, 0,   'adds and removes an exclusion constraint';
+$pg.exec('DROP TABLE IF EXISTS pg_excl CASCADE');
+
+dies-ok { $pg.ddl-remove-exclusion-constraint('pg_excl') },                         'requires a name to remove an exclusion constraint';
+
+$pg.exec('DROP TABLE IF EXISTS pg_children CASCADE');
+$pg.exec('DROP TABLE IF EXISTS pg_parents CASCADE');
+$pg.exec('CREATE TABLE pg_parents (id SERIAL PRIMARY KEY)');
+$pg.exec('CREATE TABLE pg_children (id SERIAL PRIMARY KEY, parent_id INT)');
+$pg.exec('ALTER TABLE pg_children ADD CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES pg_parents(id) NOT VALID');
+$pg.ddl-validate-foreign-key('pg_children', 'fk_parent');
+ok $pg.exec(q{SELECT convalidated FROM pg_constraint WHERE conname = 'fk_parent'})[0][0].so, 'validates a NOT VALID foreign key';
+$pg.exec('DROP TABLE IF EXISTS pg_children CASCADE');
+$pg.exec('DROP TABLE IF EXISTS pg_parents CASCADE');
+
+# ---- id-column variants and type mapping ----
+$pg.exec('DROP TABLE IF EXISTS pg_id_big CASCADE');
+$pg.ddl-create-table('pg_id_big', [ name => { :string } ], id => 'bigint');
+is $pg.column-details(table => 'pg_id_big').first(*<name> eq 'id')<type>, 'bigint', 'bigint primary key emits a BIGSERIAL id';
+$pg.exec('DROP TABLE IF EXISTS pg_id_big CASCADE');
+
+$pg.exec('DROP TABLE IF EXISTS pg_id_uuid CASCADE');
+$pg.ddl-create-table('pg_id_uuid', [ name => { :string } ], id => 'uuid');
+is $pg.column-details(table => 'pg_id_uuid').first(*<name> eq 'id')<type>, 'uuid', 'uuid primary key emits a UUID id';
+$pg.exec('DROP TABLE IF EXISTS pg_id_uuid CASCADE');
+
+$pg.exec('DROP TABLE IF EXISTS pg_id_str CASCADE');
+$pg.ddl-create-table('pg_id_str', [ name => { :string } ], id => 'string');
+is $pg.column-details(table => 'pg_id_str').first(*<name> eq 'id')<type>, 'character varying', 'string primary key emits a VARCHAR id';
+$pg.exec('DROP TABLE IF EXISTS pg_id_str CASCADE');
+
+$pg.exec('DROP TABLE IF EXISTS pg_id_small CASCADE');
+$pg.ddl-create-table('pg_id_small', [ name => { :string } ], id => 'smallint');
+is $pg.column-details(table => 'pg_id_small').first(*<name> eq 'id')<type>, 'smallint', 'an unusual id type routes through sql-type-for';
+$pg.exec('DROP TABLE IF EXISTS pg_id_small CASCADE');
+
+is $pg.ddl-column-defs('name' => { :string, collation => 'en_US' })[0], 'name VARCHAR COLLATE "en_US"', 'quotes a collation on a column definition';
+
+$pg.exec('DROP TABLE IF EXISTS pg_backfill CASCADE');
+$pg.exec('CREATE TABLE pg_backfill (qty INTEGER)');
+$pg.exec('INSERT INTO pg_backfill (qty) VALUES (NULL)');
+$pg.ddl-change-column-null('pg_backfill', 'qty', False, default => 0);
+is $pg.exec('SELECT qty FROM pg_backfill')[0][0].Int, 0, 'backfills nulls when setting NOT NULL with a default';
+$pg.exec('DROP TABLE IF EXISTS pg_backfill CASCADE');
+
+$pg.exec('DROP TABLE IF EXISTS pg_check CASCADE');
+$pg.exec('CREATE TABLE pg_check (qty INTEGER)');
+$pg.exec('ALTER TABLE pg_check ADD CONSTRAINT chk_qty CHECK (qty >= 0) NOT VALID');
+$pg.ddl-validate-check-constraint('pg_check', 'chk_qty');
+ok $pg.exec(q{SELECT convalidated FROM pg_constraint WHERE conname = 'chk_qty'})[0][0].so, 'validates a NOT VALID check constraint';
+$pg.exec('DROP TABLE IF EXISTS pg_check CASCADE');
+
+$pg.exec('DROP TABLE IF EXISTS pg_fksrc CASCADE');
+$pg.exec('DROP TABLE IF EXISTS pgrefs CASCADE');
+$pg.ddl-create-table('pgrefs', [ name => { :string } ]);
+$pg.ddl-create-table('pg_fksrc', [ title => { :string }, pgref => { :reference } ]);
+is $pg.get-constraints(table => 'pg_fksrc').grep(*<type> eq 'foreign-key').elems, 1, 'emits a foreign-key constraint for a reference column at create time';
+$pg.exec('DROP TABLE IF EXISTS pg_fksrc CASCADE');
+$pg.exec('DROP TABLE IF EXISTS pgrefs CASCADE');
+
+$pg.exec('DROP TABLE IF EXISTS pg_ine CASCADE');
+$pg.exec('CREATE TABLE pg_ine (a INTEGER)');
+$pg.ddl-add-column('pg_ine', 'b' => { :integer }, :if-not-exists);
+$pg.ddl-add-column('pg_ine', 'b' => { :integer }, :if-not-exists);
+is $pg.column-details(table => 'pg_ine').grep(*<name> eq 'b').elems, 1, 'adds a column only when it does not already exist';
+$pg.exec('DROP TABLE IF EXISTS pg_ine CASCADE');
+
+# Every branch of sql-type-for, exercised through ALTER COLUMN TYPE. The table
+# has no rows, so the USING cast only needs to be a valid expression.
+my @sqltype-cases =
+  ('bigint',   'bigint',           'bigint'),
+  ('smallint', 'smallint',         'smallint'),
+  ('boolean',  'boolean',          'boolean'),
+  ('decimal',  'numeric',          'numeric'),
+  ('float',    'double precision', 'double precision'),
+  ('money',    'money',            'money'),
+  ('datetime', 'timestamptz',      'timestamp with time zone'),
+  ('date',     'date',             'date'),
+  ('time',     'time',             'time without time zone'),
+  ('interval', 'interval',         'interval'),
+  ('uuid',     'uuid',             'uuid'),
+  ('binary',   'bytea',            'bytea'),
+  ('jsonb',    'jsonb',            'jsonb');
+
+$pg.exec('DROP TABLE IF EXISTS pg_sqltypes CASCADE');
+$pg.exec('CREATE TABLE pg_sqltypes (id SERIAL PRIMARY KEY)');
+for @sqltype-cases -> ($logical, $cast, $expected) {
+  my $col = 'c_' ~ $logical;
+  $pg.exec("ALTER TABLE pg_sqltypes ADD COLUMN $col TEXT");
+  $pg.ddl-change-column('pg_sqltypes', $col, $logical, using => "$col\::$cast");
+  is $pg.column-details(table => 'pg_sqltypes').first(*<name> eq $col)<type>, $expected,
+     "sql-type-for maps $logical to $expected";
+}
+$pg.exec('DROP TABLE IF EXISTS pg_sqltypes CASCADE');
+
+# ---- disconnect / reconnect ----
+ok  $pg.disconnect,        'disconnect succeeds';
+nok $pg.is-connected,      'is-connected reports false after disconnect';
+$pg.reconnect;
+ok  $pg.is-connected,      'reconnect re-establishes the connection';
+$pg.disconnect;
+
+done-testing;

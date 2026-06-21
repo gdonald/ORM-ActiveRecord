@@ -7,8 +7,6 @@ use ORM::ActiveRecord::Adapter::Pg;
 use ORM::ActiveRecord::Schema::Migrate;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-%*ENV<BEHAVE_WORKER_INDEX>:delete;
-%*ENV<BEHAVE_WORKER_COUNT>:delete;
 
 sub adapter-kind(--> Str) {
   my $a = DB.shared.adapter;
@@ -20,7 +18,16 @@ sub adapter-kind(--> Str) {
     default       { 'unknown' }
   }
 }
+
 my $is-pg = adapter-kind() eq 'pg';
+
+# Resolve the live primary connection before clearing the worker env below, so
+# the PostgreSQL probe still reaches the same (test) database rather than
+# falling through to the development environment.
+my %primary-config = DB.read-config(name => 'primary');
+
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
 
 my $tmp = $*TMPDIR.add("ar-cfg-extras-t-{$*PID}.json");
 my $saved-url = %*ENV<DATABASE_URL>;
@@ -66,7 +73,7 @@ is Migrate.new(args => []).migration-path, 'db/migrate',
 
 # PostgreSQL: application_name takes effect on the session
 if $is-pg {
-  my %c = DB.read-config(name => 'primary');
+  my %c = %primary-config;
   my $pg = PgAdapter.new(
     schema           => %c<schema> // 'public',
     host             => %c<host> // 'localhost',

@@ -5,8 +5,6 @@ use ORM::ActiveRecord::Adapter::Pg;
 use ORM::ActiveRecord::Schema::Migrate;
 
 %*ENV<DISABLE-SQL-LOG> = True;
-%*ENV<BEHAVE_WORKER_INDEX>:delete;
-%*ENV<BEHAVE_WORKER_COUNT>:delete;
 
 sub adapter-kind(--> Str) {
   my $a = DB.shared.adapter;
@@ -18,7 +16,17 @@ sub adapter-kind(--> Str) {
     default       { 'unknown' }
   }
 }
+
 my $is-pg = adapter-kind() eq 'pg';
+
+# Resolve the live primary connection before clearing the worker env below. The
+# per-environment config tests need a clean env, but the PostgreSQL connection
+# test must still reach the same (test) database rather than falling through to
+# the development environment.
+my %primary-config = DB.read-config(name => 'primary');
+
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
 
 sub fresh-tmp() {
   $*TMPDIR.add("ar-config-extras-{$*PID}-{(now * 1000).Int}.json");
@@ -119,7 +127,7 @@ my &pg-it = $is-pg ?? &it !! &xit;
 
 describe 'PostgreSQL connection options take effect', :tag<destructive>, {
   pg-it 'sets the session application_name and accepts an ssl mode', {
-    my %c = DB.read-config(name => 'primary');
+    my %c = %primary-config;
     my $pg = PgAdapter.new(
       schema           => %c<schema> // 'public',
       host             => %c<host> // 'localhost',
@@ -129,7 +137,7 @@ describe 'PostgreSQL connection options take effect', :tag<destructive>, {
       sslmode          => 'disable',
       application-name => 'ar-cfg-test',
     );
-    LEAVE $pg.disconnect;
+    LEAVE { $pg.disconnect if $pg && $pg.is-connected }
     my @rows = $pg.exec('SELECT application_name FROM pg_stat_activity WHERE pid = pg_backend_pid()');
     expect(@rows[0][0].Str).to.eq('ar-cfg-test');
   }
