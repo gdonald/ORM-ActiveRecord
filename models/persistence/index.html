@@ -630,6 +630,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../async/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Async queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../raw/" class="md-nav__link">
         
   
@@ -1021,6 +1049,17 @@
     <span class="md-ellipsis">
       
         Automatic Timestamps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mass-assignment-and-strong-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mass assignment and strong parameters
       
     </span>
   </a>
@@ -1745,6 +1784,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reflection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reflection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../logging/" class="md-nav__link">
         
   
@@ -2148,6 +2214,17 @@
     <span class="md-ellipsis">
       
         Automatic Timestamps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mass-assignment-and-strong-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mass assignment and strong parameters
       
     </span>
   </a>
@@ -2908,6 +2985,14 @@ manages them for you. <code>created_at</code> is set on insert; <code>updated_at
 every save (insert and update).</p>
 <p>See <a href="../../migrations/#timestamps">Migrations &raquo; Timestamps</a> for the
 column setup.</p>
+<h2 id="mass-assignment-and-strong-parameters">Mass assignment and strong parameters</h2>
+<p>The persistence methods take an explicit attribute hash
+(<code>create({ ... })</code>, <code>update({ ... })</code>, <code>assign-attributes({ ... })</code>), so you
+decide exactly which attributes are written at the call site. Filtering
+untrusted request parameters before they reach the model — Rails' strong
+parameters — is a web-layer concern and is out of scope for the ORM; it belongs
+in the controller (for example in MVC::Keayl), which hands the ORM a hash it has
+already permitted.</p>
 
 
 

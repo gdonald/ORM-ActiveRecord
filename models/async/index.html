@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../data/">
+        <link rel="prev" href="../batching/">
       
       
-        <link rel="next" href="../options/">
+        <link rel="next" href="../raw/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Conditionals - ORM::ActiveRecord</title>
+        <title>Async queries - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#validation-conditionals" class="md-skip">
+        <a href="#async-queries" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Conditionals
+              Async queries
             
           </span>
         </div>
@@ -382,18 +382,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -414,7 +416,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -432,7 +434,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/models/" class="md-nav__link">
+      <a href="../models/" class="md-nav__link">
         
   
   
@@ -460,7 +462,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/finders/" class="md-nav__link">
+      <a href="../finders/" class="md-nav__link">
         
   
   
@@ -488,7 +490,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/relations/" class="md-nav__link">
+      <a href="../relations/" class="md-nav__link">
         
   
   
@@ -516,7 +518,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/queries/" class="md-nav__link">
+      <a href="../queries/" class="md-nav__link">
         
   
   
@@ -544,7 +546,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/joins/" class="md-nav__link">
+      <a href="../joins/" class="md-nav__link">
         
   
   
@@ -572,7 +574,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/aggregation/" class="md-nav__link">
+      <a href="../aggregation/" class="md-nav__link">
         
   
   
@@ -600,7 +602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/batching/" class="md-nav__link">
+      <a href="../batching/" class="md-nav__link">
         
   
   
@@ -608,482 +610,6 @@
     
   
     Batching
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/async/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Async queries
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/raw/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Raw SQL & CTEs
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/inspection/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Inspection
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/persistence/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Persistence
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/types/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Attribute types
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/enums/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Enums
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/normalization/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Normalisation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/serialization/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Serialization
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/callbacks/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Callbacks
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/discard/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Soft deletes
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/inheritance/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Inheritance
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/secure-tokens/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Tokens & secure data
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/encryption/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Encryption
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../models/transactions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Transactions
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Validations
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_9">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Validations
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../data/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Data
   
 
     
@@ -1120,7 +646,7 @@
   <span class="md-ellipsis">
     
   
-    Conditionals
+    Async queries
   
 
     
@@ -1138,7 +664,7 @@
   <span class="md-ellipsis">
     
   
-    Conditionals
+    Async queries
   
 
     
@@ -1164,10 +690,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#if" class="md-nav__link">
+  <a href="#whats-available" class="md-nav__link">
     <span class="md-ellipsis">
       
-        If
+        What's available
       
     </span>
   </a>
@@ -1175,10 +701,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#unless" class="md-nav__link">
+  <a href="#how-it-runs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Unless
+        How it runs
       
     </span>
   </a>
@@ -1186,74 +712,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#on" class="md-nav__link">
+  <a href="#errors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        On
+        Errors
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="On">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Create
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#update" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Update
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-contexts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom contexts
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sticky-context" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Sticky context
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#re-running-validations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Re-running validations
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1273,7 +738,481 @@
   
   
     <li class="md-nav__item">
-      <a href="../options/" class="md-nav__link">
+      <a href="../raw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Raw SQL & CTEs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inspection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../persistence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persistence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attribute types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../enums/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enums
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../normalization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Normalisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serialization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serialization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../callbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Soft deletes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inheritance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inheritance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secure-tokens/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tokens & secure data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transactions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transactions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Validations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validations/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validations/conditionals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conditionals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validations/options/" class="md-nav__link">
         
   
   
@@ -1301,7 +1240,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../i18n/" class="md-nav__link">
+      <a href="../../validations/i18n/" class="md-nav__link">
         
   
   
@@ -1740,10 +1679,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#if" class="md-nav__link">
+  <a href="#whats-available" class="md-nav__link">
     <span class="md-ellipsis">
       
-        If
+        What's available
       
     </span>
   </a>
@@ -1751,10 +1690,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#unless" class="md-nav__link">
+  <a href="#how-it-runs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Unless
+        How it runs
       
     </span>
   </a>
@@ -1762,74 +1701,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#on" class="md-nav__link">
+  <a href="#errors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        On
+        Errors
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="On">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Create
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#update" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Update
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-contexts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom contexts
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sticky-context" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Sticky context
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#re-running-validations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Re-running validations
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1850,203 +1728,91 @@
 
 
 
-<h1 id="validation-conditionals">Validation Conditionals</h1>
-<p>Validations can be made conditional based on some other method call or criteria.  The available conditionals are <code>if</code>, <code>unless</code>, and <code>on</code>.  With <code>on</code> a <code>create</code> or <code>update</code> life cycle event may be specified.</p>
-<h2 id="if">If</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">Book</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;title&#39;</span>, { :<span class="n">presence</span>, :<span class="n">if</span> =&gt; { <span class="nb">self</span>.<span class="n">returns-true</span> } }
-  }
-
-  <span class="k">method</span> <span class="n">returns-true</span> { <span class="nb">True</span> }
-}
-
-<span class="k">my</span> <span class="nv">$book</span> = <span class="n">Book</span>.<span class="n">build</span>;
-<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">is-valid</span>;
-<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">errors</span>.<span class="n">title</span>[<span class="mi">0</span>];
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
-must<span class="w"> </span>be<span class="w"> </span>present
-</code></pre></div></td></tr></table></div>
-
-<h2 id="unless">Unless</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">Book</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;title&#39;</span>, { :<span class="n">presence</span>, :<span class="n">unless</span> =&gt; { <span class="nb">self</span>.<span class="n">returns-false</span> } }
-  }
-
-  <span class="k">method</span> <span class="n">returns-false</span> { <span class="nb">False</span> }
-}
-
-<span class="k">my</span> <span class="nv">$book</span> = <span class="n">Book</span>.<span class="n">build</span>;
-<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">is-valid</span>;
-<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">errors</span>.<span class="n">title</span>[<span class="mi">0</span>];
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
-must<span class="w"> </span>be<span class="w"> </span>present
-</code></pre></div></td></tr></table></div>
-
-<h2 id="on">On</h2>
-<h3 id="create">Create</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span>, <span class="n">on</span> =&gt; { :<span class="n">create</span> } }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({});
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">fname</span>[<span class="mi">0</span>];
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
-must<span class="w"> </span>be<span class="w"> </span>present
-</code></pre></div></td></tr></table></div>
-
-<h3 id="update">Update</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span>, <span class="n">on</span> =&gt; { :<span class="n">update</span> } }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({});
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
-
-<span class="nv">$user</span>.<span class="n">update</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;&#39;</span>});
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">fname</span>[<span class="mi">0</span>];
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>True
-False
-must<span class="w"> </span>be<span class="w"> </span>present
-</code></pre></div></td></tr></table></div>
-
-<h3 id="custom-contexts">Custom contexts</h3>
-<p><code>on:</code> accepts any context name, not just <code>:create</code> or <code>:update</code>. A validator
-tagged with a custom context only runs when the caller asks for it.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">Signup</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;email&#39;</span>,    { :<span class="n">presence</span> }
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;password&#39;</span>, { :<span class="n">presence</span>, <span class="n">on</span> =&gt; { :<span class="n">step_two</span> } }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$s</span> = <span class="n">Signup</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;a@b.com&#39;</span>});
-<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-valid</span>;                            <span class="c1"># True — step_two skipped by default</span>
-<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-invalid</span>(:<span class="n">context</span><span class="s">&lt;step_two&gt;</span>);     <span class="c1"># True — step_two now fires</span>
-<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">errors</span>.<span class="n">password</span>[<span class="mi">0</span>];                  <span class="c1"># must be present</span>
-</code></pre></div></td></tr></table></div>
-
-<p>A validator tagged with <code>on:</code> that does not match the active context is silently
-skipped; validators with no <code>on:</code> always run.</p>
-<h3 id="sticky-context">Sticky context</h3>
-<p>Set <code>validation-context=</code> on the record to make subsequent <code>is-valid</code>/<code>is-invalid</code>
-calls (and <code>save</code>) use a particular context. Explicit <code>:context</code> arguments still
-win over the sticky setter.</p>
+<h1 id="async-queries">Async queries</h1>
+<p>Every read method has an <code>-async</code> variant that runs the query on a worker
+thread and returns a Raku <code>Promise</code>. <code>await</code> it (or call <code>.result</code>) when you
+need the value. The point is to fire several independent queries and let them
+run concurrently instead of one after another.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$s</span> = <span class="n">Signup</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;a@b.com&#39;</span>});
-<span class="nv">$s</span>.<span class="n">validation-context</span> = <span class="s">&#39;step_two&#39;</span>;
-<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-invalid</span>;          <span class="c1"># True — uses sticky context</span>
-<span class="nv">$s</span>.<span class="n">validation-context</span> = <span class="nb">Str</span>; <span class="c1"># clear</span>
-<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-valid</span>;            <span class="c1"># True — back to default</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$users-p</span> = <span class="n">User</span>.<span class="n">where</span>({ <span class="n">active</span> =&gt; <span class="nb">True</span> }).<span class="n">load-async</span>;
+<span class="k">my</span> <span class="nv">$count-p</span> = <span class="nb">Order</span>.<span class="nb">all</span>.<span class="n">count-async</span>;
+
+<span class="c1"># … other work while both queries run …</span>
+
+<span class="k">my</span> <span class="nv">@users</span> = <span class="nb">await</span> <span class="nv">$users-p</span>;
+<span class="k">my</span> <span class="nv">$count</span> = <span class="nb">await</span> <span class="nv">$count-p</span>;
 </code></pre></div></td></tr></table></div>
 
-<h3 id="re-running-validations">Re-running validations</h3>
-<p>Every call to <code>is-valid</code> / <code>is-invalid</code> clears <code>errors</code> and re-runs every
-applicable validator. There is no result cache — repeated calls reflect the
-current attribute state, not a stale snapshot:</p>
+<h2 id="whats-available">What's available</h2>
+<table>
+<thead>
+<tr>
+<th>Sync</th>
+<th>Async</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>all</code> / <code>perform</code></td>
+<td><code>load-async</code></td>
+</tr>
+<tr>
+<td><code>count</code></td>
+<td><code>count-async</code></td>
+</tr>
+<tr>
+<td><code>sum</code> / <code>average</code> / <code>minimum</code> / <code>maximum</code></td>
+<td><code>sum-async</code> / <code>average-async</code> / <code>minimum-async</code> / <code>maximum-async</code></td>
+</tr>
+<tr>
+<td><code>calculate</code></td>
+<td><code>calculate-async</code></td>
+</tr>
+<tr>
+<td><code>pluck</code> / <code>pick</code> / <code>ids</code></td>
+<td><code>pluck-async</code> / <code>pick-async</code> / <code>ids-async</code></td>
+</tr>
+<tr>
+<td><code>find-by-sql</code></td>
+<td><code>find-by-sql-async</code></td>
+</tr>
+</tbody>
+</table>
+<p>They exist both on a relation and at the class level:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$s</span> = <span class="n">Signup</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;&#39;</span>});
-<span class="nv">$s</span>.<span class="n">is-invalid</span>;            <span class="c1"># error pushed onto $s.errors</span>
-<span class="nv">$s</span>.<span class="n">email</span> = <span class="s">&#39;a@b.com&#39;</span>;
-<span class="nv">$s</span>.<span class="n">is-valid</span>;              <span class="c1"># errors cleared, no new errors pushed</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({ <span class="n">active</span> =&gt; <span class="nb">True</span> }).<span class="n">load-async</span>;   <span class="c1"># on a relation</span>
+<span class="n">User</span>.<span class="n">count-async</span>;                            <span class="c1"># class level (whole table)</span>
+<span class="n">User</span>.<span class="n">find-by-sql-async</span>(<span class="s">&#39;SELECT * FROM users WHERE age &gt; ?&#39;</span>, <span class="mi">18</span>);
+</code></pre></div></td></tr></table></div>
+
+<h2 id="how-it-runs">How it runs</h2>
+<p>Each async call checks out a dedicated connection from the connection pool and
+runs the whole query — the SELECT and the object instantiation — on that
+connection on a worker thread, then returns it to the pool. Database driver
+handles are not thread-safe, so the async work never touches the shared
+connection the main thread is using; that is what makes it safe to run queries
+in parallel.</p>
+<p>Records returned by <code>load-async</code> and <code>find-by-sql-async</code> are rebound to the
+shared connection before they reach you, so you can <code>save</code>, <code>reload</code>, and follow
+associations on them from the calling thread as usual.</p>
+<p>The number of queries that truly run in parallel is bounded by the connection
+pool size (the <code>pool</code> key in the connection config, default 5). Beyond that,
+async calls wait for a connection to free up.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"> </span><span class="nt">&quot;production&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;primary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ar&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;pool&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="errors">Errors</h2>
+<p>A query that fails breaks its <code>Promise</code>; <code>await</code> rethrows the exception on the
+calling thread:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$p</span> = <span class="n">User</span>.<span class="n">find-by-sql-async</span>(<span class="s">&#39;SELECT * FROM nope&#39;</span>);
+<span class="k">my</span> <span class="nv">@rows</span> = <span class="nb">await</span> <span class="nv">$p</span>;   <span class="c1"># rethrows the adapter error here</span>
 </code></pre></div></td></tr></table></div>
 
 

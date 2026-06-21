@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../data/">
+        <link rel="prev" href="../errors/">
       
       
-        <link rel="next" href="../options/">
+        <link rel="next" href="../logging/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Conditionals - ORM::ActiveRecord</title>
+        <title>Reflection - ORM::ActiveRecord</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
       
 
@@ -46,7 +46,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#validation-conditionals" class="md-skip">
+        <a href="#reflection" class="md-skip">
           Skip to content
         </a>
       
@@ -80,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-header__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Conditionals
+              Reflection
             
           </span>
         </div>
@@ -178,7 +178,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
+    <a href=".." title="ORM::ActiveRecord" class="md-nav__button md-logo" aria-label="ORM::ActiveRecord" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -196,7 +196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -223,7 +223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rails-migration/" class="md-nav__link">
+      <a href="../rails-migration/" class="md-nav__link">
         
   
   
@@ -250,7 +250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../adapters/" class="md-nav__link">
+      <a href="../adapters/" class="md-nav__link">
         
   
   
@@ -277,7 +277,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../migrations/" class="md-nav__link">
+      <a href="../migrations/" class="md-nav__link">
         
   
   
@@ -304,7 +304,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../generators/" class="md-nav__link">
+      <a href="../generators/" class="md-nav__link">
         
   
   
@@ -331,7 +331,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../db-tasks/" class="md-nav__link">
+      <a href="../db-tasks/" class="md-nav__link">
         
   
   
@@ -358,7 +358,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../runtime/" class="md-nav__link">
+      <a href="../runtime/" class="md-nav__link">
         
   
   
@@ -432,7 +432,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/models/" class="md-nav__link">
+      <a href="../models/models/" class="md-nav__link">
         
   
   
@@ -460,7 +460,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/finders/" class="md-nav__link">
+      <a href="../models/finders/" class="md-nav__link">
         
   
   
@@ -488,7 +488,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/relations/" class="md-nav__link">
+      <a href="../models/relations/" class="md-nav__link">
         
   
   
@@ -516,7 +516,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/queries/" class="md-nav__link">
+      <a href="../models/queries/" class="md-nav__link">
         
   
   
@@ -544,7 +544,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/joins/" class="md-nav__link">
+      <a href="../models/joins/" class="md-nav__link">
         
   
   
@@ -572,7 +572,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/aggregation/" class="md-nav__link">
+      <a href="../models/aggregation/" class="md-nav__link">
         
   
   
@@ -600,7 +600,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/batching/" class="md-nav__link">
+      <a href="../models/batching/" class="md-nav__link">
         
   
   
@@ -628,7 +628,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/async/" class="md-nav__link">
+      <a href="../models/async/" class="md-nav__link">
         
   
   
@@ -656,7 +656,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/raw/" class="md-nav__link">
+      <a href="../models/raw/" class="md-nav__link">
         
   
   
@@ -684,7 +684,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/inspection/" class="md-nav__link">
+      <a href="../models/inspection/" class="md-nav__link">
         
   
   
@@ -712,7 +712,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/persistence/" class="md-nav__link">
+      <a href="../models/persistence/" class="md-nav__link">
         
   
   
@@ -740,7 +740,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/types/" class="md-nav__link">
+      <a href="../models/types/" class="md-nav__link">
         
   
   
@@ -768,7 +768,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/enums/" class="md-nav__link">
+      <a href="../models/enums/" class="md-nav__link">
         
   
   
@@ -796,7 +796,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/normalization/" class="md-nav__link">
+      <a href="../models/normalization/" class="md-nav__link">
         
   
   
@@ -824,7 +824,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/serialization/" class="md-nav__link">
+      <a href="../models/serialization/" class="md-nav__link">
         
   
   
@@ -852,7 +852,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/callbacks/" class="md-nav__link">
+      <a href="../models/callbacks/" class="md-nav__link">
         
   
   
@@ -880,7 +880,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/discard/" class="md-nav__link">
+      <a href="../models/discard/" class="md-nav__link">
         
   
   
@@ -908,7 +908,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/inheritance/" class="md-nav__link">
+      <a href="../models/inheritance/" class="md-nav__link">
         
   
   
@@ -936,7 +936,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/secure-tokens/" class="md-nav__link">
+      <a href="../models/secure-tokens/" class="md-nav__link">
         
   
   
@@ -964,7 +964,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/encryption/" class="md-nav__link">
+      <a href="../models/encryption/" class="md-nav__link">
         
   
   
@@ -992,7 +992,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/transactions/" class="md-nav__link">
+      <a href="../models/transactions/" class="md-nav__link">
         
   
   
@@ -1024,20 +1024,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
           <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
@@ -1058,7 +1056,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1076,7 +1074,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../data/" class="md-nav__link">
+      <a href="../validations/data/" class="md-nav__link">
         
   
   
@@ -1101,37 +1099,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Conditionals
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../validations/conditionals/" class="md-nav__link">
         
   
   
@@ -1147,120 +1118,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#if" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        If
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#unless" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Unless
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#on" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        On
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="On">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Create
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#update" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Update
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-contexts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom contexts
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sticky-context" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Sticky context
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#re-running-validations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Re-running validations
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1273,7 +1130,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../options/" class="md-nav__link">
+      <a href="../validations/options/" class="md-nav__link">
         
   
   
@@ -1301,7 +1158,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../i18n/" class="md-nav__link">
+      <a href="../validations/i18n/" class="md-nav__link">
         
   
   
@@ -1383,7 +1240,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/through-associations/" class="md-nav__link">
+      <a href="../cookbook/through-associations/" class="md-nav__link">
         
   
   
@@ -1411,7 +1268,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/polymorphic/" class="md-nav__link">
+      <a href="../cookbook/polymorphic/" class="md-nav__link">
         
   
   
@@ -1439,7 +1296,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/single-table-inheritance/" class="md-nav__link">
+      <a href="../cookbook/single-table-inheritance/" class="md-nav__link">
         
   
   
@@ -1467,7 +1324,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/custom-validators/" class="md-nav__link">
+      <a href="../cookbook/custom-validators/" class="md-nav__link">
         
   
   
@@ -1495,7 +1352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/transactions/" class="md-nav__link">
+      <a href="../cookbook/transactions/" class="md-nav__link">
         
   
   
@@ -1523,7 +1380,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/eager-loading/" class="md-nav__link">
+      <a href="../cookbook/eager-loading/" class="md-nav__link">
         
   
   
@@ -1558,7 +1415,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../errors/" class="md-nav__link">
+      <a href="../errors/" class="md-nav__link">
         
   
   
@@ -1582,10 +1439,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../reflection/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reflection
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1601,6 +1485,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#associations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Associations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#columns-and-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Columns and attributes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#primary-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primary key
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enums" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enums
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#construction-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Construction contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stubbed-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stubbed records
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1612,7 +1582,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../logging/" class="md-nav__link">
+      <a href="../logging/" class="md-nav__link">
         
   
   
@@ -1639,7 +1609,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../instrumentation/" class="md-nav__link">
+      <a href="../instrumentation/" class="md-nav__link">
         
   
   
@@ -1666,7 +1636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tests/" class="md-nav__link">
+      <a href="../tests/" class="md-nav__link">
         
   
   
@@ -1693,7 +1663,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../test-helpers/" class="md-nav__link">
+      <a href="../test-helpers/" class="md-nav__link">
         
   
   
@@ -1740,10 +1710,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#if" class="md-nav__link">
+  <a href="#associations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        If
+        Associations
       
     </span>
   </a>
@@ -1751,10 +1721,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#unless" class="md-nav__link">
+  <a href="#columns-and-attributes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Unless
+        Columns and attributes
       
     </span>
   </a>
@@ -1762,74 +1732,46 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#on" class="md-nav__link">
+  <a href="#primary-key" class="md-nav__link">
     <span class="md-ellipsis">
       
-        On
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="On">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Create
+        Primary key
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#update" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#enums" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Update
+        Enums
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-contexts" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#construction-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom contexts
+        Construction contract
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#sticky-context" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#stubbed-records" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sticky context
+        Stubbed records
       
     </span>
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#re-running-validations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Re-running validations
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1850,204 +1792,139 @@
 
 
 
-<h1 id="validation-conditionals">Validation Conditionals</h1>
-<p>Validations can be made conditional based on some other method call or criteria.  The available conditionals are <code>if</code>, <code>unless</code>, and <code>on</code>.  With <code>on</code> a <code>create</code> or <code>update</code> life cycle event may be specified.</p>
-<h2 id="if">If</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">Book</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;title&#39;</span>, { :<span class="n">presence</span>, :<span class="n">if</span> =&gt; { <span class="nb">self</span>.<span class="n">returns-true</span> } }
-  }
-
-  <span class="k">method</span> <span class="n">returns-true</span> { <span class="nb">True</span> }
-}
-
-<span class="k">my</span> <span class="nv">$book</span> = <span class="n">Book</span>.<span class="n">build</span>;
-<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">is-valid</span>;
-<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">errors</span>.<span class="n">title</span>[<span class="mi">0</span>];
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
-must<span class="w"> </span>be<span class="w"> </span>present
-</code></pre></div></td></tr></table></div>
-
-<h2 id="unless">Unless</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">Book</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;title&#39;</span>, { :<span class="n">presence</span>, :<span class="n">unless</span> =&gt; { <span class="nb">self</span>.<span class="n">returns-false</span> } }
-  }
-
-  <span class="k">method</span> <span class="n">returns-false</span> { <span class="nb">False</span> }
-}
-
-<span class="k">my</span> <span class="nv">$book</span> = <span class="n">Book</span>.<span class="n">build</span>;
-<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">is-valid</span>;
-<span class="nb">say</span> <span class="nv">$book</span>.<span class="n">errors</span>.<span class="n">title</span>[<span class="mi">0</span>];
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
-must<span class="w"> </span>be<span class="w"> </span>present
-</code></pre></div></td></tr></table></div>
-
-<h2 id="on">On</h2>
-<h3 id="create">Create</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span>, <span class="n">on</span> =&gt; { :<span class="n">create</span> } }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({});
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">fname</span>[<span class="mi">0</span>];
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>False
-must<span class="w"> </span>be<span class="w"> </span>present
-</code></pre></div></td></tr></table></div>
-
-<h3 id="update">Update</h3>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">User</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;fname&#39;</span>, { :<span class="n">presence</span>, <span class="n">on</span> =&gt; { :<span class="n">update</span> } }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">create</span>({});
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
-
-<span class="nv">$user</span>.<span class="n">update</span>({<span class="n">fname</span> =&gt; <span class="s">&#39;&#39;</span>});
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">is-valid</span>;
-<span class="nb">say</span> <span class="nv">$user</span>.<span class="n">errors</span>.<span class="n">fname</span>[<span class="mi">0</span>];
-</code></pre></div></td></tr></table></div>
-
-<p>Output</p>
+<h1 id="reflection">Reflection</h1>
+<p>Public class-level introspection so tools (a console, a serializer, a factory)
+can build, stub, and describe records without reaching into model internals.
+Every method works on the class or on an instance.</p>
+<h2 id="associations">Associations</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>True
-False
-must<span class="w"> </span>be<span class="w"> </span>present
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Author</span>.<span class="n">association-names</span>;              <span class="c1"># (&#39;books&#39;, &#39;reviews&#39;)</span>
+<span class="n">Author</span>.<span class="n">associations</span>;                   <span class="c1"># a reflection per association</span>
+<span class="k">my</span> <span class="nv">$ref</span> = <span class="n">Author</span>.<span class="n">reflect-on-association</span>(<span class="s">&#39;books&#39;</span>);
 </code></pre></div></td></tr></table></div>
 
-<h3 id="custom-contexts">Custom contexts</h3>
-<p><code>on:</code> accepts any context name, not just <code>:create</code> or <code>:update</code>. A validator
-tagged with a custom context only runs when the caller asks for it.</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Model</span>;
-
-<span class="k">class</span> <span class="n">Signup</span> <span class="k">is</span> <span class="n">Model</span> {
-  <span class="k">submethod</span> <span class="nb">BUILD</span> {
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;email&#39;</span>,    { :<span class="n">presence</span> }
-    <span class="nb">self</span>.<span class="n">validate:</span> <span class="s">&#39;password&#39;</span>, { :<span class="n">presence</span>, <span class="n">on</span> =&gt; { :<span class="n">step_two</span> } }
-  }
-}
-
-<span class="k">my</span> <span class="nv">$s</span> = <span class="n">Signup</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;a@b.com&#39;</span>});
-<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-valid</span>;                            <span class="c1"># True — step_two skipped by default</span>
-<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-invalid</span>(:<span class="n">context</span><span class="s">&lt;step_two&gt;</span>);     <span class="c1"># True — step_two now fires</span>
-<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">errors</span>.<span class="n">password</span>[<span class="mi">0</span>];                  <span class="c1"># must be present</span>
-</code></pre></div></td></tr></table></div>
-
-<p>A validator tagged with <code>on:</code> that does not match the active context is silently
-skipped; validators with no <code>on:</code> always run.</p>
-<h3 id="sticky-context">Sticky context</h3>
-<p>Set <code>validation-context=</code> on the record to make subsequent <code>is-valid</code>/<code>is-invalid</code>
-calls (and <code>save</code>) use a particular context. Explicit <code>:context</code> arguments still
-win over the sticky setter.</p>
+<p>A reflection (<code>AssociationReflection</code>) describes one declared association:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>the association name</td>
+</tr>
+<tr>
+<td><code>macro</code></td>
+<td><code>belongs-to</code>, <code>has-many</code>, <code>has-one</code>, <code>has-and-belongs-to-many</code></td>
+</tr>
+<tr>
+<td><code>klass</code></td>
+<td>the resolved target class (<code>Mu</code> for a polymorphic / unresolved one)</td>
+</tr>
+<tr>
+<td><code>class-name</code></td>
+<td>the target class name</td>
+</tr>
+<tr>
+<td><code>foreign-key</code></td>
+<td>the foreign key column</td>
+</tr>
+<tr>
+<td><code>primary-key</code></td>
+<td>the primary key on the target</td>
+</tr>
+<tr>
+<td><code>polymorphic</code></td>
+<td><code>True</code> for a polymorphic <code>belongs-to</code></td>
+</tr>
+<tr>
+<td><code>through</code></td>
+<td>the join association name, for <code>:through</code></td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td>the source association name, for <code>:through</code></td>
+</tr>
+<tr>
+<td><code>is-collection</code> / <code>is-singular</code></td>
+<td>plural vs singular</td>
+</tr>
+</tbody>
+</table>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$s</span> = <span class="n">Signup</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;a@b.com&#39;</span>});
-<span class="nv">$s</span>.<span class="n">validation-context</span> = <span class="s">&#39;step_two&#39;</span>;
-<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-invalid</span>;          <span class="c1"># True — uses sticky context</span>
-<span class="nv">$s</span>.<span class="n">validation-context</span> = <span class="nb">Str</span>; <span class="c1"># clear</span>
-<span class="nb">say</span> <span class="nv">$s</span>.<span class="n">is-valid</span>;            <span class="c1"># True — back to default</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$ref</span> = <span class="n">Book</span>.<span class="n">reflect-on-association</span>(<span class="s">&#39;cover&#39;</span>);
+<span class="nv">$ref</span>.<span class="n">macro</span>;          <span class="c1"># &#39;belongs-to&#39;</span>
+<span class="nv">$ref</span>.<span class="n">polymorphic</span>;    <span class="c1"># True</span>
+<span class="nv">$ref</span>.<span class="n">foreign-key</span>;    <span class="c1"># &#39;cover_id&#39;</span>
+<span class="nv">$ref</span>.<span class="n">is-singular</span>;    <span class="c1"># True</span>
 </code></pre></div></td></tr></table></div>
 
-<h3 id="re-running-validations">Re-running validations</h3>
-<p>Every call to <code>is-valid</code> / <code>is-invalid</code> clears <code>errors</code> and re-runs every
-applicable validator. There is no result cache — repeated calls reflect the
-current attribute state, not a stale snapshot:</p>
+<h2 id="columns-and-attributes">Columns and attributes</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$s</span> = <span class="n">Signup</span>.<span class="n">build</span>({<span class="n">email</span> =&gt; <span class="s">&#39;&#39;</span>});
-<span class="nv">$s</span>.<span class="n">is-invalid</span>;            <span class="c1"># error pushed onto $s.errors</span>
-<span class="nv">$s</span>.<span class="n">email</span> = <span class="s">&#39;a@b.com&#39;</span>;
-<span class="nv">$s</span>.<span class="n">is-valid</span>;              <span class="c1"># errors cleared, no new errors pushed</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Author</span>.<span class="n">column-names</span>;          <span class="c1"># (&#39;id&#39;, &#39;name&#39;, &#39;role&#39;, &#39;created_at&#39;, &#39;updated_at&#39;)</span>
+<span class="n">Author</span>.<span class="n">columns</span>;               <span class="c1"># a hash per column: name, type, null, default</span>
+<span class="n">Author</span>.<span class="nb">column</span>(<span class="s">&#39;name&#39;</span>);        <span class="c1"># { name =&gt; &#39;name&#39;, type =&gt; &#39;text&#39;, null =&gt; True, ... }</span>
+<span class="n">Author</span>.<span class="n">column-type</span>(<span class="s">&#39;role&#39;</span>);   <span class="c1"># &#39;integer&#39;</span>
 </code></pre></div></td></tr></table></div>
+
+<p><code>columns</code> reads live metadata from the adapter, so <code>null</code> and <code>default</code> reflect
+the actual schema.</p>
+<h2 id="primary-key">Primary key</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Author</span>.<span class="n">primary-keys</span>;          <span class="c1"># (&#39;id&#39;,) — a list, composite-aware</span>
+<span class="n">Author</span>.<span class="n">primary-key-type</span>;      <span class="c1"># &#39;integer&#39;</span>
+<span class="n">Author</span>.<span class="n">has-composite-primary-key</span>;
+</code></pre></div></td></tr></table></div>
+
+<h2 id="enums">Enums</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">Author</span>.<span class="nb">enums</span>;                 <span class="c1"># { role =&gt; { admin =&gt; 0, user =&gt; 1 } }</span>
+<span class="n">Author</span>.<span class="nb">enums</span><span class="s">&lt;role&gt;&lt;admin&gt;</span>;    <span class="c1"># 0</span>
+</code></pre></div></td></tr></table></div>
+
+<h2 id="construction-contract">Construction contract</h2>
+<p>These are the canonical "instantiate from a hash without saving" entry points
+that adapters target:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$author</span> = <span class="n">Author</span>.<span class="n">build</span>({ <span class="nb">name</span> =&gt; <span class="s">&#39;Ada&#39;</span> });   <span class="c1"># unsaved instance, no write</span>
+<span class="nv">$author</span>.<span class="n">assign-attributes</span>({ <span class="k">role</span> =&gt; <span class="s">&#39;admin&#39;</span> }); <span class="c1"># set more attributes</span>
+<span class="nv">$author</span>.<span class="n">is-new-record</span>;                           <span class="c1"># True</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>build</code> constructs an instance with <code>id</code> 0 and applies attribute types; it never
+touches the database. <code>assign-attributes</code> merges a hash into an existing
+instance.</p>
+<h2 id="stubbed-records">Stubbed records</h2>
+<p><code>build-stubbed</code> returns an instance that reports as persisted — with a fake id
+and timestamps — without any write, for tests and previews that must not hit the
+database:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$stub</span> = <span class="n">Author</span>.<span class="n">build-stubbed</span>({ <span class="nb">name</span> =&gt; <span class="s">&#39;Ada&#39;</span> });
+<span class="nv">$stub</span>.<span class="n">is-persisted</span>;          <span class="c1"># True</span>
+<span class="nv">$stub</span>.<span class="n">attrs</span><span class="s">&lt;created_at&gt;</span>;     <span class="c1"># set</span>
+
+<span class="nv">$stub</span>.<span class="n">save</span>;                  <span class="c1"># raises X::ReadOnlyRecord</span>
+<span class="nv">$stub</span>.<span class="n">reload</span>;                <span class="c1"># raises X::StubbedRecord</span>
+</code></pre></div></td></tr></table></div>
+
+<p>A stub is read-only (it raises on <code>save</code> / <code>update</code> / <code>destroy</code>) and guards
+against a <code>reload</code>, so a stubbed record can never silently turn into a database
+round-trip.</p>
 
 
 
@@ -2097,10 +1974,10 @@ current attribute state, not a stale snapshot:</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

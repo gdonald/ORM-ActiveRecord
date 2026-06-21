@@ -630,6 +630,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../async/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Async queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../raw/" class="md-nav__link">
         
   
@@ -850,6 +878,17 @@
     <span class="md-ellipsis">
       
         Inspecting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-machines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State machines
       
     </span>
   </a>
@@ -1518,6 +1557,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reflection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reflection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../logging/" class="md-nav__link">
         
   
@@ -1700,6 +1766,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#state-machines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State machines
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1784,6 +1861,13 @@ saves the record.</p>
 <p><code>enum-values('status')</code> lists the symbolic names declared for a column.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">Order</span>.<span class="n">enum-values</span>(<span class="s">&#39;status&#39;</span>);    <span class="c1"># (&#39;active&#39;, &#39;archived&#39;)</span>
 </code></pre></div></td></tr></table></div>
+
+<h2 id="state-machines">State machines</h2>
+<p>There is no built-in state-machine DSL — it is out of scope for the ORM core.
+Model a state column with an enum and guard the transitions with
+<a href="../../validations/data/">validations</a> and <a href="../callbacks/">callbacks</a>, or reach
+for a dedicated state-machine library when you need guards, events, and
+transition callbacks as first-class concepts.</p>
 
 
 

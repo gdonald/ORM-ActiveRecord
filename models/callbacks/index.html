@@ -630,6 +630,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../async/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Async queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../raw/" class="md-nav__link">
         
   
@@ -1066,6 +1094,17 @@
     <span class="md-ellipsis">
       
         Custom Chain Terminator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observers
       
     </span>
   </a>
@@ -1650,6 +1689,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reflection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reflection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../logging/" class="md-nav__link">
         
   
@@ -1958,6 +2024,17 @@
     <span class="md-ellipsis">
       
         Custom Chain Terminator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observers
       
     </span>
   </a>
@@ -2636,6 +2713,12 @@ per event/timing by passing a <code>Block</code> that decides whether a result a
   :<span class="n">block</span>(-&gt; <span class="nv">$result</span> { <span class="nv">$result</span> === <span class="mi">0</span> || <span class="nv">$result</span> === <span class="nb">False</span> }),
 );
 </code></pre></div></td></tr></table></div>
+
+<h2 id="observers">Observers</h2>
+<p>ORM::ActiveRecord does not ship Observers. They were deprecated and removed from
+Rails, and callbacks cover the same ground: register <code>before-*</code> / <code>after-*</code> /
+<code>after-commit</code> handlers (in <code>BUILD</code>, or with <code>set-callback</code> from outside the
+class) to react to a model's lifecycle without a separate observer object.</p>
 
 
 

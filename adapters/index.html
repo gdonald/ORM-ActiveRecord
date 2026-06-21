@@ -341,7 +341,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="config/application.json">
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#named-connections-and-connects-to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named connections and connects-to
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Named connections and connects-to">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -966,6 +977,34 @@
     
   
     Batching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/async/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Async queries
   
 
     
@@ -1772,6 +1811,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../reflection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reflection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../logging/" class="md-nav__link">
         
   
@@ -1931,7 +1997,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="config/application.json">
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#named-connections-and-connects-to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named connections and connects-to
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Named connections and connects-to">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2335,6 +2412,42 @@ the <code>name</code> field IS the schema. SQLite only needs <code>name</code> (
 defaults to <code>development</code>; the test suite uses <code>test</code>). When <code>DATABASE_URL</code> is
 set it overrides the active environment's <code>primary</code> connection; any other named
 connection is still resolved from <code>config/application.json</code>.</p>
+<h3 id="named-connections-and-connects-to">Named connections and <code>connects-to</code></h3>
+<p>An environment can hold more than one named connection. <code>primary</code> is the
+default; add others alongside it:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;production&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;primary&quot;</span><span class="p">:</span><span class="w">   </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ar_production&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;analytics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ar_analytics&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;analytics-db&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+
+<p>A model uses <code>primary</code> unless you bind it to another connection with
+<code>connects-to</code>, declared right after the class:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Event</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">method</span> <span class="n">table-name</span> { <span class="s">&#39;events&#39;</span> }
+}
+
+<span class="n">Event</span>.<span class="n">connects-to</span>(<span class="s">&#39;analytics&#39;</span>);
+
+<span class="n">Event</span>.<span class="n">connection-name</span>;     <span class="c1"># &#39;analytics&#39;</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Each model routes its own queries through its bound connection;
+<code>DATABASE_URL</code>, when set, overrides only the active environment's <code>primary</code>, so
+other named connections still resolve from <code>config/application.json</code>.</p>
 <h4 id="connection-options-postgresql">Connection options (PostgreSQL)</h4>
 <p>A connection block (or <code>DATABASE_URL</code> query string) may carry extra
 PostgreSQL connection parameters, passed straight through to the driver:</p>
