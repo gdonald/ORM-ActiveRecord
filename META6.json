@@ -63,6 +63,7 @@
     "ORM::ActiveRecord::Relation::Query::Finders": "lib/ORM/ActiveRecord/Relation/Query/Finders.rakumod",
     "ORM::ActiveRecord::Relation::Query::Joins": "lib/ORM/ActiveRecord/Relation/Query/Joins.rakumod",
     "ORM::ActiveRecord::Relation::Query::Json": "lib/ORM/ActiveRecord/Relation/Query/Json.rakumod",
+    "ORM::ActiveRecord::Relation::Query::Like": "lib/ORM/ActiveRecord/Relation/Query/Like.rakumod",
     "ORM::ActiveRecord::Relation::Query::Modifiers": "lib/ORM/ActiveRecord/Relation/Query/Modifiers.rakumod",
     "ORM::ActiveRecord::Relation::Query::Predicates": "lib/ORM/ActiveRecord/Relation/Query/Predicates.rakumod",
     "ORM::ActiveRecord::Relation::Query::Preloader": "lib/ORM/ActiveRecord/Relation/Query/Preloader.rakumod",

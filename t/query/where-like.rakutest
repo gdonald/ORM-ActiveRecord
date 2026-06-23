@@ -1,0 +1,50 @@
+
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use Models::Game;
+use ORM::ActiveRecord::Relation::Query::Like;
+use Test;
+
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+Game.destroy-all;
+
+Game.create({name => 'Chess',    year => 1500});
+Game.create({name => 'Checkers', year => 1600});
+Game.create({name => 'Go',       year => 1700});
+Game.create({name => 'Poker',    year => 1800});
+Game.create({name => 'a_b',      year => 1900});
+Game.create({name => 'axb',      year => 2000});
+
+# starts-with → LIKE 'Ch%'
+my @ch = Game.where({name => LikePredicate.starts-with('Ch')}).order('name').all;
+ok @ch.elems == 2, 'starts-with emits LIKE with a trailing wildcard';
+ok @ch.map({ .name }).join(',') eq 'Checkers,Chess', 'starts-with matches the right rows';
+
+# ends-with → LIKE '%s'
+my @s = Game.where({name => LikePredicate.ends-with('s')}).all;
+ok @s.elems == 2, 'ends-with emits LIKE with a leading wildcard';
+
+# contains → LIKE '%ok%'
+my @ok = Game.where({name => LikePredicate.contains('ok')}).all;
+ok @ok.elems == 1 && @ok[0].name eq 'Poker', 'contains matches a substring';
+
+# wildcard characters in the value are escaped to match literally
+my @lit = Game.where({name => LikePredicate.contains('a_b')}).all;
+ok @lit.elems == 1 && @lit[0].name eq 'a_b', 'an underscore in the value matches literally, not as a wildcard';
+
+# where.not → NOT LIKE
+my @rest = Game.where.not({name => LikePredicate.starts-with('Ch')}).all;
+ok @rest.elems == 4, 'where.not emits NOT LIKE';
+
+# count honors LIKE
+ok Game.where({name => LikePredicate.contains('e')}).count == 3, 'count honors a LIKE predicate';
+
+# the anchor is respected
+ok Game.where({name => LikePredicate.starts-with('he')}).count == 0, 'starts-with anchors at the beginning';
+
+Game.destroy-all;

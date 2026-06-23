@@ -23,10 +23,28 @@ User.where({id => [1, 2, 3]});
 User.where({user => $alice});            # belongs_to :user
 ```
 
+## LIKE predicates
+
+`LikePredicate` builds a `LIKE` comparison for substring search. The where key is
+the column; the predicate carries the pattern.
+
+```perl6
+use ORM::ActiveRecord::Relation::Query::Like;
+
+User.where({fname => LikePredicate.contains('li')});      # fname LIKE '%li%'
+User.where({fname => LikePredicate.starts-with('Al')});   # fname LIKE 'Al%'
+User.where({fname => LikePredicate.ends-with('ce')});     # fname LIKE '%ce'
+User.where.not({fname => LikePredicate.contains('li')});  # fname NOT LIKE '%li%'
+```
+
+`%` and `_` in the value are escaped so they match literally; the clause carries
+`ESCAPE '\'`, which PostgreSQL, MySQL, and SQLite all accept. It composes with
+`order`, `limit`, scopes, and `count` like any other condition.
+
 ## where.not
 
-`where.not(%conditions)` adds a negated condition. `Nil`, ranges, and arrays
-work the same as the positive form.
+`where.not(%conditions)` adds a negated condition. `Nil`, ranges, arrays, and
+`LikePredicate` work the same as the positive form.
 
 ```perl6
 User.where.not({fname => 'Bob'}).count;

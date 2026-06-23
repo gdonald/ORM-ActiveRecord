@@ -34,6 +34,8 @@ class PgAdapter is SqlAdapter is export {
     self.disconnect;
   }
 
+  method like-escape-clause(--> Str) { "ESCAPE E'\\\\'" }
+
   method connect() {
     return if self.db.defined;
     my %params = :$!schema, :$!host, :$!database, :$!user, :$!password;

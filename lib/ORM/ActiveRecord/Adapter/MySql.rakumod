@@ -30,6 +30,8 @@ class MySqlAdapter is SqlAdapter is export {
     self.disconnect;
   }
 
+  method like-escape-clause(--> Str) { "ESCAPE '\\\\'" }
+
   method connect() {
     return if self.db.defined;
     %*ENV<DBIISH_MYSQL_LIB> //= self!discover-libmysql;

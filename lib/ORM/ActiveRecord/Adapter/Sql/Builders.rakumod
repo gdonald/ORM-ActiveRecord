@@ -4,9 +4,12 @@ use JSON::Tiny;
 use ORM::ActiveRecord::Adapter;
 use ORM::ActiveRecord::Support::Utils;
 use ORM::ActiveRecord::Relation::Query::Json;
+use ORM::ActiveRecord::Relation::Query::Like;
 use ORM::ActiveRecord::Instrumentation::Notifications;
 
 role SqlBuilders is export {
+  method like-escape-clause(--> Str) { "ESCAPE '\\'" }
+
   method !bind-typed(SqlStmt:D $stmt, $value, Str :$type --> Str) {
     my $coerced = self.coerce-write($value, :$type);
     $coerced.defined
@@ -328,6 +331,10 @@ role SqlBuilders is export {
     given $v {
       when JsonPredicate {
         self.json-fragment($stmt, $col, $op, $v);
+      }
+      when LikePredicate {
+        my $like = $negate ?? 'NOT LIKE' !! 'LIKE';
+        "$col $like " ~ $stmt.placeholder($v.pattern) ~ ' ' ~ self.like-escape-clause;
       }
       when Range {
         my $lo = $v.min;
