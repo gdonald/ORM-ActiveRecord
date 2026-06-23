@@ -589,6 +589,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#like-predicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LIKE predicates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#wherenot" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1756,6 +1767,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#like-predicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LIKE predicates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#wherenot" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1905,9 +1927,28 @@ a new relation — the original is never mutated.</p>
 <span class="n">User</span>.<span class="n">where</span>({<span class="n">user</span> =&gt; <span class="nv">$alice</span>});            <span class="c1"># belongs_to :user</span>
 </code></pre></div></td></tr></table></div>
 
+<h2 id="like-predicates">LIKE predicates</h2>
+<p><code>LikePredicate</code> builds a <code>LIKE</code> comparison for substring search. The where key is
+the column; the predicate carries the pattern.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Relation::Query::Like</span>;
+
+<span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="n">LikePredicate</span>.<span class="nb">contains</span>(<span class="s">&#39;li&#39;</span>)});      <span class="c1"># fname LIKE &#39;%li%&#39;</span>
+<span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="n">LikePredicate</span>.<span class="nb">starts-with</span>(<span class="s">&#39;Al&#39;</span>)});   <span class="c1"># fname LIKE &#39;Al%&#39;</span>
+<span class="n">User</span>.<span class="n">where</span>({<span class="n">fname</span> =&gt; <span class="n">LikePredicate</span>.<span class="nb">ends-with</span>(<span class="s">&#39;ce&#39;</span>)});     <span class="c1"># fname LIKE &#39;%ce&#39;</span>
+<span class="n">User</span>.<span class="n">where</span>.<span class="nb">not</span>({<span class="n">fname</span> =&gt; <span class="n">LikePredicate</span>.<span class="nb">contains</span>(<span class="s">&#39;li&#39;</span>)});  <span class="c1"># fname NOT LIKE &#39;%li%&#39;</span>
+</code></pre></div></td></tr></table></div>
+
+<p><code>%</code> and <code>_</code> in the value are escaped so they match literally; the clause carries
+<code>ESCAPE '\'</code>, which PostgreSQL, MySQL, and SQLite all accept. It composes with
+<code>order</code>, <code>limit</code>, scopes, and <code>count</code> like any other condition.</p>
 <h2 id="wherenot">where.not</h2>
-<p><code>where.not(%conditions)</code> adds a negated condition. <code>Nil</code>, ranges, and arrays
-work the same as the positive form.</p>
+<p><code>where.not(%conditions)</code> adds a negated condition. <code>Nil</code>, ranges, arrays, and
+<code>LikePredicate</code> work the same as the positive form.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
