@@ -6,6 +6,60 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-24
+
+### Added
+
+#### Async queries
+
+- Run relations and aggregations on worker threads, returning a `Promise`:
+  `load-async`, `count-async`, `sum-async`, `average-async`, `minimum-async`,
+  `maximum-async`, `calculate-async`, `pluck-async`, `pick-async`, `ids-async`,
+  and `find-by-sql-async`.
+
+#### Query predicates
+
+- `LIKE` matching in `where` with automatic wildcard escaping:
+  `LikePredicate.contains`, `.starts-with`, and `.ends-with`.
+- Database-agnostic JSON / JSONB querying: `JsonPredicate.extract(...).eq` /
+  `.ne`, `JsonPredicate.contains`, and `JsonPredicate.has-key`.
+
+#### Bulk writes
+
+- Set-level relation operations: `update-all`, `delete-all`, `destroy-all`,
+  `update-counters`, and `touch-all`.
+- Class-level shortcuts: `Model.update-all`, `delete-all`, `destroy-all`,
+  `destroy-by`, `delete-by`, and `update-counters`.
+- Single-statement insert and upsert: `insert` / `insert-bang`,
+  `insert-all` / `insert-all-bang`, and `upsert` / `upsert-all` with
+  `unique-by` and `update-cols`.
+
+#### Models
+
+- Record copying: `dup` (a new record without an id) and `clone` (preserves id
+  and the readonly flag).
+- Scoped save and callback suppression: `Model.suppress` and
+  `Model.is-suppressed`.
+- Per-class strict loading: `Model.strict-loading-by-default` and
+  `Model.is-strict-loading-by-default`.
+
+#### Connection and concurrency
+
+- Named advisory locks on PostgreSQL and MySQL (no-op on SQLite):
+  `with-advisory-lock`, `get-advisory-lock`, `release-advisory-lock`, and
+  `supports-advisory-locks`.
+- Request-scoped role and shard switching: `Model.connected-to`,
+  `connected-to-many`, `active-role`, `active-shard`, `active-connection`, and
+  a `DatabaseSelector` that picks a role based on recent writes.
+
+#### Parallel testing
+
+- Per-worker database support: `worker-index`, `worker-count`,
+  `per-worker-dbs-active`, and `apply-worker-suffix`.
+- Schema helpers to manage worker databases: `create-test-databases`,
+  `migrate-test-databases`, `drop-test-databases`, `reset-test-databases`, and
+  `check-test-databases`.
+
 ## [0.1.0] - 2026-06-17
 
 Initial release. The feature set below is what ships in 0.1.0.
@@ -91,5 +145,6 @@ Initial release. The feature set below is what ships in 0.1.0.
   label-based deterministic ids and cross-file references), and a database
   cleaner with deletion / truncation / transaction strategies.
 
-[Unreleased]: https://github.com/gdonald/ORM-ActiveRecord/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/gdonald/ORM-ActiveRecord/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/gdonald/ORM-ActiveRecord/compare/v0.1.0...v0.9.0
 [0.1.0]: https://github.com/gdonald/ORM-ActiveRecord/releases/tag/v0.1.0

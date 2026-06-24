@@ -1,12 +1,19 @@
 {
   "name": "ORM::ActiveRecord",
   "description": "Object-relational mapping module",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "api": "1",
   "perl": "6.d",
   "authors": ["Greg Donald"],
   "auth": "zef:gdonald",
-  "depends": ["DBIish", "JSON::Tiny", "Log::Async", "YAMLish", "OpenSSL", "Base64"],
+  "depends": [
+    "DBIish",
+    "JSON::Tiny",
+    "Log::Async",
+    "YAMLish",
+    "OpenSSL",
+    "Base64"
+  ],
   "build-depends": [],
   "test-depends": ["Test", "Test::META", "BDD::Behave:auth<zef:gdonald>"],
   "provides": {
