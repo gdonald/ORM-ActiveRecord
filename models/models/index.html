@@ -524,6 +524,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Scope">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scopes-as-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scopes as methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scopes-with-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scopes with arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#same-named-scopes-on-different-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Same-named scopes on different models
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2141,6 +2180,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Scope">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scopes-as-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scopes as methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scopes-with-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scopes with arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#same-named-scopes-on-different-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Same-named scopes on different models
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2738,6 +2816,68 @@ Greg
 True
 True
 True
+</code></pre></div></td></tr></table></div>
+
+<h3 id="scopes-as-methods">Scopes as methods</h3>
+<p>A scope can also be declared as a method marked with the <code>is scope</code> trait. The method body is the scope block, and <code>self</code> refers to the model class. This reads more naturally than the <code>$?CLASS.scope</code> form and keeps the scope alongside the model's other methods.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Image</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">method</span> <span class="n">jpgs</span> <span class="k">is</span> <span class="nb">scope</span> { <span class="nb">self</span>.<span class="n">where</span>({<span class="n">ext</span> =&gt; <span class="s">&#39;jpg&#39;</span>}) }
+}
+
+<span class="k">my</span> <span class="nv">@images</span> = <span class="n">Image</span>.<span class="n">jpgs</span>.<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p><code>Image.jpgs</code> calls the method directly. The scope is also registered by name, so it is introspectable and resolved through the same machinery as a <code>$?CLASS.scope</code> scope.</p>
+<h3 id="scopes-with-arguments">Scopes with arguments</h3>
+<p>A scope can accept arguments. With <code>$?CLASS.scope</code>, the block declares the parameters and values passed at the call site are handed to the block:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Image</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="nv">$?CLASS</span>.<span class="n">scope:</span> <span class="s">&#39;by-ext&#39;</span>, -&gt; <span class="nv">$ext</span> { <span class="nv">$?CLASS</span>.<span class="n">where</span>({<span class="n">ext</span> =&gt; <span class="nv">$ext</span>}) }
+}
+
+<span class="n">Image</span>.<span class="n">by-ext</span>(<span class="s">&#39;png&#39;</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>With the <code>is scope</code> trait, the method declares the parameters directly:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Image</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="k">method</span> <span class="n">by-ext</span>(<span class="nv">$ext</span>) <span class="k">is</span> <span class="nb">scope</span> { <span class="nb">self</span>.<span class="n">where</span>({<span class="n">ext</span> =&gt; <span class="nv">$ext</span>}) }
+}
+
+<span class="n">Image</span>.<span class="n">by-ext</span>(<span class="s">&#39;jpg&#39;</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<h3 id="same-named-scopes-on-different-models">Same-named scopes on different models</h3>
+<p>Scopes are matched by name and by owning class, so two models can each define a scope of the same name without colliding.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="n">Tag</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="nv">$?CLASS</span>.<span class="n">scope:</span> <span class="s">&#39;ordered&#39;</span>, -&gt; { <span class="nv">$?CLASS</span>.<span class="n">order</span>(<span class="s">&#39;name&#39;</span>) }
+}
+
+<span class="k">class</span> <span class="n">Page</span> <span class="k">is</span> <span class="n">Model</span> {
+  <span class="nv">$?CLASS</span>.<span class="n">scope:</span> <span class="s">&#39;ordered&#39;</span>, -&gt; { <span class="nv">$?CLASS</span>.<span class="n">order</span>(<span class="s">&#39;rank&#39;</span>) }
+}
+
+<span class="n">Tag</span>.<span class="n">ordered</span>.<span class="nb">all</span>;    <span class="c1"># ORDER BY name</span>
+<span class="n">Page</span>.<span class="n">ordered</span>.<span class="nb">all</span>;   <span class="c1"># ORDER BY rank</span>
 </code></pre></div></td></tr></table></div>
 
 <h2 id="has-one">Has One</h2>
