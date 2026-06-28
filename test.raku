@@ -311,7 +311,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
   # is what lets a changed migration take effect, since a migration is only
   # ever applied once.
   for ('createdb', 'reset', 'migrate') -> $cmd {
-    my @argv = 'raku', '-Ilib', 'bin/ar', $cmd;
+    my @argv = 'raku', '-Ilib', 'bin/active-record', $cmd;
     @argv.append: '--yes', '--quiet' if $cmd eq 'reset';
     my $proc = run :env(%*ENV, DISABLE-SQL-LOG => 'True'), |@argv;
     return $proc.exitcode unless $proc.exitcode == 0;
@@ -332,7 +332,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
     # is passed to `ar` explicitly (`--parallel=N`) so it matches behave's
     # `--parallel=N` even when there is no config file to read it from.
     for ('createdb', 'reset', 'migrate') -> $cmd {
-      my @argv = 'raku', '-Ilib', 'bin/ar', $cmd, "--parallel=$parallel";
+      my @argv = 'raku', '-Ilib', 'bin/active-record', $cmd, "--parallel=$parallel";
       @argv.append: '--yes', '--quiet' if $cmd eq 'reset';
       my $proc = run :env(%*ENV, DISABLE-SQL-LOG => 'True'), |@argv;
       return $proc.exitcode unless $proc.exitcode == 0;
@@ -341,7 +341,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
     # Pre-flight: confirm every expected worker database exists and is migrated
     # before launching any specs (one clean failure beats per-worker errors).
     my $checked = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-    'raku', '-Ilib', 'bin/ar', 'check', "--parallel=$parallel";
+    'raku', '-Ilib', 'bin/active-record', 'check', "--parallel=$parallel";
     return $checked.exitcode unless $checked.exitcode == 0;
 
     my $proc = run 'behave', "--parallel=$parallel", |@specs;
@@ -349,7 +349,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
   } elsif $run-behave {
     # Pre-flight the single configured database before running any specs.
     my $checked = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-    'raku', '-Ilib', 'bin/ar', 'check';
+    'raku', '-Ilib', 'bin/active-record', 'check';
     return $checked.exitcode unless $checked.exitcode == 0;
 
     # behave runs every spec file in its own process (one EVAL'd compunit per
@@ -367,7 +367,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
   # all tables; round-trip-spec re-migrates a swapped sqlite). Restore the
   # canonical schema so the next test.raku run starts clean.
   run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-  'raku', '-Ilib', 'bin/ar';
+  'raku', '-Ilib', 'bin/active-record';
 
   $any-behave-fail;
 }

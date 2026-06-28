@@ -1,5 +1,5 @@
 
-# File generators behind `ar generate` / `ar destroy`. Render methods are pure
+# File generators behind `active-record generate` / `active-record destroy`. Render methods are pure
 # (string in, string out) so they test without touching disk; the generate- /
 # destroy- methods write or remove the rendered files under the configured root.
 

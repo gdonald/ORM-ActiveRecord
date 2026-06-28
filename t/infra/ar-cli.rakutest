@@ -5,32 +5,32 @@ use Test;
 %*ENV<DISABLE-SQL-LOG> = True;
 
 sub ar-output(*@args --> Str) {
-  my $proc = run 'raku', '-Ilib', 'bin/ar', |@args, :out, :err;
+  my $proc = run 'raku', '-Ilib', 'bin/active-record', |@args, :out, :err;
   my $out = $proc.out.slurp(:close);
   $proc.err.slurp(:close);
   $out;
 }
 
-ok ar-output('--version').contains('ORM::ActiveRecord'), 'ar --version prints the distribution name';
-ok ar-output('--version') ~~ /\d+ '.' \d+/,              'ar --version prints a version number';
-ok ar-output('--help').contains('Usage:'),               'ar --help shows usage';
-ok ar-output('--help').contains('createdb'),             'ar --help documents the createdb subcommand';
-ok ar-output('--help').contains('migrate'),              'ar --help documents the migrate subcommand';
-ok ar-output('--help').contains('generate'),             'ar --help documents the generate subcommand';
-ok ar-output('--help').contains('destroy'),              'ar --help documents the destroy subcommand';
-ok ar-output('--help').contains('db:migrate'),           'ar --help documents the db: tasks';
-ok ar-output('--help').contains('db:schema:dump'),       'ar --help documents the schema tasks';
-ok ar-output('--help').contains('runner'),               'ar --help documents the runtime tasks';
+ok ar-output('--version').contains('ORM::ActiveRecord'), 'active-record --version prints the distribution name';
+ok ar-output('--version') ~~ /\d+ '.' \d+/,              'active-record --version prints a version number';
+ok ar-output('--help').contains('Usage:'),               'active-record --help shows usage';
+ok ar-output('--help').contains('createdb'),             'active-record --help documents the createdb subcommand';
+ok ar-output('--help').contains('migrate'),              'active-record --help documents the migrate subcommand';
+ok ar-output('--help').contains('generate'),             'active-record --help documents the generate subcommand';
+ok ar-output('--help').contains('destroy'),              'active-record --help documents the destroy subcommand';
+ok ar-output('--help').contains('db:migrate'),           'active-record --help documents the db: tasks';
+ok ar-output('--help').contains('db:schema:dump'),       'active-record --help documents the schema tasks';
+ok ar-output('--help').contains('runner'),               'active-record --help documents the runtime tasks';
 
-ok ar-output('runner', 'say 13 + 29').contains('42'),    'ar runner evaluates inline code';
-ok ar-output('stats').contains('Migrations:'),           'ar stats reports counts';
+ok ar-output('runner', 'say 13 + 29').contains('42'),    'active-record runner evaluates inline code';
+ok ar-output('stats').contains('Migrations:'),           'active-record stats reports counts';
 
 my $repo = $*CWD;
 my $tmp  = $*TMPDIR.add('ar-cli-generate-' ~ $*PID);
 $tmp.mkdir;
 LEAVE { run 'rm', '-rf', $tmp.Str }
 
-my $proc = run 'raku', '-I', $repo.add('lib').Str, $repo.add('bin/ar').Str,
+my $proc = run 'raku', '-I', $repo.add('lib').Str, $repo.add('bin/active-record').Str,
   'generate', 'migration', 'CreateThings', 'name:string',
   :cwd($tmp.Str), :out, :err;
 $proc.out.slurp(:close);
@@ -39,6 +39,6 @@ $proc.err.slurp(:close);
 my @migrations = $tmp.add('db/migrate').d
   ?? $tmp.add('db/migrate').dir.grep(*.basename.ends-with('-create-things.raku')).list
   !! ();
-ok @migrations.elems == 1, 'ar generate migration writes a migration file under db/migrate';
+ok @migrations.elems == 1, 'active-record generate migration writes a migration file under db/migrate';
 
 done-testing;

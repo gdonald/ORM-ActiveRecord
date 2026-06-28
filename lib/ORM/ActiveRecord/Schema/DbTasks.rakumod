@@ -8,7 +8,7 @@ use ORM::ActiveRecord::Schema::Dumper;
 use ORM::ActiveRecord::Schema::Cache;
 use ORM::ActiveRecord::Support::Environment;
 
-# The `ar db:*` tasks. Database existence (create / drop) fans out over every
+# The `active-record db:*` tasks. Database existence (create / drop) fans out over every
 # configured connection of the active environment; migration-state tasks
 # (version, status, rollback, ...) act on the primary connection. A migration
 # path can be injected for tests.

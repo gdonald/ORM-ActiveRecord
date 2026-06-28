@@ -29,6 +29,6 @@ lives-ok {
 }, 'Support::Log loads cleanly when ORM_LOG_FILE is set';
 $tmp.unlink if $tmp.e;
 
-my $bin = 'bin/ar'.IO.slurp;
+my $bin = 'bin/active-record'.IO.slurp;
 like $bin, /'BEGIN' \s+ '%*ENV<ORM_LOG_FILE>' \s* '//=' .* "'log'.IO.d"/,
-  'bin/ar defaults ORM_LOG_FILE to log/error.log only when log/ exists';
+  'bin/active-record defaults ORM_LOG_FILE to log/error.log only when log/ exists';

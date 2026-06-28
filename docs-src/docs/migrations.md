@@ -1255,49 +1255,49 @@ $cache.constraints-for('users');
 `serialize` / `deserialize` do the same round-trip through a JSON string
 instead of a file.
 
-## The `ar` command
+## The `active-record` command
 
-`ar` is the command-line tool for creating, migrating, and checking your
+`active-record` is the command-line tool for creating, migrating, and checking your
 database(s). It reads the same configuration as the rest of the ORM
 (`DATABASE_URL`, or `config/application.json` — see [Adapters](adapters.md)).
 
 | Command            | What it does                                                                                        |
 | ------------------ | --------------------------------------------------------------------------------------------------- |
-| `ar`               | Run all outstanding `up` migrations (same as `ar migrate`).                                         |
-| `ar migrate`       | Run all outstanding `up` migrations against the configured database(s).                             |
-| `ar createdb`      | Create the configured database(s); does **not** migrate.                                            |
-| `ar check`         | Report whether the database(s) exist and are fully migrated; exit non-zero if not. Changes nothing. |
-| `ar up[:N]`        | Run all pending migrations, or just `N` of them.                                                    |
-| `ar down[:N]`      | Roll back all migrations, or just `N` of them.                                                      |
-| `ar reset [--yes]` | Drop every table (see [Reset](#reset)).                                                             |
-| `ar --version`     | Print the installed version.                                                                        |
-| `ar --help`        | Print usage.                                                                                        |
+| `active-record`               | Run all outstanding `up` migrations (same as `active-record migrate`).                                         |
+| `active-record migrate`       | Run all outstanding `up` migrations against the configured database(s).                             |
+| `active-record createdb`      | Create the configured database(s); does **not** migrate.                                            |
+| `active-record check`         | Report whether the database(s) exist and are fully migrated; exit non-zero if not. Changes nothing. |
+| `active-record up[:N]`        | Run all pending migrations, or just `N` of them.                                                    |
+| `active-record down[:N]`      | Roll back all migrations, or just `N` of them.                                                      |
+| `active-record reset [--yes]` | Drop every table (see [Reset](#reset)).                                                             |
+| `active-record --version`     | Print the installed version.                                                                        |
+| `active-record --help`        | Print usage.                                                                                        |
 
 ## Run Migrations
 
-With no arguments, `ar` runs all outstanding `up` methods:
+With no arguments, `active-record` runs all outstanding `up` methods:
 
 ```shell
-$ ar
+$ active-record
 ```
 
 You can also migrate `up` or `down` a specific number of migrations:
 
 ```shell
-$ ar up      # runs all pending migrations
-$ ar down    # rolls back all migrations
-$ ar up:1    # runs 1 pending migration
-$ ar down:2  # resets 2 previously completed migrations
+$ active-record up      # runs all pending migrations
+$ active-record down    # rolls back all migrations
+$ active-record up:1    # runs 1 pending migration
+$ active-record down:2  # resets 2 previously completed migrations
 ```
 
 ## Creating databases
 
-`ar createdb` creates the database(s) named in your configuration without
-running any migrations — useful for a fresh checkout before the first `ar`:
+`active-record createdb` creates the database(s) named in your configuration without
+running any migrations — useful for a fresh checkout before the first `active-record`:
 
 ```shell
-$ ar createdb     # create the configured database(s)
-$ ar              # then migrate them
+$ active-record createdb     # create the configured database(s)
+$ active-record              # then migrate them
 ```
 
 For a multi-database config (more than one named connection in the active
@@ -1306,16 +1306,16 @@ so `createdb` is effectively a no-op there.
 
 ## Checking readiness
 
-`ar check` verifies, without changing anything, that every database the active
+`active-record check` verifies, without changing anything, that every database the active
 environment expects exists and has all migrations applied. It exits non-zero
 and prints a single summary if anything is missing or behind:
 
 ```shell
-$ ar check
+$ active-record check
 Databases not ready:
   - missing database: app_production
   - unrun migrations: app_events
-Run `ar createdb` and `ar migrate` first.
+Run `active-record createdb` and `active-record migrate` first.
 ```
 
 ## Parallel test databases
@@ -1326,17 +1326,17 @@ The worker count comes from the test environment's `parallel` key in
 `config/application.json`:
 
 ```shell
-$ ar createdb --parallel    # create the N per-worker copies
-$ ar migrate  --parallel    # migrate them
-$ ar check    --parallel    # verify all N are ready
+$ active-record createdb --parallel    # create the N per-worker copies
+$ active-record migrate  --parallel    # migrate them
+$ active-record check    --parallel    # verify all N are ready
 ```
 
 This is the machinery behind parallel test runs — see [Tests](tests.md).
 
 ## Reset
 
-`ar reset` drops every table in the database (including the bookkeeping
-`migrations` table) so the next `ar` run reapplies every migration from
+`active-record reset` drops every table in the database (including the bookkeeping
+`migrations` table) so the next `active-record` run reapplies every migration from
 scratch. The drop ignores foreign-key dependencies: PostgreSQL uses
 `DROP TABLE ... CASCADE`, MySQL temporarily flips `FOREIGN_KEY_CHECKS = 0`,
 SQLite turns off `PRAGMA foreign_keys`.
@@ -1345,7 +1345,7 @@ Reset is destructive. It prints the tables it is
 about to drop and prompts:
 
 ```shell
-$ ar reset
+$ active-record reset
 About to DROP these tables:
   articles
   books
@@ -1367,13 +1367,13 @@ aborts immediately:
 To bypass the prompt in scripts, pass `--yes` (or set `AR_ASSUME_YES=1`):
 
 ```shell
-$ ar reset --yes
-$ AR_ASSUME_YES=1 ar reset
+$ active-record reset --yes
+$ AR_ASSUME_YES=1 active-record reset
 ```
 
-`ar reset` does **not** re-run migrations. Pair it with a plain `ar` to drop
+`active-record reset` does **not** re-run migrations. Pair it with a plain `active-record` to drop
 all tables and re-run every migration:
 
 ```shell
-$ ar reset --yes && ar
+$ active-record reset --yes && active-record
 ```

@@ -20,8 +20,8 @@ the config shape). You can also override the primary connection with
 Create and migrate the configured databases:
 
 ```
-raku -Ilib bin/ar createdb
-raku -Ilib bin/ar migrate
+raku -Ilib bin/active-record createdb
+raku -Ilib bin/active-record migrate
 ```
 
 ## Running the tests

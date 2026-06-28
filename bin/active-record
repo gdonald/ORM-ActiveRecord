@@ -23,7 +23,7 @@ use ORM::ActiveRecord::Support::Version;
 # reset is non-interactive, so it requires --yes.
 sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
   if $version {
-    say "ar (ORM::ActiveRecord) {ORM::ActiveRecord::Support::Version::version()}";
+    say "active-record (ORM::ActiveRecord) {ORM::ActiveRecord::Support::Version::version()}";
     return;
   }
 
@@ -155,7 +155,7 @@ sub run-destroy(@args --> Int) {
 }
 
 sub missing(Str:D $usage --> Int) {
-  $*ERR.say: "ar: missing arguments - usage: ar $usage";
+  $*ERR.say: "active-record: missing arguments - usage: active-record $usage";
   2;
 }
 
@@ -243,7 +243,7 @@ sub run-db-task(@cmd --> Int) {
     }
     when 'test:prepare' | 'test:load_schema' | 'test:load-schema' { $tasks.test-prepare }
     default {
-      $*ERR.say: "ar: unknown task 'db:$task'";
+      $*ERR.say: "active-record: unknown task 'db:$task'";
       return 2;
     }
   }
@@ -253,51 +253,51 @@ sub run-db-task(@cmd --> Int) {
 
 sub USAGE {
   print q:to/HELP/;
-  ar — ORM::ActiveRecord migration & database tool
+  active-record — ORM::ActiveRecord migration & database tool
 
   Usage:
-    ar                     migrate the configured database(s)
-    ar migrate             migrate the configured database(s)
-    ar createdb            create the configured database(s) (no migrate)
-    ar check               report whether the database(s) exist and are migrated
-    ar up[:N] | down[:N]   migrate up / down (optionally N steps)
-    ar reset [--yes]       drop every table (use --yes to skip the prompt)
+    active-record                     migrate the configured database(s)
+    active-record migrate             migrate the configured database(s)
+    active-record createdb            create the configured database(s) (no migrate)
+    active-record check               report whether the database(s) exist and are migrated
+    active-record up[:N] | down[:N]   migrate up / down (optionally N steps)
+    active-record reset [--yes]       drop every table (use --yes to skip the prompt)
 
-    ar generate model NAME [field:type ...]      model + create-table migration
-    ar generate migration NAME [field:type ...]  a migration (Create/Add/Remove inferred)
-    ar generate scope MODEL NAME [field:value]   insert a scope into a model
-    ar generate validator NAME                   a custom validator class
-    ar destroy TYPE NAME                          remove what `generate` created
+    active-record generate model NAME [field:type ...]      model + create-table migration
+    active-record generate migration NAME [field:type ...]  a migration (Create/Add/Remove inferred)
+    active-record generate scope MODEL NAME [field:value]   insert a scope into a model
+    active-record generate validator NAME                   a custom validator class
+    active-record destroy TYPE NAME                          remove what `generate` created
     (field types: string, integer, datetime, references, ... ; modifiers :uniq :index)
 
-    ar db:create | db:drop | db:reset | db:setup  create / drop / reset / set up the database
-    ar db:seed | db:prepare                       run db/seeds.raku / create+migrate+seed-if-new
-    ar db:migrate [VERSION=NNN]                    migrate up (or to a target version)
-    ar db:migrate:up VERSION=NNN                   run one migration's up
-    ar db:migrate:down VERSION=NNN                 run one migration's down
-    ar db:migrate:status                           list each migration as up / down
-    ar db:migrate:redo [STEP=N]                    roll back then re-apply N migrations
-    ar db:rollback [STEP=N]                        roll back the last N migrations
-    ar db:version                                  print the current schema version
-    ar db:abort_if_pending_migrations             exit non-zero if migrations are pending
-    ar db:test:prepare                             create + migrate the test database
-    ar db:schema:dump | db:schema:load            dump / load db/schema.raku
-    ar db:structure:dump                           dump raw DDL to db/structure.sql
-    ar db:schema:cache:dump | :clear              dump / remove db/schema_cache.yml
+    active-record db:create | db:drop | db:reset | db:setup  create / drop / reset / set up the database
+    active-record db:seed | db:prepare                       run db/seeds.raku / create+migrate+seed-if-new
+    active-record db:migrate [VERSION=NNN]                    migrate up (or to a target version)
+    active-record db:migrate:up VERSION=NNN                   run one migration's up
+    active-record db:migrate:down VERSION=NNN                 run one migration's down
+    active-record db:migrate:status                           list each migration as up / down
+    active-record db:migrate:redo [STEP=N]                    roll back then re-apply N migrations
+    active-record db:rollback [STEP=N]                        roll back the last N migrations
+    active-record db:version                                  print the current schema version
+    active-record db:abort_if_pending_migrations             exit non-zero if migrations are pending
+    active-record db:test:prepare                             create + migrate the test database
+    active-record db:schema:dump | db:schema:load            dump / load db/schema.raku
+    active-record db:structure:dump                           dump raw DDL to db/structure.sql
+    active-record db:schema:cache:dump | :clear              dump / remove db/schema_cache.yml
 
-    ar console                                     a Raku REPL with the project on the include path
-    ar runner FILE | "CODE"                        run a script or inline code against the app
-    ar dbconsole                                   open the database client with the app credentials
-    ar notes                                       list TODO / FIXME / OPTIMIZE / HACK / XXX annotations
-    ar stats                                       count files, lines, models, and migrations
+    active-record console                                     a Raku REPL with the project on the include path
+    active-record runner FILE | "CODE"                        run a script or inline code against the app
+    active-record dbconsole                                   open the database client with the app credentials
+    active-record notes                                       list TODO / FIXME / OPTIMIZE / HACK / XXX annotations
+    active-record stats                                       count files, lines, models, and migrations
 
-    ar createdb --parallel       create the test env's parallel databases
-    ar migrate  --parallel       migrate the test env's parallel databases
-    ar check    --parallel       check the test env's parallel databases
-    ar reset    --parallel --yes drop every table in the parallel databases
+    active-record createdb --parallel       create the test env's parallel databases
+    active-record migrate  --parallel       migrate the test env's parallel databases
+    active-record check    --parallel       check the test env's parallel databases
+    active-record reset    --parallel --yes drop every table in the parallel databases
     (the worker count comes from config: the test env's `parallel` key)
 
-    ar --version           print the installed version
-    ar --help              show this help
+    active-record --version           print the installed version
+    active-record --help              show this help
   HELP
 }

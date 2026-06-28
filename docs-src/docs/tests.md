@@ -52,16 +52,16 @@ $ behave specs/model/basic-spec.raku        # one spec file
 `behave` can run spec files concurrently, each against its own database copy so
 they never trample each other's schema and data. First provision the per-worker
 databases — set the test environment's `parallel` key to the worker count and
-use `ar … --parallel` (see [Migrations » Parallel test databases](migrations.md#parallel-test-databases)):
+use `active-record … --parallel` (see [Migrations » Parallel test databases](migrations.md#parallel-test-databases)):
 
 ```json
 { "test": { "parallel": 4, "primary": { "adapter": "pg", "name": "ar_test" } } }
 ```
 
 ```shell
-$ ar createdb --parallel    # create the N per-worker copies
-$ ar migrate  --parallel    # migrate them
-$ ar check    --parallel    # verify all N exist and are migrated
+$ active-record createdb --parallel    # create the N per-worker copies
+$ active-record migrate  --parallel    # migrate them
+$ active-record check    --parallel    # verify all N exist and are migrated
 ```
 
 Then run behave with a matching worker count:
@@ -86,9 +86,9 @@ behave's own `BEHAVE_WORKER_INDEX` / `BEHAVE_WORKER_COUNT`, so there is nothing
 else to keep in sync. Creating and migrating N copies costs N × a full
 `db/migrate/` pass up front.
 
-> Run `ar check --parallel` first. Launching specs against missing or
+> Run `active-record check --parallel` first. Launching specs against missing or
 > un-migrated worker databases otherwise produces confusing "no such table"
-> errors deep in the run; `ar check` reports them up front and changes nothing
+> errors deep in the run; `active-record check` reports them up front and changes nothing
 > (`behave` itself is database-agnostic and cannot verify your schema).
 
 ## Adapter-aware test skipping

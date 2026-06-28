@@ -120,7 +120,7 @@ Initial release. The feature set below is what ships in 0.1.0.
 - A migration DSL (`create-table`, `add-column`, indexes, constraints,
   references, timestamps), reversible migrations, and schema introspection.
 
-### Tooling (`ar`)
+### Tooling (`active-record`)
 
 - Migrations: `migrate`, `rollback`, `up` / `down`, and `db:*` tasks
   (`db:create`, `db:drop`, `db:reset`, `db:setup`, `db:seed`, `db:prepare`,

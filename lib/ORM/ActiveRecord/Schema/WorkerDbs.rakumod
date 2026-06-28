@@ -8,7 +8,7 @@ use ORM::ActiveRecord::Support::Environment;
 
 unit module ORM::ActiveRecord::Schema::WorkerDbs;
 
-# `ar --create-db` and `ar --migrate` live here. Both consult
+# `active-record --create-db` and `active-record --migrate` live here. Both consult
 # config/application.json for the active environment and act on every
 # configured connection's database — all of them for a multi-db setup, or just
 # the one otherwise. With :parallel they instead target the N per-worker copies

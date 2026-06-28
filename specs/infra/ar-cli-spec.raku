@@ -4,13 +4,13 @@ use BDD::Behave;
 %*ENV<DISABLE-SQL-LOG> = True;
 
 sub ar-output(*@args --> Str) {
-  my $proc = run 'raku', '-Ilib', 'bin/ar', |@args, :out, :err;
+  my $proc = run 'raku', '-Ilib', 'bin/active-record', |@args, :out, :err;
   my $out = $proc.out.slurp(:close);
   $proc.err.slurp(:close);
   $out;
 }
 
-describe 'ar --version', {
+describe 'active-record --version', {
   it 'prints the distribution name', {
     expect(ar-output('--version').contains('ORM::ActiveRecord')).to.be-truthy;
   }
@@ -20,7 +20,7 @@ describe 'ar --version', {
   }
 }
 
-describe 'ar --help', {
+describe 'active-record --help', {
   it 'shows usage', {
     expect(ar-output('--help').contains('Usage:')).to.be-truthy;
   }
@@ -54,7 +54,7 @@ describe 'ar --help', {
   }
 }
 
-describe 'ar runtime tasks', {
+describe 'active-record runtime tasks', {
   it 'runs inline code', {
     expect(ar-output('runner', 'say 13 + 29').contains('42')).to.be-truthy;
   }
@@ -64,7 +64,7 @@ describe 'ar runtime tasks', {
   }
 }
 
-describe 'ar generate migration', {
+describe 'active-record generate migration', {
   it 'writes a migration file under db/migrate', {
     my $repo = $*CWD;
     my $tmp  = $*TMPDIR.add('ar-cli-generate-' ~ $*PID);
@@ -72,7 +72,7 @@ describe 'ar generate migration', {
 
     LEAVE { run 'rm', '-rf', $tmp.Str }
 
-    my $proc = run 'raku', '-I', $repo.add('lib').Str, $repo.add('bin/ar').Str,
+    my $proc = run 'raku', '-I', $repo.add('lib').Str, $repo.add('bin/active-record').Str,
       'generate', 'migration', 'CreateThings', 'name:string',
       :cwd($tmp.Str), :out, :err;
     $proc.out.slurp(:close);

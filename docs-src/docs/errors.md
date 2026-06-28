@@ -103,7 +103,7 @@ you want a writable record. See [Aggregation &raquo; readonly](models/aggregatio
 ## X::IrreversibleMigration
 
 Raised from inside a migration `down` to signal that the change can't be
-rolled back automatically. The `ar` runner catches it, reports which file
+rolled back automatically. The `active-record` runner catches it, reports which file
 fired, and aborts the rollback.
 
 ```perl6

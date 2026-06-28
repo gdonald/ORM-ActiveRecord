@@ -2,7 +2,7 @@ unit module ORM::ActiveRecord::Support::Environment;
 
 # Active environment name. AR_ENV wins, then RAKU_ENV; otherwise anything
 # running under behave (BEHAVE_WORKER_COUNT is always set there) is a test run,
-# so default to 'test'. Failing all, the caller's default (bin/ar ->
+# so default to 'test'. Failing all, the caller's default (bin/active-record ->
 # development).
 sub current-env(Str:D $default = 'development' --> Str) is export {
   for %*ENV<AR_ENV>, %*ENV<RAKU_ENV> -> $env {

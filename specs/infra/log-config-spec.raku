@@ -2,7 +2,7 @@ use lib 'lib';
 use BDD::Behave;
 
 my $src = 'lib/ORM/ActiveRecord/Support/Log.rakumod'.IO.slurp;
-my $bin = 'bin/ar'.IO.slurp;
+my $bin = 'bin/active-record'.IO.slurp;
 
 describe 'Support::Log source', {
   it 'does not unconditionally open log/error.log', {
@@ -40,7 +40,7 @@ describe 'Support::Log loading', {
   }
 }
 
-describe 'bin/ar', {
+describe 'bin/active-record', {
   it 'defaults ORM_LOG_FILE to log/error.log only when log/ exists', {
     expect($bin).to.match(/'BEGIN' \s+ '%*ENV<ORM_LOG_FILE>' \s* '//=' .* "'log'.IO.d"/);
   }

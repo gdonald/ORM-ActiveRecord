@@ -23,7 +23,7 @@ sub table-names(Str:D $path) {
 
 my &group = $has-sqlite ?? &describe !! &xdescribe;
 
-group 'ar create-db (sqlite via DATABASE_URL)', :tag<destructive>, {
+group 'active-record create-db (sqlite via DATABASE_URL)', :tag<destructive>, {
   if !$has-sqlite { pending 'no sqlite driver available'; }
 
   my @paths;

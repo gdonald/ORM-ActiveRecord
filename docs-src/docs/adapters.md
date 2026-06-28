@@ -74,7 +74,7 @@ environment (`primary` is the default connection):
 the `name` field IS the schema. SQLite only needs `name` (the file path) or
 `":memory:"`.
 
-The active environment is chosen by `AR_ENV`, then `RAKU_ENV` (`bin/ar`
+The active environment is chosen by `AR_ENV`, then `RAKU_ENV` (`bin/active-record`
 defaults to `development`; the test suite uses `test`). When `DATABASE_URL` is
 set it overrides the active environment's `primary` connection; any other named
 connection is still resolved from `config/application.json`.
@@ -137,7 +137,7 @@ DATABASE_URL=postgres://app@db/app?sslmode=require&application_name=app-web
 #### Per-connection migration path
 
 A connection may set its own migration directory with a `migration-path` (or
-`migrations`) key; it defaults to `db/migrate`. `ar` migrates each connection
+`migrations`) key; it defaults to `db/migrate`. `active-record` migrates each connection
 from its configured path.
 
 ```json
@@ -279,7 +279,7 @@ $selector.record-write if $is-mutating;
 ```
 
 The `parallel` key (test environment only) sets how many per-worker database
-copies `ar createdb --parallel` / `test.raku --parallel` create; see
+copies `active-record createdb --parallel` / `test.raku --parallel` create; see
 [Tests](tests.md).
 
 ## Adapter-specific notes
