@@ -418,10 +418,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ar-console" class="md-nav__link">
+  <a href="#active-record-console" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar console
+        active-record console
       
     </span>
   </a>
@@ -429,10 +429,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-runner" class="md-nav__link">
+  <a href="#active-record-runner" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar runner
+        active-record runner
       
     </span>
   </a>
@@ -440,10 +440,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-dbconsole" class="md-nav__link">
+  <a href="#active-record-dbconsole" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar dbconsole
+        active-record dbconsole
       
     </span>
   </a>
@@ -451,10 +451,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-notes" class="md-nav__link">
+  <a href="#active-record-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar notes
+        active-record notes
       
     </span>
   </a>
@@ -462,10 +462,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-stats" class="md-nav__link">
+  <a href="#active-record-stats" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar stats
+        active-record stats
       
     </span>
   </a>
@@ -1699,10 +1699,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ar-console" class="md-nav__link">
+  <a href="#active-record-console" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar console
+        active-record console
       
     </span>
   </a>
@@ -1710,10 +1710,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-runner" class="md-nav__link">
+  <a href="#active-record-runner" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar runner
+        active-record runner
       
     </span>
   </a>
@@ -1721,10 +1721,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-dbconsole" class="md-nav__link">
+  <a href="#active-record-dbconsole" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar dbconsole
+        active-record dbconsole
       
     </span>
   </a>
@@ -1732,10 +1732,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-notes" class="md-nav__link">
+  <a href="#active-record-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar notes
+        active-record notes
       
     </span>
   </a>
@@ -1743,10 +1743,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-stats" class="md-nav__link">
+  <a href="#active-record-stats" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar stats
+        active-record stats
       
     </span>
   </a>
@@ -1771,10 +1771,10 @@
 
 
 <h1 id="runtime-tasks">Runtime tasks</h1>
-<p>The <code>ar</code> runtime subcommands run code against the app, open a database client,
+<p>The <code>active-record</code> runtime subcommands run code against the app, open a database client,
 and report on the source tree.</p>
-<h2 id="ar-console">ar console</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar console
+<h2 id="active-record-console">active-record console</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record console
 </code></pre></div></td></tr></table></div>
 
 <p>Starts a Raku REPL with the project's <code>lib</code>, <code>app/models</code>, and <code>app/validators</code>
@@ -1787,25 +1787,25 @@ models to poke at data:</p>
 &gt; <span class="n">Models::User</span>.<span class="nb">count</span>;
 </code></pre></div></td></tr></table></div>
 
-<h2 id="ar-runner">ar runner</h2>
+<h2 id="active-record-runner">active-record runner</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>ar runner script.raku
-ar runner &quot;Models::User.where({ active =&gt; True }).count.say&quot;
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record runner script.raku
+active-record runner &quot;Models::User.where({ active =&gt; True }).count.say&quot;
 </code></pre></div></td></tr></table></div>
 
 <p>Runs a script file or inline code. The first argument is treated as a file when
 it exists on disk, otherwise as code to evaluate. The database connection is
 resolved lazily from config, so models work without any setup. Inline code does
 not auto-print, so call <code>.say</code> (or <code>say ...</code>) when you want output.</p>
-<h2 id="ar-dbconsole">ar dbconsole</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar dbconsole
+<h2 id="active-record-dbconsole">active-record dbconsole</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record dbconsole
 </code></pre></div></td></tr></table></div>
 
 <p>Opens the native client for the active environment's primary connection with
 the configured credentials: <code>sqlite3</code> for SQLite, <code>psql</code> for PostgreSQL (the
 password is passed via <code>PGPASSWORD</code>), and <code>mysql</code> for MySQL.</p>
-<h2 id="ar-notes">ar notes</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar notes
+<h2 id="active-record-notes">active-record notes</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record notes
 </code></pre></div></td></tr></table></div>
 
 <p>Scans the source tree (<code>lib</code>, <code>bin</code>, <code>app</code>, <code>db</code>, <code>t</code>) for annotation comments
@@ -1816,8 +1816,8 @@ FIXME    app/models/user.rakumod:18  handle the nil case
 </code></pre></div></td></tr></table></div>
 
 <p>The recognised tags are <code>TODO</code>, <code>FIXME</code>, <code>OPTIMIZE</code>, <code>HACK</code>, and <code>XXX</code>.</p>
-<h2 id="ar-stats">ar stats</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar stats
+<h2 id="active-record-stats">active-record stats</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record stats
 </code></pre></div></td></tr></table></div>
 
 <p>Counts source files, total lines, code lines (non-blank, non-comment), model

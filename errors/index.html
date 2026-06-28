@@ -2082,7 +2082,7 @@ invoked on a record that was fetched through a <code>readonly</code> relation.</
 you want a writable record. See <a href="../models/aggregation/#readonly">Aggregation &raquo; readonly</a>.</p>
 <h2 id="xirreversiblemigration">X::IrreversibleMigration</h2>
 <p>Raised from inside a migration <code>down</code> to signal that the change can't be
-rolled back automatically. The <code>ar</code> runner catches it, reports which file
+rolled back automatically. The <code>active-record</code> runner catches it, reports which file
 fired, and aborts the rollback.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>

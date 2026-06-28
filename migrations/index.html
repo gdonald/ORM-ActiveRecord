@@ -1108,10 +1108,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-ar-command" class="md-nav__link">
+  <a href="#the-active-record-command" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The ar command
+        The active-record command
       
     </span>
   </a>
@@ -3252,10 +3252,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-ar-command" class="md-nav__link">
+  <a href="#the-active-record-command" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The ar command
+        The active-record command
       
     </span>
   </a>
@@ -5388,8 +5388,8 @@ constraints, plus sequences) so an app can skip live introspection on boot.</p>
 
 <p><code>serialize</code> / <code>deserialize</code> do the same round-trip through a JSON string
 instead of a file.</p>
-<h2 id="the-ar-command">The <code>ar</code> command</h2>
-<p><code>ar</code> is the command-line tool for creating, migrating, and checking your
+<h2 id="the-active-record-command">The <code>active-record</code> command</h2>
+<p><code>active-record</code> is the command-line tool for creating, migrating, and checking your
 database(s). It reads the same configuration as the rest of the ORM
 (<code>DATABASE_URL</code>, or <code>config/application.json</code> — see <a href="../adapters/">Adapters</a>).</p>
 <table>
@@ -5401,82 +5401,82 @@ database(s). It reads the same configuration as the rest of the ORM
 </thead>
 <tbody>
 <tr>
-<td><code>ar</code></td>
-<td>Run all outstanding <code>up</code> migrations (same as <code>ar migrate</code>).</td>
+<td><code>active-record</code></td>
+<td>Run all outstanding <code>up</code> migrations (same as <code>active-record migrate</code>).</td>
 </tr>
 <tr>
-<td><code>ar migrate</code></td>
+<td><code>active-record migrate</code></td>
 <td>Run all outstanding <code>up</code> migrations against the configured database(s).</td>
 </tr>
 <tr>
-<td><code>ar createdb</code></td>
+<td><code>active-record createdb</code></td>
 <td>Create the configured database(s); does <strong>not</strong> migrate.</td>
 </tr>
 <tr>
-<td><code>ar check</code></td>
+<td><code>active-record check</code></td>
 <td>Report whether the database(s) exist and are fully migrated; exit non-zero if not. Changes nothing.</td>
 </tr>
 <tr>
-<td><code>ar up[:N]</code></td>
+<td><code>active-record up[:N]</code></td>
 <td>Run all pending migrations, or just <code>N</code> of them.</td>
 </tr>
 <tr>
-<td><code>ar down[:N]</code></td>
+<td><code>active-record down[:N]</code></td>
 <td>Roll back all migrations, or just <code>N</code> of them.</td>
 </tr>
 <tr>
-<td><code>ar reset [--yes]</code></td>
+<td><code>active-record reset [--yes]</code></td>
 <td>Drop every table (see <a href="#reset">Reset</a>).</td>
 </tr>
 <tr>
-<td><code>ar --version</code></td>
+<td><code>active-record --version</code></td>
 <td>Print the installed version.</td>
 </tr>
 <tr>
-<td><code>ar --help</code></td>
+<td><code>active-record --help</code></td>
 <td>Print usage.</td>
 </tr>
 </tbody>
 </table>
 <h2 id="run-migrations">Run Migrations</h2>
-<p>With no arguments, <code>ar</code> runs all outstanding <code>up</code> methods:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar
+<p>With no arguments, <code>active-record</code> runs all outstanding <code>up</code> methods:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>active-record
 </code></pre></div></td></tr></table></div>
 
 <p>You can also migrate <code>up</code> or <code>down</code> a specific number of migrations:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>up<span class="w">      </span><span class="c1"># runs all pending migrations</span>
-$<span class="w"> </span>ar<span class="w"> </span>down<span class="w">    </span><span class="c1"># rolls back all migrations</span>
-$<span class="w"> </span>ar<span class="w"> </span>up:1<span class="w">    </span><span class="c1"># runs 1 pending migration</span>
-$<span class="w"> </span>ar<span class="w"> </span>down:2<span class="w">  </span><span class="c1"># resets 2 previously completed migrations</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>active-record<span class="w"> </span>up<span class="w">      </span><span class="c1"># runs all pending migrations</span>
+$<span class="w"> </span>active-record<span class="w"> </span>down<span class="w">    </span><span class="c1"># rolls back all migrations</span>
+$<span class="w"> </span>active-record<span class="w"> </span>up:1<span class="w">    </span><span class="c1"># runs 1 pending migration</span>
+$<span class="w"> </span>active-record<span class="w"> </span>down:2<span class="w">  </span><span class="c1"># resets 2 previously completed migrations</span>
 </code></pre></div></td></tr></table></div>
 
 <h2 id="creating-databases">Creating databases</h2>
-<p><code>ar createdb</code> creates the database(s) named in your configuration without
-running any migrations — useful for a fresh checkout before the first <code>ar</code>:</p>
+<p><code>active-record createdb</code> creates the database(s) named in your configuration without
+running any migrations — useful for a fresh checkout before the first <code>active-record</code>:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>createdb<span class="w">     </span><span class="c1"># create the configured database(s)</span>
-$<span class="w"> </span>ar<span class="w">              </span><span class="c1"># then migrate them</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>active-record<span class="w"> </span>createdb<span class="w">     </span><span class="c1"># create the configured database(s)</span>
+$<span class="w"> </span>active-record<span class="w">              </span><span class="c1"># then migrate them</span>
 </code></pre></div></td></tr></table></div>
 
 <p>For a multi-database config (more than one named connection in the active
 environment) it creates every one. SQLite files are created on first connect,
 so <code>createdb</code> is effectively a no-op there.</p>
 <h2 id="checking-readiness">Checking readiness</h2>
-<p><code>ar check</code> verifies, without changing anything, that every database the active
+<p><code>active-record check</code> verifies, without changing anything, that every database the active
 environment expects exists and has all migrations applied. It exits non-zero
 and prints a single summary if anything is missing or behind:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>check
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>active-record<span class="w"> </span>check
 Databases<span class="w"> </span>not<span class="w"> </span>ready:
 <span class="w">  </span>-<span class="w"> </span>missing<span class="w"> </span>database:<span class="w"> </span>app_production
 <span class="w">  </span>-<span class="w"> </span>unrun<span class="w"> </span>migrations:<span class="w"> </span>app_events
-Run<span class="w"> </span><span class="sb">`</span>ar<span class="w"> </span>createdb<span class="sb">`</span><span class="w"> </span>and<span class="w"> </span><span class="sb">`</span>ar<span class="w"> </span>migrate<span class="sb">`</span><span class="w"> </span>first.
+Run<span class="w"> </span><span class="sb">`</span>active-record<span class="w"> </span>createdb<span class="sb">`</span><span class="w"> </span>and<span class="w"> </span><span class="sb">`</span>active-record<span class="w"> </span>migrate<span class="sb">`</span><span class="w"> </span>first.
 </code></pre></div></td></tr></table></div>
 
 <h2 id="parallel-test-databases">Parallel test databases</h2>
@@ -5486,15 +5486,15 @@ The worker count comes from the test environment's <code>parallel</code> key in
 <code>config/application.json</code>:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>createdb<span class="w"> </span>--parallel<span class="w">    </span><span class="c1"># create the N per-worker copies</span>
-$<span class="w"> </span>ar<span class="w"> </span>migrate<span class="w">  </span>--parallel<span class="w">    </span><span class="c1"># migrate them</span>
-$<span class="w"> </span>ar<span class="w"> </span>check<span class="w">    </span>--parallel<span class="w">    </span><span class="c1"># verify all N are ready</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>active-record<span class="w"> </span>createdb<span class="w"> </span>--parallel<span class="w">    </span><span class="c1"># create the N per-worker copies</span>
+$<span class="w"> </span>active-record<span class="w"> </span>migrate<span class="w">  </span>--parallel<span class="w">    </span><span class="c1"># migrate them</span>
+$<span class="w"> </span>active-record<span class="w"> </span>check<span class="w">    </span>--parallel<span class="w">    </span><span class="c1"># verify all N are ready</span>
 </code></pre></div></td></tr></table></div>
 
 <p>This is the machinery behind parallel test runs — see <a href="../tests/">Tests</a>.</p>
 <h2 id="reset">Reset</h2>
-<p><code>ar reset</code> drops every table in the database (including the bookkeeping
-<code>migrations</code> table) so the next <code>ar</code> run reapplies every migration from
+<p><code>active-record reset</code> drops every table in the database (including the bookkeeping
+<code>migrations</code> table) so the next <code>active-record</code> run reapplies every migration from
 scratch. The drop ignores foreign-key dependencies: PostgreSQL uses
 <code>DROP TABLE ... CASCADE</code>, MySQL temporarily flips <code>FOREIGN_KEY_CHECKS = 0</code>,
 SQLite turns off <code>PRAGMA foreign_keys</code>.</p>
@@ -5506,7 +5506,7 @@ about to drop and prompts:</p>
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>reset
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>active-record<span class="w"> </span>reset
 About<span class="w"> </span>to<span class="w"> </span>DROP<span class="w"> </span>these<span class="w"> </span>tables:
 <span class="w">  </span>articles
 <span class="w">  </span>books
@@ -5545,13 +5545,13 @@ aborts immediately:</p>
 </table>
 <p>To bypass the prompt in scripts, pass <code>--yes</code> (or set <code>AR_ASSUME_YES=1</code>):</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>reset<span class="w"> </span>--yes
-$<span class="w"> </span><span class="nv">AR_ASSUME_YES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>ar<span class="w"> </span>reset
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>active-record<span class="w"> </span>reset<span class="w"> </span>--yes
+$<span class="w"> </span><span class="nv">AR_ASSUME_YES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>active-record<span class="w"> </span>reset
 </code></pre></div></td></tr></table></div>
 
-<p><code>ar reset</code> does <strong>not</strong> re-run migrations. Pair it with a plain <code>ar</code> to drop
+<p><code>active-record reset</code> does <strong>not</strong> re-run migrations. Pair it with a plain <code>active-record</code> to drop
 all tables and re-run every migration:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>reset<span class="w"> </span>--yes<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>ar
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>active-record<span class="w"> </span>reset<span class="w"> </span>--yes<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>active-record
 </code></pre></div></td></tr></table></div>
 
 

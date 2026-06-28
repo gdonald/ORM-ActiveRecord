@@ -1815,7 +1815,7 @@
 
 
 <h1 id="database-tasks">Database tasks</h1>
-<p>The <code>ar db:*</code> tasks manage the database lifecycle: creating and dropping it,
+<p>The <code>active-record db:*</code> tasks manage the database lifecycle: creating and dropping it,
 running and inspecting migrations, and seeding. They act on the active
 environment's configured connections (all of them for a multi-database setup);
 migration-state tasks report on the primary connection.</p>
@@ -1824,11 +1824,11 @@ migration-state tasks report on the primary connection.</p>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:create     # create the configured database(s)
-ar db:drop       # drop the configured database(s)
-ar db:setup      # create + migrate + seed
-ar db:reset      # drop + create + migrate + seed
-ar db:prepare    # create, migrate, and seed only when the database is new
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record db:create     # create the configured database(s)
+active-record db:drop       # drop the configured database(s)
+active-record db:setup      # create + migrate + seed
+active-record db:reset      # drop + create + migrate + seed
+active-record db:prepare    # create, migrate, and seed only when the database is new
 </code></pre></div></td></tr></table></div>
 
 <p><code>db:create</code> and <code>db:drop</code> operate on the database itself (the file for SQLite,
@@ -1842,13 +1842,13 @@ that seeds a freshly created database but leaves an existing one untouched.</p>
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span><span class="w">                 </span>#<span class="w"> </span><span class="nv">apply</span><span class="w"> </span><span class="nv">every</span><span class="w"> </span><span class="nv">pending</span><span class="w"> </span><span class="nv">migration</span>
-<span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span><span class="mi">20260615120000</span>
-<span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span>:<span class="nv">up</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span>...<span class="w">   </span>#<span class="w"> </span><span class="nv">run</span><span class="w"> </span><span class="nv">one</span><span class="w"> </span><span class="nv">migration</span><span class="err">&#39;s up</span>
-<span class="nv">ar</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span>:<span class="nv">down</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span>...<span class="w"> </span>#<span class="w"> </span><span class="nv">run</span><span class="w"> </span><span class="nv">one</span><span class="w"> </span><span class="nv">migration</span><span class="err">&#39;s down</span>
-<span class="err">ar db:rollback                 # roll back the last migration</span>
-<span class="err">ar db:rollback STEP=3          # roll back the last 3</span>
-<span class="err">ar db:migrate:redo             # roll back then re-apply (STEP=N supported)</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">active</span><span class="o">-</span><span class="nv">record</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span><span class="w">                 </span>#<span class="w"> </span><span class="nv">apply</span><span class="w"> </span><span class="nv">every</span><span class="w"> </span><span class="nv">pending</span><span class="w"> </span><span class="nv">migration</span>
+<span class="nv">active</span><span class="o">-</span><span class="nv">record</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span><span class="mi">20260615120000</span>
+<span class="nv">active</span><span class="o">-</span><span class="nv">record</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span>:<span class="nv">up</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span>...<span class="w">   </span>#<span class="w"> </span><span class="nv">run</span><span class="w"> </span><span class="nv">one</span><span class="w"> </span><span class="nv">migration</span><span class="err">&#39;s up</span>
+<span class="nv">active</span><span class="o">-</span><span class="nv">record</span><span class="w"> </span><span class="nv">db</span>:<span class="nv">migrate</span>:<span class="nv">down</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span>...<span class="w"> </span>#<span class="w"> </span><span class="nv">run</span><span class="w"> </span><span class="nv">one</span><span class="w"> </span><span class="nv">migration</span><span class="err">&#39;s down</span>
+<span class="err">active-record db:rollback                 # roll back the last migration</span>
+<span class="err">active-record db:rollback STEP=3          # roll back the last 3</span>
+<span class="err">active-record db:migrate:redo             # roll back then re-apply (STEP=N supported)</span>
 </code></pre></div></td></tr></table></div>
 
 <p><code>db:migrate VERSION=NNN</code> brings the schema to exactly that version: it applies
@@ -1857,9 +1857,9 @@ migration above it. <code>VERSION=0</code> rolls everything back.</p>
 <h2 id="inspecting">Inspecting</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:version                       # the highest applied version
-ar db:migrate:status                # each migration as up / down
-ar db:abort_if_pending_migrations   # exit non-zero if any migration is pending
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record db:version                       # the highest applied version
+active-record db:migrate:status                # each migration as up / down
+active-record db:abort_if_pending_migrations   # exit non-zero if any migration is pending
 </code></pre></div></td></tr></table></div>
 
 <p><code>db:migrate:status</code> prints one line per migration:</p>
@@ -1874,7 +1874,7 @@ down  20260615120000  create-widgets
 test run: it exits <code>1</code> (and lists the pending versions) when the schema is
 behind, and <code>0</code> otherwise.</p>
 <h2 id="seeding">Seeding</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:seed
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record db:seed
 </code></pre></div></td></tr></table></div>
 
 <p>Runs <code>db/seeds.raku</code>, an ordinary Raku script that uses the ORM to insert
@@ -1895,19 +1895,19 @@ its own models:</p>
 their last step.</p>
 <h2 id="test-database">Test database</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">test</span><span class="p">:</span><span class="n">prepare</span><span class="w">        </span><span class="c1"># create + migrate the test database</span>
-<span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">test</span><span class="p">:</span><span class="n">load_schema</span><span class="w">    </span><span class="c1"># alias of db:test:prepare</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">active</span><span class="o">-</span><span class="n">record</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">test</span><span class="p">:</span><span class="n">prepare</span><span class="w">        </span><span class="c1"># create + migrate the test database</span>
+<span class="n">active</span><span class="o">-</span><span class="n">record</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">test</span><span class="p">:</span><span class="n">load_schema</span><span class="w">    </span><span class="c1"># alias of db:test:prepare</span>
 </code></pre></div></td></tr></table></div>
 
 <p>These ready the <code>test</code> environment's database. For the parallel test setup (the
-per-worker databases behave uses), <code>ar createdb --parallel</code> and
-<code>ar migrate --parallel</code> create and migrate every worker copy.</p>
+per-worker databases behave uses), <code>active-record createdb --parallel</code> and
+<code>active-record migrate --parallel</code> create and migrate every worker copy.</p>
 <h2 id="schema-dump-and-load">Schema dump and load</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">schema</span><span class="p">:</span><span class="n">dump</span><span class="w">     </span><span class="c1"># introspect the database into db/schema.raku</span>
-<span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">schema</span><span class="p">:</span><span class="nb">load</span><span class="w">     </span><span class="c1"># purge, then rebuild the database from db/schema.raku</span>
-<span class="n">ar</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">structure</span><span class="p">:</span><span class="n">dump</span><span class="w">  </span><span class="c1"># dump the raw DDL to db/structure.sql</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">active</span><span class="o">-</span><span class="n">record</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">schema</span><span class="p">:</span><span class="n">dump</span><span class="w">     </span><span class="c1"># introspect the database into db/schema.raku</span>
+<span class="n">active</span><span class="o">-</span><span class="n">record</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">schema</span><span class="p">:</span><span class="nb">load</span><span class="w">     </span><span class="c1"># purge, then rebuild the database from db/schema.raku</span>
+<span class="n">active</span><span class="o">-</span><span class="n">record</span><span class="w"> </span><span class="n">db</span><span class="p">:</span><span class="n">structure</span><span class="p">:</span><span class="n">dump</span><span class="w">  </span><span class="c1"># dump the raw DDL to db/structure.sql</span>
 </code></pre></div></td></tr></table></div>
 
 <p><code>db/schema.raku</code> is a <code>Migration</code> subclass that recreates the tables with the
@@ -1925,8 +1925,8 @@ migrations as applied (the fast alternative to replaying every migration).</p>
 features the portable dump cannot represent.</p>
 <h2 id="schema-cache">Schema cache</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
-<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>ar db:schema:cache:dump   # write db/schema_cache.yml
-ar db:schema:cache:clear  # remove db/schema_cache.yml
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record db:schema:cache:dump   # write db/schema_cache.yml
+active-record db:schema:cache:clear  # remove db/schema_cache.yml
 </code></pre></div></td></tr></table></div>
 
 <p>The schema cache is a YAML snapshot of every table's columns, indexes,

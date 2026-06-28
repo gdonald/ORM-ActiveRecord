@@ -2408,7 +2408,7 @@ environment (<code>primary</code> is the default connection):</p>
 <code>DATABASE_URL</code> schemes are accepted). MySQL has no separate schema concept —
 the <code>name</code> field IS the schema. SQLite only needs <code>name</code> (the file path) or
 <code>":memory:"</code>.</p>
-<p>The active environment is chosen by <code>AR_ENV</code>, then <code>RAKU_ENV</code> (<code>bin/ar</code>
+<p>The active environment is chosen by <code>AR_ENV</code>, then <code>RAKU_ENV</code> (<code>bin/active-record</code>
 defaults to <code>development</code>; the test suite uses <code>test</code>). When <code>DATABASE_URL</code> is
 set it overrides the active environment's <code>primary</code> connection; any other named
 connection is still resolved from <code>config/application.json</code>.</p>
@@ -2493,7 +2493,7 @@ PostgreSQL connection parameters, passed straight through to the driver:</p>
 
 <h4 id="per-connection-migration-path">Per-connection migration path</h4>
 <p>A connection may set its own migration directory with a <code>migration-path</code> (or
-<code>migrations</code>) key; it defaults to <code>db/migrate</code>. <code>ar</code> migrates each connection
+<code>migrations</code>) key; it defaults to <code>db/migrate</code>. <code>active-record</code> migrates each connection
 from its configured path.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
@@ -2670,7 +2670,7 @@ reads for a short window after a write, so a user sees their own change — go t
 </code></pre></div></td></tr></table></div>
 
 <p>The <code>parallel</code> key (test environment only) sets how many per-worker database
-copies <code>ar createdb --parallel</code> / <code>test.raku --parallel</code> create; see
+copies <code>active-record createdb --parallel</code> / <code>test.raku --parallel</code> create; see
 <a href="../tests/">Tests</a>.</p>
 <h2 id="adapter-specific-notes">Adapter-specific notes</h2>
 <h3 id="postgresql">PostgreSQL</h3>

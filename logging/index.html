@@ -1774,12 +1774,12 @@ and <code>ERROR</code>-level messages will be appended to that file:</p>
 <li>Unset or empty <code>ORM_LOG_FILE</code> ⇒ no file handler is attached. This keeps
   the library safe to load under tooling that runs from arbitrary working
   directories (LSP precompilation, CI matrices, cron jobs).</li>
-<li>The <code>bin/ar</code> migration CLI defaults <code>ORM_LOG_FILE</code> to <code>log/error.log</code> —
+<li>The <code>bin/active-record</code> migration CLI defaults <code>ORM_LOG_FILE</code> to <code>log/error.log</code> —
   but <strong>only when a <code>log/</code> directory exists in the current working
-  directory</strong>. So running <code>ar</code> from the project root keeps the old
+  directory</strong>. So running <code>active-record</code> from the project root keeps the old
   file-logging behavior, while precompilation under tooling that runs from
   elsewhere (LSP, CI checkout from a parent dir, etc.) skips it cleanly.
-  Export a different value before invoking <code>ar</code> to override.</li>
+  Export a different value before invoking <code>active-record</code> to override.</li>
 </ul>
 <h2 id="structured-configuration">Structured configuration</h2>
 <p><code>Support::Log</code> has a small configuration layer over the SQL log: a minimum

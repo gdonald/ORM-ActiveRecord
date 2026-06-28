@@ -1811,15 +1811,15 @@ $<span class="w"> </span>behave<span class="w"> </span>specs/model/basic-spec.ra
 <p><code>behave</code> can run spec files concurrently, each against its own database copy so
 they never trample each other's schema and data. First provision the per-worker
 databases — set the test environment's <code>parallel</code> key to the worker count and
-use <code>ar … --parallel</code> (see <a href="../migrations/#parallel-test-databases">Migrations » Parallel test databases</a>):</p>
+use <code>active-record … --parallel</code> (see <a href="../migrations/#parallel-test-databases">Migrations » Parallel test databases</a>):</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">{</span><span class="w"> </span><span class="nt">&quot;test&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;parallel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;primary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;adapter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ar_test&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div></td></tr></table></div>
 
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>ar<span class="w"> </span>createdb<span class="w"> </span>--parallel<span class="w">    </span><span class="c1"># create the N per-worker copies</span>
-$<span class="w"> </span>ar<span class="w"> </span>migrate<span class="w">  </span>--parallel<span class="w">    </span><span class="c1"># migrate them</span>
-$<span class="w"> </span>ar<span class="w"> </span>check<span class="w">    </span>--parallel<span class="w">    </span><span class="c1"># verify all N exist and are migrated</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>$<span class="w"> </span>active-record<span class="w"> </span>createdb<span class="w"> </span>--parallel<span class="w">    </span><span class="c1"># create the N per-worker copies</span>
+$<span class="w"> </span>active-record<span class="w"> </span>migrate<span class="w">  </span>--parallel<span class="w">    </span><span class="c1"># migrate them</span>
+$<span class="w"> </span>active-record<span class="w"> </span>check<span class="w">    </span>--parallel<span class="w">    </span><span class="c1"># verify all N exist and are migrated</span>
 </code></pre></div></td></tr></table></div>
 
 <p>Then run behave with a matching worker count:</p>
@@ -1861,9 +1861,9 @@ behave's own <code>BEHAVE_WORKER_INDEX</code> / <code>BEHAVE_WORKER_COUNT</code>
 else to keep in sync. Creating and migrating N copies costs N × a full
 <code>db/migrate/</code> pass up front.</p>
 <blockquote>
-<p>Run <code>ar check --parallel</code> first. Launching specs against missing or
+<p>Run <code>active-record check --parallel</code> first. Launching specs against missing or
 un-migrated worker databases otherwise produces confusing "no such table"
-errors deep in the run; <code>ar check</code> reports them up front and changes nothing
+errors deep in the run; <code>active-record check</code> reports them up front and changes nothing
 (<code>behave</code> itself is database-agnostic and cannot verify your schema).</p>
 </blockquote>
 <h2 id="adapter-aware-test-skipping">Adapter-aware test skipping</h2>

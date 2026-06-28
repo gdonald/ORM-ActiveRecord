@@ -375,10 +375,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-generate-model" class="md-nav__link">
+  <a href="#active-record-generate-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar generate model
+        active-record generate model
       
     </span>
   </a>
@@ -386,10 +386,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-generate-migration" class="md-nav__link">
+  <a href="#active-record-generate-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar generate migration
+        active-record generate migration
       
     </span>
   </a>
@@ -397,10 +397,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-generate-scope" class="md-nav__link">
+  <a href="#active-record-generate-scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar generate scope
+        active-record generate scope
       
     </span>
   </a>
@@ -408,10 +408,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-generate-validator" class="md-nav__link">
+  <a href="#active-record-generate-validator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar generate validator
+        active-record generate validator
       
     </span>
   </a>
@@ -419,10 +419,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-destroy" class="md-nav__link">
+  <a href="#active-record-destroy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar destroy
+        active-record destroy
       
     </span>
   </a>
@@ -1721,10 +1721,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-generate-model" class="md-nav__link">
+  <a href="#active-record-generate-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar generate model
+        active-record generate model
       
     </span>
   </a>
@@ -1732,10 +1732,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-generate-migration" class="md-nav__link">
+  <a href="#active-record-generate-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar generate migration
+        active-record generate migration
       
     </span>
   </a>
@@ -1743,10 +1743,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-generate-scope" class="md-nav__link">
+  <a href="#active-record-generate-scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar generate scope
+        active-record generate scope
       
     </span>
   </a>
@@ -1754,10 +1754,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-generate-validator" class="md-nav__link">
+  <a href="#active-record-generate-validator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar generate validator
+        active-record generate validator
       
     </span>
   </a>
@@ -1765,10 +1765,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ar-destroy" class="md-nav__link">
+  <a href="#active-record-destroy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ar destroy
+        active-record destroy
       
     </span>
   </a>
@@ -1793,8 +1793,8 @@
 
 
 <h1 id="generators">Generators</h1>
-<p><code>ar generate</code> scaffolds the files you would otherwise hand-write, and
-<code>ar destroy</code> removes what a matching <code>generate</code> produced. Both take a type
+<p><code>active-record generate</code> scaffolds the files you would otherwise hand-write, and
+<code>active-record destroy</code> removes what a matching <code>generate</code> produced. Both take a type
 (<code>model</code>, <code>migration</code>, <code>scope</code>, <code>validator</code>) followed by a name and optional
 field specs. <code>g</code> and <code>d</code> are short aliases.</p>
 <p>Generated files land under the current project:</p>
@@ -1816,8 +1816,8 @@ maps to a migration column adverb (<code>string</code>, <code>integer</code>, <c
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>title:string  price:decimal  author:references  email:string:uniq  slug:string:index
 </code></pre></div></td></tr></table></div>
 
-<h2 id="ar-generate-model">ar generate model</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar generate model Article title:string body:text author:references
+<h2 id="active-record-generate-model">active-record generate model</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record generate model Article title:string body:text author:references
 </code></pre></div></td></tr></table></div>
 
 <p>Writes <code>app/models/Article.rakumod</code>:</p>
@@ -1875,15 +1875,15 @@ maps to a migration column adverb (<code>string</code>, <code>integer</code>, <c
 <p>The table name follows the ORM's own rule (the class name snake-cased, then
 plus <code>s</code>, so <code>PageTag</code> becomes <code>page_tags</code>), so the model and its table always
 agree.</p>
-<h2 id="ar-generate-migration">ar generate migration</h2>
+<h2 id="active-record-generate-migration">active-record generate migration</h2>
 <p>The migration body is inferred from the name:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>ar generate migration CreateProducts name:string price:decimal
-ar generate migration AddStockToProducts stock:integer
-ar generate migration RemovePriceFromProducts price:decimal
-ar generate migration BackfillProducts
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record generate migration CreateProducts name:string price:decimal
+active-record generate migration AddStockToProducts stock:integer
+active-record generate migration RemovePriceFromProducts price:decimal
+active-record generate migration BackfillProducts
 </code></pre></div></td></tr></table></div>
 
 <ul>
@@ -1894,9 +1894,9 @@ ar generate migration BackfillProducts
   down.</li>
 <li>anything else gets an empty <code>up</code> / <code>down</code> stub to fill in.</li>
 </ul>
-<h2 id="ar-generate-scope">ar generate scope</h2>
+<h2 id="active-record-generate-scope">active-record generate scope</h2>
 <p>Inserts a named scope into an existing model file:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar generate scope Article published published:True
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record generate scope Article published published:True
 </code></pre></div></td></tr></table></div>
 
 <p>adds to <code>app/models/Article.rakumod</code>:</p>
@@ -1911,26 +1911,26 @@ ar generate migration BackfillProducts
 
 <p>Field tokens become the <code>where</code> conditions. A numeric or <code>True</code> / <code>False</code> value
 is emitted bare; anything else is quoted.</p>
-<h2 id="ar-generate-validator">ar generate validator</h2>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>ar generate validator NotEvil
+<h2 id="active-record-generate-validator">active-record generate validator</h2>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record generate validator NotEvil
 </code></pre></div></td></tr></table></div>
 
 <p>Writes <code>app/validators/NotEvilValidator.rakumod</code> with a <code>validate($record)</code>
 skeleton, ready to use with <code>self.validates-with(NotEvilValidator)</code>. <code>Validator</code>
 is appended to the name when it is not already there.</p>
-<h2 id="ar-destroy">ar destroy</h2>
-<p><code>ar destroy</code> is the inverse:</p>
+<h2 id="active-record-destroy">active-record destroy</h2>
+<p><code>active-record destroy</code> is the inverse:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
-<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>ar destroy model Article          # remove the model and its create migration
-ar destroy migration AddStockToProducts
-ar destroy scope Article published
-ar destroy validator NotEvil
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record destroy model Article          # remove the model and its create migration
+active-record destroy migration AddStockToProducts
+active-record destroy scope Article published
+active-record destroy validator NotEvil
 </code></pre></div></td></tr></table></div>
 
 <p>Migrations are matched by the kebab-cased name regardless of their timestamp
-prefix, so <code>ar destroy migration CreateProducts</code> removes
+prefix, so <code>active-record destroy migration CreateProducts</code> removes
 <code>&lt;timestamp&gt;-create-products.raku</code>.</p>
 
 
