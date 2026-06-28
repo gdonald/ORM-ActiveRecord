@@ -2,14 +2,22 @@
   "test": {
     "parallel": 16,
     "primary": {
-      "adapter": "sqlite",
-      "name": "db/test.sqlite3"
+      "adapter": "mysql",
+      "host": "127.0.0.1",
+      "port": 3306,
+      "name": "ar_test",
+      "user": "root",
+      "password": ""
     }
   },
   "development": {
     "primary": {
-      "adapter": "sqlite",
-      "name": "db/development.sqlite3"
+      "adapter": "mysql",
+      "host": "127.0.0.1",
+      "port": 3306,
+      "name": "ar_development",
+      "user": "root",
+      "password": ""
     }
   }
 }

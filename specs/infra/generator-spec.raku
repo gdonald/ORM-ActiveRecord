@@ -19,6 +19,14 @@ describe 'code generators', {
     it 'tableizes with the ORM naive plural rule', {
       expect($gen.tableize('Person')).to.eq('persons');
     }
+
+    it 'tableizes a camel-case name to snake_case plural', {
+      expect($gen.tableize('PageTag')).to.eq('page_tags');
+    }
+
+    it 'tableizes an underscored name to snake_case plural', {
+      expect($gen.tableize('blog_post')).to.eq('blog_posts');
+    }
   }
 
   context 'model rendering', {

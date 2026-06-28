@@ -3,14 +3,14 @@ use ORM::ActiveRecord::Schema::Migration;
 
 class CreateOwnerships is Migration {
   method up {
-    self.create-table: 'destroyowners',  [ name => { :string, limit => 64 } ];
-    self.create-table: 'deleteowners',   [ name => { :string, limit => 64 } ];
-    self.create-table: 'nullifyowners',  [ name => { :string, limit => 64 } ];
-    self.create-table: 'resterrowners',  [ name => { :string, limit => 64 } ];
-    self.create-table: 'restexcowners',  [ name => { :string, limit => 64 } ];
-    self.create-table: 'onedestroyowners', [ name => { :string, limit => 64 } ];
-    self.create-table: 'onenullifyowners', [ name => { :string, limit => 64 } ];
-    self.create-table: 'onerestexcowners', [ name => { :string, limit => 64 } ];
+    self.create-table: 'destroy_owners',  [ name => { :string, limit => 64 } ];
+    self.create-table: 'delete_owners',   [ name => { :string, limit => 64 } ];
+    self.create-table: 'nullify_owners',  [ name => { :string, limit => 64 } ];
+    self.create-table: 'rest_err_owners',  [ name => { :string, limit => 64 } ];
+    self.create-table: 'rest_exc_owners',  [ name => { :string, limit => 64 } ];
+    self.create-table: 'one_destroy_owners', [ name => { :string, limit => 64 } ];
+    self.create-table: 'one_nullify_owners', [ name => { :string, limit => 64 } ];
+    self.create-table: 'one_rest_exc_owners', [ name => { :string, limit => 64 } ];
 
     self.create-table: 'belongings', [
       owner_id => { :integer },
@@ -25,13 +25,13 @@ class CreateOwnerships is Migration {
   method down {
     self.drop-table: 'singletons';
     self.drop-table: 'belongings';
-    self.drop-table: 'onerestexcowners';
-    self.drop-table: 'onenullifyowners';
-    self.drop-table: 'onedestroyowners';
-    self.drop-table: 'restexcowners';
-    self.drop-table: 'resterrowners';
-    self.drop-table: 'nullifyowners';
-    self.drop-table: 'deleteowners';
-    self.drop-table: 'destroyowners';
+    self.drop-table: 'one_rest_exc_owners';
+    self.drop-table: 'one_nullify_owners';
+    self.drop-table: 'one_destroy_owners';
+    self.drop-table: 'rest_exc_owners';
+    self.drop-table: 'rest_err_owners';
+    self.drop-table: 'nullify_owners';
+    self.drop-table: 'delete_owners';
+    self.drop-table: 'destroy_owners';
   }
 }

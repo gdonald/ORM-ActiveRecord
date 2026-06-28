@@ -21,14 +21,25 @@ class Utils is export {
     $current;
   }
 
+  # Convert a (possibly namespaced) CamelCase class name to snake_case:
+  # 'PageTag' -> 'page_tag', 'Foo::HotItem' -> 'hot_item'.
+  method underscore(Str:D $name) {
+    Utils.base-name($name).subst(/(<[a..z0..9]>)(<[A..Z]>)/, { "$0_$1" }, :g).lc;
+  }
+
+  # Rails-style table name: snake_case the class name, then pluralize.
+  method tableize(Str:D $name) {
+    Utils.underscore($name) ~ 's';
+  }
+
   multi method table-name(Mu:D $obj) {
     return $obj.table-name if $obj.^can('table-name');
-    Utils.base-name($obj.WHAT.raku.lc) ~ 's';
+    Utils.tableize($obj.WHAT.^name);
   }
 
   multi method table-name(Mu:U $type) {
     return $type.table-name if $type.^can('table-name');
-    Utils.base-name($type.^name).lc ~ 's';
+    Utils.tableize($type.^name);
   }
 
   method singular(Str:D $name) {

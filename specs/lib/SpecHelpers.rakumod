@@ -62,14 +62,14 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   archives
   tracks
   studios
-  deleteowners
-  destroyowners
-  nullifyowners
-  onedestroyowners
-  onenullifyowners
-  onerestexcowners
-  resterrowners
-  restexcowners
+  delete_owners
+  destroy_owners
+  nullify_owners
+  one_destroy_owners
+  one_nullify_owners
+  one_rest_exc_owners
+  rest_err_owners
+  rest_exc_owners
   singletons
   members
   shop_widgets

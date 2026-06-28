@@ -866,7 +866,7 @@ class Model
   }
 
   method table-name {
-    Utils.base-name(self.^name).lc ~ 's';
+    Utils.tableize(self.^name);
   }
 
   method fkey-name {

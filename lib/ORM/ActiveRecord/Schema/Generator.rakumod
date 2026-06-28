@@ -25,7 +25,7 @@ class Generator is export {
   }
 
   method tableize(Str:D $name --> Str) {
-    self.classize($name).lc ~ 's';
+    self.classize($name).subst(/(<[a..z0..9]>)(<[A..Z]>)/, { "$0_$1" }, :g).lc ~ 's';
   }
 
   method parse-field(Str:D $token --> Hash) {

@@ -3,7 +3,7 @@ use lib 'lib';
 use ORM::ActiveRecord::Schema::Generator;
 use Test;
 
-plan 31;
+plan 33;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -18,6 +18,8 @@ is $gen.classize('blog_post'), 'BlogPost', 'classize underscores to PascalCase';
 is $gen.classize('user'),      'User',     'classize lower to PascalCase';
 is $gen.kebabize('AddEmailToUsers'), 'add-email-to-users', 'kebabize camel to kebab';
 is $gen.tableize('Person'),    'persons',  'tableize matches the ORM naive plural rule';
+is $gen.tableize('PageTag'),   'page_tags', 'tableize snake_cases a camel-case name';
+is $gen.tableize('blog_post'), 'blog_posts', 'tableize snake_cases an underscored name';
 
 # model rendering
 my $model = $gen.render-model('User', ['name:string', 'role:references']);

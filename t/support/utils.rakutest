@@ -1,0 +1,20 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Support::Utils;
+use ORM::ActiveRecord::Model;
+
+# underscore: CamelCase -> snake_case, namespace stripped
+is Utils.underscore('PageTag'),      'page_tag', 'underscore snake_cases a camel-case name';
+is Utils.underscore('User'),         'user',     'underscore lowercases a single word';
+is Utils.underscore('Foo::HotItem'), 'hot_item', 'underscore strips the namespace';
+
+# tableize: snake_case + naive plural
+is Utils.tableize('PageTag'), 'page_tags', 'tableize snake_cases and pluralizes';
+is Utils.tableize('User'),    'users',     'tableize pluralizes a single word';
+
+# Model.table-name derives the same without an override
+my class WidgetPart is Model { }
+is WidgetPart.table-name, 'widget_parts', 'a multi-word model derives a snake_case table name';
+
+done-testing;

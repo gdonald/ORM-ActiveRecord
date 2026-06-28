@@ -96,8 +96,8 @@ plan 28;
 sub clear-all {
   DB.shared.delete-records(:table('belongings'), :where({}));
   DB.shared.delete-records(:table('singletons'), :where({}));
-  for <destroyowners deleteowners nullifyowners resterrowners restexcowners
-       onedestroyowners onenullifyowners onerestexcowners> -> $t {
+  for <destroy_owners delete_owners nullify_owners rest_err_owners rest_exc_owners
+       one_destroy_owners one_nullify_owners one_rest_exc_owners> -> $t {
     DB.shared.delete-records(:table($t), :where({}));
   }
 }
