@@ -1872,8 +1872,9 @@ maps to a migration column adverb (<code>string</code>, <code>integer</code>, <c
 }
 </code></pre></div></td></tr></table></div>
 
-<p>The table name follows the ORM's own rule (the lower-cased class name plus <code>s</code>),
-so the model and its table always agree.</p>
+<p>The table name follows the ORM's own rule (the class name snake-cased, then
+plus <code>s</code>, so <code>PageTag</code> becomes <code>page_tags</code>), so the model and its table always
+agree.</p>
 <h2 id="ar-generate-migration">ar generate migration</h2>
 <p>The migration body is inferred from the name:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
