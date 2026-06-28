@@ -243,8 +243,9 @@ class Model
   }
 
   method FALLBACK(Str:D $name, *@rest) is raw {
-    if $?CLASS.scopes.exists($name) {
-      return $?CLASS.scopes.exec($name);
+    my $scope-class = self.WHAT;
+    if $?CLASS.scopes.exists($name, $scope-class) {
+      return $?CLASS.scopes.exec($name, $scope-class, |@rest);
     }
 
     # Enum value predicate: record.is-active
@@ -1991,6 +1992,18 @@ class Model
     }
     $new;
   }
+}
+
+# Declare a named scope as a method: `method published is scope { self.where(...) }`.
+# The method works directly (Page.published) and is also registered per-class so
+# it is introspectable and discoverable by name like a `self.scope(...)` scope.
+multi sub trait_mod:<is>(Method:D $method, :$scope!) is export {
+  my $klass = $method.package;
+  my $name  = $method.name;
+
+  Scopes.scopes.push(
+    Scope.new(:$klass, :$name, :block(-> |args { $klass."$name"(|args) }))
+  );
 }
 
 multi sub infix:<==>(Model $a, Model $b --> Bool) is export {

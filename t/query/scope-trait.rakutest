@@ -1,0 +1,60 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::Model;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+# A scope declared as a method via the `is scope` trait.
+class TraitImage is Model {
+  method table-name { 'images' }
+  method jpgs is scope { self.where({ ext => 'jpg' }) }
+  method by-ext($ext) is scope { self.where({ ext => $ext }) }
+}
+
+# A scope block that takes an argument passed at the call site.
+class ArgImage is Model {
+  method table-name { 'images' }
+  $?CLASS.scope: 'with-ext', -> $ext { $?CLASS.where({ ext => $ext }) }
+}
+
+# Two models declaring a scope of the same name must not collide: scopes are
+# matched by owning class, not name alone.
+class SharedJpg is Model {
+  method table-name { 'images' }
+  $?CLASS.scope: 'shared', -> { $?CLASS.where({ ext => 'jpg' }) }
+}
+
+class SharedPng is Model {
+  method table-name { 'images' }
+  $?CLASS.scope: 'shared', -> { $?CLASS.where({ ext => 'png' }) }
+}
+
+plan 6;
+
+TraitImage.destroy-all;
+my $jpg = TraitImage.create({ name => 'a', ext => 'jpg' });
+TraitImage.create({ name => 'b', ext => 'png' });
+
+my @jpgs = TraitImage.jpgs.all;
+is @jpgs.elems, 1,        'a method marked `is scope` runs as a named scope';
+is @jpgs[0].id, $jpg.id,  'the trait scope filters correctly';
+
+is TraitImage.by-ext('png').all.map(*.attrs<ext>).unique.sort.List, ('png',),
+  'a method scope passes arguments through to the query';
+
+is SharedJpg.shared.all.map(*.attrs<ext>).unique.sort.List, ('jpg',),
+  'a same-named scope resolves to its own class (jpg)';
+is SharedPng.shared.all.map(*.attrs<ext>).unique.sort.List, ('png',),
+  'a same-named scope on another class does not collide (png)';
+
+TraitImage.destroy-all;
+
+ArgImage.destroy-all;
+ArgImage.create({ name => 'a', ext => 'jpg' });
+ArgImage.create({ name => 'b', ext => 'png' });
+
+is ArgImage.with-ext('png').all.map(*.attrs<ext>).unique.sort.List, ('png',),
+  'a scope block receives the call-site argument';
+
+ArgImage.destroy-all;

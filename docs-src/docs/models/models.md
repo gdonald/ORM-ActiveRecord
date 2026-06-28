@@ -117,6 +117,59 @@ True
 True
 ```
 
+### Scopes as methods
+
+A scope can also be declared as a method marked with the `is scope` trait. The method body is the scope block, and `self` refers to the model class. This reads more naturally than the `$?CLASS.scope` form and keeps the scope alongside the model's other methods.
+
+```perl6
+class Image is Model {
+  method jpgs is scope { self.where({ext => 'jpg'}) }
+}
+
+my @images = Image.jpgs.all;
+```
+
+`Image.jpgs` calls the method directly. The scope is also registered by name, so it is introspectable and resolved through the same machinery as a `$?CLASS.scope` scope.
+
+### Scopes with arguments
+
+A scope can accept arguments. With `$?CLASS.scope`, the block declares the parameters and values passed at the call site are handed to the block:
+
+```perl6
+class Image is Model {
+  $?CLASS.scope: 'by-ext', -> $ext { $?CLASS.where({ext => $ext}) }
+}
+
+Image.by-ext('png').all;
+```
+
+With the `is scope` trait, the method declares the parameters directly:
+
+```perl6
+class Image is Model {
+  method by-ext($ext) is scope { self.where({ext => $ext}) }
+}
+
+Image.by-ext('jpg').all;
+```
+
+### Same-named scopes on different models
+
+Scopes are matched by name and by owning class, so two models can each define a scope of the same name without colliding.
+
+```perl6
+class Tag is Model {
+  $?CLASS.scope: 'ordered', -> { $?CLASS.order('name') }
+}
+
+class Page is Model {
+  $?CLASS.scope: 'ordered', -> { $?CLASS.order('rank') }
+}
+
+Tag.ordered.all;    # ORDER BY name
+Page.ordered.all;   # ORDER BY rank
+```
+
 ## Has One
 
 A model can declare a one-to-one association with `has-one`. The associated table holds the foreign key pointing back at the owner, mirroring the `belongs-to` side.

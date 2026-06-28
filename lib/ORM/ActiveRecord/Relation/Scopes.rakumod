@@ -4,17 +4,21 @@ use ORM::ActiveRecord::Relation::Scope;
 class Scopes is export {
   my @.scopes of Scope;
 
-  method exec(Str:D $name) {
+  # Scopes are matched by name AND owning class, so two models may each define a
+  # scope of the same name (e.g. Tag.ordered and Page.ordered) without colliding.
+  method exec(Str:D $name, Mu:U $klass, |args) {
     for Scopes.scopes -> $scope {
-      return $scope.block()() if $scope.name eq $name;
+      next unless $scope.name eq $name;
+      next unless $klass ~~ $scope.klass;
+      return $scope.block()(|args);
     }
 
-    say 'Scope "' ~ $name ~ '" not found'; die;
+    die qq{Scope "$name" not found for {$klass.^name}};
   }
 
-  method exists(Str:D $name) {
+  method exists(Str:D $name, Mu:U $klass --> Bool) {
     for Scopes.scopes -> $scope {
-      return True if $scope.name eq $name;
+      return True if $scope.name eq $name && $klass ~~ $scope.klass;
     }
 
     False;
