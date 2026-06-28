@@ -381,6 +381,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#inline-foreign-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inline foreign keys
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2514,6 +2525,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#inline-foreign-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inline foreign keys
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3581,6 +3603,53 @@ differences).</p>
 ];
 </code></pre></div></td></tr></table></div>
 
+<h3 id="inline-foreign-keys">Inline foreign keys</h3>
+<p><code>references =&gt; '&lt;table&gt;'</code> declares a foreign key on the column as named, pointed
+at the given table. Unlike <code>:reference</code> (which appends <code>_id</code> and derives the
+target table from the column name), <code>references</code> takes the exact column and
+target, so it fits a column you have already named:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nb">self</span>.<span class="n">create-table:</span> <span class="s">&#39;comments&#39;</span>, [
+  <span class="n">body</span>    =&gt; { :<span class="n">string</span>, <span class="n">limit</span> =&gt; <span class="mi">255</span> },
+  <span class="n">user_id</span> =&gt; { :<span class="n">integer</span>, <span class="n">references</span> =&gt; <span class="s">&#39;users&#39;</span>, <span class="n">on-delete</span> =&gt; <span class="s">&#39;cascade&#39;</span> },
+];
+</code></pre></div></td></tr></table></div>
+
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>references =&gt; '&lt;table&gt;'</code></td>
+<td>Target table for the foreign key.</td>
+</tr>
+<tr>
+<td><code>on-delete =&gt; '&lt;action&gt;'</code></td>
+<td><code>cascade</code>, <code>nullify</code>, <code>restrict</code>, <code>set-default</code>, or <code>no-action</code>.</td>
+</tr>
+<tr>
+<td><code>on-update =&gt; '&lt;action&gt;'</code></td>
+<td>Same actions as <code>on-delete</code>.</td>
+</tr>
+<tr>
+<td><code>fk-name =&gt; '&lt;name&gt;'</code></td>
+<td>Constraint name. Defaults to <code>fk_&lt;table&gt;_&lt;column&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>fk-primary-key =&gt; '&lt;col&gt;'</code></td>
+<td>Referenced column on the target table. Defaults to <code>id</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>On PostgreSQL and MySQL the constraint is added with <code>ALTER TABLE</code>; on SQLite it
+is declared inline in the <code>CREATE TABLE</code> (SQLite cannot add a foreign key to an
+existing table). This is the form <code>db:schema:dump</code> emits for SQLite.</p>
 <p>Every column type accepts a <code>default =&gt; $value</code> option to set a column-level
 default (see also <a href="#function-defaults">function defaults</a>).</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>

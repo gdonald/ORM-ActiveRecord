@@ -1911,12 +1911,14 @@ per-worker databases behave uses), <code>ar createdb --parallel</code> and
 </code></pre></div></td></tr></table></div>
 
 <p><code>db/schema.raku</code> is a <code>Migration</code> subclass that recreates the tables with the
-migration DSL, plus the list of applied versions. It is portable across
-adapters, but lossy: column limits, defaults, and foreign keys are not
-recoverable through the introspection API and are omitted. <code>db:schema:load</code>
-drops every table and re-runs the dumped <code>up</code>, then records the schema's
-versions so the app sees the migrations as applied (the fast alternative to
-replaying every migration).</p>
+migration DSL, plus the list of applied versions. Foreign keys are introspected
+and reproduced: on PostgreSQL and MySQL as <code>add-foreign-key</code> statements after
+every table is created, and on SQLite as inline <code>references</code> adverbs on the
+column (SQLite cannot add a foreign key to an existing table). The dump remains
+lossy for column limits and defaults, which are not recoverable through the
+introspection API and are omitted. <code>db:schema:load</code> drops every table and
+re-runs the dumped <code>up</code>, then records the schema's versions so the app sees the
+migrations as applied (the fast alternative to replaying every migration).</p>
 <p><code>db:structure:dump</code> writes the exact, database-specific DDL: the
 <code>sqlite_master</code> statements on SQLite, and <code>pg_dump --schema-only</code> /
 <code>mysqldump --no-data</code> on PostgreSQL and MySQL. Use it when the schema relies on
