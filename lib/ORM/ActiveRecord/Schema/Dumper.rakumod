@@ -128,6 +128,19 @@ class SchemaDumper is export {
     '    self.add-foreign-key: ' ~ @parts.join(', ') ~ ';';
   }
 
+  method !remove-foreign-key-line(Str:D $from-table, %fk --> Str) {
+    my @parts = "'$from-table'", "to-table => '%fk<to-table>'";
+
+    @parts.push: "column => '%fk<column>'"
+      if %fk<column> ne $!adapter.ref-default-column(%fk<to-table>);
+
+    my $default-name = $!adapter.ref-default-fk-name($from-table, %fk<column>);
+    @parts.push: "name => '%fk<name>'"
+      if %fk<name>.defined && %fk<name> ne $default-name;
+
+    '    self.remove-foreign-key: ' ~ @parts.join(', ') ~ ';';
+  }
+
   method !create-table-block(Str:D $table --> Str) {
     my @columns = self!columns($table);
     my $has-id  = @columns.first({ .<name> eq 'id' }).defined;
@@ -164,16 +177,22 @@ class SchemaDumper is export {
     # after every create-table so a target table always exists by the time its
     # constraint is added. SQLite declares them inline on the column instead.
     my @fk-lines;
+    my @fk-remove-lines;
     if $!adapter.ref-supports-alter-foreign-key {
       for @tables -> $table {
         for self!foreign-keys($table) -> %fk {
           @fk-lines.push: self!foreign-key-line($table, %fk);
+          @fk-remove-lines.push: self!remove-foreign-key-line($table, %fk);
         }
       }
     }
     $up ~= "\n\n" ~ @fk-lines.join("\n") if @fk-lines.elems;
 
-    my $down = @tables.reverse.map({ "    self.drop-table: '$_';" }).join("\n");
+    # Drop the foreign keys before the tables so the reverse-alphabetical drop
+    # order can't hit a constraint from a not-yet-dropped child table. SQLite
+    # declares FKs inline and can't ALTER them away, so it skips this.
+    my @drop-lines = @tables.reverse.map({ "    self.drop-table: '$_';" });
+    my $down = (|@fk-remove-lines, |@drop-lines).join("\n");
 
     my $versions = @!versions.elems
       ?? '<' ~ @!versions.sort.join(' ') ~ '>'

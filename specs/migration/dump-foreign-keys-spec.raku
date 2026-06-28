@@ -54,8 +54,21 @@ group 'dumping foreign keys', :order<defined>, {
     expect(schema.contains("self.add-foreign-key: '_dfk_books', '_dfk_authors'")).to.be-truthy;
   }
 
+  alter-it 'emits a remove-foreign-key statement for the reference (PostgreSQL/MySQL)', {
+    expect(schema.contains("self.remove-foreign-key: '_dfk_books', to-table => '_dfk_authors'")).to.be-truthy;
+  }
+
+  alter-it 'removes foreign keys before dropping tables (PostgreSQL/MySQL)', {
+    expect(schema.index("self.remove-foreign-key: '_dfk_books'")
+             < schema.index("self.drop-table: '_dfk_authors'")).to.be-truthy;
+  }
+
   inline-it 'emits an inline references adverb on the column (SQLite)', {
     expect(schema.contains("references => '_dfk_authors'")).to.be-truthy;
+  }
+
+  inline-it 'emits no remove-foreign-key for inline references (SQLite)', {
+    expect(schema.contains('self.remove-foreign-key:')).to.be-falsy;
   }
 
   it 'records the on-delete action', {

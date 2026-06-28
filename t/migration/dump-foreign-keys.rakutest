@@ -48,10 +48,20 @@ my $schema = SchemaDumper.new(adapter => $adapter).render-schema;
 if $adapter.ref-supports-alter-foreign-key {
   ok $schema.contains("self.add-foreign-key: '_dfk_books', '_dfk_authors'"),
     'the dump emits add-foreign-key for the reference (PostgreSQL/MySQL)';
+
+  ok $schema.contains("self.remove-foreign-key: '_dfk_books', to-table => '_dfk_authors'"),
+    'the dump emits remove-foreign-key for the reference (PostgreSQL/MySQL)';
+
+  ok $schema.index("self.remove-foreign-key: '_dfk_books'")
+       < $schema.index("self.drop-table: '_dfk_authors'"),
+    'the dump removes foreign keys before dropping tables';
 }
 else {
   ok $schema.contains("references => '_dfk_authors'"),
     'the dump emits an inline references adverb for the reference (SQLite)';
+
+  nok $schema.contains('self.remove-foreign-key:'),
+    'the dump emits no remove-foreign-key for inline references (SQLite)';
 }
 
 ok $schema.contains("on-delete => 'cascade'"),
