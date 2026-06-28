@@ -1,0 +1,62 @@
+
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Schema::Dumper;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+unless $adapter.defined && $adapter.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+sub table-exists($name) {
+  ?$adapter.get-table-names.list.grep({ $_ eq $name }).elems;
+}
+
+sub cleanup-tables {
+  for < _dfk_books _dfk_authors > -> $t {
+    try { $adapter.ddl-drop-table($t) if table-exists($t) }
+  }
+}
+
+class CreateAuthors is Migration {
+  method change { self.create-table: '_dfk_authors', [ name => { :string, limit => 32 } ]; }
+}
+
+class CreateBooks is Migration {
+  method change {
+    self.create-table: '_dfk_books', [
+      title     => { :string, limit => 32 },
+      author_id => { :integer, references => '_dfk_authors', on-delete => 'cascade' },
+    ];
+  }
+}
+
+cleanup-tables;
+CreateAuthors.new.up;
+CreateBooks.new.up;
+
+my $schema = SchemaDumper.new(adapter => $adapter).render-schema;
+
+if $adapter.ref-supports-alter-foreign-key {
+  ok $schema.contains("self.add-foreign-key: '_dfk_books', '_dfk_authors'"),
+    'the dump emits add-foreign-key for the reference (PostgreSQL/MySQL)';
+}
+else {
+  ok $schema.contains("references => '_dfk_authors'"),
+    'the dump emits an inline references adverb for the reference (SQLite)';
+}
+
+ok $schema.contains("on-delete => 'cascade'"),
+  'the dump records the on-delete action';
+
+cleanup-tables;
+
+done-testing;

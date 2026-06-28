@@ -484,4 +484,22 @@ role SqlDdl is export {
   }
 
   method ref-fk-not-valid-suffix(--> Str) { '' }
+
+  # PG and MySQL add foreign keys to an existing table with ALTER TABLE; SQLite
+  # can't and must declare them inline in CREATE TABLE. The schema dumper uses
+  # this to decide between add-foreign-key statements and inline columns.
+  method ref-supports-alter-foreign-key(--> Bool) { True }
+
+  # Inverse of ref-fk-action: map an introspected referential action back to
+  # the DSL keyword. NO ACTION is the SQL default (no clause emitted), so it
+  # maps to Str and the dumper omits the option.
+  method ref-fk-action-keyword(Str:D $action --> Str) {
+    given $action.uc {
+      when 'CASCADE'     { 'cascade' }
+      when 'SET NULL'    { 'nullify' }
+      when 'SET DEFAULT' { 'set-default' }
+      when 'RESTRICT'    { 'restrict' }
+      default            { Str }
+    }
+  }
 }

@@ -239,6 +239,27 @@ class SqliteAdapter is SqlAdapter is export {
     @out;
   }
 
+  # PRAGMA foreign_key_list: (id, seq, table, from, to, on_update, on_delete,
+  # match). SQLite FKs are anonymous, so the name matches ref-default-fk-name.
+  # `to` is NULL when the FK targets the referenced table's implicit primary
+  # key, which is 'id' for tables this library creates.
+  method get-foreign-keys(Str:D :$table --> List) {
+    my @out;
+    for self.exec("PRAGMA foreign_key_list('$table')") -> $fk {
+      next unless $fk[1].Int == 0;
+      my $column = $fk[3].Str;
+      @out.push: %(
+        name        => "fk_{$table}_{$column}",
+        column      => $column,
+        to-table    => $fk[2].Str,
+        primary-key => ($fk[4].defined ?? $fk[4].Str !! 'id'),
+        on-update   => self.ref-fk-action-keyword($fk[5].Str),
+        on-delete   => self.ref-fk-action-keyword($fk[6].Str),
+      );
+    }
+    @out.sort(*.<name>).list;
+  }
+
   # SQLite has no sequences; AUTOINCREMENT bookkeeping lives in sqlite_sequence.
   method get-sequences(--> List) {
     my $exists = self.exec(q{SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'sqlite_sequence'});
@@ -439,6 +460,8 @@ class SqliteAdapter is SqlAdapter is export {
 
   method ref-index-supports-opclass(--> Bool) { False }
 
+  method ref-supports-alter-foreign-key(--> Bool) { False }
+
   method ddl-add-foreign-key(Str:D $from-table, Str:D $to-table, *%opts) {
     die 'SqliteAdapter: add-foreign-key on an existing table is not supported (SQLite needs a table rebuild; declare the FK in create-table instead)';
   }
@@ -505,6 +528,11 @@ class SqliteAdapter is SqlAdapter is export {
       my $generated-as;
       my Bool $stored = False;
       my Bool $is-unique = False;
+      my $references;
+      my $fk-on-delete;
+      my $fk-on-update;
+      my $fk-name;
+      my $fk-primary-key = 'id';
 
       for $_{$name}.keys -> $attr {
         my $value = $_{$name}{$attr};
@@ -554,6 +582,11 @@ class SqliteAdapter is SqlAdapter is export {
             $field_name = $field_name ~ '_id';
             @fk-clauses.push("FOREIGN KEY ($field_name) REFERENCES { $name ~ 's' }(id)");
           }
+          when 'references'     { $references = $value }
+          when 'on-delete'      { $fk-on-delete = $value }
+          when 'on-update'      { $fk-on-update = $value }
+          when 'fk-name'        { $fk-name = $value }
+          when 'fk-primary-key' { $fk-primary-key = $value }
           default { die 'SqliteAdapter: unknown column attr: ' ~ $attr }
         }
       }
@@ -574,6 +607,18 @@ class SqliteAdapter is SqlAdapter is export {
       $col ~= ' UNIQUE' if $is-unique;
 
       @fields.push($col);
+
+      if $references.defined {
+        my $constraint = $fk-name.defined
+          ?? "CONSTRAINT $fk-name "
+          !! '';
+        my $on-del = $fk-on-delete.defined
+          ?? ' ON DELETE ' ~ self.ref-fk-action($fk-on-delete) !! '';
+        my $on-upd = $fk-on-update.defined
+          ?? ' ON UPDATE ' ~ self.ref-fk-action($fk-on-update) !! '';
+        @fk-clauses.push(
+          "{$constraint}FOREIGN KEY ($field_name) REFERENCES {$references}({$fk-primary-key})$on-del$on-upd");
+      }
     }
 
     @fields;

@@ -35,6 +35,7 @@ role Adapter is export {
   # Each returns a List of Hashes (sequences: a List of names).
   method get-indexes(Str:D :$table --> List)     { ... }
   method get-constraints(Str:D :$table --> List) { ... }
+  method get-foreign-keys(Str:D :$table --> List) { ... }
   method get-sequences(--> List)                 { ... }
 
   # CRUD primitives whose SQL shape varies by dialect

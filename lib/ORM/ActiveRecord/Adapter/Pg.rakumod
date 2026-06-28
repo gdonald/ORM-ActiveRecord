@@ -272,6 +272,38 @@ class PgAdapter is SqlAdapter is export {
     }
   }
 
+  method get-foreign-keys(Str:D :$table --> List) {
+    my $rows = self.exec(q:to/SQL/, $table);
+      SELECT con.conname, att.attname, cl.relname, fatt.attname,
+             con.confdeltype, con.confupdtype
+        FROM pg_constraint con
+        JOIN pg_class cl ON cl.oid = con.confrelid
+        JOIN pg_attribute att ON att.attrelid = con.conrelid AND att.attnum = con.conkey[1]
+        JOIN pg_attribute fatt ON fatt.attrelid = con.confrelid AND fatt.attnum = con.confkey[1]
+       WHERE con.conrelid = $1::regclass AND con.contype = 'f'
+       ORDER BY con.conname
+      SQL
+
+    $rows.map({
+      %( name        => $_[0].Str,
+         column      => $_[1].Str,
+         to-table    => $_[2].Str,
+         primary-key => $_[3].Str,
+         on-delete   => self.ref-fk-action-keyword(self!pg-fk-action($_[4].Str)),
+         on-update   => self.ref-fk-action-keyword(self!pg-fk-action($_[5].Str)) )
+    }).list;
+  }
+
+  method !pg-fk-action(Str:D $c --> Str) {
+    given $c {
+      when 'c' { 'CASCADE' }
+      when 'n' { 'SET NULL' }
+      when 'd' { 'SET DEFAULT' }
+      when 'r' { 'RESTRICT' }
+      default  { 'NO ACTION' }
+    }
+  }
+
   method get-sequences(--> List) {
     self.exec(q{SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public' ORDER BY sequence_name}).map({ $_[0].Str }).list;
   }
@@ -358,7 +390,8 @@ class PgAdapter is SqlAdapter is export {
 
     my %pk = self.pk-plan(:$id, :$primary-key);
     my @comments;
-    my @field-defs = self!build-fields(@params, :@foreign-keys, :@comments);
+    my @fk-specs;
+    my @field-defs = self!build-fields(@params, :@foreign-keys, :@comments, :@fk-specs);
     my $prefix = self.ref-create-table-prefix(:$temporary, :$if-not-exists);
 
     my @cols;
@@ -378,6 +411,17 @@ class PgAdapter is SqlAdapter is export {
         FOREIGN KEY ({$fk}_id)
         REFERENCES {$fk ~ 's'}(id)
         SQL
+    }
+
+    for @fk-specs -> %fk {
+      self.ddl-add-foreign-key(
+        $table, %fk<to-table>,
+        column      => %fk<column>,
+        primary-key => %fk<primary-key>,
+        |(name      => %fk<name>      with %fk<name>),
+        |(on-delete => %fk<on-delete> with %fk<on-delete>),
+        |(on-update => %fk<on-update> with %fk<on-update>),
+      );
     }
 
     # PostgreSQL has no inline column-comment syntax, so comments collected
@@ -609,7 +653,7 @@ class PgAdapter is SqlAdapter is export {
     self.exec("ALTER TYPE $name RENAME VALUE {self!string-literal($from)} TO {self!string-literal($to)}");
   }
 
-  method !build-fields(@params, :@foreign-keys, :@comments) {
+  method !build-fields(@params, :@foreign-keys, :@comments, :@fk-specs) {
     my @fields;
 
     for @params {
@@ -640,6 +684,11 @@ class PgAdapter is SqlAdapter is export {
       my Bool $is-unique = False;
       my $precision;
       my $scale;
+      my $references;
+      my $fk-on-delete;
+      my $fk-on-update;
+      my $fk-name;
+      my $fk-primary-key = 'id';
 
       for $_{$name}.keys -> $attr {
         my $value = $_{$name}{$attr};
@@ -706,6 +755,11 @@ class PgAdapter is SqlAdapter is export {
             $type = 'INTEGER';
             $field_name = $field_name ~ '_id';
           }
+          when 'references'     { $references = $value }
+          when 'on-delete'      { $fk-on-delete = $value }
+          when 'on-update'      { $fk-on-update = $value }
+          when 'fk-name'        { $fk-name = $value }
+          when 'fk-primary-key' { $fk-primary-key = $value }
           default { die 'PgAdapter: unknown column attr: ' ~ $attr }
         }
       }
@@ -736,6 +790,15 @@ class PgAdapter is SqlAdapter is export {
       @comments.push($field_name => $comment) if $comment.defined;
 
       @fields.push($col);
+
+      @fk-specs.push(%(
+        column      => $field_name,
+        to-table    => $references,
+        primary-key => $fk-primary-key,
+        on-delete   => $fk-on-delete,
+        on-update   => $fk-on-update,
+        name        => $fk-name,
+      )) if $references.defined;
     }
 
     @fields;

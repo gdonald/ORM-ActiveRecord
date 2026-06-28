@@ -1,8 +1,9 @@
 
 # Renders a portable `db/schema.raku` (a Migration subclass that recreates the
 # tables) from live introspection. Column types are mapped back to the logical
-# adverbs; limits, defaults, and foreign keys are not recoverable through the
-# introspection API and are omitted (use `db:structure:dump` for an exact,
+# adverbs. Foreign keys are introspected and emitted as add-foreign-key calls
+# after every table is created. Limits and defaults are not recoverable through
+# the introspection API and are omitted (use `db:structure:dump` for an exact,
 # database-specific dump).
 
 class SchemaDumper is export {
@@ -60,13 +61,38 @@ class SchemaDumper is export {
     }).list;
   }
 
-  method !column-block(@columns --> Str) {
+  method !foreign-keys(Str:D $table) {
+    $!adapter.get-foreign-keys(:$table).list;
+  }
+
+  method !column-block(Str:D $table, @columns, %fk-by-column --> Str) {
     return '' unless @columns.elems;
     my $width = @columns.map(*.<name>.chars).max;
     @columns.map(-> %col {
       my $pad = ' ' x ($width - %col<name>.chars);
-      '      ' ~ %col<name> ~ $pad ~ ' => { :' ~ %col<adverb> ~ ' },'
+      my $suffix = %fk-by-column{%col<name>}:exists
+        ?? self!inline-fk-suffix($table, %fk-by-column{%col<name>})
+        !! '';
+      '      ' ~ %col<name> ~ $pad ~ ' => { :' ~ %col<adverb> ~ $suffix ~ ' },'
     }).join("\n");
+  }
+
+  # SQLite can't ALTER in a foreign key, so its dump declares the FK inline on
+  # the column with a `references` adverb instead of a trailing add-foreign-key.
+  method !inline-fk-suffix(Str:D $from-table, %fk --> Str) {
+    my @opts = "references => '%fk<to-table>'";
+
+    @opts.push: "fk-primary-key => '%fk<primary-key>'"
+      if %fk<primary-key>.defined && %fk<primary-key> ne 'id';
+
+    my $default-name = $!adapter.ref-default-fk-name($from-table, %fk<column>);
+    @opts.push: "fk-name => '%fk<name>'"
+      if %fk<name>.defined && %fk<name> ne $default-name;
+
+    @opts.push: "on-delete => '%fk<on-delete>'" if %fk<on-delete>.defined;
+    @opts.push: "on-update => '%fk<on-update>'" if %fk<on-update>.defined;
+
+    ', ' ~ @opts.join(', ');
   }
 
   method !index-line(Str:D $table, %index --> Str) {
@@ -83,12 +109,38 @@ class SchemaDumper is export {
     "    self.add-index: '$table', $columns$unique;";
   }
 
+  method !foreign-key-line(Str:D $from-table, %fk --> Str) {
+    my @parts = "'$from-table'", "'%fk<to-table>'";
+
+    @parts.push: "column => '%fk<column>'"
+      if %fk<column> ne $!adapter.ref-default-column(%fk<to-table>);
+
+    @parts.push: "primary-key => '%fk<primary-key>'"
+      if %fk<primary-key>.defined && %fk<primary-key> ne 'id';
+
+    my $default-name = $!adapter.ref-default-fk-name($from-table, %fk<column>);
+    @parts.push: "name => '%fk<name>'"
+      if %fk<name>.defined && %fk<name> ne $default-name;
+
+    @parts.push: "on-delete => '%fk<on-delete>'" if %fk<on-delete>.defined;
+    @parts.push: "on-update => '%fk<on-update>'" if %fk<on-update>.defined;
+
+    '    self.add-foreign-key: ' ~ @parts.join(', ') ~ ';';
+  }
+
   method !create-table-block(Str:D $table --> Str) {
     my @columns = self!columns($table);
     my $has-id  = @columns.first({ .<name> eq 'id' }).defined;
     my @listed  = @columns.grep({ .<name> ne 'id' });
 
-    my $columns = self!column-block(@listed);
+    my %fk-by-column;
+    unless $!adapter.ref-supports-alter-foreign-key {
+      for self!foreign-keys($table) -> %fk {
+        %fk-by-column{%fk<column>} = %fk;
+      }
+    }
+
+    my $columns = self!column-block($table, @listed, %fk-by-column);
     my $id-opt  = $has-id ?? '' !! ', :id(False)';
 
     my $block = "    self.create-table: '$table', [\n";
@@ -107,6 +159,19 @@ class SchemaDumper is export {
 
     my $up = @tables.map({ self!create-table-block($_) }).join("\n\n");
     $up = '' unless @tables.elems;
+
+    # On adapters that support ALTER TABLE ADD FOREIGN KEY, emit the constraints
+    # after every create-table so a target table always exists by the time its
+    # constraint is added. SQLite declares them inline on the column instead.
+    my @fk-lines;
+    if $!adapter.ref-supports-alter-foreign-key {
+      for @tables -> $table {
+        for self!foreign-keys($table) -> %fk {
+          @fk-lines.push: self!foreign-key-line($table, %fk);
+        }
+      }
+    }
+    $up ~= "\n\n" ~ @fk-lines.join("\n") if @fk-lines.elems;
 
     my $down = @tables.reverse.map({ "    self.drop-table: '$_';" }).join("\n");
 

@@ -20,7 +20,7 @@ unless $has-sqlite {
   exit 0;
 }
 
-plan 18;
+plan 27;
 
 temp %*ENV;
 %*ENV<BEHAVE_WORKER_INDEX>:delete;
@@ -62,6 +62,19 @@ class CreatePets is Migration {
 }
 RAKU
 
+$migdir.add('003-create-toys.raku').spurt: q:to/RAKU/;
+use ORM::ActiveRecord::Schema::Migration;
+class CreateToys is Migration {
+  method up {
+    self.create-table: 'toys', [
+      name   => { :string, limit => 32 },
+      pet_id => { :integer, references => 'pets', on-delete => 'cascade' },
+    ];
+  }
+  method down { self.drop-table: 'toys' }
+}
+RAKU
+
 temp %*ENV<DATABASE_URL> = "sqlite:$dbfile";
 DB.set-shared(Nil);
 
@@ -79,6 +92,12 @@ sub columns(Str:D $table --> Set) {
   $h.execute("PRAGMA table_info('$table')").allrows.map(*[1]).Set;
 }
 
+sub foreign-key-targets(Str:D $table --> Set) {
+  my $h = DBIish.connect('SQLite', :database($dbfile));
+  LEAVE { $h.dispose if $h.defined }
+  $h.execute("PRAGMA foreign_key_list('$table')").allrows.map(*[2]).Set;
+}
+
 $tasks.create;
 $tasks.migrate;
 
@@ -92,7 +111,9 @@ ok $dump.contains(':text'),                       'schema:dump maps the string c
 ok $dump.contains(':integer'),                    'schema:dump maps the integer column';
 ok $dump.contains("self.add-index: 'people'"),    'schema:dump renders the index';
 ok $dump.contains("self.create-table: 'pets'"),   'schema:dump renders the pets table';
-ok $dump.contains('<001 002>'),                   'schema:dump records the applied versions';
+ok $dump.contains("references => 'pets'"),        'schema:dump renders the foreign key from a reference';
+ok $dump.contains("on-delete => 'cascade'"),      'schema:dump renders the foreign key on-delete action';
+ok $dump.contains('<001 002 003>'),               'schema:dump records the applied versions';
 ok $dump.contains("self.drop-table: 'people'"),   'schema:dump renders a reversing down';
 
 # structure:dump
@@ -119,4 +140,28 @@ $tasks.schema-load(path => $schema);
 ok tables(){'people'}, 'schema:load recreates the people table';
 ok tables(){'pets'},   'schema:load recreates the pets table';
 ok columns('people'){'age'}, 'schema:load restores the table columns';
-is $tasks.version, '002', 'schema:load records the schema version';
+ok foreign-key-targets('toys'){'pets'}, 'schema:load restores the foreign key from a reference';
+is $tasks.version, '003', 'schema:load records the schema version';
+
+# schema-dump-after-migrate: dumps outside the test env, skips in test / on opt-out
+my $after = $*TMPDIR.add("schema-after-$st.raku").Str;
+LEAVE { $after.IO.unlink if $after.defined && $after.IO.e }
+
+my $dev-tasks  = DbTasks.new(:migration-path($migdir.Str), :env('development'));
+my $test-tasks = DbTasks.new(:migration-path($migdir.Str), :env('test'));
+
+is $dev-tasks.schema-dump-after-migrate(path => $after), $after,
+  'schema-dump-after-migrate dumps in a non-test environment';
+ok $after.IO.e, 'schema-dump-after-migrate writes the schema file';
+
+$after.IO.unlink;
+is $test-tasks.schema-dump-after-migrate(path => $after), '',
+  'schema-dump-after-migrate skips the test environment';
+nok $after.IO.e, 'no schema file is written in the test environment';
+
+{
+  temp %*ENV<AR_NO_SCHEMA_DUMP> = '1';
+  is $dev-tasks.schema-dump-after-migrate(path => $after), '',
+    'schema-dump-after-migrate honors AR_NO_SCHEMA_DUMP';
+  nok $after.IO.e, 'no schema file is written when the dump is opted out';
+}

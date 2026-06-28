@@ -321,6 +321,34 @@ class MySqlAdapter is SqlAdapter is export {
       }
     }
 
+    method get-foreign-keys(Str:D :$table --> List) {
+      my $stmt = SqlStmt.new(:adapter(self));
+      my $tph = $stmt.placeholder($table);
+      $stmt.sql = qq:to/SQL/;
+        SELECT kcu.constraint_name, kcu.column_name,
+               kcu.referenced_table_name, kcu.referenced_column_name,
+               rc.delete_rule, rc.update_rule
+          FROM information_schema.key_column_usage kcu
+          JOIN information_schema.referential_constraints rc
+            ON rc.constraint_schema = kcu.table_schema
+           AND rc.constraint_name = kcu.constraint_name
+         WHERE kcu.table_schema = DATABASE()
+           AND kcu.table_name = $tph
+           AND kcu.referenced_table_name IS NOT NULL
+           AND kcu.ordinal_position = 1
+         ORDER BY kcu.constraint_name
+        SQL
+
+      self.exec-stmt($stmt).map({
+        %( name        => self!stringify($_[0]),
+           column      => self!stringify($_[1]),
+           to-table    => self!stringify($_[2]),
+           primary-key => self!stringify($_[3]),
+           on-delete   => self.ref-fk-action-keyword(self!stringify($_[4])),
+           on-update   => self.ref-fk-action-keyword(self!stringify($_[5])) )
+      }).list;
+    }
+
     # MySQL has no sequences (AUTO_INCREMENT lives on the column).
     method get-sequences(--> List) { () }
 
@@ -736,6 +764,11 @@ class MySqlAdapter is SqlAdapter is export {
             my Bool $is-unique = False;
             my $precision;
             my $scale;
+            my $references;
+            my $fk-on-delete;
+            my $fk-on-update;
+            my $fk-name;
+            my $fk-primary-key = 'id';
 
             for $_{$name}.keys -> $attr {
               my $value = $_{$name}{$attr};
@@ -785,6 +818,11 @@ class MySqlAdapter is SqlAdapter is export {
                   $field_name = $field_name ~ '_id';
                   @fk-clauses.push("FOREIGN KEY ($field_name) REFERENCES { $name ~ 's' }(id)");
                 }
+                when 'references'     { $references = $value }
+                when 'on-delete'      { $fk-on-delete = $value }
+                when 'on-update'      { $fk-on-update = $value }
+                when 'fk-name'        { $fk-name = $value }
+                when 'fk-primary-key' { $fk-primary-key = $value }
                 default { die 'MySqlAdapter: unknown column attr: ' ~ $attr }
               }
             }
@@ -825,6 +863,16 @@ class MySqlAdapter is SqlAdapter is export {
             $col ~= ' COMMENT ' ~ self!string-literal($comment.Str) if $comment.defined;
 
             @fields.push($col);
+
+            if $references.defined {
+              my $constraint = $fk-name.defined ?? "CONSTRAINT $fk-name " !! '';
+              my $on-del = $fk-on-delete.defined
+                ?? ' ON DELETE ' ~ self.ref-fk-action($fk-on-delete) !! '';
+              my $on-upd = $fk-on-update.defined
+                ?? ' ON UPDATE ' ~ self.ref-fk-action($fk-on-update) !! '';
+              @fk-clauses.push(
+                "{$constraint}FOREIGN KEY ($field_name) REFERENCES {$references}({$fk-primary-key})$on-del$on-upd");
+            }
           }
 
           @fields;

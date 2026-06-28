@@ -77,6 +77,13 @@ ok 'foreign-key' (elem) constraint-types('_si_things'), 'get-constraints reports
 ok 'unique'      (elem) constraint-types('_si_things'), 'get-constraints reports the unique constraint';
 ok 'primary-key' (elem) constraint-types('_si_things'), 'get-constraints reports the primary key';
 
+# foreign-key introspection
+my @si-fks = $adapter.get-foreign-keys(table => '_si_things').list;
+ok @si-fks.grep({ .<to-table> eq '_si_widgets' }).elems > 0,
+  'get-foreign-keys reports the referenced table';
+ok @si-fks.grep({ .<column> eq '_si_widget_id' }).elems > 0,
+  'get-foreign-keys reports the foreign-key column';
+
 # sequence introspection (per adapter)
 given $kind {
   when 'pg' {

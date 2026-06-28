@@ -106,6 +106,18 @@ group 'schema introspection', :order<defined>, {
     }
   }
 
+  context 'foreign-key introspection', {
+    it 'reports the referenced table', {
+      my @fks = $adapter.get-foreign-keys(table => '_si_things').list;
+      expect(@fks.grep({ .<to-table> eq '_si_widgets' }).elems > 0).to.be-truthy;
+    }
+
+    it 'reports the foreign-key column', {
+      my @fks = $adapter.get-foreign-keys(table => '_si_things').list;
+      expect(@fks.grep({ .<column> eq '_si_widget_id' }).elems > 0).to.be-truthy;
+    }
+  }
+
   context 'sequence introspection', {
     pg-it 'lists the serial sequence (PostgreSQL)', {
       expect($adapter.get-sequences.grep({ .contains('_si_things') }).elems > 0).to.be-truthy;

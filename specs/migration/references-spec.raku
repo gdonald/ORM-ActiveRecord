@@ -35,7 +35,7 @@ sub index-exists($name) {
   ?$rows.elems;
 }
 
-my @test-tables = <_ref_posts _ref_users>;
+my @test-tables = <_ref_comments _ref_posts _ref_users>;
 
 sub cleanup-tables {
   for @test-tables -> $t {
@@ -88,6 +88,15 @@ class AddUniqueRef is Migration {
 class AddNotNullRef is Migration {
   method change {
     self.add-reference: '_ref_posts', 'tag', null => False, index => False;
+  }
+}
+
+class RefCreateComments is Migration {
+  method change {
+    self.create-table: '_ref_comments', [
+      body    => { :string, limit => 32 },
+      user_id => { :integer, references => '_ref_users', on-delete => 'cascade' },
+    ];
   }
 }
 
@@ -202,6 +211,21 @@ group 'migration references', :order<defined>, {
 
     it 'makes <name>_id NOT NULL', {
       expect({ $adapter.exec("INSERT INTO _ref_posts (title) VALUES ('x')") }).to.raise-error;
+    }
+  }
+
+  context 'inline references column adverb', :order<defined>, {
+    before-all { if $has-db { RefCreateComments.new.up } }
+    after-all  { if $has-db { try { $adapter.ddl-drop-table('_ref_comments') } } }
+
+    it 'creates a foreign key to the named table', {
+      my @fks = $adapter.get-foreign-keys(table => '_ref_comments').list;
+      expect(@fks.grep({ .<column> eq 'user_id' && .<to-table> eq '_ref_users' }).elems > 0).to.be-truthy;
+    }
+
+    it 'records the on-delete action', {
+      my @fks = $adapter.get-foreign-keys(table => '_ref_comments').list;
+      expect(@fks.grep({ .<on-delete> eq 'cascade' }).elems > 0).to.be-truthy;
     }
   }
 }

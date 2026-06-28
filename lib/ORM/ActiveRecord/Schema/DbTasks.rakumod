@@ -158,6 +158,17 @@ class DbTasks is export {
     }
   }
 
+  # Rails regenerates db/schema.rb after db:migrate; mirror that for
+  # db/schema.raku so the schema file tracks the applied migrations. Skip in the
+  # test environment (a harness migrates an ephemeral database every run) and
+  # honor AR_NO_SCHEMA_DUMP as the opt-out (Rails' dump_schema_after_migration
+  # = false). Returns the written path, or the empty string when skipped.
+  method schema-dump-after-migrate(Str:D :$path = 'db/schema.raku' --> Str) {
+    return '' if %*ENV<AR_NO_SCHEMA_DUMP>;
+    return '' if $.env eq 'test';
+    self.schema-dump(:$path);
+  }
+
   method schema-dump(Str:D :$path = 'db/schema.raku' --> Str) {
     my $migrate = self!primary-migrate;
     $migrate.check-migrations-table;

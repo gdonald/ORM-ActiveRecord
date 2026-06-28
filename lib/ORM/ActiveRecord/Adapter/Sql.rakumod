@@ -32,6 +32,7 @@ class SqlAdapter
   method get-table-names()                                          { ... }
   method get-indexes(Str:D :$table --> List)                        { ... }
   method get-constraints(Str:D :$table --> List)                    { ... }
+  method get-foreign-keys(Str:D :$table --> List)                   { ... }
   method get-sequences(--> List)                                    { ... }
   method build-insert(Str:D :$table, :%attrs, :%types --> SqlStmt)  { ... }
   method create-object(Mu:D $obj)                                   { ... }

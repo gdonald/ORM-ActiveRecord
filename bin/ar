@@ -49,7 +49,10 @@ sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
     when 'stats'     { run-stats }
     when /^ 'db:' / { exit run-db-task(@cmd) }
     when 'createdb' { create-test-databases(parallel => $par, :$count) }
-    when 'migrate'  { migrate-test-databases(parallel => $par, :$count) }
+    when 'migrate'  {
+      migrate-test-databases(parallel => $par, :$count);
+      try DbTasks.new.schema-dump-after-migrate unless $par;
+    }
     when 'check'    { exit check-command(parallel => $par, :$count) }
     when 'reset'    {
       if $par {
@@ -64,7 +67,10 @@ sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
         Migrate.new(args => @cmd).run;
       }
     }
-    default         { Migrate.new(args => @cmd).run }
+    default         {
+      Migrate.new(args => @cmd).run;
+      try DbTasks.new.schema-dump-after-migrate;
+    }
   }
 }
 

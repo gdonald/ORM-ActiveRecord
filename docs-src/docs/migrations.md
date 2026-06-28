@@ -126,6 +126,32 @@ self.create-table: 'users', [
 ];
 ```
 
+### Inline foreign keys
+
+`references => '<table>'` declares a foreign key on the column as named, pointed
+at the given table. Unlike `:reference` (which appends `_id` and derives the
+target table from the column name), `references` takes the exact column and
+target, so it fits a column you have already named:
+
+```perl6
+self.create-table: 'comments', [
+  body    => { :string, limit => 255 },
+  user_id => { :integer, references => 'users', on-delete => 'cascade' },
+];
+```
+
+| Option                      | Effect                                                              |
+| --------------------------- | ------------------------------------------------------------------ |
+| `references => '<table>'`   | Target table for the foreign key.                                  |
+| `on-delete => '<action>'`   | `cascade`, `nullify`, `restrict`, `set-default`, or `no-action`.   |
+| `on-update => '<action>'`   | Same actions as `on-delete`.                                       |
+| `fk-name => '<name>'`       | Constraint name. Defaults to `fk_<table>_<column>`.                |
+| `fk-primary-key => '<col>'` | Referenced column on the target table. Defaults to `id`.           |
+
+On PostgreSQL and MySQL the constraint is added with `ALTER TABLE`; on SQLite it
+is declared inline in the `CREATE TABLE` (SQLite cannot add a foreign key to an
+existing table). This is the form `db:schema:dump` emits for SQLite.
+
 Every column type accepts a `default => $value` option to set a column-level
 default (see also [function defaults](#function-defaults)).
 

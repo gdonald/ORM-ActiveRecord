@@ -42,7 +42,7 @@ sub index-exists($name) {
   ?$rows.elems;
 }
 
-my @test-tables = <_ref_posts _ref_users>;
+my @test-tables = <_ref_comments _ref_posts _ref_users>;
 
 sub cleanup-tables {
   for @test-tables -> $t {
@@ -174,6 +174,26 @@ throws-like { $adapter.exec("INSERT INTO _ref_posts (title) VALUES ('x')") },
   Exception,
   'add-reference :null => False makes <name>_id NOT NULL';
 AddNotNullRef.new.down;
+
+# the inline `references` column adverb declares a foreign key in create-table
+class CreateComments is Migration {
+  method change {
+    self.create-table: '_ref_comments', [
+      body    => { :string, limit => 32 },
+      user_id => { :integer, references => '_ref_users', on-delete => 'cascade' },
+    ];
+  }
+}
+
+CreateComments.new.up;
+
+my @comment-fks = $adapter.get-foreign-keys(table => '_ref_comments').list;
+
+ok @comment-fks.grep({ .<column> eq 'user_id' && .<to-table> eq '_ref_users' }).elems > 0,
+  'the references column adverb creates a foreign key to the named table';
+
+ok @comment-fks.grep({ .<on-delete> eq 'cascade' }).elems > 0,
+  'the references column adverb records the on-delete action';
 
 cleanup-tables;
 
