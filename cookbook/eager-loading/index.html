@@ -1475,6 +1475,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#starting-from-the-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Starting from the class
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#loading-several-associations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1745,6 +1756,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#starting-from-the-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Starting from the class
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#loading-several-associations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1852,9 +1874,21 @@ unless something forces a JOIN, then it switches to one.</p>
 <p>Each of these emits <code>LEFT OUTER JOIN profiles</code>, filters or orders on it, and
 still caches the association. <code>references(profile =&gt; False)</code> suppresses the
 promotion.</p>
+<h2 id="starting-from-the-class">Starting from the class</h2>
+<p><code>preload</code>, <code>includes</code>, and <code>eager-load</code> are available directly on the model, so
+you can drop the leading <code>where({})</code> when there is no condition:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">preload</span>(:<span class="n">pages</span>).<span class="nb">all</span>;
+<span class="n">User</span>.<span class="n">includes</span>(:<span class="n">profile</span>).<span class="n">references</span>(:<span class="n">profile</span>);
+<span class="n">User</span>.<span class="n">eager-load</span>(:<span class="n">pages</span>).<span class="nb">all</span>;
+</code></pre></div></td></tr></table></div>
+
+<p>These are the same as starting from <code>User.where({})</code> or <code>User.all</code>; add a
+<code>where</code> later to filter.</p>
 <h2 id="loading-several-associations">Loading several associations</h2>
 <p>Pass multiple names to load them all:</p>
-<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">where</span>({}).<span class="n">preload</span>(:<span class="n">pages</span>, :<span class="n">profile</span>).<span class="nb">all</span>;
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">User</span>.<span class="n">preload</span>(:<span class="n">pages</span>, :<span class="n">profile</span>).<span class="nb">all</span>;
 </code></pre></div></td></tr></table></div>
 
 <h2 id="nested-eager-loading">Nested eager loading</h2>
