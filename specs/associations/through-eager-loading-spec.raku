@@ -38,6 +38,26 @@ describe 'through eager loading', {
   before-each { tel-seed }
   after-each  { clean-shared-tables }
 
+  context 'class-level eager loading without a leading where', {
+    it 'includes a has-many :through directly from the class', {
+      my @users = User.includes(:magazines).all;
+      my $a = @users.first({ .attrs<fname> eq 'Alice' });
+      expect($a.assoc-cache<magazines>:exists).to.be-truthy;
+    }
+
+    it 'preloads a has-many :through directly from the class', {
+      my @users = User.preload(:magazines).all;
+      my $a = @users.first({ .attrs<fname> eq 'Alice' });
+      expect($a.magazines.map(*.attrs<title>).sort.join(',')).to.eq('Time,Wired');
+    }
+
+    it 'eager-loads a has-many :through directly from the class', {
+      my @users = User.eager-load(:magazines).all;
+      my $a = @users.first({ .attrs<fname> eq 'Alice' });
+      expect($a.assoc-cache<magazines>:exists).to.be-truthy;
+    }
+  }
+
   context 'preload has-many :through caches collection', {
     it 'caches on Alice', {
       my @users = User.where({}).preload(:magazines).all;

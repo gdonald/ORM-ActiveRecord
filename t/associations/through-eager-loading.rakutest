@@ -8,7 +8,7 @@ use Models::Profile;
 use Models::Account;
 use Test;
 
-plan 21;
+plan 24;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -37,6 +37,24 @@ my $acct-b = Account.create({name => 'bob-acct'});
 Profile.create({user => $alice, account => $acct-a, bio => 'A bio'});
 Profile.create({user => $bob,   account => $acct-b, bio => 'B bio'});
 # Carol has no profile
+
+# --- class-level includes / preload (no leading where) ---
+{
+  my @inc = User.includes(:magazines).all;
+  my $a = @inc.first({ .attrs<fname> eq 'Alice' });
+  ok $a.assoc-cache<magazines>:exists,
+    'class-level includes eager-loads a has-many :through';
+
+  my @pre = User.preload(:magazines).all;
+  my $a2 = @pre.first({ .attrs<fname> eq 'Alice' });
+  is $a2.magazines.map(*.attrs<title>).sort.join(','), 'Time,Wired',
+    'class-level preload eager-loads a has-many :through';
+
+  my @el = User.eager-load(:magazines).all;
+  my $a3 = @el.first({ .attrs<fname> eq 'Alice' });
+  ok $a3.assoc-cache<magazines>:exists,
+    'class-level eager-load eager-loads a has-many :through';
+}
 
 # --- preload has-many :through caches the target collection on the owner ---
 {

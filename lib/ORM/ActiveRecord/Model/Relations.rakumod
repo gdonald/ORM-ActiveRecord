@@ -22,6 +22,9 @@ role ModelRelations is export {
   method offset(Int:D $n)                            { self.all.offset($n) }
   method select(*@cols)                              { self.all.select(|@cols) }
   method distinct(Bool:D $on = True)                 { self.all.distinct($on) }
+  method includes(*@names, *%kw)                     { self.all.includes(|@names, |%kw) }
+  method preload(*@names, *%kw)                      { self.all.preload(|@names, |%kw) }
+  method eager-load(*@names, *%kw)                   { self.all.eager-load(|@names, |%kw) }
   method group(*@cols)                               { self.all.group(|@cols) }
   method regroup(*@cols)                             { self.all.regroup(|@cols) }
   method from($source, Str $alias?)                  { self.all.from($source, $alias) }
