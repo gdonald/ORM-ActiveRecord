@@ -1040,7 +1040,7 @@ class Model
     for @!fields -> $field {
       given $field.name {
         when 'updated_at' { %!attrs<updated_at> = $now }
-        when 'created_at' { %!attrs<created_at> = $now if $!id == 0 }
+        when 'created_at' { %!attrs<created_at> //= $now if $!id == 0 }
       }
     }
   }
@@ -1998,6 +1998,10 @@ class Model
 # The method works directly (Page.published) and is also registered per-class so
 # it is introspectable and discoverable by name like a `self.scope(...)` scope.
 multi sub trait_mod:<is>(Method:D $method, :$scope!) is export {
+  # Mark the method so a relation can recognise it as a scope by introspection
+  # (this survives precompilation, unlike the compile-time global registry).
+  $method does IsScope;
+
   my $klass = $method.package;
   my $name  = $method.name;
 

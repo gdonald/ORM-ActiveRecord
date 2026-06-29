@@ -107,6 +107,22 @@ describe 'Migrate.reset', {
     }
   }
 
+  context 'a dependent view', {
+    before-each {
+      seed-tables($iso-db, 'widgets');
+      $iso-db.exec('CREATE VIEW widgets_view AS SELECT id FROM widgets');
+      run-reset(reply => "y\n");
+    }
+
+    it 'is dropped along with the base tables', {
+      expect($iso-db.get-table-names.elems).to.eq(0);
+    }
+
+    it 'leaves no views behind', {
+      expect($iso-db.get-view-names.elems).to.eq(0);
+    }
+  }
+
   context "'Y' confirms", {
     it 'drops the table', {
       seed-tables($iso-db, 'alpha');

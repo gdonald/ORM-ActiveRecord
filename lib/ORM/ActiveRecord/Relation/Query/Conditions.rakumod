@@ -129,6 +129,9 @@ role QueryConditions is export {
     self.ctes-values.append: $other.ctes-values if $other.ctes-values.elems;
     self.annotations-values.append: $other.annotations-values if $other.annotations-values.elems;
     self.optimizer-hints-values.append: $other.optimizer-hints-values if $other.optimizer-hints-values.elems;
+    self.preloads-values.append: $other.preloads-values if $other.preloads-values.elems;
+    self.eager-loads-values.append: $other.eager-loads-values if $other.eager-loads-values.elems;
+    self.pending-includes-values.append: $other.pending-includes-values if $other.pending-includes-values.elems;
     self;
   }
 }

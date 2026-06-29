@@ -352,12 +352,27 @@ class MySqlAdapter is SqlAdapter is export {
     # MySQL has no sequences (AUTO_INCREMENT lives on the column).
     method get-sequences(--> List) { () }
 
+    method get-view-names(--> List) {
+      my $rows = self.exec(qq:to/SQL/);
+        SELECT table_name FROM information_schema.views
+         WHERE table_schema = DATABASE()
+         ORDER BY table_name
+        SQL
+      @$rows.map({ self!stringify($_[0]) }).list;
+    }
+
     method ddl-drop-all-tables(--> List) {
-      my @tables = self.get-table-names.list;
-      return @tables unless @tables.elems;
+      my @views  = self.get-view-names;
+      my @tables = self.get-table-names.list.grep({ $_ ne any(@views) });
+
+      return @tables unless @views.elems || @tables.elems;
+
       self.exec('SET FOREIGN_KEY_CHECKS = 0');
       LEAVE self.exec('SET FOREIGN_KEY_CHECKS = 1');
+
+      self.exec("DROP VIEW IF EXISTS `{$_}`") for @views;
       self.exec("DROP TABLE IF EXISTS `{$_}`") for @tables;
+
       @tables;
     }
 

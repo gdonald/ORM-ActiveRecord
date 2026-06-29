@@ -14,6 +14,8 @@ use ORM::ActiveRecord::Relation::Query::Bulk;
 use ORM::ActiveRecord::Relation::Query::Batching;
 use ORM::ActiveRecord::Relation::Query::Preloader;
 use ORM::ActiveRecord::Relation::Query::Async;
+use ORM::ActiveRecord::Relation::Scope;
+use ORM::ActiveRecord::Relation::Scopes;
 
 class Query
 does QueryConditions
@@ -150,6 +152,25 @@ is export
   method pending-includes-values is rw { @!pending-includes }
   method class-of               { $!class }
   method table-of               { $!table }
+
+  # Chain a named scope onto a relation (Rails delegates scopes to the relation):
+  # `Page.published.ordered` runs `ordered` for the relation's class and merges
+  # its conditions into this relation. Unknown names raise as usual.
+  method FALLBACK(Str:D $name, |args) {
+    # A method on the model marked with the `is scope` trait. Found by
+    # introspection so it works for precompiled model modules.
+    my $method = $!class.^find_method($name);
+    if $method.defined && $method ~~ IsScope {
+      return self.merge($!class."$name"(|args));
+    }
+
+    # Block scopes registered via `self.scope(...)` (same-process registry).
+    if Scopes.exists($name, $!class) {
+      return self.merge(Scopes.exec($name, $!class, |args));
+    }
+
+    die X::Method::NotFound.new(method => $name, typename => self.^name);
+  }
 
   method db(--> DB) {
     return $*AR-DB-OVERRIDE if $*AR-DB-OVERRIDE.defined;

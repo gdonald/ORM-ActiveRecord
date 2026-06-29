@@ -4,7 +4,7 @@ use lib 'specs/lib';
 use Models::Article;
 use Test;
 
-plan 6;
+plan 7;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -27,5 +27,10 @@ my $reloaded = Article.find($article.id);
 ok $reloaded.created_at.posix == $original-created.posix, 'created_at preserved on update';
 ok $reloaded.updated_at.posix > $original-updated.posix, 'updated_at moved forward on update';
 ok $reloaded.title eq 'Hello, World', 'title round-trip after update';
+
+# An explicitly provided created_at is honored on insert (admin backdating, fixtures)
+my $when = DateTime.new(2020, 1, 2, 3, 4, 5, :timezone(0));
+my $backdated = Article.create({ title => 'Old', body => 'x', created_at => $when });
+is Article.find($backdated.id).created_at.posix, $when.posix, 'an explicit created_at is honored on insert';
 
 Article.destroy-all;

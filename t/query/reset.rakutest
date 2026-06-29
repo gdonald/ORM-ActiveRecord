@@ -26,7 +26,7 @@ use ORM::ActiveRecord::Adapter::Sqlite;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Schema::Migrate;
 
-plan 21;
+plan 23;
 
 # Duck-typed stand-in for IO::Handle. Captures output and feeds one line
 # at a time from a fixed reply string. Reset's signature accepts any
@@ -88,6 +88,18 @@ sub run-reset($db, :@args = [], Str :$reply = '') {
   ok %r<out>.contains('About to DROP'), 'prompt mentions the action';
   ok %r<out>.contains('Dropped 3 tables'), 'success message reports count';
   ok $db.get-table-names.elems == 0, 'database has zero tables after reset';
+}
+
+# A dependent view is dropped along with the tables.
+{
+  my $db = fresh-db;
+  seed-tables($db, 'widgets');
+  $db.exec('CREATE VIEW widgets_view AS SELECT id FROM widgets');
+
+  run-reset($db, reply => "y\n");
+
+  ok $db.get-table-names.elems == 0, 'reset drops every base table';
+  ok $db.get-view-names.elems == 0, 'reset also drops every view';
 }
 
 # 2. 'Y' confirms.

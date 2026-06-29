@@ -267,12 +267,27 @@ class SqliteAdapter is SqlAdapter is export {
     self.exec('SELECT name FROM sqlite_sequence ORDER BY name').map({ $_[0].Str }).list;
   }
 
+  method get-view-names(--> List) {
+    my $rows = self.exec(qq:to/SQL/);
+      SELECT name FROM sqlite_master
+      WHERE type = 'view' AND name NOT LIKE 'sqlite_%'
+      ORDER BY name
+      SQL
+    @$rows.map({ $_[0] }).list;
+  }
+
   method ddl-drop-all-tables(--> List) {
+    my @views  = self.get-view-names;
     my @tables = self.get-table-names.list;
-    return @tables unless @tables.elems;
+
+    return @tables unless @views.elems || @tables.elems;
+
     self.exec('PRAGMA foreign_keys = OFF');
     LEAVE self.exec('PRAGMA foreign_keys = ON');
+
+    self.exec("DROP VIEW IF EXISTS {$_}") for @views;
     self.exec("DROP TABLE IF EXISTS {$_}") for @tables;
+
     @tables;
   }
 

@@ -216,9 +216,25 @@ class PgAdapter is SqlAdapter is export {
     @out;
   }
 
+  method get-view-names(--> List) {
+    my @fields = <table_name>.map({ Field.new(:name($_), :type('character varying')) });
+    my $stmt = self.build-select(
+      :@fields,
+      table => 'information_schema.views',
+      where => { 'table_schema' => 'public' },
+      order => <table_name>.list,
+    );
+
+    self.exec-stmt($stmt).map({ $_[0] }).list;
+  }
+
   method ddl-drop-all-tables(--> List) {
-    my @tables = self.get-table-names.list;
+    my @views  = self.get-view-names;
+    my @tables = self.get-table-names.list.grep({ $_ ne any(@views) });
+
+    self.exec("DROP VIEW IF EXISTS {$_} CASCADE") for @views;
     self.exec("DROP TABLE IF EXISTS {$_} CASCADE") for @tables;
+
     @tables;
   }
 

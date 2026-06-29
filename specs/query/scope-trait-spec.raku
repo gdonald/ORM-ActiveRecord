@@ -8,6 +8,7 @@ class TraitScImage is Model {
   method table-name { 'images' }
   method jpgs is scope { self.where({ ext => 'jpg' }) }
   method by-ext($ext) is scope { self.where({ ext => $ext }) }
+  method ordered is scope { self.order('name') }
 }
 
 class ArgScImage is Model {
@@ -40,6 +41,11 @@ describe 'the `is scope` trait', {
 
   it 'passes arguments to a method scope', {
     expect(TraitScImage.by-ext('png').all.map(*.attrs<ext>).unique.sort.List).to.eq(('png',));
+  }
+
+  it 'chains a scope onto a relation produced by another scope', {
+    TraitScImage.create({ name => 'c', ext => 'jpg' });
+    expect(TraitScImage.jpgs.ordered.all.map(*.attrs<name>).List).to.eq(('a', 'c'));
   }
 }
 

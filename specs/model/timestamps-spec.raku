@@ -32,6 +32,12 @@ describe 'timestamps', {
     it 'populates updated_at as a DateTime', {
       expect($article.updated_at).to.be-a(DateTime);
     }
+
+    it 'honors an explicitly provided created_at', {
+      my $when = DateTime.new(2020, 1, 2, 3, 4, 5, :timezone(0));
+      my $backdated = Article.create({ title => 'Old', body => 'x', created_at => $when });
+      expect(Article.find($backdated.id).created_at.posix).to.eq($when.posix);
+    }
   }
 
   context 'on update', {

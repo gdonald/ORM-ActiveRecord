@@ -10,6 +10,7 @@ class TraitImage is Model {
   method table-name { 'images' }
   method jpgs is scope { self.where({ ext => 'jpg' }) }
   method by-ext($ext) is scope { self.where({ ext => $ext }) }
+  method ordered is scope { self.order('name') }
 }
 
 # A scope block that takes an argument passed at the call site.
@@ -30,7 +31,7 @@ class SharedPng is Model {
   $?CLASS.scope: 'shared', -> { $?CLASS.where({ ext => 'png' }) }
 }
 
-plan 6;
+plan 7;
 
 TraitImage.destroy-all;
 my $jpg = TraitImage.create({ name => 'a', ext => 'jpg' });
@@ -47,6 +48,11 @@ is SharedJpg.shared.all.map(*.attrs<ext>).unique.sort.List, ('jpg',),
   'a same-named scope resolves to its own class (jpg)';
 is SharedPng.shared.all.map(*.attrs<ext>).unique.sort.List, ('png',),
   'a same-named scope on another class does not collide (png)';
+
+# A scope chains onto a relation returned by another scope (Rails-style).
+TraitImage.create({ name => 'c', ext => 'jpg' });
+is TraitImage.jpgs.ordered.all.map(*.attrs<name>).List, ('a', 'c'),
+  'a scope chains onto a relation produced by another scope';
 
 TraitImage.destroy-all;
 
