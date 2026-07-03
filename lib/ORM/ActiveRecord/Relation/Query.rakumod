@@ -153,7 +153,7 @@ is export
   method class-of               { $!class }
   method table-of               { $!table }
 
-  # Chain a named scope onto a relation (Rails delegates scopes to the relation):
+  # Chain a named scope onto a relation (scopes delegate to the relation):
   # `Page.published.ordered` runs `ordered` for the relation's class and merges
   # its conditions into this relation. Unknown names raise as usual.
   method FALLBACK(Str:D $name, |args) {

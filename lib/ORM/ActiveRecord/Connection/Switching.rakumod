@@ -12,7 +12,7 @@ sub active-role       is export { $*AR-ROLE }
 sub active-shard      is export { $*AR-SHARD }
 sub active-connection is export { $*AR-CONNECTION }
 
-# Rails-style automatic role selector. A web middleware asks `role-for` which
+# Automatic role selector. A web middleware asks `role-for` which
 # role a request should use: writes (and reads for a short window after a
 # write, so a user sees their own change) go to `writing`; everything else to
 # `reading`. Call `record-write` after a write.

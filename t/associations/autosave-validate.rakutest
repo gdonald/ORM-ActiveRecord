@@ -21,7 +21,7 @@ ok $new-parent.id > 0, 'autosave: True saved the new parent';
 is $child.attrs<user_id>, $new-parent.id,
   'foreign-key column points to the saved parent';
 
-# autosave on an existing parent re-saves it (Rails parity)
+# autosave on an existing parent re-saves it
 my $loaded = User.find($new-parent.id);
 $loaded.attrs<fname> = 'Renamed';
 Page.create({name => 'C2', autosave-user => $loaded});

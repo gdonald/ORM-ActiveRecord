@@ -1176,7 +1176,7 @@ partway, the already-applied statements stay applied.
 
 `safety-assured` runs its block unchanged. This ORM enforces no
 strong-migration safety checks, so the helper exists for API parity and to
-mark intent in migrations ported from Rails:
+mark intent:
 
 ```perl6
 self.safety-assured: -> {

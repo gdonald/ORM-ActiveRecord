@@ -81,7 +81,7 @@ plan 33;
   nok $w<bogus>:exists,     ':exists is false for an unknown attribute';
 }
 
-# is-attribute-present — Rails present? semantics
+# is-attribute-present: blank values are not present
 {
   my $w = Widget.build({ name => 'Hotel', qty => 5, active => True });
   ok $w.is-attribute-present('name'),    'string with content is present';
@@ -90,7 +90,7 @@ plan 33;
 
   my $blank = Widget.build({ name => '', qty => 0, active => False });
   nok $blank.is-attribute-present('name'),   'empty string is not present';
-  ok $blank.is-attribute-present('qty'),     'zero IS present (matches Rails)';
+  ok $blank.is-attribute-present('qty'),     'zero IS present';
   nok $blank.is-attribute-present('active'), 'False bool is not present';
 
   nok $blank.is-attribute-present('bogus'),  'unknown attribute is not present';

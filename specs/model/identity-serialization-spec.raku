@@ -299,7 +299,7 @@ group 'identity and serialization', {
       expect($w.inspect.contains('password: [FILTERED]')).to.be-truthy;
     }
 
-    it 'does NOT redact in serializable-hash (Rails parity)', {
+    it 'does NOT redact in serializable-hash', {
       expect($w.serializable-hash<password>).to.eq('hunter2');
     }
   }

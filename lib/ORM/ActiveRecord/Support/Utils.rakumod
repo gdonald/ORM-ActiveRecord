@@ -27,7 +27,7 @@ class Utils is export {
     Utils.base-name($name).subst(/(<[a..z0..9]>)(<[A..Z]>)/, { "$0_$1" }, :g).lc;
   }
 
-  # Rails-style table name: snake_case the class name, then pluralize.
+  # Table name: snake_case the class name, then pluralize.
   method tableize(Str:D $name) {
     Utils.underscore($name) ~ 's';
   }

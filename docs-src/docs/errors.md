@@ -153,10 +153,9 @@ declaration syntax.
 
 Every model instance carries an `errors` object — an instance of
 `ORM::ActiveRecord::Errors::Errors` — that validators populate during
-`is-valid` / `is-invalid`. The collection mirrors Rails' `ActiveModel::Errors`
-API so the same patterns (`add`, `delete`, `clear`, `where`, `details`,
-`full-messages`, `is-added`, `group-by-attribute`, `merge`, …) work without
-translation.
+`is-valid` / `is-invalid`. The collection exposes an errors API covering
+`add`, `delete`, `clear`, `where`, `details`, `full-messages`, `is-added`,
+`group-by-attribute`, `merge`, and more.
 
 Each entry is an `ORM::ActiveRecord::Errors::Error` carrying:
 

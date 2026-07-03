@@ -133,7 +133,7 @@ group 'attribute access', {
     }
   }
 
-  context 'is-attribute-present (Rails present? semantics)', {
+  context 'is-attribute-present (blank values are not present)', {
     my $w;
     my $blank;
 
@@ -158,7 +158,7 @@ group 'attribute access', {
       expect($blank.is-attribute-present('name')).to.be-falsy;
     }
 
-    it 'reports zero as present (matches Rails)', {
+    it 'reports zero as present', {
       expect($blank.is-attribute-present('qty')).to.be-truthy;
     }
 

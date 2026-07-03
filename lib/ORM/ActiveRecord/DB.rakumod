@@ -104,6 +104,27 @@ class DB is export {
     $db;
   }
 
+  # Close this connection's primary adapter and any built pool. Never forces a
+  # lazy pool into existence.
+  method close(--> DB) {
+    .disconnect-all with $!pool;
+    $!adapter.disconnect if $!adapter.defined;
+    self;
+  }
+
+  # Deterministically close every process-wide shared connection and drop the
+  # registry. An END phaser calls this so the native driver handles (notably
+  # libpq) are freed while the runtime is healthy. Left to the shutdown GC, the
+  # finalization order is undefined and DBDish::Pg can segfault mid-teardown.
+  method disconnect-shared {
+    for %shared.values -> $db {
+      $db.close if $db.defined;
+    }
+    %shared = ();
+  }
+
+  END { try DB.disconnect-shared }
+
   method adapter-class-for(%config) {
     my $kind = (%config<adapter> // 'pg').lc;
     given $kind {

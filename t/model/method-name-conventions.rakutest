@@ -1,12 +1,13 @@
 
 # Documents the empirical fact that Raku rejects both trailing `!` and `?`
 # in method-name identifiers. The parser fails with "Missing block" at the
-# suffix character. This is the basis for our Raku-idiomatic API choices:
-#   Rails save!     →  save-bang
-#   Rails update!   →  update-bang
-#   Rails create!   →  create-bang
-#   Rails exists?   →  exists  (bare)
-#   Rails valid?    →  is-valid
+# suffix character. This is the basis for our Raku-idiomatic API choices,
+# mapping the conventional punctuated names to their Raku forms:
+#   save!     →  save-bang
+#   update!   →  update-bang
+#   create!   →  create-bang
+#   exists?   →  exists  (bare)
+#   valid?    →  is-valid
 
 use v6.d;
 use Test;

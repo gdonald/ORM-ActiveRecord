@@ -1,7 +1,7 @@
 
 use ORM::ActiveRecord::Type;
 
-# Rails-style enums. Declare one in the model's `submethod BUILD`, the same
+# Enums. Declare one in the model's `submethod BUILD`, the same
 # place attributes / validations / associations are declared:
 #
 #   self.enum: 'status', { active => 0, archived => 1 };

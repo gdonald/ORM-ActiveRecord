@@ -71,11 +71,11 @@ For a grouped relation, see below.
 ## group and having
 
 `group(*@cols)` adds `GROUP BY`. `having(...)` adds a `HAVING` clause. The
-raw form accepts a SQL fragment with positional binds; the hash form is
-Rails-style and works on aggregates or grouped columns.
+raw form accepts a SQL fragment with positional binds. The hash form works
+on aggregates or grouped columns.
 
 ```perl6
-# Hash of group value => count (Rails-aligned)
+# Hash of group value => count
 User.group('lname').count;
 # { Anderson => 2, Brown => 1, Carter => 1 }
 

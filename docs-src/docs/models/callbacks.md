@@ -463,7 +463,7 @@ $c.set-callback-terminator(
 
 ## Observers
 
-ORM::ActiveRecord does not ship Observers. They were deprecated and removed from
-Rails, and callbacks cover the same ground: register `before-*` / `after-*` /
+ORM::ActiveRecord does not ship Observers. Callbacks cover the same ground:
+register `before-*` / `after-*` /
 `after-commit` handlers (in `BUILD`, or with `set-callback` from outside the
 class) to react to a model's lifecycle without a separate observer object.

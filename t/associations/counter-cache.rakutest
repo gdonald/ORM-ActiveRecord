@@ -106,7 +106,7 @@ my $art-bare = Article.create({title => 'bare', author_id => $userD.id});
 is user-count($userD.id), 1, 'created via user D';
 $art-bare.delete;
 is user-count($userD.id), 1,
-  'bare delete bypasses counter-cache (matches Rails)';
+  'bare delete bypasses counter-cache';
 
 clear-all;
 User.destroy-all;

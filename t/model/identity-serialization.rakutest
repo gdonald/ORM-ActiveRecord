@@ -154,7 +154,7 @@ plan 38;
   ok $w.inspect.contains('password: [FILTERED]'),
                                           'inspect redacts filtered attributes';
   is $w.serializable-hash<password>, 'hunter2',
-                                          'serializable-hash does NOT redact (Rails parity)';
+                                          'serializable-hash does NOT redact';
 }
 
 # gist hooks into inspect for defined instances

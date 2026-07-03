@@ -1,7 +1,7 @@
 site_name: ORM::ActiveRecord
 nav:
   - Home: index.md
-  - Coming from Rails: rails-migration.md
+  - Conventions: conventions.md
   - Adapters: adapters.md
   - Migrations: migrations.md
   - Generators: generators.md

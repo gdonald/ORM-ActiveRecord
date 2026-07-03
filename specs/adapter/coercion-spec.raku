@@ -108,3 +108,83 @@ describe 'DateTime round-trip through coerce-write / coerce-read', {
     expect($found-a.attrs<created_at>.posix).to.be-greater-than(0);
   }
 }
+
+describe 'a blank string assigned to a non-text column', {
+  before-each { Article.destroy-all }
+  after-each  { Article.destroy-all }
+
+  context 'on create', {
+    it 'persists the record rather than sending "" to the driver', {
+      my $blank = Article.create({ title => 'Blank Date', body => '', created_at => '' });
+      expect($blank.id).to.be-truthy;
+    }
+
+    it 'auto-fills a blank created_at with a DateTime', {
+      my $blank = Article.create({ title => 'Blank Date', body => '', created_at => '' });
+      expect($blank.attrs<created_at>).to.be-a(DateTime);
+    }
+
+    it 'reads the auto-filled created_at back as a DateTime', {
+      my $blank = Article.create({ title => 'Blank Date', body => '', created_at => '' });
+      my $found = Article.find($blank.id);
+      expect($found.attrs<created_at>).to.be-a(DateTime);
+    }
+
+    it 'keeps the empty string for a text column', {
+      my $blank = Article.create({ title => 'Blank Date', body => '', created_at => '' });
+      expect($blank.attrs<body>).to.eq('');
+    }
+
+    it 'stores the column default for a blank integer', {
+      my $blank = Article.create({ title => 'Blank Int', body => 'x', score => '' });
+      my $found = Article.find($blank.id);
+      expect($found.attrs<score>).to.eq(0);
+    }
+
+    it 'reads a blank integer back as an Int', {
+      my $blank = Article.create({ title => 'Blank Int', body => 'x', score => '' });
+      my $found = Article.find($blank.id);
+      expect($found.attrs<score>).to.be-a(Int);
+    }
+
+    it 'stores the column default for a blank boolean', {
+      my $blank = Article.create({ title => 'Blank Bool', body => 'x', published => '' });
+      my $found = Article.find($blank.id);
+      expect($found.attrs<published>).to.eq(False);
+    }
+
+    it 'reads a blank boolean back as a Bool', {
+      my $blank = Article.create({ title => 'Blank Bool', body => 'x', published => '' });
+      my $found = Article.find($blank.id);
+      expect($found.attrs<published>).to.be-a(Bool);
+    }
+  }
+
+  context 'on update', {
+    it 'leaves the stored created_at a DateTime rather than sending "" to the driver', {
+      my $blank = Article.create({ title => 'Blank Date', body => 'x' });
+      $blank.update({ title => 'Blank Date Renamed', created_at => '' });
+      my $reloaded = Article.find($blank.id);
+      expect($reloaded.attrs<created_at>).to.be-a(DateTime);
+    }
+
+    it 'still applies the other updated columns', {
+      my $blank = Article.create({ title => 'Blank Date', body => 'x' });
+      $blank.update({ title => 'Blank Date Renamed', created_at => '' });
+      my $reloaded = Article.find($blank.id);
+      expect($reloaded.attrs<title>).to.eq('Blank Date Renamed');
+    }
+  }
+
+  context 'when the value is an explicitly undefined string', {
+    it 'persists the record', {
+      my $undef = Article.create({ title => 'Undef Body', body => Str });
+      expect($undef.id).to.be-truthy;
+    }
+
+    it 'leaves the undefined value undefined rather than probing it as a blank string', {
+      my $undef = Article.create({ title => 'Undef Body', body => Str });
+      expect($undef.attrs<body>.defined).to.be-falsy;
+    }
+  }
+}

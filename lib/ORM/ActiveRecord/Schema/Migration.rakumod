@@ -350,7 +350,7 @@ class Migration is export {
     $!db.ddl-drop-join-table($name);
   }
 
-  # Rails-style join-table name: the two table names sorted and joined with '_'.
+  # Join-table name: the two table names sorted and joined with '_'.
   method !join-table-name(Str:D $t1, Str:D $t2 --> Str) {
     ($t1, $t2).sort.join('_');
   }

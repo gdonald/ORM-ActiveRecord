@@ -195,7 +195,7 @@ promote `includes`.
 re-routed: a chain like `preload(:profile).references(:profile)` stays a
 preload, and `eager-load(:profile)` stays a JOIN even with no `references`.
 
-Both forms Rails uses for nested includes are supported, and the three
+Both forms for nested includes are supported, and the three
 loaders (`preload`, `eager-load`, `includes`) accept the same shapes.
 
 Array form — multiple top-level associations:

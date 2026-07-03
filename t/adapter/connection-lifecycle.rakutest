@@ -4,7 +4,7 @@ use lib 'lib';
 use ORM::ActiveRecord::DB;
 use Test;
 
-plan 8;
+plan 11;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -31,3 +31,18 @@ $db.disconnect;
 nok $db.is-connected, 'disconnected before auto-reconnect probe';
 my @rows2 = $db.exec('SELECT 2');
 is @rows2[0][0].Int, 2, 'exec auto-reconnects when handle is nil';
+
+# close() tears down the primary adapter (and any built pool) deterministically
+$db.exec('SELECT 1') unless $db.is-connected;
+$db.close;
+nok $db.is-connected, 'close disconnects the adapter';
+
+# disconnect-shared closes the live shared connection and clears the registry,
+# so the next .shared rebuilds a fresh, working connection
+my $shared = DB.shared;
+$shared.exec('SELECT 1') unless $shared.is-connected;
+DB.disconnect-shared;
+nok $shared.is-connected, 'disconnect-shared closed the previous shared connection';
+
+my @rows3 = DB.shared.exec('SELECT 3');
+is @rows3[0][0].Int, 3, 'the next .shared rebuilds a working connection';

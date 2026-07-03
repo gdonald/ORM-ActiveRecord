@@ -338,9 +338,9 @@ literal `":memory:"` for an ephemeral in-process database — useful in tests.
 
 ## Connection lifecycle
 
-The adapter on `DB.shared` exposes four lifecycle primitives. The shared
-handle connects lazily on first use, so most callers never touch these — they
-exist for tests, long-running daemons, and code that needs to recycle a
+The adapter on `DB.shared` exposes a handful of lifecycle primitives. The
+shared handle connects lazily on first use, so most callers never touch these.
+They exist for tests, long-running daemons, and code that needs to recycle a
 connection after an out-of-band drop.
 
 ```perl6
@@ -377,6 +377,23 @@ connection is dead and returns whether it is live afterward.
 $db.is-active;            # True on a live connection, False on a dropped one
 $db.verify;               # reconnects if needed; True if live afterward
 ```
+
+**Deterministic shutdown:** `close` disconnects a connection's primary adapter
+and any built pool, without forcing a lazy pool into existence.
+`DB.disconnect-shared` closes every process-wide shared connection and clears
+the registry, so the next `DB.shared` rebuilds from config.
+
+```perl6
+$db.close;                # close this connection's adapter (and pool, if built)
+
+DB.disconnect-shared;     # close every shared connection, drop the registry
+DB.shared;                # rebuilds a fresh connection from config
+```
+
+An `END` phaser runs `DB.disconnect-shared` for you at process exit, so native
+driver handles (notably libpq) are freed while the runtime is healthy rather
+than during the shutdown garbage collection, where the finalization order is
+undefined and the PostgreSQL driver can crash mid-teardown.
 
 ## Connection pooling
 

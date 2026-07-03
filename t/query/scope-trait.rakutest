@@ -49,7 +49,7 @@ is SharedJpg.shared.all.map(*.attrs<ext>).unique.sort.List, ('jpg',),
 is SharedPng.shared.all.map(*.attrs<ext>).unique.sort.List, ('png',),
   'a same-named scope on another class does not collide (png)';
 
-# A scope chains onto a relation returned by another scope (Rails-style).
+# A scope chains onto a relation returned by another scope.
 TraitImage.create({ name => 'c', ext => 'jpg' });
 is TraitImage.jpgs.ordered.all.map(*.attrs<name>).List, ('a', 'c'),
   'a scope chains onto a relation produced by another scope';

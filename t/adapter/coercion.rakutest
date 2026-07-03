@@ -12,7 +12,7 @@ class Article is Model {
   submethod BUILD { }
 }
 
-plan 12;
+plan 24;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -53,5 +53,49 @@ my $found-a = Article.find($a.id);
 isa-ok $found-a.attrs<created_at>, DateTime, 'created_at read back as DateTime';
 isa-ok $found-a.attrs<updated_at>, DateTime, 'updated_at read back as DateTime';
 ok $found-a.attrs<created_at>.posix > 0, 'created_at carries a real epoch value';
+
+Article.destroy-all;
+
+# Blank string for a non-text column — a blank form field for a timestamp must
+# not reach the driver as "". It becomes the typed null, so touch-timestamps
+# fills created_at, while a text column keeps its empty string.
+
+Article.destroy-all;
+
+my $blank = Article.create({ title => 'Blank Date', body => '', created_at => '' });
+ok $blank.id, 'a page created with a blank created_at string persists';
+isa-ok $blank.attrs<created_at>, DateTime, 'a blank created_at is auto-filled with a DateTime';
+is $blank.attrs<body>, '', 'a blank text column keeps its empty string';
+
+my $found-blank = Article.find($blank.id);
+isa-ok $found-blank.attrs<created_at>, DateTime, 'the auto-filled created_at reads back as DateTime';
+
+# A blank string for a numeric or boolean column becomes the typed null too, so
+# the column falls back to its declared default instead of reaching the driver
+# as "".
+
+my $blank-int = Article.create({ title => 'Blank Int', body => 'x', score => '' });
+my $found-int = Article.find($blank-int.id);
+isa-ok $found-int.attrs<score>, Int, 'a blank integer reads back as Int';
+is $found-int.attrs<score>, 0, 'a blank integer stores the column default';
+
+my $blank-bool = Article.create({ title => 'Blank Bool', body => 'x', published => '' });
+my $found-bool = Article.find($blank-bool.id);
+isa-ok $found-bool.attrs<published>, Bool, 'a blank boolean reads back as Bool';
+is $found-bool.attrs<published>, False, 'a blank boolean stores the column default';
+
+# Update path coerces a blank non-text value too.
+$blank.update({ title => 'Blank Date Renamed', created_at => '' });
+my $reloaded-blank = Article.find($blank.id);
+isa-ok $reloaded-blank.attrs<created_at>, DateTime, 'a blank created_at on update does not reach the driver as ""';
+is $reloaded-blank.attrs<title>, 'Blank Date Renamed', 'the update otherwise applied';
+
+Article.destroy-all;
+
+# An explicitly undefined value is not a blank string, so it is left untouched
+# rather than being probed with `eq ''` (which would warn on a type object).
+my $undef = Article.create({ title => 'Undef Body', body => Str });
+ok $undef.id, 'a record created with an undefined text value persists';
+nok $undef.attrs<body>.defined, 'the undefined value is left undefined, not coerced';
 
 Article.destroy-all;

@@ -115,8 +115,8 @@ my $car = $v.becomes(Car);   # same id, same attrs, Car methods now in scope
 ```
 
 `becomes-bang(Klass)` does the same and additionally writes the new
-class name into the `type` column when the table has one, mirroring
-Rails' `becomes!` for STI.
+class name into the `type` column when the table has one, for
+single-table inheritance.
 
 ```perl6
 my $car = $v.becomes-bang(Car);
@@ -196,9 +196,8 @@ $user<bogus>:exists;      # False
 ```
 
 `is-attribute-present` returns `True` when the attribute exists and has a
-non-blank value. It follows the same rules as Rails' `present?`: zero counts
-as present, but `False`, the empty string, an empty hash, or an empty array
-do not.
+non-blank value. Zero counts as present, but `False`, the empty string, an
+empty hash, or an empty array do not.
 
 ```perl6
 $user.is-attribute-present('fname');   # True
@@ -222,6 +221,31 @@ $user.attribute-names;   # (id fname lname created_at updated_at)
 my %dump = $user.attributes;
 %dump<fname> = 'X';      # does not touch the live record
 ```
+
+### Blank strings on typed columns
+
+Assigning a blank string (`''`) to a non-text column is treated as "no value".
+The attribute becomes the typed null, and the column is left out of the
+`INSERT` / `UPDATE`. On create it falls back to its schema default. On update it
+keeps its stored value. This is what a web form sends when an optional numeric,
+boolean, or datetime field is left empty. Text and character columns keep the
+empty string.
+
+```perl6
+# score is integer default 0, published is boolean default False, body is text
+my $article = Article.create({ title => 'Draft', score => '', published => '', body => '' });
+my $found   = Article.find($article.id);
+
+$found<score>;       # 0      (the column default)
+$found<published>;   # False  (the column default)
+$found<body>;        # ''     (a text column keeps the blank string)
+```
+
+An `INSERT` with a blank `created_at` still gets a timestamp, because the
+automatic timestamps fill it before the row is written.
+
+An explicitly undefined value (a type object such as `Str`) is not a blank
+string, so it is left untouched rather than coerced.
 
 ## State Predicates
 
@@ -284,9 +308,9 @@ $user.read-attribute('fname');   # 'Greg' -- reads still work
 
 ## Dirty Tracking
 
-The dirty tracking surface mirrors Rails. A record exposes both what is
-changed *right now* (since the last load or save) and what was changed
-*previously* (the diff that the last save persisted).
+A record exposes both what is changed *right now* (since the last load or
+save) and what was changed *previously* (the diff that the last save
+persisted).
 
 ### Current changes
 
@@ -604,7 +628,6 @@ column setup.
 The persistence methods take an explicit attribute hash
 (`create({ ... })`, `update({ ... })`, `assign-attributes({ ... })`), so you
 decide exactly which attributes are written at the call site. Filtering
-untrusted request parameters before they reach the model — Rails' strong
-parameters — is a web-layer concern and is out of scope for the ORM; it belongs
-in the controller (for example in MVC::Keayl), which hands the ORM a hash it has
-already permitted.
+untrusted request parameters before they reach the model is a web-layer
+concern and is out of scope for the ORM. It belongs in the controller (for
+example in MVC::Keayl), which hands the ORM a hash it has already permitted.

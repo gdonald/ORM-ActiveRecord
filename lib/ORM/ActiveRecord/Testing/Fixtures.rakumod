@@ -25,7 +25,7 @@ class Fixtures is export {
   has $.dir;
   has %.loaded;
 
-  # Stable label → integer id, the Raku equivalent of Rails' FixtureSet.identify.
+  # Stable label → integer id, derived deterministically from the label.
   method identify(Str:D $label --> Int) {
     Utils.fnv1a-hex($label).substr(0, 8).parse-base(16) % 1_000_000_000 + 1;
   }

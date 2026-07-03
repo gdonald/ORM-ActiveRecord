@@ -38,7 +38,7 @@ role SqlDdl is export {
   method ref-temporary-keyword(--> Str) { 'TEMPORARY ' }
 
   # Resolve the `id:` / `primary-key:` create-table options into a plan the
-  # adapters emit from. Semantics mirror Rails:
+  # adapters emit from. Semantics:
   #   id => True (default)  surrogate auto-increment integer named 'id'
   #   id => 'uuid'          surrogate column of that type (custom PK type)
   #   id => False           no surrogate column

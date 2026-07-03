@@ -868,7 +868,7 @@ Auto-detection is **skipped** when any of these options appear on the owning sid
 
 ### Explicit `inverse-of:`
 
-Pass `inverse-of:` in the hash form to name the inverse association by hand. This is required whenever overrides disable auto-detection, and useful when the back-pointer name does not match Rails-like convention.
+Pass `inverse-of:` in the hash form to name the inverse association by hand. This is required whenever overrides disable auto-detection, and useful when the back-pointer name does not match the naming convention.
 
 ```perl6
 class Article {...}
@@ -900,7 +900,7 @@ $u.articles.first.scribe === $u;              # True
 
 ## Optional and Required Belongs-To
 
-By default every `belongs-to` is **required**: validation fails unless the record has either an in-memory parent instance or a non-zero foreign-key value. This matches the Rails 5+ default and turns a missing parent into a clear validation error rather than a `NOT NULL` constraint violation at insert time.
+By default every `belongs-to` is **required**: validation fails unless the record has either an in-memory parent instance or a non-zero foreign-key value. This turns a missing parent into a clear validation error rather than a `NOT NULL` constraint violation at insert time.
 
 ```perl6
 class Page is Model {
@@ -944,7 +944,7 @@ For a polymorphic `belongs-to`, both `<name>_id` and `<name>_type` must be set.
 
 ## Dependent
 
-The `dependent:` option on an association decides what happens to the related rows when the owner is destroyed. The five strategies match Rails:
+The `dependent:` option on an association decides what happens to the related rows when the owner is destroyed. The five strategies are:
 
 - `:destroy` — call `destroy` on each related record. `before-destroy` / `after-destroy` callbacks run on every child.
 - `:delete-all` — bulk-delete related rows in one SQL statement. No child callbacks fire.
@@ -1031,7 +1031,7 @@ self.belongs-to: librarian => %(
 
 A child can declare counter caches on more than one `belongs-to` — both counters are kept in sync independently.
 
-Counter caches are wired into `save` and `destroy`. Methods that intentionally bypass the persistence layer — `delete` (no callbacks), `update-column`, `update-columns`, `update-all`, `delete-all`, `insert-all`, and `upsert` — do not adjust the counter, matching Rails. Polymorphic `belongs-to` is skipped because the target class is not known until access time.
+Counter caches are wired into `save` and `destroy`. Methods that intentionally bypass the persistence layer — `delete` (no callbacks), `update-column`, `update-columns`, `update-all`, `delete-all`, `insert-all`, and `upsert` — do not adjust the counter. Polymorphic `belongs-to` is skipped because the target class is not known until access time.
 
 ## Touch
 
@@ -1086,7 +1086,7 @@ class Article is Model {
 }
 ```
 
-Per-field parent errors are not merged — Rails' `validates_associated` rolls up to one summary message, and that is what `validate => True` does here.
+Per-field parent errors are not merged. `validate => True` rolls up to one summary message.
 
 ## Nested Attributes
 

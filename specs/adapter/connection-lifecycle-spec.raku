@@ -68,4 +68,27 @@ describe 'DB.shared connection lifecycle', {
 
     expect(@rows2[0][0].Int).to.eq(2);
   }
+
+  it 'disconnects the primary adapter on close', {
+    my $db = DB.shared;
+    $db.exec('SELECT 1') unless $db.is-connected;
+    $db.close;
+
+    expect($db.is-connected).to.be-falsy;
+  }
+
+  it 'closes the previous shared connection when disconnect-shared runs', {
+    my $db = DB.shared;
+    $db.exec('SELECT 1') unless $db.is-connected;
+    DB.disconnect-shared;
+
+    expect($db.is-connected).to.be-falsy;
+  }
+
+  it 'rebuilds a working shared connection after disconnect-shared', {
+    DB.disconnect-shared;
+    my @rows = DB.shared.exec('SELECT 3');
+
+    expect(@rows[0][0].Int).to.eq(3);
+  }
 }

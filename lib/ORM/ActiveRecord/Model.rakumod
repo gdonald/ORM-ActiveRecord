@@ -1046,7 +1046,19 @@ class Model
   }
 
   method merge-attrs(Hash:D $attrs) {
-    for $attrs.keys { %!attrs«$_» = $attrs«$_» }
+    for $attrs.keys { %!attrs«$_» = self.blank-to-null($_, $attrs«$_») }
+  }
+
+  # A blank string assigned to a non-text column means "no value", so it becomes
+  # the typed null (NULL, or a DB default such as an auto-set timestamp). Text and
+  # character columns keep the empty string. A blank form field thus casts to
+  # null for datetime, numeric, and boolean attributes.
+  method blank-to-null(Str:D $name, $value) {
+    return $value unless $value.defined && $value ~~ Str && $value eq '';
+    my $field = @!fields.first({ .name eq $name });
+    return $value unless $field && $field.type.defined;
+    return $value if $field.type ~~ /:i character | text | varchar | 'char' | string /;
+    Nil;
   }
 
   method primary-key-where(--> Hash) {
@@ -1287,7 +1299,7 @@ class Model
 
   multi method update(%attrs) {
     for %attrs.keys -> $key {
-      %!attrs{$key} = %attrs{$key};
+      %!attrs{$key} = self.blank-to-null($key, %attrs{$key});
     }
     self.save;
   }
