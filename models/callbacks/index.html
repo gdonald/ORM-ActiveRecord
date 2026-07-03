@@ -223,14 +223,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rails-migration/" class="md-nav__link">
+      <a href="../../conventions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Coming from Rails
+    Conventions
   
 
     
@@ -2715,8 +2715,8 @@ per event/timing by passing a <code>Block</code> that decides whether a result a
 </code></pre></div></td></tr></table></div>
 
 <h2 id="observers">Observers</h2>
-<p>ORM::ActiveRecord does not ship Observers. They were deprecated and removed from
-Rails, and callbacks cover the same ground: register <code>before-*</code> / <code>after-*</code> /
+<p>ORM::ActiveRecord does not ship Observers. Callbacks cover the same ground:
+register <code>before-*</code> / <code>after-*</code> /
 <code>after-commit</code> handlers (in <code>BUILD</code>, or with <code>set-callback</code> from outside the
 class) to react to a model's lifecycle without a separate observer object.</p>
 

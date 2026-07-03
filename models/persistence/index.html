@@ -223,14 +223,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rails-migration/" class="md-nav__link">
+      <a href="../../conventions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Coming from Rails
+    Conventions
   
 
     
@@ -825,6 +825,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Attribute Access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#blank-strings-on-typed-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blank strings on typed columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1991,6 +2008,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Attribute Access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#blank-strings-on-typed-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blank strings on typed columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2383,8 +2417,8 @@ subclass-specific behavior applies.</p>
 </code></pre></div></td></tr></table></div>
 
 <p><code>becomes-bang(Klass)</code> does the same and additionally writes the new
-class name into the <code>type</code> column when the table has one, mirroring
-Rails' <code>becomes!</code> for STI.</p>
+class name into the <code>type</code> column when the table has one, for
+single-table inheritance.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$car</span> = <span class="nv">$v</span>.<span class="n">becomes-bang</span>(<span class="n">Car</span>);
@@ -2462,9 +2496,8 @@ record so you can chain it.</p>
 </code></pre></div></td></tr></table></div>
 
 <p><code>is-attribute-present</code> returns <code>True</code> when the attribute exists and has a
-non-blank value. It follows the same rules as Rails' <code>present?</code>: zero counts
-as present, but <code>False</code>, the empty string, an empty hash, or an empty array
-do not.</p>
+non-blank value. Zero counts as present, but <code>False</code>, the empty string, an
+empty hash, or an empty array do not.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">is-attribute-present</span>(<span class="s">&#39;fname&#39;</span>);   <span class="c1"># True</span>
 <span class="nv">$user</span>.<span class="n">is-attribute-present</span>(<span class="s">&#39;bogus&#39;</span>);   <span class="c1"># False</span>
@@ -2487,6 +2520,32 @@ mutating it does not affect the record.</p>
 <span class="nv">%dump&lt;fname&gt;</span> = <span class="s">&#39;X&#39;</span>;      <span class="c1"># does not touch the live record</span>
 </code></pre></div></td></tr></table></div>
 
+<h3 id="blank-strings-on-typed-columns">Blank strings on typed columns</h3>
+<p>Assigning a blank string (<code>''</code>) to a non-text column is treated as "no value".
+The attribute becomes the typed null, and the column is left out of the
+<code>INSERT</code> / <code>UPDATE</code>. On create it falls back to its schema default. On update it
+keeps its stored value. This is what a web form sends when an optional numeric,
+boolean, or datetime field is left empty. Text and character columns keep the
+empty string.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># score is integer default 0, published is boolean default False, body is text</span>
+<span class="k">my</span> <span class="nv">$article</span> = <span class="n">Article</span>.<span class="n">create</span>({ <span class="n">title</span> =&gt; <span class="s">&#39;Draft&#39;</span>, <span class="n">score</span> =&gt; <span class="s">&#39;&#39;</span>, <span class="n">published</span> =&gt; <span class="s">&#39;&#39;</span>, <span class="n">body</span> =&gt; <span class="s">&#39;&#39;</span> });
+<span class="k">my</span> <span class="nv">$found</span>   = <span class="n">Article</span>.<span class="n">find</span>(<span class="nv">$article</span>.<span class="nb">id</span>);
+
+<span class="nv">$found&lt;score&gt;</span>;       <span class="c1"># 0      (the column default)</span>
+<span class="nv">$found&lt;published&gt;</span>;   <span class="c1"># False  (the column default)</span>
+<span class="nv">$found&lt;body&gt;</span>;        <span class="c1"># &#39;&#39;     (a text column keeps the blank string)</span>
+</code></pre></div></td></tr></table></div>
+
+<p>An <code>INSERT</code> with a blank <code>created_at</code> still gets a timestamp, because the
+automatic timestamps fill it before the row is written.</p>
+<p>An explicitly undefined value (a type object such as <code>Str</code>) is not a blank
+string, so it is left untouched rather than coerced.</p>
 <h2 id="state-predicates">State Predicates</h2>
 <p>A record reports its lifecycle stage through a small set of predicates.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
@@ -2575,9 +2634,9 @@ the next save (because the next save is an update, not an insert).
 </code></pre></div></td></tr></table></div>
 
 <h2 id="dirty-tracking">Dirty Tracking</h2>
-<p>The dirty tracking surface mirrors Rails. A record exposes both what is
-changed <em>right now</em> (since the last load or save) and what was changed
-<em>previously</em> (the diff that the last save persisted).</p>
+<p>A record exposes both what is changed <em>right now</em> (since the last load or
+save) and what was changed <em>previously</em> (the diff that the last save
+persisted).</p>
 <h3 id="current-changes">Current changes</h3>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
@@ -2989,10 +3048,9 @@ column setup.</p>
 <p>The persistence methods take an explicit attribute hash
 (<code>create({ ... })</code>, <code>update({ ... })</code>, <code>assign-attributes({ ... })</code>), so you
 decide exactly which attributes are written at the call site. Filtering
-untrusted request parameters before they reach the model — Rails' strong
-parameters — is a web-layer concern and is out of scope for the ORM; it belongs
-in the controller (for example in MVC::Keayl), which hands the ORM a hash it has
-already permitted.</p>
+untrusted request parameters before they reach the model is a web-layer
+concern and is out of scope for the ORM. It belongs in the controller (for
+example in MVC::Keayl), which hands the ORM a hash it has already permitted.</p>
 
 
 

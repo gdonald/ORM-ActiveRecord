@@ -223,14 +223,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rails-migration/" class="md-nav__link">
+      <a href="../../conventions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Coming from Rails
+    Conventions
   
 
     
@@ -1929,8 +1929,8 @@ non-NULLs.</p>
 <p>For a grouped relation, see below.</p>
 <h2 id="group-and-having">group and having</h2>
 <p><code>group(*@cols)</code> adds <code>GROUP BY</code>. <code>having(...)</code> adds a <code>HAVING</code> clause. The
-raw form accepts a SQL fragment with positional binds; the hash form is
-Rails-style and works on aggregates or grouped columns.</p>
+raw form accepts a SQL fragment with positional binds. The hash form works
+on aggregates or grouped columns.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
@@ -1939,7 +1939,7 @@ Rails-style and works on aggregates or grouped columns.</p>
 <span class="normal">6</span>
 <span class="normal">7</span>
 <span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Hash of group value =&gt; count (Rails-aligned)</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Hash of group value =&gt; count</span>
 <span class="n">User</span>.<span class="n">group</span>(<span class="s">&#39;lname&#39;</span>).<span class="nb">count</span>;
 <span class="c1"># { Anderson =&gt; 2, Brown =&gt; 1, Carter =&gt; 1 }</span>
 

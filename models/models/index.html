@@ -223,14 +223,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rails-migration/" class="md-nav__link">
+      <a href="../../conventions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Coming from Rails
+    Conventions
   
 
     
@@ -3800,7 +3800,7 @@ Bob,<span class="w"> </span>Carol
 <p>Auto-detection runs when the association is declared with only <code>class:</code> and/or <code>class-name:</code>. It searches the target model's <code>belongs-to</code> declarations and uses one whose class matches the owning model — if and only if exactly one match exists.</p>
 <p>Auto-detection is <strong>skipped</strong> when any of these options appear on the owning side: <code>foreign-key</code>, <code>primary-key</code>, <code>through</code>, <code>as</code>, <code>polymorphic</code>. In those cases the heuristic isn't reliable, and an explicit <code>inverse-of:</code> is required to wire the back-pointer.</p>
 <h3 id="explicit-inverse-of">Explicit <code>inverse-of:</code></h3>
-<p>Pass <code>inverse-of:</code> in the hash form to name the inverse association by hand. This is required whenever overrides disable auto-detection, and useful when the back-pointer name does not match Rails-like convention.</p>
+<p>Pass <code>inverse-of:</code> in the hash form to name the inverse association by hand. This is required whenever overrides disable auto-detection, and useful when the back-pointer name does not match the naming convention.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -3850,7 +3850,7 @@ Bob,<span class="w"> </span>Carol
 
 <p><code>inverse-of:</code> accepts either a <code>:pair</code> form (<code>inverse-of =&gt; :scribe</code>) or a string (<code>inverse-of =&gt; 'scribe'</code>). It applies to <code>has-many</code> and <code>has-one</code>; the back-pointer is populated on every record returned from the collection or singular accessor. If no inverse is declared and auto-detection cannot run, the back-pointer is not wired and each <code>child.parent</code> access reloads from the database.</p>
 <h2 id="optional-and-required-belongs-to">Optional and Required Belongs-To</h2>
-<p>By default every <code>belongs-to</code> is <strong>required</strong>: validation fails unless the record has either an in-memory parent instance or a non-zero foreign-key value. This matches the Rails 5+ default and turns a missing parent into a clear validation error rather than a <code>NOT NULL</code> constraint violation at insert time.</p>
+<p>By default every <code>belongs-to</code> is <strong>required</strong>: validation fails unless the record has either an in-memory parent instance or a non-zero foreign-key value. This turns a missing parent into a clear validation error rather than a <code>NOT NULL</code> constraint violation at insert time.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -3900,7 +3900,7 @@ Bob,<span class="w"> </span>Carol
 <p>For a polymorphic <code>belongs-to</code>, both <code>&lt;name&gt;_id</code> and <code>&lt;name&gt;_type</code> must be set.</p>
 <p><code>is-belongs-to-optional($name)</code> reports whether the named association is optional, useful when introspecting a model's relations.</p>
 <h2 id="dependent">Dependent</h2>
-<p>The <code>dependent:</code> option on an association decides what happens to the related rows when the owner is destroyed. The five strategies match Rails:</p>
+<p>The <code>dependent:</code> option on an association decides what happens to the related rows when the owner is destroyed. The five strategies are:</p>
 <ul>
 <li><code>:destroy</code> — call <code>destroy</code> on each related record. <code>before-destroy</code> / <code>after-destroy</code> callbacks run on every child.</li>
 <li><code>:delete-all</code> — bulk-delete related rows in one SQL statement. No child callbacks fire.</li>
@@ -4005,7 +4005,7 @@ Bob,<span class="w"> </span>Carol
 </code></pre></div></td></tr></table></div>
 
 <p>A child can declare counter caches on more than one <code>belongs-to</code> — both counters are kept in sync independently.</p>
-<p>Counter caches are wired into <code>save</code> and <code>destroy</code>. Methods that intentionally bypass the persistence layer — <code>delete</code> (no callbacks), <code>update-column</code>, <code>update-columns</code>, <code>update-all</code>, <code>delete-all</code>, <code>insert-all</code>, and <code>upsert</code> — do not adjust the counter, matching Rails. Polymorphic <code>belongs-to</code> is skipped because the target class is not known until access time.</p>
+<p>Counter caches are wired into <code>save</code> and <code>destroy</code>. Methods that intentionally bypass the persistence layer — <code>delete</code> (no callbacks), <code>update-column</code>, <code>update-columns</code>, <code>update-all</code>, <code>delete-all</code>, <code>insert-all</code>, and <code>upsert</code> — do not adjust the counter. Polymorphic <code>belongs-to</code> is skipped because the target class is not known until access time.</p>
 <h2 id="touch">Touch</h2>
 <p>The <code>touch:</code> option on a <code>belongs-to</code> bumps timestamps on the parent whenever the child is saved or destroyed. <code>touch =&gt; True</code> updates <code>updated_at</code>. Pass a column name (string) to update that column <strong>and</strong> <code>updated_at</code>:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
@@ -4073,7 +4073,7 @@ Bob,<span class="w"> </span>Carol
 }
 </code></pre></div></td></tr></table></div>
 
-<p>Per-field parent errors are not merged — Rails' <code>validates_associated</code> rolls up to one summary message, and that is what <code>validate =&gt; True</code> does here.</p>
+<p>Per-field parent errors are not merged. <code>validate =&gt; True</code> rolls up to one summary message.</p>
 <h2 id="nested-attributes">Nested Attributes</h2>
 <p><code>accepts-nested-attributes-for</code> lets a parent take a hash (or array of hashes) of attributes for an association and create, update, or destroy the associated records as part of the parent's own save. Declare it after the association, naming the association and any options.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>

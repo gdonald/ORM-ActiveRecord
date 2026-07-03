@@ -223,14 +223,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../rails-migration/" class="md-nav__link">
+      <a href="../../conventions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Coming from Rails
+    Conventions
   
 
     
@@ -1880,9 +1880,8 @@ embedding in URLs. New (unsaved) records return an undefined <code>Str</code>.</
 
 <h2 id="to-key">to-key</h2>
 <p><code>to-key</code> returns a list of values that identify the record — currently
-<code>[id]</code> for persisted records, <code>Nil</code> for new ones. The list shape mirrors
-Rails so future composite-key support can extend it without breaking
-callers.</p>
+<code>[id]</code> for persisted records, <code>Nil</code> for new ones. It returns a list so that
+future composite-key support can extend it without breaking callers.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">to-key</span>;            <span class="c1"># [42]</span>
 <span class="n">User</span>.<span class="nb">new</span>(:<span class="n">id</span>(<span class="mi">0</span>)).<span class="n">to-key</span>; <span class="c1"># Nil</span>
@@ -1995,7 +1994,7 @@ truncated to 50 characters, dates are quoted as ISO strings, booleans as
 </code></pre></div></td></tr></table></div>
 
 <h2 id="inspect">inspect</h2>
-<p><code>inspect</code> returns a single-line Rails-style summary of the record:</p>
+<p><code>inspect</code> returns a single-line summary of the record:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$user</span>.<span class="n">inspect</span>;
 <span class="c1"># &#39;#&lt;User id: 42, fname: &quot;Greg&quot;, lname: &quot;Donald&quot;, active: True&gt;&#39;</span>

@@ -9,7 +9,7 @@
       
       
       
-        <link rel="prev" href="../rails-migration/">
+        <link rel="prev" href="../conventions/">
       
       
         <link rel="next" href="../migrations/">
@@ -223,14 +223,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../rails-migration/" class="md-nav__link">
+      <a href="../conventions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Coming from Rails
+    Conventions
   
 
     
@@ -2718,9 +2718,9 @@ unbounded in SQLite.)</p>
 <p>The <code>database</code> field accepts a file path (created on first connect) or the
 literal <code>":memory:"</code> for an ephemeral in-process database — useful in tests.</p>
 <h2 id="connection-lifecycle">Connection lifecycle</h2>
-<p>The adapter on <code>DB.shared</code> exposes four lifecycle primitives. The shared
-handle connects lazily on first use, so most callers never touch these — they
-exist for tests, long-running daemons, and code that needs to recycle a
+<p>The adapter on <code>DB.shared</code> exposes a handful of lifecycle primitives. The
+shared handle connects lazily on first use, so most callers never touch these.
+They exist for tests, long-running daemons, and code that needs to recycle a
 connection after an out-of-band drop.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
 <span class="normal"> 2</span>
@@ -2766,6 +2766,23 @@ connection is dead and returns whether it is live afterward.</p>
 <span class="nv">$db</span>.<span class="n">verify</span>;               <span class="c1"># reconnects if needed; True if live afterward</span>
 </code></pre></div></td></tr></table></div>
 
+<p><strong>Deterministic shutdown:</strong> <code>close</code> disconnects a connection's primary adapter
+and any built pool, without forcing a lazy pool into existence.
+<code>DB.disconnect-shared</code> closes every process-wide shared connection and clears
+the registry, so the next <code>DB.shared</code> rebuilds from config.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nv">$db</span>.<span class="nb">close</span>;                <span class="c1"># close this connection&#39;s adapter (and pool, if built)</span>
+
+<span class="n">DB</span>.<span class="n">disconnect-shared</span>;     <span class="c1"># close every shared connection, drop the registry</span>
+<span class="n">DB</span>.<span class="n">shared</span>;                <span class="c1"># rebuilds a fresh connection from config</span>
+</code></pre></div></td></tr></table></div>
+
+<p>An <code>END</code> phaser runs <code>DB.disconnect-shared</code> for you at process exit, so native
+driver handles (notably libpq) are freed while the runtime is healthy rather
+than during the shutdown garbage collection, where the finalization order is
+undefined and the PostgreSQL driver can crash mid-teardown.</p>
 <h2 id="connection-pooling">Connection pooling</h2>
 <p>For concurrent work, a connection pool hands out separate connections — each a
 full adapter with its own driver handle and transaction state. Size it from

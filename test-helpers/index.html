@@ -221,14 +221,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../rails-migration/" class="md-nav__link">
+      <a href="../conventions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Coming from Rails
+    Conventions
   
 
     
@@ -1854,7 +1854,7 @@ so references resolve across files regardless of load order.</p>
 <p>Loading deletes the table's existing rows first, so it is repeatable.</p>
 <h3 id="interpolation">Interpolation</h3>
 <p><code>&lt;%= expr %&gt;</code> in a value is replaced by the stringified result of the Raku
-expression before the YAML is parsed — the equivalent of Rails' ERB fixtures.</p>
+expression before the YAML is parsed.</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">created_at</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;%= DateTime.now %&gt;</span>
 <span class="nt">admin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;%= True %&gt;</span>

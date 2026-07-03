@@ -223,14 +223,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../rails-migration/" class="md-nav__link">
+      <a href="../conventions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Coming from Rails
+    Conventions
   
 
     
@@ -2146,10 +2146,9 @@ declaration syntax.</p>
 <h2 id="the-errors-collection">The errors collection</h2>
 <p>Every model instance carries an <code>errors</code> object — an instance of
 <code>ORM::ActiveRecord::Errors::Errors</code> — that validators populate during
-<code>is-valid</code> / <code>is-invalid</code>. The collection mirrors Rails' <code>ActiveModel::Errors</code>
-API so the same patterns (<code>add</code>, <code>delete</code>, <code>clear</code>, <code>where</code>, <code>details</code>,
-<code>full-messages</code>, <code>is-added</code>, <code>group-by-attribute</code>, <code>merge</code>, …) work without
-translation.</p>
+<code>is-valid</code> / <code>is-invalid</code>. The collection exposes an errors API covering
+<code>add</code>, <code>delete</code>, <code>clear</code>, <code>where</code>, <code>details</code>, <code>full-messages</code>, <code>is-added</code>,
+<code>group-by-attribute</code>, <code>merge</code>, and more.</p>
 <p>Each entry is an <code>ORM::ActiveRecord::Errors::Error</code> carrying:</p>
 <table>
 <thead>

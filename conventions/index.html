@@ -23,7 +23,7 @@
     
     
       
-        <title>Coming from Rails - ORM::ActiveRecord</title>
+        <title>Conventions - ORM::ActiveRecord</title>
       
     
     
@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#coming-from-rails" class="md-skip">
+        <a href="#conventions-and-cheatsheet" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Coming from Rails
+              Conventions
             
           </span>
         </div>
@@ -239,7 +239,7 @@
   <span class="md-ellipsis">
     
   
-    Coming from Rails
+    Conventions
   
 
     
@@ -257,7 +257,7 @@
   <span class="md-ellipsis">
     
   
-    Coming from Rails
+    Conventions
   
 
     
@@ -393,10 +393,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#whats-different" class="md-nav__link">
+  <a href="#things-to-keep-in-mind" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What's different
+        Things to keep in mind
       
     </span>
   </a>
@@ -1875,10 +1875,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#whats-different" class="md-nav__link">
+  <a href="#things-to-keep-in-mind" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What's different
+        Things to keep in mind
       
     </span>
   </a>
@@ -1902,56 +1902,56 @@
 
 
 
-<h1 id="coming-from-rails">Coming from Rails</h1>
-<p>ORM::ActiveRecord ports Active Record to Raku concept-for-concept. If you know
-Rails, most of what you know carries over once you adjust for two Raku rules
-about method names.</p>
+<h1 id="conventions-and-cheatsheet">Conventions and cheatsheet</h1>
+<p>ORM::ActiveRecord follows a small set of naming conventions. Once you know the
+two rules Raku imposes on method names, the rest of the API reads the way you
+would expect. The tables below are a quick reference from a plain-English
+operation to the method that performs it.</p>
 <h2 id="the-two-naming-rules">The two naming rules</h2>
 <p>Raku method names cannot end in <code>!</code> or <code>?</code>, and the ecosystem prefers hyphens to
 underscores:</p>
 <ul>
-<li>A bang method drops the <code>!</code> and gains a <code>-bang</code> suffix: <code>save!</code> → <code>save-bang</code>.</li>
-<li>A predicate drops the <code>?</code> and gains an <code>is-</code> prefix: <code>valid?</code> → <code>is-valid</code>,
-  <code>persisted?</code> → <code>is-persisted</code>, <code>new_record?</code> → <code>is-new-record</code>.</li>
-<li>Everything else swaps <code>_</code> for <code>-</code>: <code>find_by</code> → <code>find-by</code>, <code>has_many</code> →
-  <code>has-many</code>, <code>update_all</code> → <code>update-all</code>.</li>
+<li>A bang method drops the <code>!</code> and gains a <code>-bang</code> suffix: <code>save-bang</code>.</li>
+<li>A predicate drops the <code>?</code> and gains an <code>is-</code> prefix: <code>is-valid</code>,
+  <code>is-persisted</code>, <code>is-new-record</code>.</li>
+<li>Everything else swaps <code>_</code> for <code>-</code>: <code>find-by</code>, <code>has-many</code>, <code>update-all</code>.</li>
 </ul>
 <p>That is most of the translation. The tables below cover the rest.</p>
 <h2 id="models-and-tables">Models and tables</h2>
 <table>
 <thead>
 <tr>
-<th>Rails</th>
+<th>Operation</th>
 <th>ORM::ActiveRecord</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>class User &lt; ApplicationRecord</code></td>
+<td>Declare a model</td>
 <td><code>class User is Model { }</code></td>
 </tr>
 <tr>
-<td><code>self.table_name = 'people'</code></td>
+<td>Override the table name</td>
 <td><code>method table-name { 'people' }</code></td>
 </tr>
 <tr>
-<td><code>belongs_to :author</code></td>
+<td>Belongs-to association</td>
 <td><code>self.belongs-to: author =&gt; class-name =&gt; 'Author'</code></td>
 </tr>
 <tr>
-<td><code>has_many :posts</code></td>
+<td>Has-many association</td>
 <td><code>self.has-many: posts =&gt; class-name =&gt; 'Post'</code></td>
 </tr>
 <tr>
-<td><code>has_one :profile</code></td>
+<td>Has-one association</td>
 <td><code>self.has-one: profile =&gt; class-name =&gt; 'Profile'</code></td>
 </tr>
 <tr>
-<td><code>has_and_belongs_to_many :tags</code></td>
+<td>Many-to-many association</td>
 <td><code>self.has-and-belongs-to-many: tags =&gt; class-name =&gt; 'Tag'</code></td>
 </tr>
 <tr>
-<td><code>has_many :through</code></td>
+<td>Has-many through</td>
 <td><code>self.has-many: magazines =&gt; %(through =&gt; :subscriptions, ...)</code></td>
 </tr>
 </tbody>
@@ -1962,41 +1962,41 @@ underscores:</p>
 <table>
 <thead>
 <tr>
-<th>Rails</th>
+<th>Operation</th>
 <th>ORM::ActiveRecord</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>User.create(attrs)</code></td>
+<td>Create a record</td>
 <td><code>User.create({ ... })</code></td>
 </tr>
 <tr>
-<td><code>User.create!(attrs)</code></td>
+<td>Create or raise</td>
 <td><code>User.create-bang({ ... })</code></td>
 </tr>
 <tr>
-<td><code>user.save</code> / <code>user.save!</code></td>
+<td>Save</td>
 <td><code>user.save</code> / <code>user.save-bang</code></td>
 </tr>
 <tr>
-<td><code>user.update(attrs)</code> / <code>update!</code></td>
-<td><code>user.update({ ... })</code> / <code>update-bang</code></td>
+<td>Update attributes</td>
+<td><code>user.update({ ... })</code> / <code>user.update-bang({ ... })</code></td>
 </tr>
 <tr>
-<td><code>user.destroy</code> / <code>User.destroy_all</code></td>
+<td>Destroy</td>
 <td><code>user.destroy</code> / <code>User.destroy-all</code></td>
 </tr>
 <tr>
-<td><code>user.persisted?</code> / <code>new_record?</code></td>
+<td>Check persistence</td>
 <td><code>user.is-persisted</code> / <code>user.is-new-record</code></td>
 </tr>
 <tr>
-<td><code>user.reload</code></td>
+<td>Reload from the database</td>
 <td><code>user.reload</code></td>
 </tr>
 <tr>
-<td><code>user.touch</code></td>
+<td>Touch timestamps</td>
 <td><code>user.touch</code></td>
 </tr>
 </tbody>
@@ -2006,90 +2006,90 @@ underscores:</p>
 <table>
 <thead>
 <tr>
-<th>Rails</th>
+<th>Operation</th>
 <th>ORM::ActiveRecord</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>User.find(id)</code></td>
+<td>Find by primary key</td>
 <td><code>User.find(id)</code></td>
 </tr>
 <tr>
-<td><code>User.find_by(name: 'x')</code></td>
+<td>Find by attributes</td>
 <td><code>User.find-by({ name =&gt; 'x' })</code></td>
 </tr>
 <tr>
-<td><code>User.find_by!(...)</code></td>
+<td>Find by attributes or raise</td>
 <td><code>User.find-by-bang({ ... })</code></td>
 </tr>
 <tr>
-<td><code>User.where(active: true)</code></td>
+<td>Filter</td>
 <td><code>User.where({ active =&gt; True })</code></td>
 </tr>
 <tr>
-<td><code>.where.not(...)</code></td>
+<td>Negated filter</td>
 <td><code>.not({ ... })</code></td>
 </tr>
 <tr>
-<td><code>.order(:name)</code></td>
+<td>Order</td>
 <td><code>.order('name')</code></td>
 </tr>
 <tr>
-<td><code>.limit(10).offset(20)</code></td>
+<td>Limit and offset</td>
 <td><code>.limit(10).offset(20)</code></td>
 </tr>
 <tr>
-<td><code>.first</code> / <code>.last</code></td>
+<td>First and last</td>
 <td><code>.first</code> / <code>.last</code></td>
 </tr>
 <tr>
-<td><code>.count</code> / <code>.sum(:col)</code></td>
+<td>Count and sum</td>
 <td><code>.count</code> / <code>.sum('col')</code></td>
 </tr>
 <tr>
-<td><code>.pluck(:name)</code></td>
+<td>Pluck a column</td>
 <td><code>.pluck('name')</code></td>
 </tr>
 <tr>
-<td><code>.exists?</code></td>
+<td>Existence check</td>
 <td><code>.exists</code></td>
 </tr>
 <tr>
-<td><code>.update_all(...)</code> / <code>.delete_all</code></td>
+<td>Bulk update or delete</td>
 <td><code>.update-all(...)</code> / <code>.delete-all</code></td>
 </tr>
 </tbody>
 </table>
-<p>A relation is lazy; it runs when you call <code>.all</code> / <code>.perform</code>, iterate it, or
+<p>A relation is lazy. It runs when you call <code>.all</code> / <code>.perform</code>, iterate it, or
 ask for a count. See <a href="../models/finders/">Finders</a> and <a href="../models/queries/">Queries</a>.</p>
 <h2 id="eager-loading">Eager loading</h2>
 <table>
 <thead>
 <tr>
-<th>Rails</th>
+<th>Operation</th>
 <th>ORM::ActiveRecord</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>.preload(:posts)</code></td>
+<td>Preload (separate queries)</td>
 <td><code>.preload(:posts)</code></td>
 </tr>
 <tr>
-<td><code>.includes(:posts)</code></td>
+<td>Includes (loader chosen for you)</td>
 <td><code>.includes(:posts)</code></td>
 </tr>
 <tr>
-<td><code>.eager_load(:posts)</code></td>
+<td>Eager-load (single JOIN)</td>
 <td><code>.eager-load(:posts)</code></td>
 </tr>
 <tr>
-<td><code>.references(:posts)</code></td>
+<td>Force a JOIN reference</td>
 <td><code>.references(:posts)</code></td>
 </tr>
 <tr>
-<td><code>.includes(posts: :comments)</code></td>
+<td>Nested loading</td>
 <td><code>.preload(posts =&gt; :comments)</code></td>
 </tr>
 </tbody>
@@ -2099,33 +2099,33 @@ ask for a count. See <a href="../models/finders/">Finders</a> and <a href="../mo
 <table>
 <thead>
 <tr>
-<th>Rails</th>
+<th>Operation</th>
 <th>ORM::ActiveRecord</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>validates :name, presence: true</code></td>
+<td>Presence</td>
 <td><code>self.validate: 'name', { :presence }</code></td>
 </tr>
 <tr>
-<td><code>validates :age, numericality: { ... }</code></td>
+<td>Numericality</td>
 <td><code>self.validate: 'age', { numericality =&gt; { ... } }</code></td>
 </tr>
 <tr>
-<td><code>validates_with MyValidator</code></td>
+<td>Validate with a class</td>
 <td><code>self.validates-with(MyValidator.new)</code></td>
 </tr>
 <tr>
-<td><code>validates_each :a, :b do ... end</code></td>
+<td>Validate each attribute</td>
 <td><code>self.validates-each: &lt;a b&gt;, -&gt; $rec, $attr, $value { ... }</code></td>
 </tr>
 <tr>
-<td><code>record.valid?</code> / <code>invalid?</code></td>
+<td>Validity check</td>
 <td><code>record.is-valid</code> / <code>record.is-invalid</code></td>
 </tr>
 <tr>
-<td><code>record.errors.full_messages</code></td>
+<td>Read error messages</td>
 <td><code>record.errors.full-messages</code></td>
 </tr>
 </tbody>
@@ -2136,21 +2136,21 @@ ask for a count. See <a href="../models/finders/">Finders</a> and <a href="../mo
 <table>
 <thead>
 <tr>
-<th>Rails</th>
+<th>Operation</th>
 <th>ORM::ActiveRecord</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>before_save :m</code></td>
+<td>Before save</td>
 <td><code>self.before-save: -&gt; { ... }</code> or <code>self.before-save: 'method-name'</code></td>
 </tr>
 <tr>
-<td><code>after_create</code>, <code>after_update</code>, ...</td>
+<td>After create / update</td>
 <td><code>self.after-create</code>, <code>self.after-update</code>, ...</td>
 </tr>
 <tr>
-<td><code>after_commit</code>, <code>after_rollback</code></td>
+<td>After commit / rollback</td>
 <td><code>self.after-commit</code>, <code>self.after-rollback</code></td>
 </tr>
 </tbody>
@@ -2160,29 +2160,29 @@ ask for a count. See <a href="../models/finders/">Finders</a> and <a href="../mo
 <table>
 <thead>
 <tr>
-<th>Rails</th>
+<th>Operation</th>
 <th>ORM::ActiveRecord</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>ActiveRecord::Base.transaction { }</code></td>
+<td>Connection transaction</td>
 <td><code>DB.shared.transaction({ })</code></td>
 </tr>
 <tr>
-<td><code>Model.transaction { }</code></td>
+<td>Model transaction</td>
 <td><code>Model.transaction({ })</code></td>
 </tr>
 <tr>
-<td><code>requires_new: true</code></td>
+<td>Nested savepoint</td>
 <td><code>:requires-new</code></td>
 </tr>
 <tr>
-<td><code>raise ActiveRecord::Rollback</code></td>
+<td>Roll back</td>
 <td><code>die X::Rollback.new</code></td>
 </tr>
 <tr>
-<td><code>isolation: :read_committed</code></td>
+<td>Isolation level</td>
 <td><code>:isolation&lt;read_committed&gt;</code></td>
 </tr>
 </tbody>
@@ -2192,37 +2192,37 @@ ask for a count. See <a href="../models/finders/">Finders</a> and <a href="../mo
 <table>
 <thead>
 <tr>
-<th>Rails</th>
+<th>Operation</th>
 <th>ORM::ActiveRecord</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>enum status: { ... }</code></td>
+<td>Enum attribute</td>
 <td><code>self.enum: 'status', { ... }</code> (<a href="../models/enums/">Enums</a>)</td>
 </tr>
 <tr>
-<td><code>serialize :prefs, JSON</code></td>
+<td>Serialize a column</td>
 <td><code>self.serialize('prefs', JsonCoder.new)</code> (<a href="../models/types/">Attribute types</a>)</td>
 </tr>
 <tr>
-<td><code>normalizes :email, with: ...</code></td>
+<td>Normalize a value</td>
 <td><code>self.normalizes('email', :with(-&gt; $v { ... }))</code> (<a href="../models/normalization/">Normalisation</a>)</td>
 </tr>
 <tr>
-<td><code>encrypts :ssn</code></td>
+<td>Encrypt a column</td>
 <td><code>self.encrypts('ssn')</code> (<a href="../models/encryption/">Encryption</a>)</td>
 </tr>
 <tr>
-<td><code>has_secure_password</code></td>
+<td>Secure password</td>
 <td><code>self.has-secure-password</code> (<a href="../models/secure-tokens/">Tokens &amp; secure data</a>)</td>
 </tr>
 <tr>
-<td>STI <code>type</code> column</td>
-<td><a href="../models/inheritance/">Single-table inheritance</a></td>
+<td>Single-table inheritance</td>
+<td><code>type</code> column (<a href="../models/inheritance/">Single-table inheritance</a>)</td>
 </tr>
 <tr>
-<td>discard gem</td>
+<td>Soft deletes</td>
 <td><a href="../models/discard/">Soft deletes</a></td>
 </tr>
 </tbody>
@@ -2231,46 +2231,46 @@ ask for a count. See <a href="../models/finders/">Finders</a> and <a href="../mo
 <table>
 <thead>
 <tr>
-<th>Rails</th>
+<th>Operation</th>
 <th>ORM::ActiveRecord</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>rails db:migrate</code></td>
+<td>Run migrations</td>
 <td><code>active-record db:migrate</code></td>
 </tr>
 <tr>
-<td><code>rails db:rollback</code></td>
+<td>Roll back</td>
 <td><code>active-record db:rollback</code></td>
 </tr>
 <tr>
-<td><code>rails db:seed</code></td>
+<td>Seed data</td>
 <td><code>active-record db:seed</code></td>
 </tr>
 <tr>
-<td><code>rails g model User name:string</code></td>
+<td>Generate a model</td>
 <td><code>active-record generate model User name:string</code></td>
 </tr>
 <tr>
-<td><code>rails console</code> / <code>runner</code></td>
+<td>Console and runner</td>
 <td><code>active-record console</code> / <code>active-record runner</code></td>
 </tr>
 <tr>
-<td><code>rails dbconsole</code></td>
+<td>Database console</td>
 <td><code>active-record dbconsole</code></td>
 </tr>
 </tbody>
 </table>
 <p>See <a href="../db-tasks/">Database tasks</a>, <a href="../generators/">Generators</a>, and
 <a href="../runtime/">Runtime tasks</a>.</p>
-<h2 id="whats-different">What's different</h2>
+<h2 id="things-to-keep-in-mind">Things to keep in mind</h2>
 <ul>
 <li>Hashes are passed explicitly: <code>User.where({ active =&gt; True })</code>, not bareword
   keyword arguments.</li>
-<li><code>True</code> / <code>False</code> / <code>Nil</code> replace <code>true</code> / <code>false</code> / <code>nil</code>.</li>
+<li><code>True</code> / <code>False</code> / <code>Nil</code> are the boolean and null literals.</li>
 <li>A model class binds itself into <code>GLOBAL</code> (<code>GLOBAL::&lt;User&gt; := User;</code>) so that
-  associations resolve by class name — the generators emit this for you.</li>
+  associations resolve by class name. The generators emit this for you.</li>
 <li>There is no autoloading: <code>use</code> the modules and models you reference.</li>
 </ul>
 
