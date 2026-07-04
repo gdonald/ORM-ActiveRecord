@@ -1857,11 +1857,17 @@ migration above it. <code>VERSION=0</code> rolls everything back.</p>
 <h2 id="inspecting">Inspecting</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record db:version                       # the highest applied version
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record db:version                       # the highest applied version
 active-record db:migrate:status                # each migration as up / down
+active-record db:check                         # every database exists and is migrated
 active-record db:abort_if_pending_migrations   # exit non-zero if any migration is pending
 </code></pre></div></td></tr></table></div>
 
+<p><code>db:check</code> verifies, without changing anything, that every database the active
+environment expects exists and has all its migrations applied. It exits non-zero
+and prints one line per problem when something is missing or behind, so it works
+as a pre-flight before a deploy or a test run.</p>
 <p><code>db:migrate:status</code> prints one line per migration:</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
@@ -1900,8 +1906,21 @@ their last step.</p>
 </code></pre></div></td></tr></table></div>
 
 <p>These ready the <code>test</code> environment's database. For the parallel test setup (the
-per-worker databases behave uses), <code>active-record createdb --parallel</code> and
-<code>active-record migrate --parallel</code> create and migrate every worker copy.</p>
+per-worker databases behave uses), <code>db:create</code>, <code>db:migrate</code>, <code>db:check</code>, and
+<code>db:reset</code> accept <code>--parallel</code>, which targets every worker copy instead of the
+single base database. The worker count comes from the test environment's
+<code>parallel</code> key in <code>config/application.json</code> (or an explicit <code>--parallel=N</code>):</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code>active-record db:create  --parallel        # create the N per-worker copies
+active-record db:migrate --parallel        # migrate them
+active-record db:check   --parallel        # verify all N are ready
+active-record db:reset   --parallel --yes  # drop every worker table
+</code></pre></div></td></tr></table></div>
+
+<p>A parallel <code>db:reset</code> drops every worker table and is non-interactive, so it
+requires <code>--yes</code> (or <code>AR_ASSUME_YES=1</code>).</p>
 <h2 id="schema-dump-and-load">Schema dump and load</h2>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
