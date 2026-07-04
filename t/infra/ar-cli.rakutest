@@ -1,6 +1,8 @@
 use v6.d;
 use lib 'lib';
 use Test;
+use DBIish;
+use ORM::ActiveRecord::Support::WorkerDb;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -11,16 +13,25 @@ sub ar-output(*@args --> Str) {
   $out;
 }
 
-ok ar-output('--version').contains('ORM::ActiveRecord'), 'active-record --version prints the distribution name';
-ok ar-output('--version') ~~ /\d+ '.' \d+/,              'active-record --version prints a version number';
-ok ar-output('--help').contains('Usage:'),               'active-record --help shows usage';
-ok ar-output('--help').contains('createdb'),             'active-record --help documents the createdb subcommand';
-ok ar-output('--help').contains('migrate'),              'active-record --help documents the migrate subcommand';
-ok ar-output('--help').contains('generate'),             'active-record --help documents the generate subcommand';
-ok ar-output('--help').contains('destroy'),              'active-record --help documents the destroy subcommand';
-ok ar-output('--help').contains('db:migrate'),           'active-record --help documents the db: tasks';
-ok ar-output('--help').contains('db:schema:dump'),       'active-record --help documents the schema tasks';
-ok ar-output('--help').contains('runner'),               'active-record --help documents the runtime tasks';
+sub ar-exit(%env, *@args --> Int) {
+  my $proc = run :env(%env), 'raku', '-Ilib', 'bin/active-record', |@args, :out, :err;
+  $proc.out.slurp(:close);
+  $proc.err.slurp(:close);
+  $proc.exitcode;
+}
+
+ok ar-output('version').contains('ORM::ActiveRecord'),   'active-record version prints the distribution name';
+ok ar-output('version') ~~ /\d+ '.' \d+/,                'active-record version prints a version number';
+ok ar-output('--version').contains('ORM::ActiveRecord'), 'active-record --version stays a version alias';
+ok ar-output('help').contains('Usage:'),                 'active-record help shows usage';
+ok ar-output('--help').contains('Usage:'),               'active-record --help stays a help alias';
+ok ar-output('help').contains('db:create'),              'active-record help documents the db:create task';
+ok ar-output('help').contains('db:migrate'),             'active-record help documents the db:migrate task';
+ok ar-output('help').contains('db:check'),               'active-record help documents the db:check task';
+ok ar-output('help').contains('generate'),               'active-record help documents the generate subcommand';
+ok ar-output('help').contains('destroy'),                'active-record help documents the destroy subcommand';
+ok ar-output('help').contains('db:schema:dump'),         'active-record help documents the schema tasks';
+ok ar-output('help').contains('runner'),                 'active-record help documents the runtime tasks';
 
 ok ar-output('runner', 'say 13 + 29').contains('42'),    'active-record runner evaluates inline code';
 ok ar-output('stats').contains('Migrations:'),           'active-record stats reports counts';
@@ -40,5 +51,44 @@ my @migrations = $tmp.add('db/migrate').d
   ?? $tmp.add('db/migrate').dir.grep(*.basename.ends-with('-create-things.raku')).list
   !! ();
 ok @migrations.elems == 1, 'active-record generate migration writes a migration file under db/migrate';
+
+my $has-sqlite = try {
+  my $handle = DBIish.connect('SQLite', :database(':memory:'));
+  $handle.dispose;
+  True;
+} // False;
+
+if $has-sqlite {
+  my $base    = $*TMPDIR.add("ar-cli-db-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+  my @workers = (^2).map: { apply-worker-suffix({ adapter => 'sqlite', name => $base }, $_)<name> };
+
+  # Drive the CLI as a user would, outside any behave worker slot: strip the
+  # worker overlay so db: tasks resolve the base (or explicitly suffixed)
+  # databases rather than the runner's inherited slot.
+  my %env = %*ENV.clone;
+  %env<DATABASE_URL>    = "sqlite:$base";
+  %env<AR_ENV>          = 'test';
+  %env<DISABLE-SQL-LOG> = 'True';
+  %env<BEHAVE_WORKER_INDEX>:delete;
+  %env<BEHAVE_WORKER_COUNT>:delete;
+
+  LEAVE { .IO.unlink for ($base, |@workers).grep(*.IO.e) }
+
+  isnt ar-exit(%env, 'db:check'), 0, 'db:check exits non-zero when the database is missing';
+
+  is ar-exit(%env, 'db:create'),  0, 'db:create exits zero';
+  is ar-exit(%env, 'db:migrate'), 0, 'db:migrate exits zero';
+  is ar-exit(%env, 'db:check'),   0, 'db:check exits zero once the database is created and migrated';
+  is ar-exit(%env, 'db:reset'),   0, 'db:reset rebuilds the database';
+
+  is ar-exit(%env, 'db:reset', '--parallel=2'), 2,
+    'db:reset --parallel refuses to run without --yes';
+
+  is ar-exit(%env, 'db:create',  '--parallel=2'), 0, 'db:create --parallel creates the worker databases';
+  is ar-exit(%env, 'db:migrate', '--parallel=2'), 0, 'db:migrate --parallel migrates the worker databases';
+  is ar-exit(%env, 'db:check',   '--parallel=2'), 0, 'db:check --parallel passes once the workers are ready';
+  is ar-exit(%env, 'db:reset', '--parallel=2', '--yes'), 0,
+    'db:reset --parallel --yes drops every worker table';
+}
 
 done-testing;

@@ -650,6 +650,24 @@ describe 'PgAdapter id-column and type mapping', :order<defined>, {
       expect(id-type-of('pg_id_uuid')).to.eq('uuid');
     }
 
+    # get-fields folds the wider integer types into the canonical 'integer' so a
+    # bigint column or foreign key builds like an integer one, while
+    # column-details still reports the true schema type.
+    it 'folds the wider integer types to integer in get-fields, keeping the raw type in column-details', {
+      $pg.exec('DROP TABLE IF EXISTS pg_bigcols CASCADE');
+      $pg.exec('CREATE TABLE pg_bigcols (id BIGSERIAL PRIMARY KEY, author_id BIGINT, tally SMALLINT)');
+      LEAVE { $pg.exec('DROP TABLE IF EXISTS pg_bigcols CASCADE'); }
+
+      my %fields = $pg.get-fields(table => 'pg_bigcols').map({ $_[0] => $_[1] }).Hash;
+
+      aggregate-failures {
+        expect(%fields<author_id>).to.eq('integer');
+        expect(%fields<tally>).to.eq('integer');
+        expect(%fields<id>).to.eq('integer');
+        expect($pg.column-details(table => 'pg_bigcols').first(*<name> eq 'author_id')<type>).to.eq('bigint');
+      }
+    }
+
     it 'emits a VARCHAR id for a string primary key', {
       $pg.exec('DROP TABLE IF EXISTS pg_id_str CASCADE');
       $pg.ddl-create-table('pg_id_str', [ name => { :string } ], id => 'string');

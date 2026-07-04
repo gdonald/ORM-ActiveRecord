@@ -36,7 +36,7 @@ unless $can-connect {
   exit 0;
 }
 
-plan 29;
+plan 33;
 
 my $mysql = MySqlAdapter.new(:$host, :$port, :$user, :$password, :$database);
 ok $mysql.is-connected, 'connects from BUILD';
@@ -71,6 +71,17 @@ is %types-by-name<created_at>, 'datetime', 'DATETIME preserved';
 
 my @tables = $mysql.get-table-names;
 ok 'widgets' (elem) @tables, 'information_schema lists the new table';
+
+# The whole integer family folds to the canonical 'integer' so a bigint column
+# or foreign key builds like an integer one, matching PG and SQLite.
+$mysql.exec('DROP TABLE IF EXISTS mysql_bigcols');
+$mysql.exec('CREATE TABLE mysql_bigcols (id BIGINT AUTO_INCREMENT PRIMARY KEY, author_id BIGINT, tally SMALLINT, span MEDIUMINT)');
+my %bigtypes = $mysql.get-fields(table => 'mysql_bigcols').map({ $_[0] => $_[1] });
+is %bigtypes<author_id>, 'integer', 'get-fields folds a bigint column to integer';
+is %bigtypes<tally>, 'integer',     'get-fields folds a smallint column to integer';
+is %bigtypes<span>, 'integer',      'get-fields folds a mediumint column to integer';
+is %bigtypes<id>, 'integer',        'get-fields folds a bigint primary key to integer';
+$mysql.exec('DROP TABLE IF EXISTS mysql_bigcols');
 
 my %types = name => 'VARCHAR', qty => 'INT', active => 'TINYINT(1)', body => 'TEXT';
 my $stmt = $mysql.build-insert(

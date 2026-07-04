@@ -3,8 +3,8 @@ use DBIish;
 unit module ORM::ActiveRecord::Schema::DbReady;
 
 # Read-only readiness checks for a single configured database. Used by the
-# launcher's pre-flight (test.raku / `active-record check`) to confirm every expected
-# database exists and is fully migrated before any specs run. These never
+# launcher's pre-flight (test.raku / `active-record db:check`) to confirm every
+# expected database exists and is fully migrated before any specs run. These never
 # create or alter anything. Kept free of any DB/adapter dependency to avoid a
 # cycle.
 

@@ -253,6 +253,18 @@ $pg.ddl-create-table('pg_id_big', [ name => { :string } ], id => 'bigint');
 is $pg.column-details(table => 'pg_id_big').first(*<name> eq 'id')<type>, 'bigint', 'bigint primary key emits a BIGSERIAL id';
 $pg.exec('DROP TABLE IF EXISTS pg_id_big CASCADE');
 
+# get-fields folds the wider integer types into the canonical 'integer' so a
+# bigint column or foreign key builds like an integer one, while column-details
+# still reports the true schema type.
+$pg.exec('DROP TABLE IF EXISTS pg_bigcols CASCADE');
+$pg.exec('CREATE TABLE pg_bigcols (id BIGSERIAL PRIMARY KEY, author_id BIGINT, tally SMALLINT)');
+my %bigfields = $pg.get-fields(table => 'pg_bigcols').map({ $_[0] => $_[1] }).Hash;
+is %bigfields<author_id>, 'integer', 'get-fields folds a bigint column to integer';
+is %bigfields<tally>, 'integer',     'get-fields folds a smallint column to integer';
+is %bigfields<id>, 'integer',        'get-fields folds a bigserial primary key to integer';
+is $pg.column-details(table => 'pg_bigcols').first(*<name> eq 'author_id')<type>, 'bigint', 'column-details keeps the raw bigint type';
+$pg.exec('DROP TABLE IF EXISTS pg_bigcols CASCADE');
+
 $pg.exec('DROP TABLE IF EXISTS pg_id_uuid CASCADE');
 $pg.ddl-create-table('pg_id_uuid', [ name => { :string } ], id => 'uuid');
 is $pg.column-details(table => 'pg_id_uuid').first(*<name> eq 'id')<type>, 'uuid', 'uuid primary key emits a UUID id';

@@ -178,6 +178,18 @@ class PgAdapter is SqlAdapter is export {
     %types;
   }
 
+  # Postgres reports the wider integer types by their own names ('bigint',
+  # 'smallint'). For the field vocabulary that feeds Model.init-attrs and
+  # foreign-key detection, fold them into the canonical 'integer' so a bigint
+  # column or foreign key builds like an integer one. column-details keeps the
+  # raw type, since it reports the true schema.
+  method !normalize-type(Str:D $data-type --> Str) {
+    given $data-type {
+      when 'bigint' | 'smallint' { 'integer' }
+      default                    { $data-type }
+    }
+  }
+
   method get-fields(Str:D :$table) {
     my $type = 'character varying';
     my $names = <column_name data_type>;
@@ -190,7 +202,7 @@ class PgAdapter is SqlAdapter is export {
       order => <ordinal_position>.list,
     );
 
-    self.exec-stmt($stmt);
+    self.exec-stmt($stmt).map({ [$_[0].Str, self!normalize-type($_[1].Str)] });
   }
 
   method column-details(Str:D :$table) {

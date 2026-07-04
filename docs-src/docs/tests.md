@@ -59,9 +59,9 @@ use `active-record … --parallel` (see [Migrations » Parallel test databases](
 ```
 
 ```shell
-$ active-record createdb --parallel    # create the N per-worker copies
-$ active-record migrate  --parallel    # migrate them
-$ active-record check    --parallel    # verify all N exist and are migrated
+$ active-record db:create  --parallel    # create the N per-worker copies
+$ active-record db:migrate --parallel    # migrate them
+$ active-record db:check   --parallel    # verify all N exist and are migrated
 ```
 
 Then run behave with a matching worker count:
@@ -86,9 +86,9 @@ behave's own `BEHAVE_WORKER_INDEX` / `BEHAVE_WORKER_COUNT`, so there is nothing
 else to keep in sync. Creating and migrating N copies costs N × a full
 `db/migrate/` pass up front.
 
-> Run `active-record check --parallel` first. Launching specs against missing or
+> Run `active-record db:check --parallel` first. Launching specs against missing or
 > un-migrated worker databases otherwise produces confusing "no such table"
-> errors deep in the run; `active-record check` reports them up front and changes nothing
+> errors deep in the run; `active-record db:check` reports them up front and changes nothing
 > (`behave` itself is database-agnostic and cannot verify your schema).
 
 ## Adapter-aware test skipping

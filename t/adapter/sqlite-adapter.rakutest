@@ -20,7 +20,7 @@ unless $has-sqlite {
   exit 0;
 }
 
-plan 27;
+plan 30;
 
 my $sqlite = SqliteAdapter.new(database => ':memory:');
 ok $sqlite.is-connected, 'connects to :memory: from BUILD';
@@ -119,6 +119,15 @@ my @remaining = $sqlite.get-records(
   fields => @field-objs,
 );
 is @remaining.elems, 1, 'one row left after deleting id1';
+
+# An externally-declared schema may use the wider integer type names. get-fields
+# folds them to the canonical 'integer' so such a column builds like an integer
+# one, matching SQLite's INTEGER affinity for any type containing 'int'.
+$sqlite.exec('CREATE TABLE bigcols (id INTEGER PRIMARY KEY, author_id BIGINT, tally SMALLINT, votes INT)');
+my %bigtypes = $sqlite.get-fields(table => 'bigcols').map({ $_[0] => $_[1] });
+is %bigtypes<author_id>, 'integer', 'get-fields folds a bigint column to integer';
+is %bigtypes<tally>, 'integer',     'get-fields folds a smallint column to integer';
+is %bigtypes<votes>, 'integer',     'get-fields folds an int column to integer';
 
 ok $sqlite.disconnect, 'disconnect succeeds';
 nok $sqlite.is-connected, 'is-connected reports false after disconnect';

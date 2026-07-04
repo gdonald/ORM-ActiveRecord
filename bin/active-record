@@ -2,30 +2,27 @@
 
 use v6.d;
 BEGIN %*ENV<ORM_LOG_FILE> //= 'log/error.log' if 'log'.IO.d;
-use ORM::ActiveRecord::Schema::Migrate;
 use ORM::ActiveRecord::Schema::WorkerDbs;
 use ORM::ActiveRecord::Schema::Generator;
 use ORM::ActiveRecord::Schema::DbTasks;
 use ORM::ActiveRecord::Support::Runtime;
 use ORM::ActiveRecord::Support::Version;
 
-# Subcommands:
-#   createdb         create the configured database(s) — all for a multi-db
-#                    config, or just the one. Does not migrate.
-#   migrate          run migrations against the configured database(s).
-#   check            report whether every expected database exists and is
-#                    migrated; exit non-zero if not (run no migrations).
-#   up[:N] down[:N]  migrate up / down (optionally N steps).
-#   reset [--yes]    drop every table (add --quiet to silence the listing).
-# Add --parallel to createdb/migrate/check/reset to target the test
-# environment's parallel databases. The worker count comes from config (the
-# env's `parallel` key) unless `--parallel=N` gives it explicitly. A parallel
-# reset is non-interactive, so it requires --yes.
+sub show-version {
+  say "active-record (ORM::ActiveRecord) {ORM::ActiveRecord::Support::Version::version()}";
+}
+
+# Every database operation lives under the `db:` namespace. With no arguments
+# the tool runs `db:migrate` against the configured database(s). `--version`
+# and `--help` are accepted as aliases of the `version` and `help` commands.
+#
+# Add --parallel to db:create / db:migrate / db:check / db:reset to target the
+# test environment's parallel worker databases. The worker count comes from
+# config (the env's `parallel` key) unless `--parallel=N` gives it explicitly.
+# A parallel reset drops every worker table and is non-interactive, so it
+# requires --yes.
 sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
-  if $version {
-    say "active-record (ORM::ActiveRecord) {ORM::ActiveRecord::Support::Version::version()}";
-    return;
-  }
+  if $version { show-version; return }
 
   # Raku binds `--parallel` to the named arg only when it precedes the
   # subcommand; accept it (and the `--parallel=N` count form) in either
@@ -39,7 +36,11 @@ sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
     else                                  { @cmd.push: $a }
   }
 
-  given @cmd[0] // 'migrate' {
+  @cmd.push: 'db:migrate' unless @cmd.elems;
+
+  given @cmd[0] {
+    when 'version' { show-version }
+    when 'help'    { USAGE() }
     when 'generate' | 'g' { exit run-generate(@cmd[1 .. *]) }
     when 'destroy'  | 'd' { exit run-destroy(@cmd[1 .. *]) }
     when 'console'   { run-console }
@@ -47,29 +48,10 @@ sub MAIN(*@args, Bool :$parallel = False, Bool :$version = False) {
     when 'dbconsole' { run-dbconsole }
     when 'notes'     { run-notes }
     when 'stats'     { run-stats }
-    when /^ 'db:' / { exit run-db-task(@cmd) }
-    when 'createdb' { create-test-databases(parallel => $par, :$count) }
-    when 'migrate'  {
-      migrate-test-databases(parallel => $par, :$count);
-      try DbTasks.new.schema-dump-after-migrate unless $par;
-    }
-    when 'check'    { exit check-command(parallel => $par, :$count) }
-    when 'reset'    {
-      if $par {
-        my $yes = @cmd.first({ $_ eq '--yes' || $_ eq '-y' }).defined
-                  || (%*ENV<AR_ASSUME_YES> // '') eq '1';
-        unless $yes {
-          $*ERR.say: 'reset --parallel drops every worker test database; pass --yes to confirm.';
-          exit 2;
-        }
-        reset-test-databases(parallel => True, :$count);
-      } else {
-        Migrate.new(args => @cmd).run;
-      }
-    }
-    default         {
-      Migrate.new(args => @cmd).run;
-      try DbTasks.new.schema-dump-after-migrate;
+    when /^ 'db:' / { exit run-db-task(@cmd, parallel => $par, :$count) }
+    default {
+      $*ERR.say: "active-record: unknown command '{@cmd[0]}' (see --help)";
+      exit 2;
     }
   }
 }
@@ -82,8 +64,8 @@ sub check-command(Bool :$parallel, Int :$count --> Int) {
 
   $*ERR.say: "Databases not ready:";
   $*ERR.say: "  - $_" for @problems;
-  $*ERR.say: "Run `ar createdb"
-    ~ ($parallel ?? ' --parallel' !! '') ~ "` and `ar migrate"
+  $*ERR.say: "Run `ar db:create"
+    ~ ($parallel ?? ' --parallel' !! '') ~ "` and `ar db:migrate"
     ~ ($parallel ?? ' --parallel' !! '') ~ "` first.";
   1;
 }
@@ -201,7 +183,7 @@ sub run-stats {
   say "Migrations: %stats<migrations>";
 }
 
-sub run-db-task(@cmd --> Int) {
+sub run-db-task(@cmd, Bool :$parallel = False, Int :$count --> Int) {
   my $task = @cmd[0].substr(3);    # strip the leading 'db:'
 
   my %opts;
@@ -212,16 +194,36 @@ sub run-db-task(@cmd --> Int) {
   my $tasks = DbTasks.new;
 
   given $task {
-    when 'create'  { $tasks.create }
+    when 'create'  {
+      $parallel ?? create-test-databases(:parallel, :$count) !! $tasks.create;
+    }
     when 'drop'    { $tasks.drop }
-    when 'reset'   { $tasks.reset }
+    when 'check'   { return check-command(:$parallel, :$count) }
+    when 'reset'   {
+      if $parallel {
+        my $yes = @cmd.first({ $_ eq '--yes' || $_ eq '-y' }).defined
+                  || (%*ENV<AR_ASSUME_YES> // '') eq '1';
+        unless $yes {
+          $*ERR.say: 'db:reset --parallel drops every worker test database; pass --yes to confirm.';
+          return 2;
+        }
+        reset-test-databases(:parallel, :$count);
+      } else {
+        $tasks.reset;
+      }
+    }
     when 'setup'   { $tasks.setup }
     when 'seed'    { $tasks.seed }
     when 'prepare' { $tasks.prepare }
     when 'version' { $tasks.version }
     when 'rollback' { $tasks.rollback(step => (%opts<STEP> // 1).Int) }
     when 'migrate' {
-      %opts<VERSION>.defined ?? $tasks.migrate-to(%opts<VERSION>) !! $tasks.migrate;
+      if $parallel {
+        migrate-test-databases(:parallel, :$count);
+      } else {
+        %opts<VERSION>.defined ?? $tasks.migrate-to(%opts<VERSION>) !! $tasks.migrate;
+        try $tasks.schema-dump-after-migrate;
+      }
     }
     when 'migrate:up' {
       return missing('db:migrate:up VERSION=NNN') unless %opts<VERSION>.defined;
@@ -257,47 +259,41 @@ sub USAGE {
 
   Usage:
     active-record                     migrate the configured database(s)
-    active-record migrate             migrate the configured database(s)
-    active-record createdb            create the configured database(s) (no migrate)
-    active-record check               report whether the database(s) exist and are migrated
-    active-record up[:N] | down[:N]   migrate up / down (optionally N steps)
-    active-record reset [--yes]       drop every table (use --yes to skip the prompt)
 
-    active-record generate model NAME [field:type ...]      model + create-table migration
-    active-record generate migration NAME [field:type ...]  a migration (Create/Add/Remove inferred)
-    active-record generate scope MODEL NAME [field:value]   insert a scope into a model
-    active-record generate validator NAME                   a custom validator class
+    active-record generate model NAME [field:type ...]       model + create-table migration
+    active-record generate migration NAME [field:type ...]   a migration (Create/Add/Remove inferred)
+    active-record generate scope MODEL NAME [field:value]    insert a scope into a model
+    active-record generate validator NAME                    a custom validator class
     active-record destroy TYPE NAME                          remove what `generate` created
-    (field types: string, integer, datetime, references, ... ; modifiers :uniq :index)
 
     active-record db:create | db:drop | db:reset | db:setup  create / drop / reset / set up the database
     active-record db:seed | db:prepare                       run db/seeds.raku / create+migrate+seed-if-new
-    active-record db:migrate [VERSION=NNN]                    migrate up (or to a target version)
-    active-record db:migrate:up VERSION=NNN                   run one migration's up
-    active-record db:migrate:down VERSION=NNN                 run one migration's down
-    active-record db:migrate:status                           list each migration as up / down
-    active-record db:migrate:redo [STEP=N]                    roll back then re-apply N migrations
-    active-record db:rollback [STEP=N]                        roll back the last N migrations
-    active-record db:version                                  print the current schema version
+    active-record db:migrate [VERSION=NNN]                   migrate up (or to a target version)
+    active-record db:migrate:up VERSION=NNN                  run one migration's up
+    active-record db:migrate:down VERSION=NNN                run one migration's down
+    active-record db:migrate:status                          list each migration as up / down
+    active-record db:migrate:redo [STEP=N]                   roll back then re-apply N migrations
+    active-record db:rollback [STEP=N]                       roll back the last N migrations
+    active-record db:check                                   report whether the database(s) exist and are migrated
+    active-record db:version                                 print the current schema version
     active-record db:abort_if_pending_migrations             exit non-zero if migrations are pending
-    active-record db:test:prepare                             create + migrate the test database
+    active-record db:test:prepare                            create + migrate the test database
     active-record db:schema:dump | db:schema:load            dump / load db/schema.raku
-    active-record db:structure:dump                           dump raw DDL to db/structure.sql
+    active-record db:structure:dump                          dump raw DDL to db/structure.sql
     active-record db:schema:cache:dump | :clear              dump / remove db/schema_cache.yml
 
-    active-record console                                     a Raku REPL with the project on the include path
-    active-record runner FILE | "CODE"                        run a script or inline code against the app
-    active-record dbconsole                                   open the database client with the app credentials
-    active-record notes                                       list TODO / FIXME / OPTIMIZE / HACK / XXX annotations
-    active-record stats                                       count files, lines, models, and migrations
+    active-record console                                    a Raku REPL with the project on the include path
+    active-record runner FILE | "CODE"                       run a script or inline code against the app
+    active-record dbconsole                                  open the database client with the app credentials
+    active-record notes                                      list TODO / FIXME / OPTIMIZE / HACK / XXX annotations
+    active-record stats                                      count files, lines, models, and migrations
 
-    active-record createdb --parallel       create the test env's parallel databases
-    active-record migrate  --parallel       migrate the test env's parallel databases
-    active-record check    --parallel       check the test env's parallel databases
-    active-record reset    --parallel --yes drop every table in the parallel databases
-    (the worker count comes from config: the test env's `parallel` key)
+    active-record db:create  --parallel        create the test env's parallel databases
+    active-record db:migrate --parallel        migrate the test env's parallel databases
+    active-record db:check   --parallel        check the test env's parallel databases
+    active-record db:reset   --parallel --yes  drop every table in the parallel databases
 
-    active-record --version           print the installed version
-    active-record --help              show this help
+    active-record version             print the installed version
+    active-record help                show this help
   HELP
 }

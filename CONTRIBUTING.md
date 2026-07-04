@@ -34,6 +34,7 @@ raku -Ilib bin/active-record migrate
 ./test.raku --adapter=sqlite     # one adapter
 ./test.raku --prove6             # only the t/ suite
 ./test.raku --behave             # only the specs/ suite
+./test.raku --all                # once per config/application.json-*-example
 ```
 
 Run a single file while iterating:

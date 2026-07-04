@@ -1233,6 +1233,15 @@ $db.get-sequences;        # ('orders_id_seq', 'users_id_seq')  (PostgreSQL)
 cannot introspect `CHECK` constraints, and `get-sequences` is PostgreSQL's
 sequence list, SQLite's `AUTOINCREMENT` tables, and empty on MySQL.
 
+Columns are reported at two levels of fidelity. `get-fields` returns each column
+as a `[name, type]` pair in the canonical column-type vocabulary — the names
+`create-table` accepts — and folds the whole integer family (`bigint`,
+`smallint`, `mediumint`, `tinyint`, `int`) to `integer`. This is the vocabulary
+the model layer and foreign-key detection read, so a wide-integer column or
+reference declared outside the ORM is introspected — and rebuilt — as an integer
+one. `column-details` adds each column's nullability and default; PostgreSQL and
+SQLite report the engine's exact type there, so a `bigint` column stays `bigint`.
+
 ### Schema cache
 
 `SchemaCache` snapshots the whole schema (every table's columns, indexes, and
@@ -1260,120 +1269,99 @@ instead of a file.
 `active-record` is the command-line tool for creating, migrating, and checking your
 database(s). It reads the same configuration as the rest of the ORM
 (`DATABASE_URL`, or `config/application.json` — see [Adapters](adapters.md)).
+Every database operation lives under the `db:` namespace, documented in full at
+[Database tasks](db-tasks.md); with no arguments the tool runs `db:migrate`.
 
 | Command            | What it does                                                                                        |
 | ------------------ | --------------------------------------------------------------------------------------------------- |
-| `active-record`               | Run all outstanding `up` migrations (same as `active-record migrate`).                                         |
-| `active-record migrate`       | Run all outstanding `up` migrations against the configured database(s).                             |
-| `active-record createdb`      | Create the configured database(s); does **not** migrate.                                            |
-| `active-record check`         | Report whether the database(s) exist and are fully migrated; exit non-zero if not. Changes nothing. |
-| `active-record up[:N]`        | Run all pending migrations, or just `N` of them.                                                    |
-| `active-record down[:N]`      | Roll back all migrations, or just `N` of them.                                                      |
-| `active-record reset [--yes]` | Drop every table (see [Reset](#reset)).                                                             |
-| `active-record --version`     | Print the installed version.                                                                        |
-| `active-record --help`        | Print usage.                                                                                        |
+| `active-record`                      | Run every pending migration (same as `active-record db:migrate`).                    |
+| `active-record db:migrate`           | Apply every pending migration against the configured database(s).                    |
+| `active-record db:create`            | Create the configured database(s); does **not** migrate.                             |
+| `active-record db:check`             | Report whether the database(s) exist and are fully migrated; exit non-zero if not.   |
+| `active-record db:rollback [STEP=N]` | Roll back the last migration, or the last `N`.                                       |
+| `active-record db:reset`             | Drop, recreate, migrate, and seed (see [Reset](#reset)).                             |
+| `active-record version`              | Print the installed version.                                                         |
+| `active-record help`                 | Print usage.                                                                         |
 
 ## Run Migrations
 
 With no arguments, `active-record` runs all outstanding `up` methods:
 
 ```shell
-$ active-record
+$ active-record            # same as active-record db:migrate
+$ active-record db:migrate
 ```
 
-You can also migrate `up` or `down` a specific number of migrations:
+Step through migrations by version or roll back by count:
 
 ```shell
-$ active-record up      # runs all pending migrations
-$ active-record down    # rolls back all migrations
-$ active-record up:1    # runs 1 pending migration
-$ active-record down:2  # resets 2 previously completed migrations
+$ active-record db:migrate:up VERSION=NNN    # run one migration's up
+$ active-record db:migrate:down VERSION=NNN  # run one migration's down
+$ active-record db:rollback                  # roll back the last migration
+$ active-record db:rollback STEP=2           # roll back the last 2
 ```
 
 ## Creating databases
 
-`active-record createdb` creates the database(s) named in your configuration without
-running any migrations — useful for a fresh checkout before the first `active-record`:
+`active-record db:create` creates the database(s) named in your configuration without
+running any migrations — useful for a fresh checkout before the first migrate:
 
 ```shell
-$ active-record createdb     # create the configured database(s)
+$ active-record db:create    # create the configured database(s)
 $ active-record              # then migrate them
 ```
 
 For a multi-database config (more than one named connection in the active
 environment) it creates every one. SQLite files are created on first connect,
-so `createdb` is effectively a no-op there.
+so `db:create` is effectively a no-op there.
 
 ## Checking readiness
 
-`active-record check` verifies, without changing anything, that every database the active
+`active-record db:check` verifies, without changing anything, that every database the active
 environment expects exists and has all migrations applied. It exits non-zero
 and prints a single summary if anything is missing or behind:
 
 ```shell
-$ active-record check
+$ active-record db:check
 Databases not ready:
   - missing database: app_production
   - unrun migrations: app_events
-Run `active-record createdb` and `active-record migrate` first.
+Run `active-record db:create` and `active-record db:migrate` first.
 ```
 
 ## Parallel test databases
 
-`createdb`, `migrate`, and `check` accept `--parallel`, which targets the test
-environment's per-worker database copies instead of the single base database.
-The worker count comes from the test environment's `parallel` key in
-`config/application.json`:
+`db:create`, `db:migrate`, `db:check`, and `db:reset` accept `--parallel`, which
+targets the test environment's per-worker database copies instead of the single
+base database. The worker count comes from the test environment's `parallel` key
+in `config/application.json`:
 
 ```shell
-$ active-record createdb --parallel    # create the N per-worker copies
-$ active-record migrate  --parallel    # migrate them
-$ active-record check    --parallel    # verify all N are ready
+$ active-record db:create  --parallel        # create the N per-worker copies
+$ active-record db:migrate --parallel        # migrate them
+$ active-record db:check   --parallel        # verify all N are ready
+$ active-record db:reset   --parallel --yes  # drop every worker table
 ```
 
 This is the machinery behind parallel test runs — see [Tests](tests.md).
 
 ## Reset
 
-`active-record reset` drops every table in the database (including the bookkeeping
-`migrations` table) so the next `active-record` run reapplies every migration from
-scratch. The drop ignores foreign-key dependencies: PostgreSQL uses
-`DROP TABLE ... CASCADE`, MySQL temporarily flips `FOREIGN_KEY_CHECKS = 0`,
-SQLite turns off `PRAGMA foreign_keys`.
+`active-record db:reset` drops the database, recreates it, runs every migration, and
+seeds it — the full rebuild path. Use it when a changed migration needs to take
+effect, since a migration is only ever applied once.
 
-Reset is destructive. It prints the tables it is
-about to drop and prompts:
+With `--parallel` it instead drops every table in each per-worker test database
+(including the bookkeeping `migrations` table), so the next
+`active-record db:migrate --parallel` reapplies every migration from scratch. The
+drop ignores foreign-key dependencies: PostgreSQL uses `DROP TABLE ... CASCADE`,
+MySQL temporarily flips `FOREIGN_KEY_CHECKS = 0`, SQLite turns off
+`PRAGMA foreign_keys`.
 
-```shell
-$ active-record reset
-About to DROP these tables:
-  articles
-  books
-  …
-  users
-Proceed? [Y/n]
-```
-
-Pressing `Y` or `Enter` proceeds (the default is yes). Anything else
-aborts immediately:
-
-| Reply             | Outcome     |
-| ----------------- | ----------- |
-| `Y` / `y`         | Drop tables |
-| `<enter>` (empty) | Drop tables |
-| `n`               | Abort       |
-| anything else     | Abort       |
-
-To bypass the prompt in scripts, pass `--yes` (or set `AR_ASSUME_YES=1`):
+A parallel reset is destructive and non-interactive, so it requires `--yes` (or
+`AR_ASSUME_YES=1`):
 
 ```shell
-$ active-record reset --yes
-$ AR_ASSUME_YES=1 active-record reset
-```
-
-`active-record reset` does **not** re-run migrations. Pair it with a plain `active-record` to drop
-all tables and re-run every migration:
-
-```shell
-$ active-record reset --yes && active-record
+$ active-record db:reset --parallel --yes
+$ AR_ASSUME_YES=1 active-record db:reset --parallel
 ```

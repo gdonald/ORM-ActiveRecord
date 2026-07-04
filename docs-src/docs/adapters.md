@@ -279,7 +279,7 @@ $selector.record-write if $is-mutating;
 ```
 
 The `parallel` key (test environment only) sets how many per-worker database
-copies `active-record createdb --parallel` / `test.raku --parallel` create; see
+copies `active-record db:create --parallel` / `test.raku --parallel` create; see
 [Tests](tests.md).
 
 ## Adapter-specific notes

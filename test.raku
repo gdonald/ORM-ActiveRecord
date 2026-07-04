@@ -1,7 +1,8 @@
 #!/usr/bin/env raku
 
 use v6.d;
-BEGIN { chdir $*PROGRAM.parent }
+my Str $SELF;
+BEGIN { $SELF = $*PROGRAM.absolute; chdir $*PROGRAM.parent }
 use lib 'lib';
 use JSON::Tiny;
 use DBIish;
@@ -306,16 +307,13 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
   %*ENV<DATABASE_URL> = $url;
   %*ENV<AR_ENV> = 'test';
 
-  # Start each run from a clean, fully-migrated schema: ensure the database
-  # exists, drop every table, then migrate up. Resetting (not a bare migrate)
-  # is what lets a changed migration take effect, since a migration is only
-  # ever applied once.
-  for ('createdb', 'reset', 'migrate') -> $cmd {
-    my @argv = 'raku', '-Ilib', 'bin/active-record', $cmd;
-    @argv.append: '--yes', '--quiet' if $cmd eq 'reset';
-    my $proc = run :env(%*ENV, DISABLE-SQL-LOG => 'True'), |@argv;
-    return $proc.exitcode unless $proc.exitcode == 0;
-  }
+  # Start each run from a clean, fully-migrated schema: db:reset drops the
+  # database, recreates it, and migrates up. Resetting (not a bare migrate) is
+  # what lets a changed migration take effect, since a migration is only ever
+  # applied once.
+  my $reset = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+    'raku', '-Ilib', 'bin/active-record', 'db:reset';
+  return $reset.exitcode unless $reset.exitcode == 0;
 
   if $run-prove6 {
     my $prove = run 'prove6', '-Ilib', 't';
@@ -331,9 +329,9 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
     # can't collide across files) with a recycled 0..N-1 slot. The worker count
     # is passed to `ar` explicitly (`--parallel=N`) so it matches behave's
     # `--parallel=N` even when there is no config file to read it from.
-    for ('createdb', 'reset', 'migrate') -> $cmd {
+    for ('db:create', 'db:reset', 'db:migrate') -> $cmd {
       my @argv = 'raku', '-Ilib', 'bin/active-record', $cmd, "--parallel=$parallel";
-      @argv.append: '--yes', '--quiet' if $cmd eq 'reset';
+      @argv.append: '--yes' if $cmd eq 'db:reset';
       my $proc = run :env(%*ENV, DISABLE-SQL-LOG => 'True'), |@argv;
       return $proc.exitcode unless $proc.exitcode == 0;
     }
@@ -341,7 +339,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
     # Pre-flight: confirm every expected worker database exists and is migrated
     # before launching any specs (one clean failure beats per-worker errors).
     my $checked = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-    'raku', '-Ilib', 'bin/active-record', 'check', "--parallel=$parallel";
+    'raku', '-Ilib', 'bin/active-record', 'db:check', "--parallel=$parallel";
     return $checked.exitcode unless $checked.exitcode == 0;
 
     my $proc = run 'behave', "--parallel=$parallel", |@specs;
@@ -349,7 +347,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
   } elsif $run-behave {
     # Pre-flight the single configured database before running any specs.
     my $checked = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
-    'raku', '-Ilib', 'bin/active-record', 'check';
+    'raku', '-Ilib', 'bin/active-record', 'db:check';
     return $checked.exitcode unless $checked.exitcode == 0;
 
     # behave runs every spec file in its own process (one EVAL'd compunit per
@@ -397,11 +395,13 @@ sub parse-adapter-args(--> List) {
   my @args = @*ARGS;
   if @args.grep({ $_ eq '-h' || $_ eq '--help' }) {
     say q:to/USAGE/;
-    Usage: ./test.raku [--adapter=NAME[,NAME...]] [--prove6] [--behave]
+    Usage: ./test.raku [--all] [--adapter=NAME[,NAME...]] [--prove6] [--behave]
       NAME:       pg|postgres|mysql|sqlite (default: the configured adapter)
       --prove6:   run only the prove6 t/ tests
       --behave:   run only the behave specs
                   (give neither, or both, to run both)
+      --all:      run the whole suite once per config/application.json-*-example,
+                  swapping each into place (the current config is restored after)
 
     Parallelism defaults to config: the test env's `parallel` key (> 1 runs the
     behave specs across that many worker databases; 1 or absent runs serially).
@@ -435,6 +435,46 @@ sub parse-adapter-args(--> List) {
   @picked.map(*.split(',', :skip-empty)).flat.map({
       %alias{.lc} // die "unknown adapter: $_ (use pg|mysql|sqlite)"
   }).list;
+}
+
+# --all: run the whole suite once per config/application.json-*-example, each
+# swapped into config/application.json. The current config is backed up and
+# restored afterward. Each example runs in a fresh child process (this same
+# script, with --all stripped) so it reads its config cleanly.
+sub run-all(@rest --> Int) {
+  my @examples = dir('config').grep({ .basename ~~ /'application.json-' .* '-example' $/ }).sort;
+
+  my $config = 'config/application.json'.IO;
+  my $backup = 'config/application.json.test-backup'.IO;
+
+  $config.copy($backup) if $config.e;
+
+  LEAVE {
+    if $backup.e {
+      $backup.copy($config);
+      $backup.unlink;
+    }
+  }
+
+  my $failures = 0;
+
+  for @examples -> $example {
+    say '';
+    say '=' x 72;
+    say "Running test.raku with {$example.basename}";
+    say '=' x 72;
+
+    $example.copy($config);
+
+    my $proc = run $SELF, @rest;
+    $failures++ unless $proc.exitcode == 0;
+  }
+
+  $failures ?? 1 !! 0;
+}
+
+if @*ARGS.grep(* eq '--all') {
+  exit run-all(@*ARGS.grep(* ne '--all'));
 }
 
 my @wanted = parse-adapter-args();

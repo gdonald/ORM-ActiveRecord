@@ -87,6 +87,21 @@ describe 'SqliteAdapter ddl + introspection', {
       expect(%types-by-name<created_at>).to.eq('datetime');
     }
 
+    # An externally-declared schema may use the wider integer type names.
+    # get-fields folds any type containing 'int' to the canonical 'integer',
+    # following SQLite's INTEGER affinity rule, so such a column builds like an
+    # integer one.
+    it 'folds the wider integer type names to integer in get-fields', {
+      $sqlite.exec('CREATE TABLE bigcols (id INTEGER PRIMARY KEY, author_id BIGINT, tally SMALLINT, votes INT)');
+      my %types = $sqlite.get-fields(table => 'bigcols').map({ $_[0] => $_[1] });
+
+      aggregate-failures {
+        expect(%types<author_id>).to.eq('integer');
+        expect(%types<tally>).to.eq('integer');
+        expect(%types<votes>).to.eq('integer');
+      }
+    }
+
     it 'lists the new table via get-table-names', {
       my @tables = $sqlite.get-table-names;
       expect(('widgets' (elem) @tables).so).to.be-truthy;

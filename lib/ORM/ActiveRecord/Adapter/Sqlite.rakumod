@@ -159,12 +159,17 @@ class SqliteAdapter is SqlAdapter is export {
 
   method get-fields(Str:D :$table) {
     # PRAGMA table_info columns: cid, name, type, notnull, dflt_value, pk.
-    # Lowercase the type to match PG's information_schema vocabulary.
+    # Lowercase the type to match PG's information_schema vocabulary, then fold
+    # the integer family (bigint, smallint, int8, ...) to the canonical
+    # 'integer' that Model.init-attrs and foreign-key detection expect. This
+    # follows SQLite's own affinity rule: a declared type containing 'int' has
+    # INTEGER affinity. A table built through the ORM already emits INTEGER, so
+    # this only matters for a schema declared outside it.
     my $rows = self.exec("PRAGMA table_info('$table')");
     my @out;
     for @$rows -> $row {
       my $col-type = ($row[2] // '').Str.lc;
-      $col-type = 'integer' unless $col-type;  # untyped column → INTEGER affinity
+      $col-type = 'integer' if !$col-type || $col-type.contains('int');
       @out.push: [$row[1], $col-type];
     }
     @out;

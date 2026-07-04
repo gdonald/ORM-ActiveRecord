@@ -135,6 +135,24 @@ describe 'MySqlAdapter ddl + introspection', {
       expect(%types-by-name<created_at>).to.eq('datetime');
     }
 
+    # The whole integer family (tinyint, smallint, mediumint, int, bigint) folds
+    # to the canonical 'integer' so a bigint column or foreign key builds like an
+    # integer one, matching PG and SQLite.
+    it 'folds the wider integer types to integer in get-fields', {
+      $mysql.exec('DROP TABLE IF EXISTS mysql_bigcols');
+      $mysql.exec('CREATE TABLE mysql_bigcols (id BIGINT AUTO_INCREMENT PRIMARY KEY, author_id BIGINT, tally SMALLINT, span MEDIUMINT)');
+      LEAVE { $mysql.exec('DROP TABLE IF EXISTS mysql_bigcols') if $mysql && $mysql.is-connected; }
+
+      my %fields = $mysql.get-fields(table => 'mysql_bigcols').map({ $_[0] => $_[1] });
+
+      aggregate-failures {
+        expect(%fields<author_id>).to.eq('integer');
+        expect(%fields<tally>).to.eq('integer');
+        expect(%fields<span>).to.eq('integer');
+        expect(%fields<id>).to.eq('integer');
+      }
+    }
+
     it 'lists the new table via information_schema', {
       my @tables = $mysql.get-table-names;
       expect(('widgets' (elem) @tables).so).to.be-truthy;
