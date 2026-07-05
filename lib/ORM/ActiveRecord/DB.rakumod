@@ -19,6 +19,12 @@ use ORM::ActiveRecord::Support::Log;
 # shared one. Unset (undefined) on the main thread.
 PROCESS::<$AR-DB-OVERRIDE> = Nil;
 
+# A request-scoped registry (see Connection::Registry) that hands each named
+# connection one pooled connection for the life of a request, checked out on
+# first use and returned when the request ends. A web server binds this per
+# request; unset outside one, where models fall back to the shared connection.
+PROCESS::<$AR-CONNECTION-REGISTRY> = Nil;
+
 class DB is export {
   my %shared;
   my Bool $legacy-warned = False;

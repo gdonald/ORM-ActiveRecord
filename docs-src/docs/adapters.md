@@ -433,6 +433,41 @@ connection first, so one dropped while idle is reconnected transparently; a
 `pool.reap` closes connections idle past `idle-timeout` (down to
 `min-threads`), and `pool.disconnect-all` closes them all.
 
+### Request-scoped connections
+
+A concurrent server wants every query in one request to run on the same pooled
+connection, so the request sees a consistent view (and one transaction spans it).
+`Connection::Registry` provides that: a request-scoped set of checked-out
+connections, keyed by connection name. The first query on a named connection
+checks one out of that connection's pool and caches it; every later query on the
+same connection reuses it. `release-all` returns them to their pools when the
+request ends.
+
+Bind an instance to the `$*AR-CONNECTION-REGISTRY` dynamic variable around a
+request; models and relations route through it automatically:
+
+```perl6
+use ORM::ActiveRecord::Connection::Registry;
+
+my $registry = ORM::ActiveRecord::Connection::Registry.new;
+{
+  my $*AR-CONNECTION-REGISTRY = $registry;
+  # every Model / relation query in here checks out (once) and reuses
+  # its connection's pooled connection
+  User.create({ ... });
+  Order.all.list;
+}
+$registry.release-all;   # return every checked-out connection to its pool
+```
+
+Because it is keyed by connection name, a multi-database app routes each model to
+its own pooled connection instead of forcing everything onto one. A `connects-to`
+or `connected-to` model routes through the registry under its own connection
+name. When no registry is bound, models fall back to the shared connection, so
+scripts and tests need no setup. A `$*AR-DB-OVERRIDE`, which pins one operation to
+a single checked-out connection (async queries and the raw-SQL helpers set it),
+still takes precedence over the registry.
+
 ## Query cache
 
 The query cache memoises read results for the duration of a unit of work. While

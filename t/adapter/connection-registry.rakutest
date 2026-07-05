@@ -1,0 +1,82 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use DBIish;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Connection::Registry;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $has-sqlite = try {
+  my $handle = DBIish.connect('SQLite', :database(':memory:')); $handle.dispose; True;
+} // False;
+
+unless $has-sqlite {
+  plan 1;
+  skip 'no sqlite driver available';
+  exit 0;
+}
+
+plan 11;
+
+temp %*ENV;
+%*ENV<BEHAVE_WORKER_INDEX>:delete;
+%*ENV<BEHAVE_WORKER_COUNT>:delete;
+
+my $dbfile = $*TMPDIR.add("registry-{$*PID}-{(now * 1e6).Int}.sqlite3").Str;
+LEAVE { $dbfile.IO.unlink if $dbfile.IO.e }
+
+temp %*ENV<DATABASE_URL> = "sqlite:$dbfile";
+DB.set-shared(Nil);
+DB.shared.exec('CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT)');
+
+use ORM::ActiveRecord::Model;
+class Widget is Model {}
+GLOBAL::<Widget> := Widget;
+
+my $name = DB.shared.name;
+
+# db-for checks a connection out and caches it for the rest of the request.
+{
+  my $registry = ORM::ActiveRecord::Connection::Registry.new;
+  my $db = $registry.db-for($name);
+  isa-ok $db, DB, 'db-for returns a DB for the named connection';
+  is DB.shared.pool.stats<in-use>, 1, 'db-for checks a connection out of the pool';
+  ok $registry.db-for($name) === $db, 'db-for reuses the same connection within the request';
+  is $registry.checked-out-names, ($name,), 'the registry tracks the checked-out connection';
+
+  $registry.release-all;
+  is DB.shared.pool.stats<in-use>, 0, 'release-all returns the connection to the pool';
+}
+
+# A model routes through the registry when one is bound, and through the shared
+# connection when none is.
+{
+  ok Widget.db === DB.shared, 'a model uses the shared connection with no registry bound';
+
+  my $registry = ORM::ActiveRecord::Connection::Registry.new;
+  {
+    my $*AR-CONNECTION-REGISTRY = $registry;
+    ok Widget.db === $registry.db-for(Widget.connection-name),
+      'a model routes through the registry when one is bound';
+
+    Widget.create({ name => 'from-registry' });
+    is DB.shared.pool.stats<in-use>, 1, 'the model query ran on the registry connection';
+  }
+  $registry.release-all;
+
+  is DB.shared.exec('SELECT count(*) FROM widgets')[0][0], 1,
+    'the registry write is visible on the shared connection';
+}
+
+# A relation query routes through the registry too, not just Model.db.
+{
+  my $registry = ORM::ActiveRecord::Connection::Registry.new;
+  {
+    my $*AR-CONNECTION-REGISTRY = $registry;
+    Widget.all.list;
+    is $registry.checked-out-names, ($name,), 'a relation query routes through the registry';
+    is DB.shared.pool.stats<in-use>, 1, 'the relation query ran on the registry connection';
+  }
+  $registry.release-all;
+}

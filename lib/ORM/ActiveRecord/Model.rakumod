@@ -234,7 +234,9 @@ class Model
 
   method db(--> DB) {
     return $*AR-DB-OVERRIDE if $*AR-DB-OVERRIDE.defined;
-    DB.shared(name => self.connection-name);
+    my $name = self.connection-name;
+    with $*AR-CONNECTION-REGISTRY { return .db-for($name) }
+    DB.shared(name => $name);
   }
 
   method rebind-db(DB:D $db) {

@@ -175,6 +175,7 @@ is export
   method db(--> DB) {
     return $*AR-DB-OVERRIDE if $*AR-DB-OVERRIDE.defined;
     my $name = $!class.^can('connection-name') ?? $!class.connection-name !! default-connection();
+    with $*AR-CONNECTION-REGISTRY { return .db-for($name) }
     DB.shared(name => $name);
   }
 
