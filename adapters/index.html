@@ -560,6 +560,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#the-current-connection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The current connection
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2233,6 +2244,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#the-current-connection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The current connection
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2895,6 +2917,26 @@ name. When no registry is bound, models fall back to the shared connection, so
 scripts and tests need no setup. A <code>$*AR-DB-OVERRIDE</code>, which pins one operation to
 a single checked-out connection (async queries and the raw-SQL helpers set it),
 still takes precedence over the registry.</p>
+<h3 id="the-current-connection">The current connection</h3>
+<p>Every query path resolves its connection through one method, <code>DB.current</code>:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="n">DB</span>.<span class="n">current</span>;                <span class="c1"># the primary connection</span>
+<span class="n">DB</span>.<span class="n">current</span>(:<span class="n">name</span><span class="s">&lt;replica&gt;</span>);
+</code></pre></div></td></tr></table></div>
+
+<p>It returns, in order of precedence:</p>
+<ol>
+<li><code>$*AR-DB-OVERRIDE</code>, when an operation is pinned to one checked-out connection
+   (async queries and the raw-SQL helpers set it),</li>
+<li>the connection the bound <code>$*AR-CONNECTION-REGISTRY</code> hands out for that name, or</li>
+<li>the process-wide shared connection, outside any request.</li>
+</ol>
+<p><code>Model</code>, relation, and association queries all route through <code>DB.current</code>, so
+binding a registry (or an override) redirects them without any per-model wiring.
+When application code drops to raw SQL inside a request, call <code>DB.current.exec(...)</code>
+rather than <code>DB.shared.exec(...)</code>, so the raw statement joins the request's pooled
+connection instead of driving the shared connection from every request thread at
+once.</p>
 <h2 id="query-cache">Query cache</h2>
 <p>The query cache memoises read results for the duration of a unit of work. While
 it is on, repeating the same <code>SELECT</code> (same SQL and bind values) returns the
@@ -2973,6 +3015,9 @@ ready-to-execute statement with adapter-correct placeholders. They're how
 ORM::ActiveRecord avoids string-interpolating values into SQL internally; the
 same helpers are available for application code that needs to drop down to
 raw SQL.</p>
+<p>The examples below call <code>DB.shared</code> for brevity. Inside a request, prefer
+<code>DB.current</code> (see <a href="#the-current-connection">the current connection</a>) so the raw
+statement runs on the request's pooled connection rather than the shared one.</p>
 <h3 id="positional-placeholders">Positional <code>?</code> placeholders</h3>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
