@@ -13,7 +13,14 @@ my $has-sqlite = try {
   True;
 } // False;
 
-class RegistryWidget is Model {}
+class RegistryGadget is Model {}
+GLOBAL::<RegistryGadget> := RegistryGadget;
+
+class RegistryWidget is Model {
+  submethod BUILD {
+    self.has-many: gadgets => %(class-name => 'RegistryGadget', foreign-key => 'registry_widget_id');
+  }
+}
 GLOBAL::<RegistryWidget> := RegistryWidget;
 
 my &group = $has-sqlite ?? &describe !! &xdescribe;
@@ -40,6 +47,7 @@ group 'Connection::Registry (sqlite via DATABASE_URL)', :tag<destructive>, {
     %*ENV<DATABASE_URL> = "sqlite:$dbfile";
     DB.set-shared(Nil);
     DB.shared.exec('CREATE TABLE registry_widgets (id INTEGER PRIMARY KEY, name TEXT)');
+    DB.shared.exec('CREATE TABLE registry_gadgets (id INTEGER PRIMARY KEY, name TEXT, registry_widget_id INTEGER)');
     $name = DB.shared.name;
   }
 
@@ -50,7 +58,7 @@ group 'Connection::Registry (sqlite via DATABASE_URL)', :tag<destructive>, {
     $dbfile.IO.unlink if $dbfile && $dbfile.IO.e;
   }
 
-  before-each { RegistryWidget.destroy-all }
+  before-each { RegistryWidget.destroy-all; RegistryGadget.destroy-all }
 
   it 'checks out, caches, and tracks a pooled connection, then releases it', {
     my $registry = ORM::ActiveRecord::Connection::Registry.new;
@@ -99,5 +107,51 @@ group 'Connection::Registry (sqlite via DATABASE_URL)', :tag<destructive>, {
     $registry.release-all;
 
     expect(DB.shared.exec('SELECT count(*) FROM registry_widgets')[0][0]).to.eq(1);
+  }
+
+  it 'routes an association collection query through the registry when one is bound', {
+    my $widget = RegistryWidget.create({ name => 'owner' });
+    RegistryGadget.create({ name => 'g', registry_widget_id => $widget.id });
+
+    my $registry = ORM::ActiveRecord::Connection::Registry.new;
+    {
+      my $*AR-CONNECTION-REGISTRY = $registry;
+      $widget.gadgets.list;
+      expect($registry.checked-out-names).to.eq(($name,));
+    }
+    $registry.release-all;
+  }
+
+  context 'DB.current, the shared resolution point for every query path', {
+    it 'is the shared connection when nothing is bound', {
+      expect(DB.current === DB.shared).to.be-truthy;
+    }
+
+    it 'returns the async override when one is bound', {
+      my $override = DB.shared;
+      my $*AR-DB-OVERRIDE = $override;
+      expect(DB.current === $override).to.be-truthy;
+    }
+
+    it 'routes through the registry when one is bound', {
+      my $registry = ORM::ActiveRecord::Connection::Registry.new;
+      {
+        my $*AR-CONNECTION-REGISTRY = $registry;
+        expect(DB.current === $registry.db-for($name)).to.be-truthy;
+      }
+      $registry.release-all;
+    }
+
+    it 'runs raw DB.current.exec on the registry connection, not the shared one', {
+      my $registry = ORM::ActiveRecord::Connection::Registry.new;
+      {
+        my $*AR-CONNECTION-REGISTRY = $registry;
+        DB.current.exec('SELECT count(*) FROM registry_widgets');
+        expect(DB.shared.pool.stats<in-use>).to.eq(1);
+      }
+      $registry.release-all;
+
+      expect(DB.shared.pool.stats<in-use>).to.eq(0);
+    }
   }
 }

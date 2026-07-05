@@ -17,6 +17,14 @@ role ModelInheritance is export {
   my %sti-registered;          # class name => class
   my %sti-by-name;             # stored type value => class
 
+  # register-sti and the registry reads run on every model instantiation, so a
+  # web server hits them from many request threads at once. Guard the two hashes
+  # that mutate at runtime. The config hashes above are written only at class
+  # definition time (single-threaded) and read-only thereafter, so they need no
+  # lock. This Lock is non-reentrant: never call a method that re-takes it from
+  # inside a protect block.
+  my $sti-lock = Lock.new;
+
   # ---- class-level configuration (call right after the class definition) ----
 
   method abstract-class(*@set) {
@@ -76,13 +84,22 @@ role ModelInheritance is export {
   # ---- registry ----
 
   method register-sti {
-    return if %sti-registered{self.^name}:exists;
-    %sti-registered{self.^name} = self;
-    %sti-by-name{self.sti-name} = self;
+    return if $sti-lock.protect({ %sti-registered{self.^name}:exists });
+
+    # Compute sti-name outside the lock: it reads the config hashes and calls
+    # sibling methods, none of which may re-take this non-reentrant lock.
+    my $name = self.sti-name;
+
+    $sti-lock.protect: {
+      return if %sti-registered{self.^name}:exists;
+      %sti-registered{self.^name} = self;
+      %sti-by-name{$name}         = self;
+    }
   }
 
   method sti-descendants {
-    %sti-registered.values.grep({ $_.^isa(self) });
+    my @registered = $sti-lock.protect({ %sti-registered.values.List });
+    @registered.grep({ $_.^isa(self) });
   }
 
   method sti-class-for(Str() $type-value) {
@@ -96,8 +113,12 @@ role ModelInheritance is export {
       return $resolved;
     }
 
-    if %sti-by-name{$type-value}:exists {
-      my $cls = %sti-by-name{$type-value};
+    # A stored class is a type object, so .defined is False for it; key off
+    # :exists and carry the flag out of the lock rather than testing the value.
+    my ($has, $cls) = $sti-lock.protect({
+      %sti-by-name{$type-value}:exists ?? (True, %sti-by-name{$type-value}) !! (False, Nil)
+    });
+    if $has {
       $cls.register-sti;
       return $cls;
     }

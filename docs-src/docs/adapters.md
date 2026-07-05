@@ -468,6 +468,29 @@ scripts and tests need no setup. A `$*AR-DB-OVERRIDE`, which pins one operation 
 a single checked-out connection (async queries and the raw-SQL helpers set it),
 still takes precedence over the registry.
 
+### The current connection
+
+Every query path resolves its connection through one method, `DB.current`:
+
+```perl6
+DB.current;                # the primary connection
+DB.current(:name<replica>);
+```
+
+It returns, in order of precedence:
+
+1. `$*AR-DB-OVERRIDE`, when an operation is pinned to one checked-out connection
+   (async queries and the raw-SQL helpers set it),
+2. the connection the bound `$*AR-CONNECTION-REGISTRY` hands out for that name, or
+3. the process-wide shared connection, outside any request.
+
+`Model`, relation, and association queries all route through `DB.current`, so
+binding a registry (or an override) redirects them without any per-model wiring.
+When application code drops to raw SQL inside a request, call `DB.current.exec(...)`
+rather than `DB.shared.exec(...)`, so the raw statement joins the request's pooled
+connection instead of driving the shared connection from every request thread at
+once.
+
 ## Query cache
 
 The query cache memoises read results for the duration of a unit of work. While
@@ -542,6 +565,10 @@ ready-to-execute statement with adapter-correct placeholders. They're how
 ORM::ActiveRecord avoids string-interpolating values into SQL internally; the
 same helpers are available for application code that needs to drop down to
 raw SQL.
+
+The examples below call `DB.shared` for brevity. Inside a request, prefer
+`DB.current` (see [the current connection](#the-current-connection)) so the raw
+statement runs on the request's pooled connection rather than the shared one.
 
 ### Positional `?` placeholders
 

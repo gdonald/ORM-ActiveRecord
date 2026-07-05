@@ -17,7 +17,7 @@ unless $has-sqlite {
   exit 0;
 }
 
-plan 11;
+plan 17;
 
 temp %*ENV;
 %*ENV<BEHAVE_WORKER_INDEX>:delete;
@@ -29,9 +29,18 @@ LEAVE { $dbfile.IO.unlink if $dbfile.IO.e }
 temp %*ENV<DATABASE_URL> = "sqlite:$dbfile";
 DB.set-shared(Nil);
 DB.shared.exec('CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT)');
+DB.shared.exec('CREATE TABLE gadgets (id INTEGER PRIMARY KEY, name TEXT, widget_id INTEGER)');
 
 use ORM::ActiveRecord::Model;
-class Widget is Model {}
+
+class Gadget is Model {}
+GLOBAL::<Gadget> := Gadget;
+
+class Widget is Model {
+  submethod BUILD {
+    self.has-many: gadgets => %(class-name => 'Gadget', foreign-key => 'widget_id');
+  }
+}
 GLOBAL::<Widget> := Widget;
 
 my $name = DB.shared.name;
@@ -79,4 +88,49 @@ my $name = DB.shared.name;
     is DB.shared.pool.stats<in-use>, 1, 'the relation query ran on the registry connection';
   }
   $registry.release-all;
+}
+
+# An association collection query routes through the registry too, via the
+# CollectionProxy's DB.current.
+{
+  my $widget = Widget.create({ name => 'owner' });
+  Gadget.create({ name => 'g', widget_id => $widget.id });
+
+  my $registry = ORM::ActiveRecord::Connection::Registry.new;
+  {
+    my $*AR-CONNECTION-REGISTRY = $registry;
+    $widget.gadgets.list;
+    is $registry.checked-out-names, ($name,),
+      'an association collection query routes through the registry';
+  }
+  $registry.release-all;
+}
+
+# DB.current is the single resolution point every query path (and app-level raw
+# SQL) shares. It must honour an async worker's bound connection, then the
+# request registry, and only otherwise the shared connection. Raw DB.current.exec
+# that skipped this ran on the shared connection from every request thread at
+# once and corrupted the driver under load.
+{
+  ok DB.current === DB.shared, 'DB.current is the shared connection with nothing bound';
+
+  my $override = DB.shared;
+  {
+    my $*AR-DB-OVERRIDE = $override;
+    ok DB.current === $override, 'DB.current returns the async override when one is bound';
+  }
+
+  my $registry = ORM::ActiveRecord::Connection::Registry.new;
+  {
+    my $*AR-CONNECTION-REGISTRY = $registry;
+    ok DB.current === $registry.db-for($name),
+      'DB.current routes through the registry when one is bound';
+
+    DB.current.exec('SELECT count(*) FROM widgets');
+    is DB.shared.pool.stats<in-use>, 1,
+      'raw DB.current.exec runs on the registry connection, not the shared one';
+  }
+  $registry.release-all;
+
+  is DB.shared.pool.stats<in-use>, 0, 'release-all returns the DB.current connection to the pool';
 }

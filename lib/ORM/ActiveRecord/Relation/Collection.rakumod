@@ -12,8 +12,11 @@ role CollectionProxy is export {
   has @.args           is rw;
 
   method db(--> DB) {
+    # Route through DB.current so an association query uses the request's pooled
+    # connection, not the process-wide shared one that many request threads
+    # would otherwise drive concurrently.
     my $name = $!target-class.^can('connection-name') ?? $!target-class.connection-name !! default-connection();
-    DB.shared(name => $name);
+    DB.current(name => $name);
   }
 
   method records { self.list }

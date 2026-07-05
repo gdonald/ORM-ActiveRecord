@@ -27,6 +27,7 @@ PROCESS::<$AR-CONNECTION-REGISTRY> = Nil;
 
 class DB is export {
   my %shared;
+  my Lock $shared-lock = Lock.new;
   my Bool $legacy-warned = False;
 
   has Adapter $.adapter handles *;
@@ -98,15 +99,32 @@ class DB is export {
   # DBDish::Pg and produces "No such method 'PQgetisnull' for invocant of type
   # 'Any'" errors.
   method shared(Str:D :$name = default-connection() --> DB) {
-    %shared{$name} //= DB.new(:$name);
-    %shared{$name};
+    # %shared is process-wide and read from every request thread. Cro serves
+    # concurrent requests on a thread pool, so the check-then-build must be
+    # serialized or two threads race the same hash slot and corrupt it.
+    $shared-lock.protect: {
+      %shared{$name} //= DB.new(:$name);
+      %shared{$name};
+    }
+  }
+
+  # The connection the current context should use, resolved the one canonical
+  # way: an async worker's bound connection first, then the request-scoped
+  # registry (which hands out one pooled connection per request), and only
+  # outside a request the process-wide shared connection. Model, Query, and
+  # association proxies route through this; app-level raw SQL should too, so it
+  # never drives the shared connection from many request threads at once.
+  method current(Str:D :$name = default-connection() --> DB) {
+    return $*AR-DB-OVERRIDE if $*AR-DB-OVERRIDE.defined;
+    with $*AR-CONNECTION-REGISTRY { return .db-for($name) }
+    DB.shared(name => $name);
   }
 
   # Test seam: swap a named shared singleton to point at a hand-built DB
   # (e.g. one wrapping a SqliteAdapter against `:memory:`). Pass `Nil` to
   # clear and force the next `.shared` to rebuild from config.
   method set-shared($db, Str:D :$name = default-connection() --> DB) {
-    %shared{$name} = $db;
+    $shared-lock.protect: { %shared{$name} = $db; }
     $db;
   }
 
@@ -123,10 +141,12 @@ class DB is export {
   # libpq) are freed while the runtime is healthy. Left to the shutdown GC, the
   # finalization order is undefined and DBDish::Pg can segfault mid-teardown.
   method disconnect-shared {
-    for %shared.values -> $db {
-      $db.close if $db.defined;
+    $shared-lock.protect: {
+      for %shared.values -> $db {
+        $db.close if $db.defined;
+      }
+      %shared = ();
     }
-    %shared = ();
   }
 
   END { try DB.disconnect-shared }
