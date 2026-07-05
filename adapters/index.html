@@ -546,6 +546,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Connection pooling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-scoped-connections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request-scoped connections
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2202,6 +2219,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Connection pooling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-scoped-connections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request-scoped connections
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2821,6 +2855,46 @@ connection first, so one dropped while idle is reconnected transparently; a
 <code>checkout</code> that can't get a free connection within <code>checkout-timeout</code> throws.
 <code>pool.reap</code> closes connections idle past <code>idle-timeout</code> (down to
 <code>min-threads</code>), and <code>pool.disconnect-all</code> closes them all.</p>
+<h3 id="request-scoped-connections">Request-scoped connections</h3>
+<p>A concurrent server wants every query in one request to run on the same pooled
+connection, so the request sees a consistent view (and one transaction spans it).
+<code>Connection::Registry</code> provides that: a request-scoped set of checked-out
+connections, keyed by connection name. The first query on a named connection
+checks one out of that connection's pool and caches it; every later query on the
+same connection reuses it. <code>release-all</code> returns them to their pools when the
+request ends.</p>
+<p>Bind an instance to the <code>$*AR-CONNECTION-REGISTRY</code> dynamic variable around a
+request; models and relations route through it automatically:</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">use</span> <span class="n">ORM::ActiveRecord::Connection::Registry</span>;
+
+<span class="k">my</span> <span class="nv">$registry</span> = <span class="n">ORM::ActiveRecord::Connection::Registry</span>.<span class="nb">new</span>;
+{
+  <span class="k">my</span> <span class="vg">$*AR-CONNECTION-REGISTRY</span> = <span class="nv">$registry</span>;
+  <span class="c1"># every Model / relation query in here checks out (once) and reuses</span>
+  <span class="c1"># its connection&#39;s pooled connection</span>
+  <span class="n">User</span>.<span class="n">create</span>({ ... });
+  <span class="nb">Order</span>.<span class="nb">all</span>.<span class="n">list</span>;
+}
+<span class="nv">$registry</span>.<span class="n">release-all</span>;   <span class="c1"># return every checked-out connection to its pool</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Because it is keyed by connection name, a multi-database app routes each model to
+its own pooled connection instead of forcing everything onto one. A <code>connects-to</code>
+or <code>connected-to</code> model routes through the registry under its own connection
+name. When no registry is bound, models fall back to the shared connection, so
+scripts and tests need no setup. A <code>$*AR-DB-OVERRIDE</code>, which pins one operation to
+a single checked-out connection (async queries and the raw-SQL helpers set it),
+still takes precedence over the registry.</p>
 <h2 id="query-cache">Query cache</h2>
 <p>The query cache memoises read results for the duration of a unit of work. While
 it is on, repeating the same <code>SELECT</code> (same SQL and bind values) returns the
