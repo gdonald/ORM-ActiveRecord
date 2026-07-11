@@ -6,6 +6,27 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-07-11
+
+### Added
+
+- Connection registry that names and stores adapters, with `DB.current` as the
+  single resolver used across models, inheritance, and relations.
+- Scope traits (`is scope`) for declaring named scopes with cleaner syntax.
+- Foreign keys in schema dumps for PostgreSQL and MySQL.
+
+### Changed
+
+- Renamed the `ar` command-line tool to `active-record`.
+- Fold wide integer types to a common form during schema introspection.
+
+### Fixed
+
+- Eager loading through `:through` associations.
+- Foreign keys in migration dumps.
+- Snake-case conversion of table names.
+- `build-save` teardown.
+
 ## [0.9.0] - 2026-06-24
 
 ### Added
@@ -145,6 +166,7 @@ Initial release. The feature set below is what ships in 0.1.0.
   label-based deterministic ids and cross-file references), and a database
   cleaner with deletion / truncation / transaction strategies.
 
-[Unreleased]: https://github.com/gdonald/ORM-ActiveRecord/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/gdonald/ORM-ActiveRecord/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/gdonald/ORM-ActiveRecord/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/gdonald/ORM-ActiveRecord/compare/v0.1.0...v0.9.0
 [0.1.0]: https://github.com/gdonald/ORM-ActiveRecord/releases/tag/v0.1.0
