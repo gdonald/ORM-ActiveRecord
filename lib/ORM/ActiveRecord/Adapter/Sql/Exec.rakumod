@@ -118,6 +118,7 @@ role SqlExec is export {
     Log.sql(:$sql);
 
     self.clear-query-cache if self.is-write-sql($sql);
+    self.clear-schema-cache if self.is-schema-change-sql($sql);
 
     if $!query-cache-enabled && self!is-cacheable-sql($sql) {
       my $key = self!query-cache-key($sql, @binds, $format);

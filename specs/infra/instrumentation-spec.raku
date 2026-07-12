@@ -68,6 +68,15 @@ describe 'Notifications pub/sub', :order<defined>, {
   it 'runs the block when nothing is subscribed', {
     expect(Notifications.instrument('nobody', { }, { 7 })).to.eq(7);
   }
+
+  it 'returns a list result decontainerised so callers iterate the rows', {
+    Notifications.subscribe('e.rows', -> %p { });
+
+    my $count = 0;
+    $count++ for Notifications.instrument('e.rows', { }, { (1, 2, 3) });
+
+    expect($count).to.eq(3);
+  }
 }
 
 describe 'QueryLogs tagging', :order<defined>, {

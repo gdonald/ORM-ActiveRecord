@@ -157,7 +157,7 @@ class SqliteAdapter is SqlAdapter is export {
     %types;
   }
 
-  method get-fields(Str:D :$table) {
+  method get-fields-uncached(Str:D :$table) {
     # PRAGMA table_info columns: cid, name, type, notnull, dflt_value, pk.
     # Lowercase the type to match PG's information_schema vocabulary, then fold
     # the integer family (bigint, smallint, int8, ...) to the canonical
@@ -175,7 +175,7 @@ class SqliteAdapter is SqlAdapter is export {
     @out;
   }
 
-  method column-details(Str:D :$table) {
+  method column-details-uncached(Str:D :$table) {
     my $rows = self.exec("PRAGMA table_info('$table')");
     my @out;
     for @$rows -> $row {

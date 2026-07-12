@@ -190,7 +190,7 @@ class PgAdapter is SqlAdapter is export {
     }
   }
 
-  method get-fields(Str:D :$table) {
+  method get-fields-uncached(Str:D :$table) {
     my $type = 'character varying';
     my $names = <column_name data_type>;
     my @fields = $names.map({ Field.new(:name($_), :$type) });
@@ -205,7 +205,7 @@ class PgAdapter is SqlAdapter is export {
     self.exec-stmt($stmt).map({ [$_[0].Str, self!normalize-type($_[1].Str)] });
   }
 
-  method column-details(Str:D :$table) {
+  method column-details-uncached(Str:D :$table) {
     my $type = 'character varying';
     my @fields = <column_name data_type is_nullable column_default>.map({ Field.new(:name($_), :$type) });
 

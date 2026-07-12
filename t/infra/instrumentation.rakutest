@@ -50,6 +50,14 @@ Notifications.reset;
   ok @got[0]<duration> ~~ Numeric, 'instrument adds a numeric duration';
 }
 
+{
+  Notifications.subscribe('e.rows', -> %p { });
+  my $count = 0;
+  $count++ for Notifications.instrument('e.rows', {}, { (1, 2, 3) });
+  is $count, 3, 'instrument returns a list result that iterates as individual rows';
+  Notifications.reset;
+}
+
 Notifications.reset;
 is Notifications.instrument('nobody', {}, { 7 }), 7, 'instrument runs the block when nothing is subscribed';
 

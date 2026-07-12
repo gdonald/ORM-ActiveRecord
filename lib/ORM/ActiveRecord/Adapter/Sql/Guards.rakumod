@@ -50,4 +50,13 @@ role SqlGuards is export {
     return True if $stripped ~~ /^ :i 'with' <|w> .*? <|w> (insert | update | delete | replace | merge) <|w> /;
     False;
   }
+
+  # A statement that alters the schema, so the memoised column metadata must be
+  # dropped afterwards.
+  method is-schema-change-sql(Str:D $sql --> Bool) {
+    my $stripped = $sql;
+    $stripped ~~ s:g/ '/*' .*? '*/' //;
+    $stripped ~~ s/ ^ \s+ //;
+    so $stripped ~~ /^ :i (create | alter | drop | rename) <|w> /;
+  }
 }

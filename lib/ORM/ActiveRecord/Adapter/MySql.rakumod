@@ -36,7 +36,10 @@ class MySqlAdapter is SqlAdapter is export {
     return if self.db.defined;
     %*ENV<DBIISH_MYSQL_LIB> //= self!discover-libmysql;
     my %params = :$!host, :$!port, :$!database, :$!user, :$!password;
-    %params<socket> = $!socket if $!socket.defined;
+    # An empty socket string means "no socket": pass it through only when it
+    # names a real path, otherwise it forces a socket connection that behaves
+    # differently from the default TCP one (e.g. returning text as Buf).
+    %params<socket> = $!socket if $!socket.defined && $!socket ne '';
     self.db = DBIish.connect('mysql', |%params);
   }
 
@@ -213,7 +216,7 @@ class MySqlAdapter is SqlAdapter is export {
     %types;
   }
 
-  method get-fields(Str:D :$table) {
+  method get-fields-uncached(Str:D :$table) {
     my $stmt = SqlStmt.new(:adapter(self));
     my $tph = $stmt.placeholder($table);
     $stmt.sql = qq:to/SQL/;
@@ -232,7 +235,7 @@ class MySqlAdapter is SqlAdapter is export {
     @out;
   }
 
-  method column-details(Str:D :$table) {
+  method column-details-uncached(Str:D :$table) {
     my $stmt = SqlStmt.new(:adapter(self));
     my $tph = $stmt.placeholder($table);
     $stmt.sql = qq:to/SQL/;
@@ -378,7 +381,12 @@ class MySqlAdapter is SqlAdapter is export {
 
     # DBDish::mysql returns information_schema text columns as Buf — decode
     # them once at the introspection boundary so consumers see plain Str.
-    method !stringify($v --> Str) {
+    method !stringify($v is copy --> Str) {
+      # DBDish::mysql can hand back an information_schema cell as a plain Str, a
+      # Buf, or (depending on the client library and whether the connection is
+      # over a socket or TCP) a Buf wrapped in a one-element array. Normalise all
+      # of them to a Str here.
+      $v = $v[0] if $v ~~ Array;
       return '' without $v;
       return $v.decode('utf-8') if $v ~~ Blob;
       $v.Str;

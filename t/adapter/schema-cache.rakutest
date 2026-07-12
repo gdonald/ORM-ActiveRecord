@@ -1,0 +1,71 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Instrumentation::Notifications;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+my $has-db  = $adapter.defined && $adapter.is-connected;
+
+# is-schema-change-sql is a pure classifier and needs no live connection, only a
+# constructed adapter instance.
+if $adapter.defined {
+  ok  $adapter.is-schema-change-sql('CREATE TABLE t (id int)'),        'CREATE is a schema change';
+  ok  $adapter.is-schema-change-sql('  alter table t add column x int'), 'ALTER is a schema change';
+  ok  $adapter.is-schema-change-sql('DROP TABLE t'),                   'DROP is a schema change';
+  ok  $adapter.is-schema-change-sql('RENAME TABLE a TO b'),            'RENAME is a schema change';
+  nok $adapter.is-schema-change-sql('SELECT * FROM t'),                'SELECT is not a schema change';
+  nok $adapter.is-schema-change-sql('INSERT INTO t(id) VALUES (1)'),   'INSERT is not a schema change';
+  ok  $adapter.is-schema-change-sql('/* note */ DROP TABLE t'),        'a leading comment does not hide a schema change';
+} else {
+  skip 'no adapter configured for the is-schema-change-sql classifier', 7;
+}
+
+unless $has-db {
+  skip 'no reachable database for the configured adapter', 6;
+  done-testing;
+  exit 0;
+}
+
+$adapter.exec('DROP TABLE IF EXISTS sc_widgets');
+$adapter.ddl-create-table('sc_widgets', [ name => { :string, limit => 64 } ]);
+END { try $adapter.exec('DROP TABLE IF EXISTS sc_widgets') if $has-db }
+
+$adapter.clear-schema-cache;
+
+my @sql;
+my $sub = Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p<sql> });
+
+# The first introspection populates the cache.
+$adapter.get-fields(table => 'sc_widgets');
+my $after-first = @sql.elems;
+ok $after-first > 0, 'the first get-fields introspects the database';
+
+# A repeated call is served from the cache with no further query.
+$adapter.get-fields(table => 'sc_widgets');
+is @sql.elems, $after-first, 'a repeated get-fields is served from the cache and issues no query';
+
+# column-details is memoised independently of get-fields.
+@sql = ();
+$adapter.column-details(table => 'sc_widgets');
+my $after-details = @sql.elems;
+ok $after-details > 0, 'the first column-details introspects the database';
+
+$adapter.column-details(table => 'sc_widgets');
+is @sql.elems, $after-details, 'a repeated column-details is served from the cache and issues no query';
+
+# A schema change invalidates the cache, so the next call re-introspects.
+@sql = ();
+$adapter.ddl-add-column('sc_widgets', 'extra' => { :integer });
+$adapter.get-fields(table => 'sc_widgets');
+ok @sql.elems > 0, 'a schema change invalidates the cache and forces re-introspection';
+
+# And the re-introspected metadata reflects the newly added column.
+my @detail-names = $adapter.column-details(table => 'sc_widgets').map(*<name>);
+ok @detail-names.first(* eq 'extra').defined, 'the re-introspected column-details include the new column';
+
+Notifications.unsubscribe($sub);
+
+done-testing;

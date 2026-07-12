@@ -23,12 +23,37 @@ class SqlAdapter
   is export
 {
   has $.db is rw;
+  has %!fields-cache;
+  has %!column-details-cache;
+
+  # Column metadata comes from information_schema, which is expensive to query
+  # on every model operation, so memoise it per table for the life of the
+  # connection. A schema change (DDL) clears it, and disconnect drops it with
+  # the rest of the connection state.
+  method get-fields(Str:D :$table) {
+    return @(%!fields-cache{$table}) if %!fields-cache{$table}:exists;
+    my @fields = self.get-fields-uncached(:$table);
+    %!fields-cache{$table} = @fields;
+    @fields
+  }
+
+  method column-details(Str:D :$table --> List) {
+    return @(%!column-details-cache{$table}) if %!column-details-cache{$table}:exists;
+    my @details = self.column-details-uncached(:$table);
+    %!column-details-cache{$table} = @details;
+    @details
+  }
+
+  method clear-schema-cache {
+    %!fields-cache         = ();
+    %!column-details-cache = ();
+  }
 
   # Engine-specific — must be overridden
   method connect()                                                  { ... }
   method bind-placeholder(Int:D $n --> Str)                         { ... }
-  method get-fields(Str:D :$table)                                  { ... }
-  method column-details(Str:D :$table --> List)                     { ... }
+  method get-fields-uncached(Str:D :$table)                         { ... }
+  method column-details-uncached(Str:D :$table --> List)            { ... }
   method get-table-names()                                          { ... }
   method get-indexes(Str:D :$table --> List)                        { ... }
   method get-constraints(Str:D :$table --> List)                    { ... }
@@ -56,6 +81,7 @@ class SqlAdapter
     return False unless $!db.defined;
     self.clear-statement-cache;
     self.clear-query-cache;
+    self.clear-schema-cache;
     # A handle whose connection already died can throw on dispose; drop it
     # regardless so a reconnect is never blocked by a dead one.
     (try $!db.dispose);

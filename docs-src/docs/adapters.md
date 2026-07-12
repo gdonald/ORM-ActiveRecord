@@ -522,6 +522,19 @@ The cache can also be controlled directly: `enable-query-cache` and
 `clear-query-cache` empties it without changing the on/off state. Each pooled
 connection has its own cache, and disconnecting clears it.
 
+## Schema metadata cache
+
+Column introspection (`get-fields`, `column-details`) reads from
+`information_schema` (or `pragma_table_info` on SQLite), which is costly to
+repeat on every model operation. The adapter memoises this metadata per table
+for the life of the connection.
+
+The cache invalidates itself when it can no longer be trusted: any schema-change
+statement (`CREATE`, `ALTER`, `DROP`, `RENAME`) run through the adapter clears
+it, and disconnecting drops it with the rest of the connection state. Call
+`clear-schema-cache` to empty it explicitly, for example after issuing DDL
+through a route the adapter cannot observe.
+
 ## Advisory locks
 
 An advisory lock is a named, application-level lock the database tracks but does
