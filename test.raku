@@ -126,6 +126,13 @@ postgres => {
     password => %c<password> // '',
     database => %c<name>,
   },
+  probe-args      => -> %c {
+    host     => %c<host>,
+    port     => %c<port>.Int,
+    user     => %c<user>,
+    password => %c<password> // '',
+    database => 'postgres',
+  },
   messages => {
     driver => -> %, $err {
       qq:to/MSG/.chomp;
@@ -194,6 +201,12 @@ mysql => {
     user     => %c<user>,
     password => %c<password> // '',
     database => %c<name>,
+  },
+  probe-args => -> %c {
+    host     => %c<host>,
+    port     => %c<port>.Int,
+    user     => %c<user>,
+    password => %c<password> // '',
   },
   messages => {
     driver => -> %, $err {
@@ -295,7 +308,15 @@ sub probe(Str:D $name, Str:D $url --> Capture) {
   my %a = %ADAPTERS{$name};
   my %c = parse-database-url($url);
   for %a<defaults>.kv -> $k, $v { %c{$k} //= $v }
-  my %args = %a<connect-args>.(%c);
+
+  # Probe server reachability, not the target database's existence. run-once
+  # (re)creates the database it needs: a serial db:reset drops, creates, and
+  # migrates the base database, and a parallel run creates the per-worker
+  # databases. Connecting to the server's maintenance database lets a reachable
+  # adapter run even when its test database has not been created yet.
+  my $build-args = %a<probe-args> // %a<connect-args>;
+  my %args = $build-args.(%c);
+
   my ($ok, $err) = try-connect(%a<dbiish>, |%args).list;
   \($ok, $err, $ok ?? '' !! skip-message($name, %c, $err));
 }

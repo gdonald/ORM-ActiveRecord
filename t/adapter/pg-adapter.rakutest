@@ -344,6 +344,18 @@ ok  $pg.disconnect,        'disconnect succeeds';
 nok $pg.is-connected,      'is-connected reports false after disconnect';
 $pg.reconnect;
 ok  $pg.is-connected,      'reconnect re-establishes the connection';
+
+# ---- dropped-connection recovery ----
+# Simulate the overnight failure: the server closes our connection out from under
+# us (a restart, an idle-socket reap). The handle is still defined, so the next
+# statement fails; the adapter must reconnect and, for a read, replay it, instead
+# of wedging on the dead handle until the process is restarted.
+$pg.exec('SELECT 1') unless $pg.is-connected;
+try $pg.exec('SELECT pg_terminate_backend(pg_backend_pid())');
+my @recovered = $pg.exec('SELECT 42');
+is  @recovered[0][0].Int, 42, 'a read recovers from a server-side drop and replays';
+ok  $pg.is-connected,         'the connection is live again after recovery';
+
 $pg.disconnect;
 
 done-testing;

@@ -351,5 +351,20 @@ describe 'MySqlAdapter disconnect / reconnect', {
       $mysql.reconnect;
       expect($mysql.is-connected).to.be-truthy;
     }
+
+    # The server closes our connection out from under us (a restart, or
+    # wait_timeout reaping an idle socket). The handle is still defined, so the
+    # next statement fails and the adapter must reconnect rather than wedge.
+    it 'recovers and replays a read after a server-side drop', {
+      try $mysql.exec('KILL CONNECTION_ID()');
+      my @recovered = $mysql.exec('SELECT 42');
+      expect(@recovered[0][0].Int).to.eq(42);
+    }
+
+    it 'has a live connection again after recovering from a drop', {
+      try $mysql.exec('KILL CONNECTION_ID()');
+      $mysql.exec('SELECT 42');
+      expect($mysql.is-connected).to.be-truthy;
+    }
   }
 }

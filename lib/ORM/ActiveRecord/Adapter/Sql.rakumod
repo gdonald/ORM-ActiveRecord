@@ -56,7 +56,9 @@ class SqlAdapter
     return False unless $!db.defined;
     self.clear-statement-cache;
     self.clear-query-cache;
-    $!db.dispose;
+    # A handle whose connection already died can throw on dispose; drop it
+    # regardless so a reconnect is never blocked by a dead one.
+    (try $!db.dispose);
     $!db = Nil;
     self.reset-txn-state;
     True;

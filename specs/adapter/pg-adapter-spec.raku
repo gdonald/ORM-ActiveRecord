@@ -77,6 +77,21 @@ describe 'PgAdapter direct integration', {
       $pg.reconnect;
       expect($pg.is-connected).to.be-truthy;
     }
+
+    # The server closes our connection out from under us (a restart, an idle
+    # reap). The handle is still defined, so the next statement fails and the
+    # adapter must reconnect rather than wedge on the dead handle.
+    it 'recovers and replays a read after a server-side drop', {
+      try $pg.exec('SELECT pg_terminate_backend(pg_backend_pid())');
+      my @recovered = $pg.exec('SELECT 42');
+      expect(@recovered[0][0].Int).to.eq(42);
+    }
+
+    it 'has a live connection again after recovering from a drop', {
+      try $pg.exec('SELECT pg_terminate_backend(pg_backend_pid())');
+      $pg.exec('SELECT 42');
+      expect($pg.is-connected).to.be-truthy;
+    }
   }
 }
 

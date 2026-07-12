@@ -27,15 +27,27 @@ raku -Ilib bin/active-record migrate
 ## Running the tests
 
 `test.raku` is the entry point. It runs the `t/` suite (via `prove6`) and the
-`specs/` suite (via `behave`) against each configured adapter:
+`specs/` suite (via `behave`).
+
+A bare `./test.raku` runs only the adapter named in `config/application.json`
+(the `test.primary.adapter` key), at the worker count from `test.parallel`. It
+does not probe the other two adapters. To run more than one adapter, name them
+explicitly with `--adapter`:
 
 ```
-./test.raku                      # all adapters
-./test.raku --adapter=sqlite     # one adapter
-./test.raku --prove6             # only the t/ suite
-./test.raku --behave             # only the specs/ suite
-./test.raku --all                # once per config/application.json-*-example
+./test.raku                            # only the configured adapter (test.primary.adapter)
+./test.raku --adapter=pg,mysql,sqlite  # all three, probing each
+./test.raku --adapter=sqlite           # one specific adapter
+./test.raku --prove6                   # only the t/ suite
+./test.raku --behave                   # only the specs/ suite
+./test.raku --all                      # once per config/application.json-*-example
 ```
+
+When `--adapter` names an adapter your config does not define, that adapter
+falls back to its default connection URL (or its `AR_*_URL` env var), not to
+your config, so it may skip if unreachable. `--all` ignores `config/application.json`
+entirely: it swaps each `config/application.json-*-example` into place in turn,
+backing up and restoring your real config around the run.
 
 Run a single file while iterating:
 

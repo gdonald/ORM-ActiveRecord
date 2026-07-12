@@ -138,7 +138,39 @@ role SqlExec is export {
     self!run-statement($sql, @binds, $format);
   }
 
+  # Execute a statement, recovering transparently from a dropped connection. A
+  # server restart or a reaped idle socket makes the next statement fail; when
+  # that happens outside a transaction, reconnect so later requests work and
+  # replay the statement if it is a read. A write is surfaced rather than
+  # replayed, since it may have partially applied. A statement that fails while
+  # the connection still answers is a genuine SQL error and is re-thrown as-is.
   method !run-statement(Str:D $sql, @binds, Str:D $format) {
+    CATCH {
+      default {
+        my $error = $_;
+
+        # Inside a transaction the transaction is already lost, so there is
+        # nothing to salvage here; let the transaction manager roll back.
+        $error.rethrow if self.is-in-transaction;
+
+        # If the connection still answers, the SQL itself failed.
+        $error.rethrow if self!connection-alive;
+
+        # The connection dropped. Reconnect for the next caller, and replay this
+        # statement only if it is a read.
+        self.reconnect;
+        $error.rethrow unless self!replayable-read($sql);
+        return self!run-statement-once($sql, @binds, $format);
+      }
+    }
+
+    return self!run-statement-once($sql, @binds, $format);
+  }
+
+  # The raw single execution: acquire a statement, run it, reify the rows, and
+  # dispose. Never attempts connection recovery, so the probe and the replay
+  # above can call it without re-entering the recovery wrapper.
+  method !run-statement-once(Str:D $sql, @binds, Str:D $format) {
     my $exec-sql = QueryLogs.annotate($sql);
 
     Notifications.instrument('sql.active_record',
@@ -151,6 +183,19 @@ role SqlExec is export {
 
         @rows;
       });
+  }
+
+  # Liveness probe that bypasses the recovery wrapper. False on a dropped or
+  # dead connection, and never throws.
+  method !connection-alive(--> Bool) {
+    return False unless self.is-connected;
+    (try { self!run-statement-once('SELECT 1', [], 'rows'); True }) // False;
+  }
+
+  # A SELECT / WITH read is safe to replay after a reconnect; anything else is
+  # left to the caller.
+  method !replayable-read(Str:D $sql --> Bool) {
+    so $sql.subst(/^ \s+ /, '') ~~ /^ :i (select | with) <|w> /;
   }
 
   method !sql-name(Str:D $sql --> Str) {

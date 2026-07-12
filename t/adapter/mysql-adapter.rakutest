@@ -36,7 +36,7 @@ unless $can-connect {
   exit 0;
 }
 
-plan 33;
+plan 35;
 
 my $mysql = MySqlAdapter.new(:$host, :$port, :$user, :$password, :$database);
 ok $mysql.is-connected, 'connects from BUILD';
@@ -153,6 +153,17 @@ ok $mysql.disconnect, 'disconnect succeeds';
 nok $mysql.is-connected, 'is-connected reports false after disconnect';
 $mysql.reconnect;
 ok $mysql.is-connected, 'reconnect re-establishes connection';
+
+# ---- dropped-connection recovery ----
+# Simulate the failure a networked adapter hits overnight: the server closes our
+# connection (a restart, or wait_timeout reaping an idle socket). The handle is
+# still defined, so the next statement fails; the adapter must reconnect and, for
+# a read, replay it, instead of wedging on the dead handle until a restart.
+$mysql.exec('SELECT 1') unless $mysql.is-connected;
+try $mysql.exec('KILL CONNECTION_ID()');
+my @recovered = $mysql.exec('SELECT 42');
+is @recovered[0][0].Int, 42, 'a read recovers from a server-side drop and replays';
+ok $mysql.is-connected,      'the connection is live again after recovery';
 
 $mysql.exec('DROP TABLE widgets');
 $mysql.disconnect;

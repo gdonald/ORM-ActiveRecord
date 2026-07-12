@@ -1,5 +1,6 @@
 .precomp
 config/application.json
+config/application.json.test-backup
 db/*.sqlite3
 docs/
 docs-src/site/
