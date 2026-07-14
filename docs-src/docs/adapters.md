@@ -395,6 +395,25 @@ driver handles (notably libpq) are freed while the runtime is healthy rather
 than during the shutdown garbage collection, where the finalization order is
 undefined and the PostgreSQL driver can crash mid-teardown.
 
+## Thread safety
+
+A single connection is one wire-protocol stream, and two threads interleaving
+statements on it would desync that stream. Each adapter therefore serializes
+access with a reentrant per-connection lock. Statement execution (`exec`,
+`exec-stmt`, `exec-stmt-hash`), `transaction` blocks, and the lifecycle calls
+(`disconnect`, `reconnect`) each hold the lock for their full duration.
+
+Two consequences follow:
+
+- A `transaction` block holds the lock from `BEGIN` through `COMMIT`, so no
+  other thread's statement can land inside the transaction. The lock is
+  reentrant, so the statements inside the block still run.
+- Sharing one connection across threads is safe but serial: only one statement
+  or transaction block runs at a time. For parallel query throughput, use
+  [connection pooling](#connection-pooling), which hands each thread its own
+  connection. A pooled connection has a single user at a time, so its lock is
+  uncontended.
+
 ## Connection pooling
 
 For concurrent work, a connection pool hands out separate connections — each a

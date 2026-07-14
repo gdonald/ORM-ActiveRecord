@@ -5,6 +5,15 @@ use ORM::ActiveRecord::Instrumentation::Notifications;
 use ORM::ActiveRecord::Instrumentation::QueryLogs;
 
 role SqlExec is export {
+  # A connection is a single protocol stream: two threads interleaving
+  # statements on it desync the wire (libpq reports "message type 0x..
+  # arrived from server while idle") and every later call blocks forever in
+  # the driver. Pooled connections are single-user, so this lock is
+  # uncontended there; the shared fallback connection is reachable from any
+  # thread and needs it. Lock is reentrant, so a transaction block holding it
+  # can still run its own statements.
+  has Lock $!serial-lock = Lock.new;
+
   has Bool $.prepared-statements is rw = False;
   has Int  $.prepared-statement-cache-size is rw = 1000;
   has      %!stmt-cache;
@@ -100,16 +109,21 @@ role SqlExec is export {
     ($format, $sql, |@binds.map({ .defined ?? .Str !! "\x[0]" })).join("\x[1]");
   }
 
+  # Serialize a block against this adapter's connection.
+  method serialized(&block) {
+    $!serial-lock.protect(&block);
+  }
+
   method exec(Str:D $sql, *@binds) {
-    self!run-cached($sql, @binds, 'rows');
+    self.serialized: { self!run-cached($sql, @binds, 'rows') }
   }
 
   method exec-stmt(SqlStmt:D $stmt) {
-    self!run-cached($stmt.sql, $stmt.binds, 'rows');
+    self.serialized: { self!run-cached($stmt.sql, $stmt.binds, 'rows') }
   }
 
   method exec-stmt-hash(SqlStmt:D $stmt) {
-    self!run-cached($stmt.sql, $stmt.binds, 'hash');
+    self.serialized: { self!run-cached($stmt.sql, $stmt.binds, 'hash') }
   }
 
   method !run-cached(Str:D $sql, @binds, Str:D $format) {

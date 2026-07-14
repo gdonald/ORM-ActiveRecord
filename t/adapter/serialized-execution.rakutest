@@ -1,0 +1,93 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $shared = DB.shared.adapter;
+
+unless $shared.defined && $shared.is-connected {
+  plan 1;
+  skip 'no database connection available';
+  exit 0;
+}
+
+plan 4;
+
+# An adapter's connection is a single protocol stream, so the adapter
+# serializes statement execution, transaction blocks, and lifecycle calls.
+# Before the serial lock, concurrent statements on one connection desynced
+# the wire protocol (libpq: "message type 0x.. arrived from server while
+# idle") and every later call on that connection blocked forever.
+
+{
+  my @wrong = await (^16).map: -> $thread {
+    start {
+      my @misses;
+      for ^20 {
+        my $row = $shared.exec('SELECT 17')[0][0].Int;
+        @misses.push($row) unless $row == 17;
+      }
+      @misses;
+    }
+  }
+
+  is @wrong.map(*.elems).sum, 0, 'every statement answers correctly under a concurrent exec storm';
+}
+
+{
+  my @readers = (^8).map: -> $thread {
+    start {
+      my @misses;
+      for ^10 {
+        my $row = $shared.exec('SELECT 23')[0][0].Int;
+        @misses.push($row) unless $row == 23;
+      }
+      @misses;
+    }
+  }
+
+  my $recycler = start { $shared.reconnect for ^5 };
+
+  my @wrong = await @readers;
+  await $recycler;
+
+  is @wrong.map(*.elems).sum, 0,
+    'every read answers correctly while another thread recycles the connection';
+}
+
+$shared.exec('DROP TABLE IF EXISTS serial_counters');
+$shared.exec('CREATE TABLE serial_counters (n INTEGER)');
+$shared.exec('INSERT INTO serial_counters (n) VALUES (0)');
+
+{
+  await (^8).map: -> $thread {
+    start {
+      for ^5 {
+        $shared.transaction({
+          my $n = $shared.exec('SELECT n FROM serial_counters')[0][0].Int;
+          $shared.exec("UPDATE serial_counters SET n = {$n + 1}");
+        });
+      }
+    }
+  }
+
+  is $shared.exec('SELECT n FROM serial_counters')[0][0].Int, 40,
+    'concurrent read-then-write transactions lose no update';
+}
+
+{
+  $shared.exec('UPDATE serial_counters SET n = 1');
+  $shared.transaction({
+    $shared.transaction({
+      my $n = $shared.exec('SELECT n FROM serial_counters')[0][0].Int;
+      $shared.exec("UPDATE serial_counters SET n = {$n + 1}");
+    }, :requires-new);
+  });
+
+  is $shared.exec('SELECT n FROM serial_counters')[0][0].Int, 2,
+    'a nested transaction runs its statements while holding the serial lock';
+}
+
+$shared.exec('DROP TABLE IF EXISTS serial_counters');

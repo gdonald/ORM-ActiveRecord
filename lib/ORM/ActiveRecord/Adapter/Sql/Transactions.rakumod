@@ -46,30 +46,36 @@ role SqlTransactions is export {
   method release-savepoint(Str:D $name)     { self.txn-exec("RELEASE SAVEPOINT $name") }
   method rollback-to-savepoint(Str:D $name) { self.txn-exec("ROLLBACK TO SAVEPOINT $name") }
 
+  # The whole block runs under the adapter's serial lock (reentrant, so the
+  # statements inside still execute): a transaction is a stateful multi-
+  # statement conversation, and on a shared connection another thread's
+  # statement landing between BEGIN and COMMIT would join this transaction.
   method transaction(&block, Bool:D :$requires-new = False, Str :$isolation) {
-    if $isolation.defined && $isolation.chars {
-      die "transaction: isolation level only applies to the outermost transaction"
-        if $!txn-depth > 0;
-      self.normalise-isolation($isolation);
-    }
+    self.serialized: {
+      if $isolation.defined && $isolation.chars {
+        die "transaction: isolation level only applies to the outermost transaction"
+          if $!txn-depth > 0;
+        self.normalise-isolation($isolation);
+      }
 
-    if $!txn-depth == 0 {
-      self.begin-sql(:$isolation);
-      $!txn-depth = 1;
-      $!sp-counter = 0;
-      $!txn-start = now;
-      Notifications.notify('start_transaction.active_record', { :$isolation });
+      if $!txn-depth == 0 {
+        self.begin-sql(:$isolation);
+        $!txn-depth = 1;
+        $!sp-counter = 0;
+        $!txn-start = now;
+        Notifications.notify('start_transaction.active_record', { :$isolation });
+        self!push-txn-frame;
+        return self!run-outer(&block);
+      }
+
+      return self!run-joined(&block) unless $requires-new;
+
+      my $name = self!next-savepoint;
+      self.savepoint($name);
+      $!txn-depth++;
       self!push-txn-frame;
-      return self!run-outer(&block);
+      self!run-savepoint($name, &block);
     }
-
-    return self!run-joined(&block) unless $requires-new;
-
-    my $name = self!next-savepoint;
-    self.savepoint($name);
-    $!txn-depth++;
-    self!push-txn-frame;
-    self!run-savepoint($name, &block);
   }
 
   # Open a transaction that stays open until `force-rollback`. This is the basis

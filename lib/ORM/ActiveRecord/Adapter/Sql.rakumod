@@ -77,23 +77,29 @@ class SqlAdapter
   # Lifecycle — generic across DBIish drivers; engines just need to set $!db
   method is-connected(--> Bool) { $!db.defined.so }
 
+  # Serialized: tearing down the driver handle while another thread is
+  # mid-statement on it would free the handle under that statement.
   method disconnect(--> Bool) {
-    return False unless $!db.defined;
-    self.clear-statement-cache;
-    self.clear-query-cache;
-    self.clear-schema-cache;
-    # A handle whose connection already died can throw on dispose; drop it
-    # regardless so a reconnect is never blocked by a dead one.
-    (try $!db.dispose);
-    $!db = Nil;
-    self.reset-txn-state;
-    True;
+    self.serialized: {
+      return False unless $!db.defined;
+      self.clear-statement-cache;
+      self.clear-query-cache;
+      self.clear-schema-cache;
+      # A handle whose connection already died can throw on dispose; drop it
+      # regardless so a reconnect is never blocked by a dead one.
+      (try $!db.dispose);
+      $!db = Nil;
+      self.reset-txn-state;
+      True;
+    }
   }
 
   method reconnect() {
-    self.disconnect;
-    self.connect;
-    self;
+    self.serialized: {
+      self.disconnect;
+      self.connect;
+      self;
+    }
   }
 
   # Health probe: a defined handle is not proof the server is still there, so
