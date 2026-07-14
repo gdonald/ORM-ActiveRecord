@@ -538,6 +538,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#thread-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thread safety
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#connection-pooling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -581,6 +592,17 @@
     <span class="md-ellipsis">
       
         Query cache
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-metadata-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema metadata cache
       
     </span>
   </a>
@@ -2222,6 +2244,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#thread-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thread safety
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#connection-pooling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2265,6 +2298,17 @@
     <span class="md-ellipsis">
       
         Query cache
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-metadata-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema metadata cache
       
     </span>
   </a>
@@ -2839,11 +2883,29 @@ the registry, so the next <code>DB.shared</code> rebuilds from config.</p>
 driver handles (notably libpq) are freed while the runtime is healthy rather
 than during the shutdown garbage collection, where the finalization order is
 undefined and the PostgreSQL driver can crash mid-teardown.</p>
+<h2 id="thread-safety">Thread safety</h2>
+<p>A single connection is one wire-protocol stream, and two threads interleaving
+statements on it would desync that stream. Each adapter therefore serializes
+access with a reentrant per-connection lock. Statement execution (<code>exec</code>,
+<code>exec-stmt</code>, <code>exec-stmt-hash</code>), <code>transaction</code> blocks, and the lifecycle calls
+(<code>disconnect</code>, <code>reconnect</code>) each hold the lock for their full duration.</p>
+<p>Two consequences follow:</p>
+<ul>
+<li>A <code>transaction</code> block holds the lock from <code>BEGIN</code> through <code>COMMIT</code>, so no
+  other thread's statement can land inside the transaction. The lock is
+  reentrant, so the statements inside the block still run.</li>
+<li>Sharing one connection across threads is safe but serial: only one statement
+  or transaction block runs at a time. For parallel query throughput, use
+  <a href="#connection-pooling">connection pooling</a>, which hands each thread its own
+  connection. A pooled connection has a single user at a time, so its lock is
+  uncontended.</li>
+</ul>
 <h2 id="connection-pooling">Connection pooling</h2>
 <p>For concurrent work, a connection pool hands out separate connections — each a
 full adapter with its own driver handle and transaction state. Size it from
 config (the <code>pool</code> key, with <code>min-threads</code>, <code>checkout-timeout</code>,
-<code>idle-timeout</code>, <code>reaping-frequency</code>, and <code>verify-timeout</code> as further knobs):</p>
+<code>idle-timeout</code>, <code>reaping-frequency</code>, <code>verify-timeout</code>, and
+<code>verify-idle-after</code> as further knobs):</p>
 <div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
@@ -2877,6 +2939,11 @@ connection first, so one dropped while idle is reconnected transparently; a
 <code>checkout</code> that can't get a free connection within <code>checkout-timeout</code> throws.
 <code>pool.reap</code> closes connections idle past <code>idle-timeout</code> (down to
 <code>min-threads</code>), and <code>pool.disconnect-all</code> closes them all.</p>
+<p>The checkout health probe is a <code>SELECT 1</code> round-trip, and by default it runs
+on every checkout. Set <code>verify-idle-after</code> (seconds) to reserve the probe for
+connections that have sat idle past that threshold. A connection used more
+recently checks out without the round-trip, which the statement layer's own
+dropped-connection recovery makes safe.</p>
 <h3 id="request-scoped-connections">Request-scoped connections</h3>
 <p>A concurrent server wants every query in one request to run on the same pooled
 connection, so the request sees a consistent view (and one transaction spans it).
@@ -2966,6 +3033,16 @@ even within a surrounding <code>cache</code> block:</p>
 <code>disable-query-cache</code> toggle it (disabling also clears it), and
 <code>clear-query-cache</code> empties it without changing the on/off state. Each pooled
 connection has its own cache, and disconnecting clears it.</p>
+<h2 id="schema-metadata-cache">Schema metadata cache</h2>
+<p>Column introspection (<code>get-fields</code>, <code>column-details</code>) reads from
+<code>information_schema</code> (or <code>pragma_table_info</code> on SQLite), which is costly to
+repeat on every model operation. The adapter memoises this metadata per table
+for the life of the connection.</p>
+<p>The cache invalidates itself when it can no longer be trusted: any schema-change
+statement (<code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>RENAME</code>) run through the adapter clears
+it, and disconnecting drops it with the rest of the connection state. Call
+<code>clear-schema-cache</code> to empty it explicitly, for example after issuing DDL
+through a route the adapter cannot observe.</p>
 <h2 id="advisory-locks">Advisory locks</h2>
 <p>An advisory lock is a named, application-level lock the database tracks but does
 not tie to any row or table. <code>with-advisory-lock</code> takes the lock for the

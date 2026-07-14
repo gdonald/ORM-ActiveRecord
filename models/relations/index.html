@@ -594,6 +594,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#select" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        select
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#all" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1817,6 +1828,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#select" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        select
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#all" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2026,6 +2048,26 @@ orders rows to match an explicit value list.</p>
 
 <p>SQLite and MySQL require a <code>LIMIT</code> whenever an <code>OFFSET</code> is set; the adapter
 adds a synthetic unbounded <code>LIMIT</code> when you pass <code>offset</code> alone.</p>
+<h2 id="select">select</h2>
+<p><code>select(*@cols)</code> narrows the <code>SELECT</code> list to the named columns. A model
+loaded through a narrowed relation carries attrs only for the columns it
+fetched, so an unselected column reads as undefined rather than a typed
+default.</p>
+<div class="codehilite"><table class="codehilitetable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">my</span> <span class="nv">$user</span> = <span class="n">User</span>.<span class="n">select</span>(<span class="s">&lt;id fname&gt;</span>).<span class="n">where</span>({<span class="n">lname</span> =&gt; <span class="s">&#39;Anderson&#39;</span>}).<span class="nb">first</span>;
+
+<span class="nv">$user</span>.<span class="n">attrs</span><span class="s">&lt;fname&gt;</span>;           <span class="c1"># &#39;Alice&#39;</span>
+<span class="nv">$user</span>.<span class="n">attrs</span><span class="s">&lt;lname&gt;</span>.<span class="nb">defined</span>;   <span class="c1"># False, never fetched</span>
+</code></pre></div></td></tr></table></div>
+
+<p>Saving a narrowed record writes only the columns it holds, so unselected
+columns keep their database values.</p>
+<p>Entries that are not columns of the model's table (expressions such as
+<code>COUNT(*) OVER ()</code>) don't narrow the model load, and a select naming only
+expressions loads every column. Expression selects pair with <code>pluck</code> and
+<code>distinct</code>; see <a href="../aggregation/">Aggregation</a>.</p>
 <h2 id="all">all</h2>
 <p><code>Model.all</code> returns a relation that, once realised, returns every row. You can
 chain conditions onto it just like <code>where</code>.</p>
