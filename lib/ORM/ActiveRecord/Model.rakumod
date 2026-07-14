@@ -143,7 +143,8 @@ class Model
 
     self.WHAT.register-sti;
     @!fields = self.get-fields(self.table-name);
-    self.init-attrs;
+    my $only = (%!record && %!record<fields>) ?? %!record<fields>.map(*.name).Set !! Nil;
+    self.init-attrs(:$only);
 
     if %!record && %!record<attrs> {
       self.merge-attrs(%!record<attrs>);
@@ -1019,10 +1020,14 @@ class Model
     True;
   }
 
-  method init-attrs {
+  # A record instantiated from a fetched row (`:$only` = its column names)
+  # gets attrs only for the columns the query selected, so a narrowed
+  # `select` load doesn't fake the missing columns with type defaults.
+  method init-attrs(:$only) {
     for @!fields {
       my $name = $_.name;
       next if $name eq 'id';
+      next if $only.defined && $name ∉ $only;
       given .type {
         when /integer/ { %!attrs{$name} = 0 }
         when /(character|text)/ { %!attrs{$name} = '' }

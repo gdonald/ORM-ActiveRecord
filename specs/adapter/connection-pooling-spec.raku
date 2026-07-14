@@ -116,4 +116,43 @@ group 'connection pooling', :order<defined>, {
       expect(@rows[0][0].Int).to.eq(1);
     }
   }
+
+  context 'verify-idle-after', :order<defined>, {
+    my role ProbeCounter {
+      has Int $.probes is rw = 0;
+      method is-active(--> Bool) { $!probes++; callsame }
+    }
+
+    my sub counting-pool(*%opts --> ConnectionPool) {
+      ConnectionPool.new(builder => { DB.shared.build-connection does ProbeCounter }, |%opts);
+    }
+
+    it 'probes the connection on every checkout by default', {
+      my $pool = counting-pool(size => 1);
+      my $conn = $pool.checkout;
+      $pool.checkin($conn);
+      $pool.checkout;
+      $pool.disconnect-all;
+      expect($conn.probes).to.eq(2);
+    }
+
+    it 'checks out a connection idle less than the threshold without a probe', {
+      my $pool = counting-pool(size => 1, verify-idle-after => 60);
+      my $conn = $pool.checkout;
+      $pool.checkin($conn);
+      $pool.checkout;
+      $pool.disconnect-all;
+      expect($conn.probes).to.eq(0);
+    }
+
+    it 'probes a connection idle past the threshold on checkout', {
+      my $pool = counting-pool(size => 1, verify-idle-after => 0.01);
+      my $conn = $pool.checkout;
+      $pool.checkin($conn);
+      sleep 0.05;
+      $pool.checkout;
+      $pool.disconnect-all;
+      expect($conn.probes).to.eq(1);
+    }
+  }
 }

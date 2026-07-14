@@ -1,0 +1,48 @@
+
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use Models::User;
+use Test;
+
+plan 6;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+User.destroy-all;
+
+User.create({fname => 'Alice', lname => 'Anderson'});
+User.create({fname => 'Bob',   lname => 'Brown'});
+
+# select narrows the columns a model load fetches
+{
+  my $user = User.select(<id fname>).where({lname => 'Anderson'}).first;
+
+  ok $user.attrs<id>.defined,     'a selected column is fetched';
+  is $user.attrs<fname>, 'Alice', 'a selected column carries its value';
+  nok $user.attrs<lname>.defined, 'an unselected column is not fetched';
+}
+
+# the generated SQL names only the selected columns
+{
+  my $sql = User.select(<id fname>).to-sql;
+  nok $sql.contains('lname'), 'the select list omits unselected columns';
+}
+
+# a save writes only the fetched columns, so an unselected column keeps its value
+{
+  my $user = User.select(<id fname>).where({lname => 'Anderson'}).first;
+  $user.attrs<fname> = 'Alicia';
+  $user.save;
+
+  is User.find($user.id).attrs<lname>, 'Anderson',
+    'saving a narrowed record leaves an unselected column untouched';
+}
+
+# a select of only non-column expressions leaves the model load unnarrowed
+{
+  my $user = User.select('COUNT(*) OVER ()').where({lname => 'Brown'}).first;
+  is $user.attrs<lname>, 'Brown', 'an expression-only select still loads every column';
+}
+
+done-testing;

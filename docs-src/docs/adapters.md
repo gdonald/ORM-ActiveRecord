@@ -419,7 +419,8 @@ Two consequences follow:
 For concurrent work, a connection pool hands out separate connections — each a
 full adapter with its own driver handle and transaction state. Size it from
 config (the `pool` key, with `min-threads`, `checkout-timeout`,
-`idle-timeout`, `reaping-frequency`, and `verify-timeout` as further knobs):
+`idle-timeout`, `reaping-frequency`, `verify-timeout`, and
+`verify-idle-after` as further knobs):
 
 ```json
 { "production": { "primary": {
@@ -451,6 +452,12 @@ connection first, so one dropped while idle is reconnected transparently; a
 `checkout` that can't get a free connection within `checkout-timeout` throws.
 `pool.reap` closes connections idle past `idle-timeout` (down to
 `min-threads`), and `pool.disconnect-all` closes them all.
+
+The checkout health probe is a `SELECT 1` round-trip, and by default it runs
+on every checkout. Set `verify-idle-after` (seconds) to reserve the probe for
+connections that have sat idle past that threshold. A connection used more
+recently checks out without the round-trip, which the statement layer's own
+dropped-connection recovery makes safe.
 
 ### Request-scoped connections
 

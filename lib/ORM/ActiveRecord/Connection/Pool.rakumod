@@ -14,6 +14,7 @@ class ConnectionPool is export {
   has Int  $.min  = 0;                # pre-warmed idle connections
   has Real $.checkout-timeout = 5;    # seconds to wait for a free connection
   has Real $.verify-timeout   = 0;    # seconds for the checkout health probe (0 = unbounded)
+  has Real $.verify-idle-after = 0;   # probe only connections idle longer than this (0 = every checkout)
   has Real $.idle-timeout     = 0;    # reap idle connections older than this (0 = never)
   has Real $.reaping-frequency = 0;   # advisory; reaping runs via `reap`
 
@@ -39,24 +40,33 @@ class ConnectionPool is export {
     my $deadline = now + $!checkout-timeout;
 
     loop {
-      my $conn = $!lock.protect: {
+      my ($conn, $idle-since) = $!lock.protect: {
         if @!idle.elems {
           my %slot = @!idle.pop;
           %!busy{%slot<conn>.WHICH} = %slot<conn>;
-          %slot<conn>;
+          (%slot<conn>, %slot<since>);
         }
         elsif $!created < $!size {
           $!created++;
           my $c = &!builder();
           %!busy{$c.WHICH} = $c;
-          $c;
+          ($c, now);   # freshly connected, as recent as a connection gets
         }
         else {
-          Adapter;   # type object signals "none available"
+          (Adapter, Nil);   # type object signals "none available"
         }
       };
 
-      return self!ensure-live($conn) if $conn ~~ Adapter:D;
+      if $conn ~~ Adapter:D {
+        # A connection used moments ago is overwhelmingly still alive, and the
+        # exec layer recovers from a dropped one anyway, so the health probe
+        # (a SELECT 1 round-trip per checkout) is reserved for connections
+        # that have sat idle past the threshold.
+        return $conn
+          if $!verify-idle-after > 0 && $idle-since.defined && now - $idle-since < $!verify-idle-after;
+
+        return self!ensure-live($conn);
+      }
 
       die "ConnectionPool: checkout timed out after {$!checkout-timeout}s (pool size $!size)"
         if now > $deadline;

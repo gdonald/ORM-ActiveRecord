@@ -79,10 +79,12 @@ class DB is export {
     my $idle-timeout      =  self!cfg-num(%config, 'idle-timeout', 'idle_timeout') // 0;
     my $reaping-frequency =  self!cfg-num(%config, 'reaping-frequency', 'reaping_frequency') // 0;
     my $verify-timeout    =  self!cfg-num(%config, 'verify-timeout', 'verify_timeout') // 0;
+    my $verify-idle-after =  self!cfg-num(%config, 'verify-idle-after', 'verify_idle_after') // 0;
 
     ConnectionPool.new(
       builder => { self.build-connection },
       :$size, :$min, :$checkout-timeout, :$idle-timeout, :$reaping-frequency, :$verify-timeout,
+      :$verify-idle-after,
     );
   }
 

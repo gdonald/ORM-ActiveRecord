@@ -92,4 +92,44 @@ $dead.disconnect;
   is @rows[0][0].Int, 1, 'DB.with-connection runs a query on a pooled connection';
 }
 
+# verify-idle-after: the checkout health probe is reserved for connections
+# that have sat idle past the threshold.
+
+my role ProbeCounter {
+  has Int $.probes is rw = 0;
+  method is-active(--> Bool) { $!probes++; callsame }
+}
+
+sub counting-pool(*%opts --> ConnectionPool) {
+  ConnectionPool.new(builder => { DB.shared.build-connection does ProbeCounter }, |%opts);
+}
+
+{
+  my $pool = counting-pool(size => 1);
+  my $conn = $pool.checkout;
+  $pool.checkin($conn);
+  $pool.checkout;
+  is $conn.probes, 2, 'by default every checkout probes the connection';
+  $pool.disconnect-all;
+}
+
+{
+  my $pool = counting-pool(size => 1, verify-idle-after => 60);
+  my $conn = $pool.checkout;
+  $pool.checkin($conn);
+  $pool.checkout;
+  is $conn.probes, 0, 'a connection idle less than verify-idle-after checks out without a probe';
+  $pool.disconnect-all;
+}
+
+{
+  my $pool = counting-pool(size => 1, verify-idle-after => 0.01);
+  my $conn = $pool.checkout;
+  $pool.checkin($conn);
+  sleep 0.05;
+  $pool.checkout;
+  is $conn.probes, 1, 'a connection idle past verify-idle-after is probed on checkout';
+  $pool.disconnect-all;
+}
+
 done-testing;

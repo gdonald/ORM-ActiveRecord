@@ -16,7 +16,7 @@ role QueryBulk is export {
     return 0 if self.is-none-value;
     my %attrs = @args.elems && @args[0] ~~ Hash ?? @args[0].Hash !! %kw;
     die 'update-all: no attributes supplied' unless %attrs.elems;
-    my %types = self.fields-of.map({ .name => .type }).Hash;
+    my %types = self.all-fields.map({ .name => .type }).Hash;
     my @or-groups = self.or-groups-payload;
     my @locking-bump = self!locking-bump-cols(%attrs);
     self.db.update-records(
@@ -59,7 +59,7 @@ role QueryBulk is export {
 
   method !locking-bump-cols(%already-set --> List) {
     my $col = 'lock_version';
-    return () unless self.fields-of.first({ .name eq $col });
+    return () unless self.all-fields.first({ .name eq $col });
     return () if %already-set{$col}:exists;
     ($col,);
   }

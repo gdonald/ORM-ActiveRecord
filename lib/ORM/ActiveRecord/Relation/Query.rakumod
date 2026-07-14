@@ -177,7 +177,17 @@ is export
     DB.current(name => $name);
   }
 
-  method fields-of              { @!fields }
+  # The columns a model load fetches: `select` narrows to the named columns
+  # (entries that are not plain columns of this table, e.g. expressions for
+  # pluck, don't narrow). Bulk writes use `all-fields` for the full type map.
+  method fields-of {
+    return @!fields unless @!select.elems;
+    my $wanted = @!select.map(*.Str).Set;
+    my @subset = @!fields.grep({ .name ∈ $wanted });
+    @subset.elems ?? @subset !! @!fields;
+  }
+
+  method all-fields             { @!fields }
 
   method clone-query(--> Query) {
     my $copy = Query.new(:class($!class), :params({}));

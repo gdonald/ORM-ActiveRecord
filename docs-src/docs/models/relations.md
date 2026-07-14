@@ -88,6 +88,28 @@ sub page-of-users(Int :$page = 1, Int :$per = 20) {
 SQLite and MySQL require a `LIMIT` whenever an `OFFSET` is set; the adapter
 adds a synthetic unbounded `LIMIT` when you pass `offset` alone.
 
+## select
+
+`select(*@cols)` narrows the `SELECT` list to the named columns. A model
+loaded through a narrowed relation carries attrs only for the columns it
+fetched, so an unselected column reads as undefined rather than a typed
+default.
+
+```perl6
+my $user = User.select(<id fname>).where({lname => 'Anderson'}).first;
+
+$user.attrs<fname>;           # 'Alice'
+$user.attrs<lname>.defined;   # False, never fetched
+```
+
+Saving a narrowed record writes only the columns it holds, so unselected
+columns keep their database values.
+
+Entries that are not columns of the model's table (expressions such as
+`COUNT(*) OVER ()`) don't narrow the model load, and a select naming only
+expressions loads every column. Expression selects pair with `pluck` and
+`distinct`; see [Aggregation](aggregation.md).
+
 ## all
 
 `Model.all` returns a relation that, once realised, returns every row. You can
