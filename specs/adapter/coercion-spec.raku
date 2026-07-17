@@ -161,18 +161,21 @@ describe 'a blank string assigned to a non-text column', {
   }
 
   context 'on update', {
-    it 'leaves the stored created_at a DateTime rather than sending "" to the driver', {
-      my $blank = Article.create({ title => 'Blank Date', body => 'x' });
-      $blank.update({ title => 'Blank Date Renamed', created_at => '' });
-      my $reloaded = Article.find($blank.id);
-      expect($reloaded.attrs<created_at>).to.be-a(DateTime);
+    let(:scored, { Article.create({ title => 'Scored', body => 'x', score => 7 }) });
+
+    it 'clears a nullable column rather than sending "" to the driver', {
+      scored.update({ title => 'Scored Renamed', score => '' });
+      expect(Article.find(scored.id).attrs<score>.defined).to.be-falsy;
     }
 
     it 'still applies the other updated columns', {
+      scored.update({ title => 'Scored Renamed', score => '' });
+      expect(Article.find(scored.id).attrs<title>).to.eq('Scored Renamed');
+    }
+
+    it 'raises on a NOT NULL column rather than passing over the caller edit', {
       my $blank = Article.create({ title => 'Blank Date', body => 'x' });
-      $blank.update({ title => 'Blank Date Renamed', created_at => '' });
-      my $reloaded = Article.find($blank.id);
-      expect($reloaded.attrs<title>).to.eq('Blank Date Renamed');
+      expect({ $blank.update({ created_at => '' }) }).to.throw;
     }
   }
 

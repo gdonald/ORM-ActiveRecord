@@ -224,12 +224,13 @@ my %dump = $user.attributes;
 
 ### Blank strings on typed columns
 
-Assigning a blank string (`''`) to a non-text column is treated as "no value".
-The attribute becomes the typed null, and the column is left out of the
-`INSERT` / `UPDATE`. On create it falls back to its schema default. On update it
-keeps its stored value. This is what a web form sends when an optional numeric,
-boolean, or datetime field is left empty. Text and character columns keep the
-empty string.
+Assigning a blank string (`''`) to a non-text column is treated as "no value":
+the attribute becomes the typed null. This is what a web form sends when an
+optional numeric, boolean, or datetime field is left empty. Text and character
+columns keep the empty string.
+
+On create the column is left out of the `INSERT`, so it falls back to its schema
+default.
 
 ```perl6
 # score is integer default 0, published is boolean default False, body is text
@@ -244,8 +245,34 @@ $found<body>;        # ''     (a text column keeps the blank string)
 An `INSERT` with a blank `created_at` still gets a timestamp, because the
 automatic timestamps fill it before the row is written.
 
-An explicitly undefined value (a type object such as `Str`) is not a blank
-string, so it is left untouched rather than coerced.
+On update the column is cleared. An `UPDATE` writes every attribute it was
+given, so blanking a nullable column sets it back to `NULL` rather than keeping
+the stored value. Blanking a `NOT NULL` column is a real attempt to write null,
+so it raises rather than discarding the edit.
+
+```perl6
+my $article = Article.create({ title => 'Scored', body => 'x', score => 7 });
+$article.update({ score => '' });
+Article.find($article.id)<score>;   # (undefined)  -- the column was cleared
+```
+
+Assigning an explicitly undefined value (a type object such as `Str`) clears the
+column the same way. The `UPDATE` sets it to `NULL` rather than passing over the
+attribute.
+
+```perl6
+$user.lname = Str;
+$user.save;
+User.find($user.id).lname;   # (undefined)
+```
+
+Clearing a `belongs-to` association is the same operation. Assigning `Nil` to the
+association clears its foreign key (and, for a polymorphic association, its type
+column) rather than leaving the old parent in place.
+
+```perl6
+$article.update({ author => Nil });   # author_id is set back to NULL
+```
 
 ## State Predicates
 

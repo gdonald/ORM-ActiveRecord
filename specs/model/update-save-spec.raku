@@ -30,4 +30,22 @@ describe 'update and save', {
 
     expect($user.fname).to.eq('John');
   }
+
+  context 'clearing an attribute', {
+    let(:user, { User.create({fname => 'Fred', lname => 'Flintstone'}) });
+
+    it 'writes the column back to null', {
+      user.lname = Str;
+      user.save;
+
+      expect(User.find(user.id).lname.defined).to.be-falsy;
+    }
+
+    it 'leaves the other columns alone', {
+      user.lname = Str;
+      user.save;
+
+      expect(User.find(user.id).fname).to.eq('Fred');
+    }
+  }
 }

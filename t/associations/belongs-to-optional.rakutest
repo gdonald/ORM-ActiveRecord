@@ -9,7 +9,7 @@ use Models::Attachment;
 use Models::Picture;
 use Test;
 
-plan 23;
+plan 26;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -87,6 +87,21 @@ ok $bare-pic.is-invalid,
 my $half = Picture.new(:id(0), :record({attrs => {name => 'half.png', imageable_id => 1}}));
 ok $half.is-invalid,
   'polymorphic + default-required: invalid when only _id is set';
+
+# === Clearing an assigned association ===
+my $author = User.create({fname => 'Alice', lname => 'A'});
+my $assigned = Article.create({title => 'Assigned', body => 'x', author => $author});
+$assigned.update({author => Nil});
+nok Article.find($assigned.id).attrs<author_id>.defined,
+  'clearing a belongs-to clears its foreign key';
+
+my $poly-owner = User.create({fname => 'Alice', lname => 'A'});
+my $attached = Attachment.create({name => 'avatar.png', attachable => $poly-owner});
+$attached.update({attachable => Nil});
+nok Attachment.find($attached.id).attrs<attachable_id>.defined,
+  'clearing a polymorphic belongs-to clears its foreign key';
+nok Attachment.find($attached.id).attrs<attachable_type>.defined,
+  'clearing a polymorphic belongs-to clears its type';
 
 # Predicate access
 ok !User.new(:id(0)).is-belongs-to-optional('user'),

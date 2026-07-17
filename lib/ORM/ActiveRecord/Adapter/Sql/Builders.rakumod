@@ -21,9 +21,14 @@ role SqlBuilders is export {
     my @values;
     for %attrs.keys {
       next if $_ ~~ 'id';
-      next unless %attrs{$_}.defined;
+
+      # An attribute assigned an undefined value clears its column. Passing over
+      # it instead would leave the old value in the row, so an assignment that
+      # reads as "set this back to nothing" would silently do nothing.
       my $type = %types{$_};
-      @values.push: "$_ = " ~ self!bind-typed($stmt, %attrs{$_}, :$type);
+      @values.push: "$_ = " ~ (%attrs{$_}.defined
+        ?? self!bind-typed($stmt, %attrs{$_}, :$type)
+        !! 'NULL');
     }
     @values.join(', ');
   }

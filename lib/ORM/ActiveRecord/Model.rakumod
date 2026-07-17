@@ -1279,7 +1279,24 @@ class Model
 
   method update-foreign-keys {
     for $.belongs-tos.keys -> $key {
-      next unless $.attrs{$key};
+      next unless $.attrs{$key}:exists;
+
+      # Assigning an undefined association clears its foreign key rather than
+      # writing the association name as a column.
+      unless $.attrs{$key}.defined {
+        if self.is-polymorphic-assoc($key) {
+          $.attrs{$key ~ '_id'}   = Nil;
+          $.attrs{$key ~ '_type'} = Nil;
+        }
+        else {
+          my $spec = $.belongs-tos{$key};
+          my $fkey-col = self.assoc-fkey-from-spec($spec, $key ~ '_id');
+          $.attrs{$fkey-col} = Nil;
+        }
+        $.attrs{$key}:delete;
+        next;
+      }
+
       if self.is-polymorphic-assoc($key) {
         my $record = $.attrs{$key};
         next unless $record ~~ Model;

@@ -4,7 +4,7 @@ use lib 'specs/lib';
 use Models::User;
 use Test;
 
-plan 3;
+plan 5;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -14,5 +14,12 @@ ok $user.is-valid;
 $user.fname = 'John';
 ok $user.save;
 ok $user.fname eq 'John';
+
+my $cleared = User.create({fname => 'Fred', lname => 'Flintstone'});
+$cleared.lname = Str;
+$cleared.save;
+
+nok User.find($cleared.id).lname.defined, 'an attribute set to an undefined value clears the column';
+is User.find($cleared.id).fname, 'Fred', 'clearing one column leaves the others alone';
 
 User.destroy-all;

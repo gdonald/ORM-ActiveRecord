@@ -12,7 +12,7 @@ class Article is Model {
   submethod BUILD { }
 }
 
-plan 24;
+plan 25;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -84,11 +84,17 @@ my $found-bool = Article.find($blank-bool.id);
 isa-ok $found-bool.attrs<published>, Bool, 'a blank boolean reads back as Bool';
 is $found-bool.attrs<published>, False, 'a blank boolean stores the column default';
 
-# Update path coerces a blank non-text value too.
-$blank.update({ title => 'Blank Date Renamed', created_at => '' });
-my $reloaded-blank = Article.find($blank.id);
-isa-ok $reloaded-blank.attrs<created_at>, DateTime, 'a blank created_at on update does not reach the driver as ""';
-is $reloaded-blank.attrs<title>, 'Blank Date Renamed', 'the update otherwise applied';
+# Update path coerces a blank non-text value too: it becomes the typed null, so
+# the column is cleared rather than reaching the driver as "".
+my $scored = Article.create({ title => 'Scored', body => 'x', score => 7 });
+$scored.update({ title => 'Scored Renamed', score => '' });
+my $reloaded-scored = Article.find($scored.id);
+nok $reloaded-scored.attrs<score>.defined, 'a blank score on update clears the column';
+is $reloaded-scored.attrs<title>, 'Scored Renamed', 'the update otherwise applied';
+
+# Blanking a NOT NULL column is a real attempt to write null, so it raises
+# rather than passing over the column and discarding the caller's edit.
+dies-ok { $blank.update({ created_at => '' }) }, 'a blank NOT NULL column raises rather than being skipped';
 
 Article.destroy-all;
 

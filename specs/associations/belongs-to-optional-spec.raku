@@ -137,6 +137,29 @@ describe 'belongs-to optional / required', {
     }
   }
 
+  context 'clearing an assigned association', {
+    it 'clears the foreign key when set to an undefined value', {
+      my $alice = User.create({fname => 'Alice', lname => 'A'});
+      my $article = Article.create({title => 'Assigned', body => 'x', author => $alice});
+      $article.update({author => Nil});
+      expect(Article.find($article.id).attrs<author_id>.defined).to.be-falsy;
+    }
+
+    it 'clears a polymorphic foreign key when set to an undefined value', {
+      my $alice = User.create({fname => 'Alice', lname => 'A'});
+      my $attach = Attachment.create({name => 'avatar.png', attachable => $alice});
+      $attach.update({attachable => Nil});
+      expect(Attachment.find($attach.id).attrs<attachable_id>.defined).to.be-falsy;
+    }
+
+    it 'clears a polymorphic type when set to an undefined value', {
+      my $alice = User.create({fname => 'Alice', lname => 'A'});
+      my $attach = Attachment.create({name => 'avatar.png', attachable => $alice});
+      $attach.update({attachable => Nil});
+      expect(Attachment.find($attach.id).attrs<attachable_type>.defined).to.be-falsy;
+    }
+  }
+
   context 'is-belongs-to-optional predicate', {
     it 'returns False on missing key', {
       expect(User.new(:id(0)).is-belongs-to-optional('user')).to.be-falsy;
