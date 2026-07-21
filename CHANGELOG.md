@@ -4,7 +4,37 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.2] - 2026-07-21
+
+### Added
+
+- `select(*@cols)` narrows the `SELECT` list to the named columns. A model
+  loaded through a narrowed relation carries attrs only for the columns it
+  fetched, and saving it writes only those columns. Entries that are not
+  columns of the model's table (expressions such as `COUNT(*) OVER ()`) don't
+  narrow the load and pair with `pluck` and `distinct`.
+- Per-connection cache of column metadata, so repeated introspection of the
+  same table reuses the first lookup instead of re-querying the database.
+
+### Changed
+
+- Execution is serialized per connection, so statements and transactions issued
+  concurrently against one connection no longer interleave.
+- An update writes every attribute it was given, and only those. A blank string
+  assigned to a non-text column already became the typed null on create; it now
+  clears the column on update as well. Blanking a NOT NULL column raises rather
+  than discarding the caller's edit.
+
+### Fixed
+
+- Dropped connections are detected and handled during execution instead of
+  surfacing as raw driver errors.
+- `save` clears a column whose attribute is set to an undefined value. The
+  update builder passed over undefined attributes, so assigning `Nil` left the
+  previous value in the row.
+- Assigning `Nil` to a `belongs-to` association clears its foreign key (and a
+  polymorphic association's type column) instead of writing the association name
+  as a column.
 
 ## [0.9.1] - 2026-07-11
 
