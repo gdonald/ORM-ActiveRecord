@@ -2,8 +2,11 @@ use lib 'lib';
 use BDD::Behave;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Model;
 
 %*ENV<DISABLE-SQL-LOG> = True;
+
+class NumericRow is Model { method table-name { '_t_num' } }
 
 my $adapter = DB.shared.adapter;
 my $has-db  = $adapter.defined && $adapter.is-connected;
@@ -157,6 +160,17 @@ group 'migration column types', :order<defined>, {
 
     it 'stores a money value', {
       expect(digits-of('SELECT price FROM _t_num').contains('12.34')).to.be-truthy;
+    }
+
+    # A model reads numeric columns through init-attrs, which had no numeric
+    # branch and died with "No such method 'type' for string 'numeric'" before.
+    it 'reads numeric columns through a model without error', {
+      my $num-row = NumericRow.first;
+      aggregate-failures {
+        expect($num-row.defined).to.be-truthy;
+        expect(((+($num-row.attrs<amt>)) - 1234.56).abs < 0.01).to.be-truthy;
+        expect(((+($num-row.attrs<rate>)) - 2.5).abs < 0.001).to.be-truthy;
+      }
     }
   }
 

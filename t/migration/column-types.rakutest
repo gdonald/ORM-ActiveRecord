@@ -4,8 +4,11 @@ use lib 'lib';
 use Test;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Schema::Migration;
+use ORM::ActiveRecord::Model;
 
 %*ENV<DISABLE-SQL-LOG> = True;
+
+class NumericRow is Model { method table-name { '_t_num' } }
 
 my $adapter = DB.shared.adapter;
 
@@ -141,6 +144,16 @@ ok ((+scalar-of('SELECT rate FROM _t_num')) - 2.5).abs < 0.001,
 
 ok digits-of('SELECT price FROM _t_num').contains('12.34'),
   'money stores a value';
+
+# A model reads numeric columns through init-attrs, which had no numeric branch
+# and died with "No such method 'type' for string 'numeric'" before this.
+my $num-row = NumericRow.first;
+ok $num-row.defined,
+  'a model over a table with numeric columns instantiates';
+ok ((+($num-row.attrs<amt>) - 1234.56).abs < 0.01),
+  'a model reads a decimal column through init-attrs';
+ok ((+($num-row.attrs<rate>) - 2.5).abs < 0.001),
+  'a model reads a float column through init-attrs';
 
 # Temporal types
 CreateTemporal.new.up;

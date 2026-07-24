@@ -1031,9 +1031,10 @@ class Model
       given .type {
         when /integer/ { %!attrs{$name} = 0 }
         when /(character|text)/ { %!attrs{$name} = '' }
+        when /numeric|decimal|real|double|float|money/ { %!attrs{$name} = 0 }
         when /boolean/ { %!attrs{$name} = False }
         when /timestamp|^date|^time/ { %!attrs{$name} = DateTime }
-        default { say 'Unknown field type: ' ~ .type; die; }
+        default { die 'Unknown field type: ' ~ $_ }
       }
     }
     self.update-db-attrs;
