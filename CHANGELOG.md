@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-08-08
+
+### Fixed
+
+- A model over a table with a numeric column (`decimal`, `float`, `money`, and
+  the `NUMERIC` / `REAL` types SQLite reports for them) now initializes its
+  attributes instead of dying on an unrecognized field type.
+
 ## [0.9.2] - 2026-07-21
 
 ### Added
