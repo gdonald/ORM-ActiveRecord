@@ -2,6 +2,7 @@
 use DBIish;
 
 use ORM::ActiveRecord::Adapter;
+use ORM::ActiveRecord::Schema::Field;
 use ORM::ActiveRecord::Adapter::Sql::Exec;
 use ORM::ActiveRecord::Adapter::Sql::Transactions;
 use ORM::ActiveRecord::Adapter::Sql::Builders;
@@ -24,6 +25,10 @@ class SqlAdapter
 {
   has $.db is rw;
   has %!fields-cache;
+  has %!field-objects-cache;
+  has %!field-map-cache;
+  has %!field-types-cache;
+  has %!field-defaults-cache;
   has %!column-details-cache;
 
   # Column metadata comes from information_schema, which is expensive to query
@@ -37,6 +42,91 @@ class SqlAdapter
     @fields
   }
 
+  # The same `Field` objects every model instance and every relation over this
+  # table shares. `Field` is immutable, so one list serves them all instead of
+  # each caller rebuilding one object per column.
+  method get-field-objects(Str:D :$table) {
+    return @(%!field-objects-cache{$table}) if %!field-objects-cache{$table}:exists;
+    my @fields = self.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
+    %!field-objects-cache{$table} = @fields;
+    @fields
+  }
+
+  # The starting attribute value for each of a table's columns, keyed by column
+  # name. Computed once per table so instantiation does not re-derive a default
+  # from the column type for every column of every row.
+  method get-field-defaults(Str:D :$table --> Hash) {
+    return %!field-defaults-cache{$table} if %!field-defaults-cache{$table}:exists;
+
+    my %defaults;
+    for self.get-field-objects(:$table) -> $field {
+      next if $field.name eq 'id';
+      %defaults{$field.name} = self.default-for-type($field.type);
+    }
+
+    %!field-defaults-cache{$table} = %defaults;
+    %defaults
+  }
+
+  # Name-keyed views of the same cached field list, so a lookup by column name
+  # is a hash hit rather than a scan. Callers read these; they do not mutate.
+  method get-field-map(Str:D :$table --> Hash) {
+    return %!field-map-cache{$table} if %!field-map-cache{$table}:exists;
+
+    my %map;
+    for self.get-field-objects(:$table) -> $field { %map{$field.name} = $field }
+
+    %!field-map-cache{$table} = %map;
+  }
+
+  method get-field-types(Str:D :$table --> Hash) {
+    return %!field-types-cache{$table} if %!field-types-cache{$table}:exists;
+
+    my %types;
+    for self.get-field-objects(:$table) -> $field { %types{$field.name} = $field.type }
+
+    %!field-types-cache{$table} = %types;
+  }
+
+  # Which coercion a column type needs, decided once per (dialect, type string).
+  # `coerce-read` and `coerce-write` classified the type with up to four regex
+  # matches on every value, so a ten-column row cost forty matches. A profile of
+  # loading rows showed the regex engine taking 13% of the run. Each engine spells
+  # its types differently, so the classification itself stays per adapter and
+  # only the memoisation is shared.
+  has %!coercion-kind;
+
+  method coercion-kind(Str $type --> Str) {
+    return 'none' without $type;
+    %!coercion-kind{$type} //= self.classify-type($type);
+  }
+
+  method classify-type(Str:D $type --> Str) { ... }
+
+  # The strings each database spells a boolean with. A `Set` rather than a
+  # chain of `|`, which allocated a Junction per value read.
+  my constant TRUE-TEXT  = set <t true 1 y yes>;
+  my constant FALSE-TEXT = set <f false 0 n no>;
+
+  method coerce-bool($value) {
+    return $value if $value ~~ Bool;
+    my $s = $value.Str.lc;
+    return True  if TRUE-TEXT{$s};
+    return False if FALSE-TEXT{$s};
+    $value.so;
+  }
+
+  method default-for-type(Str:D $type) {
+    given $type {
+      when /integer/ { 0 }
+      when /(character|text)/ { '' }
+      when /numeric|decimal|real|double|float|money/ { 0 }
+      when /boolean/ { False }
+      when /timestamp|^date|^time/ { DateTime }
+      default { die 'Unknown field type: ' ~ $type }
+    }
+  }
+
   method column-details(Str:D :$table --> List) {
     return @(%!column-details-cache{$table}) if %!column-details-cache{$table}:exists;
     my @details = self.column-details-uncached(:$table);
@@ -45,8 +135,12 @@ class SqlAdapter
   }
 
   method clear-schema-cache {
-    %!fields-cache         = ();
-    %!column-details-cache = ();
+    %!fields-cache          = ();
+    %!field-objects-cache   = ();
+    %!field-map-cache       = ();
+    %!field-types-cache     = ();
+    %!field-defaults-cache  = ();
+    %!column-details-cache  = ();
   }
 
   # Engine-specific — must be overridden

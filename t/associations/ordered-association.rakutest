@@ -1,0 +1,59 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::Instrumentation::Notifications;
+use Models::User;
+use Models::Page;
+use Test;
+
+plan 7;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub counted(&block) {
+  my @sql;
+  my $sub = Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p<sql> });
+  block();
+  Notifications.unsubscribe($sub);
+  @sql;
+}
+
+# `order` on an association is declared rather than expressed through a `scope`
+# block. A scoped association is neither kept between reads nor countable
+# without fetching, so declaring the order keeps both.
+Page.destroy-all;
+User.destroy-all;
+
+my $seed = User.create({fname => 'Greg', lname => 'Donald'});
+Page.create({user => $seed, name => 'alpha'});
+Page.create({user => $seed, name => 'gamma'});
+Page.create({user => $seed, name => 'beta'});
+
+my $owner = User.find($seed.id);
+
+is $owner.ordered-pages.map(*.name).join(','), 'gamma,beta,alpha',
+  'an ordered association returns its rows in the declared order';
+is $owner.pages.map(*.name).sort.join(','), 'alpha,beta,gamma',
+  'an unordered association is unaffected';
+
+$owner.reload;
+my $pages = $owner.ordered-pages;
+$pages.count;
+nok $pages.is-loaded, 'counting an ordered association does not fetch the rows';
+
+$owner.reload;
+is counted({ $owner.ordered-pages.count }).elems, 1, 'counting takes one query';
+is $owner.reload.ordered-pages.count, 3, 'counting is correct';
+
+$owner.reload;
+$owner.ordered-pages.elems;
+is counted({ $owner.ordered-pages.elems }).elems, 0, 'an ordered association is kept between reads';
+
+my $wanted = Page.where({ name => 'beta' }).first;
+$owner.reload;
+my $finder = $owner.ordered-pages;
+$finder.find($wanted.id);
+nok $finder.is-loaded, 'finding by id does not fetch the rows';
+
+Page.destroy-all;
+User.destroy-all;

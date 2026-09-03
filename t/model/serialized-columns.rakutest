@@ -60,6 +60,12 @@ if $has-db {
   $a.save;
   is Account.find($a.id).theme, 'light', 'a store accessor write persists';
 
+  # An UPDATE writes only the changed columns, and a hash attribute mutated in
+  # place moves the dirty-tracking snapshot with it, so a serialized column is
+  # written whether or not it registers as changed.
+  ok $a.changed-attrs-to-persist{'prefs'}:exists,
+    'a serialized column is named in the UPDATE even though it reads as unchanged';
+
   # YAML serialization round-trips
   my $b = Account.create({ settings => { sound => 'loud', volume => 5 } });
   is Account.find($b.id).settings<sound>, 'loud', 'a YAML-serialized column round-trips';

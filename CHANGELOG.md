@@ -4,6 +4,80 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2026-09-03
+
+### Added
+
+- `order` on a `has-many`, taking a column string or a list of them. Ordering
+  an association previously needed a `scope` block, and a scoped association is
+  neither kept between reads nor countable without fetching its rows. An
+  `order:` association keeps both.
+- `stream-stmt($stmt, &block, :$hash)` hands each row to a block as the driver
+  produces it, for result sets larger than memory. The connection stays locked
+  and the statement open for the life of the iteration, so the block must not
+  run another statement on the same connection.
+- `encrypted-attrs` lists every encrypted column, alongside the existing
+  `encrypted-deterministic-attrs`.
+
+### Changed
+
+- A `has-many` collection loads its rows on first read rather than when the
+  accessor is called. `count` is a `SELECT COUNT(*)`, `is-empty` and `is-any`
+  are `LIMIT 1`, and `find` and `exists` are keyed lookups, so none of them
+  fetch the collection. A through, disable-joins, or scoped association has no
+  single relation behind it and still fetches.
+- A `has-many`, `has-one`, or `belongs-to` read through its accessor is kept on
+  the record, so a second read costs no query. Reading again after another
+  handle has written needs `reload`. An empty result, an association with a
+  `scope`, and a `has-and-belongs-to-many` are never kept.
+- `clear`, `delete`, and `replace` on a collection unlink the whole set in one
+  statement rather than one per record. `clear` on an association that has not
+  been read issues a single owner-keyed statement and does not fetch the rows,
+  so records held elsewhere in memory do not have their foreign key zeroed.
+  A `dependent: :destroy` association still runs per record, since each fires
+  its own callbacks and cascade.
+- `UPDATE` writes only the columns whose value changed, and a save with nothing
+  changed issues no statement. Columns whose stored form is derived from the
+  attribute (serialized, `store`, and encrypted columns) are always written.
+- Preloading a `has-and-belongs-to-many` association reads the join rows for
+  every owner in one statement and the records they name in a second, rather
+  than one query per owner.
+- `pluck` and `ids` return a reified `List`. They returned a `Seq`, which gave a
+  different answer when read a second time.
+- `verify-idle-after` defaults to 5 seconds rather than 0, so a connection used
+  within that window is checked out without a `SELECT 1` probe. Set it to `0`
+  to probe on every checkout. A dropped connection is still recovered for
+  reads by the statement layer, which does not replay writes.
+- A checkout that has to build a connection claims its pool slot under the lock
+  and connects outside it, and a checkout that finds the pool exhausted waits
+  to be handed the next connection returned rather than polling.
+- Generated SQL emits its columns in a fixed order, so the prepared-statement
+  and query caches no longer hold several entries for one query shape.
+- A statement carrying a query-log comment is prepared and released rather than
+  cached, since the comment varies per request.
+- `wrap-collection` takes a loader closure rather than a list of records.
+- A scope is registered through `Scopes.register`, which keeps one entry per
+  owning class and name and indexes by name. Pushing onto `Scopes.scopes`
+  directly no longer registers a scope.
+
+### Fixed
+
+- A validation whose `if` condition is false no longer runs. `acceptance`
+  recorded a "must be accepted" error and `confirmation` recorded a
+  "must be confirmed" error when their condition was false.
+- Reading `pluck` or `ids` a second time returned a different result.
+- Subscripting attributes with `«$key»` split the key on whitespace, so a key
+  containing a space read the wrong attribute.
+
+### Performance
+
+- Loading rows is roughly 2x faster and a workload of mixed reads and writes
+  4.3 to 4.7x faster, measured on PostgreSQL, MySQL, and SQLite.
+- Column type classification is decided once per type rather than by up to four
+  regex matches on every value read and written.
+- Column metadata, attribute defaults, association foreign keys, table names,
+  and declared validator options are each derived once instead of per row.
+
 ## [0.9.3] - 2026-08-08
 
 ### Fixed

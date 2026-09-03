@@ -1,0 +1,57 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::DB;
+use Models::User;
+use Test;
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+User.destroy-all;
+User.create({fname => 'ann',  lname => 'x'});
+User.create({fname => 'bob',  lname => 'y'});
+User.create({fname => 'cara', lname => 'z'});
+
+my $select = $adapter.sanitize-sql('SELECT fname FROM users ORDER BY fname');
+
+is $adapter.stream-stmt($select, -> $row { }), 3, 'streaming reports how many rows it handed over';
+
+my @seen;
+$adapter.stream-stmt($select, -> $row { @seen.push: $row[0] });
+is @seen.join(','), 'ann,bob,cara', 'streaming hands over every row in order';
+
+my @hashed;
+$adapter.stream-stmt($select, -> %row { @hashed.push: %row<fname> }, :hash);
+is @hashed.join(','), 'ann,bob,cara', 'streaming hands over hash rows when asked';
+
+my $none = $adapter.stream-stmt(
+  $adapter.sanitize-sql-array(['SELECT fname FROM users WHERE fname = ?', 'nobody']),
+  -> $row { },
+);
+is $none, 0, 'streaming hands over nothing for a result set with no rows';
+
+$adapter.stream-stmt($select, -> $row { });
+is $adapter.exec('SELECT 1')[0][0].Int, 1, 'the connection is usable after streaming';
+
+try $adapter.stream-stmt($select, -> $row { die 'stop' });
+is $adapter.exec('SELECT 1')[0][0].Int, 1, 'the connection is usable after the block throws';
+
+# Nothing is cached: holding the rows is the thing being avoided, and the
+# statement is released rather than kept.
+my $conn = DB.shared.build-connection;
+$conn.prepared-statements = True;
+$conn.stream-stmt($conn.sanitize-sql('SELECT fname FROM users ORDER BY fname'), -> $row { });
+is $conn.cached-statement-count, 0, 'a streamed statement is not cached';
+$conn.disconnect;
+
+dies-ok {
+  $adapter.while-preventing-writes({
+    $adapter.stream-stmt($adapter.sanitize-sql('DELETE FROM users'), -> $row { });
+  });
+}, 'streaming refuses a write while writes are prohibited';
+
+User.destroy-all;

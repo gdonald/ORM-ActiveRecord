@@ -1,4 +1,5 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Model;
@@ -67,6 +68,16 @@ group 'serialized columns', :order<defined>, {
       $a.theme = 'light';
       $a.save;
       expect(Account.find($a.id).theme).to.eq('light');
+    }
+
+    # An UPDATE writes only the changed columns, and a hash attribute mutated
+    # in place moves the dirty-tracking snapshot with it, so a serialized
+    # column is written whether or not it registers as changed.
+    it 'names a serialized column in the UPDATE even though it reads as unchanged', {
+      my $a = Account.create({ prefs => { theme => 'dark' } });
+      $a.theme = 'light';
+
+      expect($a.changed-attrs-to-persist{'prefs'}:exists).to.be-truthy;
     }
   }
 

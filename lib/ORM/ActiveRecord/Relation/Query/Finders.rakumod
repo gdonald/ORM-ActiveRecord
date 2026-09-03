@@ -165,15 +165,18 @@ role QueryFinders is export {
         lock => self.lock-value,
       )
     );
+    # Reified before it is handed back. A `Seq` read a second time silently
+    # yields a different answer rather than failing, and `pluck` and `ids` are
+    # exactly the kind of result a caller counts and then iterates.
     if @names.elems == 1 {
-      @rows.map({ $_[0] });
+      @rows.map({ $_[0] }).List;
     } else {
-      @rows.map({ $_.list });
+      @rows.map({ $_.list }).List;
     }
   }
 
   method ids {
-    self.pluck('id').map({ .Int });
+    self.pluck('id').map({ .Int }).List;
   }
 
   method pick(*@cols) {

@@ -4,6 +4,8 @@ use lib 'lib';
 use Test;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Adapter::Pg;
+use ORM::ActiveRecord::Instrumentation::QueryLogs;
+use ORM::ActiveRecord::Instrumentation::Notifications;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -45,6 +47,35 @@ my $is-pg = $shared.^name ~~ /Pg/;
   $conn.disconnect;
 }
 
+# A query-log comment carries the controller and action, so it varies from one
+# request to the next and every execution is a fresh SQL text. Caching those
+# would fill the cache with entries nothing hits and evict the ones that are.
+{
+  QueryLogs.enable;
+  QueryLogs.set-tags([ controller => 'orders' ]);
+
+  my $conn = DB.shared.build-connection;
+  $conn.prepared-statements = True;
+
+  $conn.exec('SELECT 1');
+  $conn.exec('SELECT 1');
+  is $conn.cached-statement-count, 0, 'a statement carrying a query-log comment is not cached';
+  is $conn.exec('SELECT 1')[0][0].Int, 1, 'and still returns correct rows';
+
+  my @sql;
+  my $sub = Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p<sql> });
+  $conn.exec('SELECT 1');
+  Notifications.unsubscribe($sub);
+  ok @sql[0].contains('controller:orders'), 'and still sends the comment to the database';
+
+  QueryLogs.reset;
+  $conn.exec('SELECT 1');
+  $conn.exec('SELECT 1');
+  is $conn.cached-statement-count, 1, 'caching resumes once tagging is off';
+
+  $conn.disconnect;
+}
+
 # cache size limit
 {
   my $conn = DB.shared.build-connection;
@@ -54,6 +85,31 @@ my $is-pg = $shared.^name ~~ /Pg/;
   $conn.exec('SELECT 1');
   $conn.exec('SELECT 2');
   is $conn.cached-statement-count, 1, 'evicts the least-recently-used statement past the cache size';
+  $conn.disconnect;
+}
+
+# Recency is an intrusive linked list over the cache keys, so a hit relinks in
+# constant time rather than rebuilding a list of every cached statement.
+{
+  my $conn = DB.shared.build-connection;
+  $conn.prepared-statements = True;
+  $conn.prepared-statement-cache-size = 2;
+
+  $conn.exec('SELECT 1');
+  $conn.exec('SELECT 2');
+  $conn.exec('SELECT 1');   # 2 is now the older of the two
+  $conn.exec('SELECT 3');
+  is $conn.cached-statement-count, 2, 'the least recently used statement is evicted';
+
+  # A hit on 1 does not grow the cache; an evicted 1 would prepare again and
+  # push the count past the bound before the next eviction.
+  $conn.exec('SELECT 1');
+  is $conn.cached-statement-count, 2, 'the most recently used statement is kept';
+
+  $conn.clear-statement-cache;
+  $conn.exec('SELECT 2');
+  is $conn.cached-statement-count, 1, 'clearing empties the recency order too';
+
   $conn.disconnect;
 }
 

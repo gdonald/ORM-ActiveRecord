@@ -83,7 +83,7 @@ my $name = DB.shared.name;
   my $registry = ORM::ActiveRecord::Connection::Registry.new;
   {
     my $*AR-CONNECTION-REGISTRY = $registry;
-    Widget.all.list;
+    Widget.all.all;
     is $registry.checked-out-names, ($name,), 'a relation query routes through the registry';
     is DB.shared.pool.stats<in-use>, 1, 'the relation query ran on the registry connection';
   }

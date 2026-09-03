@@ -17,37 +17,32 @@ class Validators is export {
   method validate(DB $db, Mu:D $obj, Str :$context = '') {
     $!context = $context;
     for @!validators -> $validator {
-      next unless $obj.^name eq $validator.klass.raku;
-      my $field = $validator.field;
-      my $ons = {};
-      my $if = -> { True };
-      my $unless = -> { False };
-      my $exclusion = {};
-      my $inclusion = {};
-      my $format = {};
-      my $msg = '';
-      my Bool $allow-nil   = False;
-      my Bool $allow-blank = False;
-      my Bool $strict      = False;
-      my Str  $as          = '';
+      next unless $obj.^name eq $validator.klass-name;
 
-      for $validator.params -> $param {
-        given $param.keys.first {
-          when 'on' { $ons = $param<on> }
-          when /if/ { $if = $param{"if\tTrue"} }
-          when /unless/ { $unless = $param{"unless\tTrue"} }
-          when 'message' { $msg = $param<message> }
-          when 'exclusion' { $exclusion = $param<exclusion> }
-          when 'inclusion' { $inclusion = $param<inclusion> }
-          when 'format' { $format = $param<format> }
-          when 'allow-nil' | 'allow_nil' { $allow-nil = so $param.value }
-          when 'allow-blank' | 'allow_blank' { $allow-blank = so $param.value }
-          when 'strict' { $strict = so $param.value }
-          when 'as' { $as = ~$param.value }
-        }
-      }
+      my $field = $validator.field;
+      my %opt  := $validator.options;
+
+      my $ons         = %opt<ons>;
+      my $if          = %opt<cond-if>;
+      my $unless      = %opt<cond-unless>;
+      my $exclusion   = %opt<exclusion>;
+      my $inclusion   = %opt<inclusion>;
+      my $format      = %opt<format>;
+      my $msg         = %opt<msg>;
+      my Bool $allow-nil   = %opt<allow-nil>;
+      my Bool $allow-blank = %opt<allow-blank>;
+      my Bool $strict      = %opt<strict>;
+      my Str  $as          = %opt<as>;
 
       next if self.should-allow-skip(:$obj, :$field, :$allow-nil, :$allow-blank);
+
+      # Tested once here rather than inside each `validate-*` method, so a
+      # validator whose guard is closed is never dispatched. It also settles two
+      # methods that got the test wrong: acceptance wrote it with `unless`, so a
+      # closed guard recorded an error instead of skipping, and confirmation's
+      # `&&` bound tighter than its `||`, leaving the second branch unguarded.
+      next unless $if() && !$unless();
+      next unless self.validate-on(:$obj, :$ons);
 
       for $validator.params -> $param {
         given $param.keys.first {
@@ -68,21 +63,14 @@ class Validators is export {
     }
 
     for @!each-validators -> $ev {
-      next unless $obj.^name eq $ev.klass.raku;
+      next unless $obj.^name eq $ev.klass-name;
 
-      my $if     = -> { True };
-      my $unless = -> { False };
-      my $ons    = {};
-      my Bool $strict = False;
+      my %opt := $ev.options;
 
-      for $ev.params.pairs -> $param {
-        given $param.keys.first {
-          when 'on'     { $ons = $param<on> }
-          when 'strict' { $strict = so $param.value }
-          when /if/     { $if = $param{"if\tTrue"} }
-          when /unless/ { $unless = $param{"unless\tTrue"} }
-        }
-      }
+      my $ons    = %opt<ons>;
+      my $if     = %opt<cond-if>;
+      my $unless = %opt<cond-unless>;
+      my Bool $strict = %opt<strict>;
 
       next unless $if() && !$unless();
       next unless self.validate-on(:$obj, :$ons);
@@ -114,14 +102,14 @@ class Validators is export {
     }
 
     for @!with-validators -> $wv {
-      next unless $obj.^name eq $wv.klass.raku;
+      next unless $obj.^name eq $wv.klass-name;
       my $v = $wv.validator;
       my $instance = $v.DEFINITE ?? $v !! $v.new(|%($wv.options // {}));
       $instance.validate($obj);
     }
 
     for @!associated -> $av {
-      next unless $obj.^name eq $av.klass.raku;
+      next unless $obj.^name eq $av.klass-name;
       self.validate-associated(:$obj, :name($av.name), :params($av.params));
     }
   }

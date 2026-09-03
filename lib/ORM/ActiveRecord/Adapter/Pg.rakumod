@@ -92,18 +92,23 @@ class PgAdapter is SqlAdapter is export {
     self.uncached({ self.exec("SELECT pg_advisory_unlock($key)")[0][0].so });
   }
 
+  method classify-type(Str:D $type --> Str) {
+    given $type {
+      when /:i ^ bool/                       { 'bool' }
+      when /:i timestamp | ^ date | ^ time / { 'datetime' }
+      when /:i ^ (int | bigint | smallint) / { 'int' }
+      when /:i ^ (numeric | decimal | real | double) / { 'numeric' }
+      default                                { 'none' }
+    }
+  }
+
   method coerce-read($value, Str :$type) {
     return $value without $value;
     return $value unless $type.defined;
-    given $type {
-      when /:i ^ bool/ {
-        return $value if $value ~~ Bool;
-        my $s = $value.Str.lc;
-        return True  if $s eq 't' | 'true'  | '1' | 'y' | 'yes';
-        return False if $s eq 'f' | 'false' | '0' | 'n' | 'no';
-        $value.so;
-      }
-      when /:i timestamp | ^ date | ^ time / {
+
+    given self.coercion-kind($type) {
+      when 'bool' { self.coerce-bool($value) }
+      when 'datetime' {
         return $value if $value ~~ DateTime;
         return $value if $value ~~ Date;
         my $s = $value.Str;
@@ -112,11 +117,17 @@ class PgAdapter is SqlAdapter is export {
         return DateTime.new($iso) if $iso ~~ /^ \d ** 4 '-' \d\d '-' \d\d 'T' \d\d ':' \d\d ':' \d\d /;
         $value;
       }
-      when /:i ^ (int | bigint | smallint | numeric | decimal | real | double) / {
+      when 'int' {
         return $value if $value ~~ Numeric;
         my $s = $value.Str;
         return $value unless $s;
-        $type ~~ /:i ^ (int | bigint | smallint) / ?? $s.Int !! $s.Numeric;
+        $s.Int;
+      }
+      when 'numeric' {
+        return $value if $value ~~ Numeric;
+        my $s = $value.Str;
+        return $value unless $s;
+        $s.Numeric;
       }
       default { $value }
     }
@@ -125,15 +136,10 @@ class PgAdapter is SqlAdapter is export {
   method coerce-write($value, Str :$type) {
     return $value without $value;
     return $value unless $type.defined;
-    given $type {
-      when /:i ^ bool/ {
-        return $value if $value ~~ Bool;
-        my $s = $value.Str.lc;
-        return True  if $s eq 't' | 'true'  | '1' | 'y' | 'yes';
-        return False if $s eq 'f' | 'false' | '0' | 'n' | 'no';
-        $value.so;
-      }
-      when /:i timestamp | ^ date | ^ time / {
+
+    given self.coercion-kind($type) {
+      when 'bool' { self.coerce-bool($value) }
+      when 'datetime' {
         return $value if $value ~~ DateTime | Date;
         my $s = $value.Str;
         return $value unless $s;
@@ -147,7 +153,7 @@ class PgAdapter is SqlAdapter is export {
 
   method build-insert(Str:D :$table, :%attrs, :%types = {} --> SqlStmt) {
     my %fvs = self.without-excluded-fields(%attrs);
-    my @keys = %fvs.keys.grep({ %fvs{$_}.defined });
+    my @keys = %fvs.keys.sort.grep({ %fvs{$_}.defined });
     my $fields = @keys.join(', ');
     my @values = @keys.map({ %fvs{$_} });
     my @types  = @keys.map({ %types{$_} // Str });

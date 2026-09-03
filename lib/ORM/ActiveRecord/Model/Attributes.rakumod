@@ -45,7 +45,7 @@ role ModelAttributes is export {
   method EXISTS-KEY(Str:D $key --> Bool) { self.attrs{$key}:exists }
 
   method has-attribute(Str:D $name --> Bool) {
-    return True if self.fields.first({ .name eq $name });
+    return True if self.field-map{$name}:exists;
     self.is-virtual-attribute($name);
   }
 

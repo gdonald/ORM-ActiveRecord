@@ -102,6 +102,33 @@ role ModelTyping is export {
     self;
   }
 
+  # The subset of `attrs-to-persist` an UPDATE has to write: the columns whose
+  # value differs from the row this record was loaded from. Leaving an unchanged
+  # column out shrinks the statement and stops two concurrent saves that touch
+  # different columns from overwriting each other.
+  method changed-attrs-to-persist(--> Hash) {
+    my %all = self.attrs-to-persist;
+    my %changed;
+
+    for self.changed -> $name {
+      %changed{$name} = %all{$name} if %all{$name}:exists;
+    }
+
+    # Dirty tracking compares an attribute against the snapshot taken when the
+    # record was loaded, and a hash or array attribute is mutated in place, so
+    # both sides move together and the change is invisible. A column with a
+    # declared type, and any whose value is a container, is always written.
+    for %all.kv -> $name, $value {
+      next if %changed{$name}:exists;
+      next unless %!attribute-types{$name}:exists
+               || self.attrs{$name} ~~ Associative
+               || self.attrs{$name} ~~ Positional;
+      %changed{$name} = $value;
+    }
+
+    %changed;
+  }
+
   # The attribute hash to persist, with declared types serialized to their DB
   # representation. Identity when no types are declared.
   method attrs-to-persist(--> Hash) {

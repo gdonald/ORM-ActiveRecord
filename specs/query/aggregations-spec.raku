@@ -1,4 +1,5 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Model;
 
@@ -194,6 +195,52 @@ describe 'aggregations', {
       my @qualified = AgGame.where({name => 'Go'}).pluck('games.year');
 
       expect(@qualified.elems == 1 && @qualified[0] == 2200).to.be-truthy;
+    }
+  }
+
+  # `pluck` and `ids` hand back a reified list. A `Seq` read a second time
+  # silently yields a different answer rather than failing, and these are
+  # exactly the kind of result a caller counts and then iterates.
+  context 'the shape of a plucked result', {
+    let(:names, { AgGame.order('name').pluck('name') });
+    let(:game-ids, { AgGame.order('id').ids });
+
+    it 'gives the same rows when read twice', {
+      my @first  = names.list;
+      my @second = names.list;
+
+      expect(@second.elems).to.eq(@first.elems);
+    }
+
+    it 'gives the same rows after being counted', {
+      my $counted = names.elems;
+
+      expect(names.list.elems).to.eq($counted);
+    }
+
+    it 'gives the same ids when read twice', {
+      my @first  = game-ids.list;
+      my @second = game-ids.list;
+
+      expect(@second.elems).to.eq(@first.elems);
+    }
+
+    it 'gives ids as integers', {
+      expect(game-ids.first ~~ Int).to.be-truthy;
+    }
+
+    it 'gives a row per column when several are named', {
+      my @pairs = AgGame.order('name').pluck('name', 'year');
+
+      expect(@pairs[0].elems).to.eq(2);
+    }
+
+    it 'gives the same multi-column rows when read twice', {
+      my $pairs = AgGame.order('name').pluck('name', 'year');
+      my @first  = $pairs.list;
+      my @second = $pairs.list;
+
+      expect(@second.elems).to.eq(@first.elems);
     }
   }
 

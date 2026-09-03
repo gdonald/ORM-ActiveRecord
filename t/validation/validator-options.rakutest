@@ -1,0 +1,43 @@
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::Schema::Field;
+use ORM::ActiveRecord::Validations::Validator;
+use Test;
+
+plan 12;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+class OptionsOwner { }
+
+# A validator's declared options never change, so they are read out of its
+# params once rather than on every validation of every record.
+my $field = Field.new(:name('username'), :type('character varying'));
+
+my $validator = Validator.new(
+  :klass(OptionsOwner),
+  :$field,
+  :params({ :presence, exclusion => { in => <admin> }, message => 'nope', :strict }),
+);
+
+is  $validator.options<exclusion><in>.list, ('admin',), 'a nested option is read';
+is  $validator.options<msg>, 'nope',                    'a message is read';
+ok  $validator.options<strict>,                         'a flag is read';
+nok $validator.options<allow-nil>,                      'a flag that was not declared takes its default';
+ok  $validator.options<cond-if>(),                      'the condition defaults to one that passes';
+nok $validator.options<cond-unless>(),                  'the negative condition defaults to one that does not fire';
+ok  $validator.options === $validator.options,          'the parse is handed back again on a second read';
+
+is $validator.klass-name, OptionsOwner.raku,            'the validator names the class it belongs to';
+is $validator.klass-name, $validator.klass-name,        'the name is handed back again on a second read';
+
+my $each = EachValidator.new(
+  :klass(OptionsOwner),
+  :fields(['username']),
+  :block(-> $o, $n, $v { }),
+  :params({ :strict, on => { create => True } }),
+);
+
+ok $each.options<strict>,          'an each-validator reads its flag';
+ok $each.options<ons><create>,     'an each-validator reads its context map';
+ok $each.options === $each.options, 'an each-validator hands back the same parse';

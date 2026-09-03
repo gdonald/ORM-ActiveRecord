@@ -1,4 +1,5 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 use DBIish;
 use ORM::ActiveRecord::DB;
@@ -92,7 +93,7 @@ group 'Connection::Registry (sqlite via DATABASE_URL)', :tag<destructive>, {
     my $registry = ORM::ActiveRecord::Connection::Registry.new;
     {
       my $*AR-CONNECTION-REGISTRY = $registry;
-      RegistryWidget.all.list;
+      RegistryWidget.all.all;
       expect($registry.checked-out-names).to.eq(($name,));
     }
     $registry.release-all;

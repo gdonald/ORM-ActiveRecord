@@ -1,0 +1,147 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::Errors::X;
+use ORM::ActiveRecord::Instrumentation::Notifications;
+use Models::User;
+use Models::Page;
+use Models::Magazine;
+use Models::Subscription;
+use Test;
+
+plan 31;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub counted(&block) {
+  my @sql;
+  my $sub = Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p<sql> });
+  block();
+  Notifications.unsubscribe($sub);
+  @sql;
+}
+
+Page.destroy-all;
+User.destroy-all;
+
+my $seed = User.create({fname => 'Greg', lname => 'Donald'});
+Page.create({user => $seed, name => 'Home'});
+Page.create({user => $seed, name => 'About'});
+
+my $owner = User.find($seed.id);
+
+is counted({ $owner.pages }).elems, 0, 'calling the accessor queries nothing';
+nok $owner.pages.is-loaded, 'the collection reports itself unloaded';
+
+my $pages = $owner.pages;
+$pages.elems;
+ok $pages.is-loaded, 'the collection reports itself loaded once the rows are read';
+
+$owner.reload;
+is counted({ $owner.pages.count }).elems, 1, 'counting takes one query';
+
+$owner.reload;
+my $unread = $owner.pages;
+$unread.count;
+nok $unread.is-loaded, 'counting does not fetch the rows';
+
+is $owner.reload.pages.count, 2,  'counting gives the same answer as fetching the rows';
+is $owner.reload.pages.size, 2,   'size answers the same way';
+is $owner.reload.pages.length, 2, 'length answers the same way';
+
+my $loaded = $owner.reload.pages;
+$loaded.elems;
+is counted({ $loaded.count }).elems, 0, 'counting comes from memory once the rows are here';
+
+# COUNT(col) counts the rows where the column is not null, which is the same
+# question as counting the records whose attribute is set.
+my $nameless = Page.create({user => $owner, name => Str});
+$owner.reload;
+is $owner.pages.count('name'), 2, 'counting one column counts only the rows where it is set';
+
+$owner.reload;
+my $col-count = $owner.pages;
+$col-count.count('name');
+nok $col-count.is-loaded, 'counting one column does not fetch the rows';
+
+$owner.reload;
+is counted({ $owner.pages.count('name') }).elems, 1, 'counting one column takes one query';
+
+$owner.reload;
+my $col-loaded = $owner.pages;
+$col-loaded.elems;
+is $col-loaded.count('name'), 2, 'counting one column agrees once the rows are here';
+
+$nameless.destroy;
+
+$owner.reload;
+is counted({ $owner.pages.is-any }).elems, 1, 'is-any takes one query';
+
+$owner.reload;
+my $probe = $owner.pages;
+$probe.is-any;
+nok $probe.is-loaded, 'is-any does not fetch the rows';
+
+nok $owner.reload.pages.is-empty, 'a populated association is not empty';
+
+my $childless = User.create({fname => 'Ann', lname => 'B'});
+ok $childless.pages.is-empty, 'an association with no rows is empty';
+
+my $wanted = Page.where({ name => 'About' }).first;
+
+$owner.reload;
+my $finder = $owner.pages;
+$finder.find($wanted.id);
+nok $finder.is-loaded, 'find by id does not fetch the rows';
+
+is $owner.reload.pages.find($wanted.id).name, 'About', 'find returns the right record';
+
+my $stranger = Page.create({name => 'Orphan'});
+dies-ok { $owner.reload.pages.find($stranger.id) }, 'find refuses an id the association does not hold';
+
+ok $owner.reload.pages.exists($wanted.id),   'exists reports an id it holds';
+nok $owner.reload.pages.exists($stranger.id), 'exists reports an id it does not hold as missing';
+
+$owner.reload;
+my $through = $owner.magazines;
+$through.count;
+ok $through.is-loaded, 'a through association counts by fetching its rows';
+
+# Membership is kept as a set of ids, so a push is constant time rather than a
+# scan of everything already in the collection.
+$owner.reload;
+my $already = $owner.pages.first;
+$owner.pages.push($already);
+is $owner.reload.pages.count, 2, 'pushing a record the collection holds adds nothing';
+
+$owner.reload.pages.push(Page.create({name => 'New'}));
+is $owner.reload.pages.count, 3, 'pushing a record it does not hold adds it';
+
+$owner.reload;
+my $member = $owner.pages.first;
+ok $owner.pages.exists($member.id), 'a member is reported as existing';
+
+$owner.pages.delete($member);
+nok $owner.pages.exists($member.id), 'a deleted record stops being reported as existing';
+
+$owner.reload;
+my $survivor = $owner.pages.first;
+$owner.pages.clear;
+nok $owner.pages.exists($survivor.id), 'nothing is reported as existing after a clear';
+
+$owner.reload;
+Page.create({user => $owner, name => 'Home'});
+Page.create({user => $owner, name => 'About'});
+$owner.reload;
+
+$owner.reload.pages.create({name => 'Contact'});
+is $owner.reload.pages.count, 3, 'create fetches the rows before appending';
+
+$owner.reload.pages.push(Page.create({name => 'Pushed'}));
+is $owner.reload.pages.count, 4, 'push fetches the rows before appending';
+
+$owner.reload.pages.clear;
+is $owner.reload.pages.count, 0, 'clear fetches the rows before emptying';
+
+Page.destroy-all;
+User.destroy-all;

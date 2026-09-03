@@ -26,15 +26,19 @@ role QueryConditions is export {
   }
 
   method !normalize-assoc-params(Hash:D $h --> Hash) {
+    return {} unless $h.elems;
+
+    my $belongs-tos = self.class-of.belongs-to-names;
     my %out;
-    my $stub = self.class-of.new(:id(0));
+
     for $h.kv -> $k, $v {
-      if $stub.belongs-tos{$k}:exists {
+      if $belongs-tos{$k} {
         %out{$k ~ '_id'} = self!coerce-id-value($v);
       } else {
         %out{$k} = $v;
       }
     }
+
     %out;
   }
 

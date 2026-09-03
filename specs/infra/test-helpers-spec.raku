@@ -1,4 +1,5 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 use DBIish;
 use ORM::ActiveRecord::DB;

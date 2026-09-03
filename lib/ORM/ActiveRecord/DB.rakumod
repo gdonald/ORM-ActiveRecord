@@ -26,7 +26,12 @@ PROCESS::<$AR-DB-OVERRIDE> = Nil;
 PROCESS::<$AR-CONNECTION-REGISTRY> = Nil;
 
 class DB is export {
-  my %shared;
+  # The named shared connections, held as an immutable Map that is replaced
+  # wholesale on write. A reader takes no lock, since the Map it reads is never
+  # mutated in place; a writer builds the next Map under the lock. `shared` is
+  # reached through `DB.current` on essentially every model and query
+  # operation, so taking a process-wide lock there put one on every row.
+  my $shared = Map.new;
   my Lock $shared-lock = Lock.new;
   my Bool $legacy-warned = False;
 
@@ -79,7 +84,7 @@ class DB is export {
     my $idle-timeout      =  self!cfg-num(%config, 'idle-timeout', 'idle_timeout') // 0;
     my $reaping-frequency =  self!cfg-num(%config, 'reaping-frequency', 'reaping_frequency') // 0;
     my $verify-timeout    =  self!cfg-num(%config, 'verify-timeout', 'verify_timeout') // 0;
-    my $verify-idle-after =  self!cfg-num(%config, 'verify-idle-after', 'verify_idle_after') // 0;
+    my $verify-idle-after =  self!cfg-num(%config, 'verify-idle-after', 'verify_idle_after') // 5;
 
     ConnectionPool.new(
       builder => { self.build-connection },
@@ -101,12 +106,17 @@ class DB is export {
   # DBDish::Pg and produces "No such method 'PQgetisnull' for invocant of type
   # 'Any'" errors.
   method shared(Str:D :$name = default-connection() --> DB) {
-    # %shared is process-wide and read from every request thread. Cro serves
-    # concurrent requests on a thread pool, so the check-then-build must be
-    # serialized or two threads race the same hash slot and corrupt it.
+    with $shared{$name} -> $db { return $db }
+
+    # Cro serves concurrent requests on a thread pool, so the check-then-build
+    # is serialized: two threads must not each build a connection for the same
+    # name.
     $shared-lock.protect: {
-      %shared{$name} //= DB.new(:$name);
-      %shared{$name};
+      with $shared{$name} -> $db { return $db }
+
+      my $db = DB.new(:$name);
+      $shared = Map.new(|$shared.pairs, $name => $db);
+      $db;
     }
   }
 
@@ -126,7 +136,9 @@ class DB is export {
   # (e.g. one wrapping a SqliteAdapter against `:memory:`). Pass `Nil` to
   # clear and force the next `.shared` to rebuild from config.
   method set-shared($db, Str:D :$name = default-connection() --> DB) {
-    $shared-lock.protect: { %shared{$name} = $db; }
+    $shared-lock.protect: {
+      $shared = Map.new(|$shared.pairs.grep({ .key ne $name }), |($db.defined ?? ($name => $db,) !! ()));
+    }
     $db;
   }
 
@@ -144,10 +156,10 @@ class DB is export {
   # finalization order is undefined and DBDish::Pg can segfault mid-teardown.
   method disconnect-shared {
     $shared-lock.protect: {
-      for %shared.values -> $db {
+      for $shared.values -> $db {
         $db.close if $db.defined;
       }
-      %shared = ();
+      $shared = Map.new;
     }
   }
 

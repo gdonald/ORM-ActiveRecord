@@ -1,5 +1,12 @@
 
 class Utils is export {
+  # Each of these is a pure function of a class or table name, and the set of
+  # names a process sees is small and fixed, so the string work is done once
+  # per name rather than on every association access and every instantiation.
+  my %tableized;
+  my %singularized;
+  my %foreign-keyed;
+
   method base-name(Str $name) {
     $name.split('::').first(:end);
   }
@@ -29,7 +36,7 @@ class Utils is export {
 
   # Table name: snake_case the class name, then pluralize.
   method tableize(Str:D $name) {
-    Utils.underscore($name) ~ 's';
+    %tableized{$name} //= Utils.underscore($name) ~ 's';
   }
 
   multi method table-name(Mu:D $obj) {
@@ -43,11 +50,11 @@ class Utils is export {
   }
 
   method singular(Str:D $name) {
-    $name.subst(/s$/, '');
+    %singularized{$name} //= $name.subst(/s$/, '');
   }
 
   method to-foreign-key(Str:D $name) {
-    Utils.singular($name) ~ '_id';
+    %foreign-keyed{$name} //= Utils.singular($name) ~ '_id';
   }
 
   method fnv1a-hex(Str:D $s --> Str) {

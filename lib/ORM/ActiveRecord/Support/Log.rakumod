@@ -39,17 +39,27 @@ class Log is export {
     &log-sink = Callable;
   }
 
+  # The entry hash is built only when the line will be written. `Log.sql` runs
+  # on every statement, and at the default level with SQL logging off the hash
+  # was allocated and then dropped.
+  method !wants(Str:D $entry-level --> Bool) {
+    return False if %*ENV<DISABLE-SQL-LOG>;
+    %LEVEL-RANK{$entry-level} >= %LEVEL-RANK{$level};
+  }
+
   method sql(Str:D :$sql) {
+    return unless self!wants('info');
     self!emit(%( kind => 'sql', level => 'info', :$sql ));
   }
 
   method query(Str:D :$sql, :$ms, Bool :$slow = False, :@binds) {
-    self!emit(%( kind => 'query', level => ($slow ?? 'warn' !! 'info'), :$sql, :$ms, :$slow, :@binds ));
+    my $entry-level = $slow ?? 'warn' !! 'info';
+    return unless self!wants($entry-level);
+    self!emit(%( kind => 'query', level => $entry-level, :$sql, :$ms, :$slow, :@binds ));
   }
 
   method !emit(%entry) {
-    return if %*ENV<DISABLE-SQL-LOG>;
-    return unless %LEVEL-RANK{%entry<level>} >= %LEVEL-RANK{$level};
+    return unless self!wants(%entry<level>);
 
     my $line = $format eq 'json' ?? self!format-json(%entry) !! self!format-text(%entry);
 

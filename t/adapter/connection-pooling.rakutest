@@ -66,12 +66,12 @@ $dead.disconnect;
 
 # auto-reconnect on a dropped connection
 {
-  my $pool = new-pool(size => 1);
+  my $pool = new-pool(size => 1, verify-idle-after => 0);
   my $conn = $pool.checkout;
   $pool.checkin($conn);
   $conn.disconnect;
   my $again = $pool.checkout;
-  ok $again.is-active, 'checkout reconnects a connection that died while idle';
+  ok $again.is-active, 'a probed checkout reconnects a connection that died while idle';
   $pool.disconnect-all;
 }
 
@@ -92,6 +92,63 @@ $dead.disconnect;
   is @rows[0][0].Int, 1, 'DB.with-connection runs a query on a pooled connection';
 }
 
+# Building a connection is a TCP connect and an auth handshake. Holding the
+# pool lock across it would block every other checkout and checkin, so the slot
+# is claimed under the lock and the connection built outside it.
+{
+  my $pool;
+  my $seen-from-another-thread;
+
+  $pool = ConnectionPool.new(
+    size    => 2,
+    builder => {
+      # `stats` takes the pool lock. Reading it from another thread while the
+      # builder runs only completes if the lock is free; the bound turns a
+      # regression into a failure rather than a hang.
+      my $probe = start { $pool.stats<created> };
+      await Promise.anyof($probe, Promise.in(2));
+      $seen-from-another-thread = $probe.status == Kept ?? $probe.result !! Nil;
+      DB.shared.build-connection;
+    },
+  );
+
+  $pool.checkout;
+  is $seen-from-another-thread, 1, 'the pool lock is free while the builder runs';
+  $pool.disconnect-all;
+}
+
+{
+  my $pool = ConnectionPool.new(size => 1, builder => { die 'no connection' });
+  try $pool.checkout;
+  is $pool.stats<created>, 0, 'a builder that throws releases the claimed slot';
+}
+
+{
+  my $fail = True;
+  my $pool = ConnectionPool.new(
+    size    => 1,
+    builder => { $fail ?? die 'no connection' !! DB.shared.build-connection },
+  );
+
+  try $pool.checkout;
+  $fail = False;
+  ok $pool.checkout.defined, 'a later checkout tries again after a failed build';
+  $pool.disconnect-all;
+}
+
+# An exhausted checkout waits on a promise the next checkin keeps, rather than
+# re-taking the lock every few milliseconds.
+{
+  my $pool = new-pool(size => 1, checkout-timeout => 5);
+  my $held = $pool.checkout;
+
+  my $waiting = start { $pool.checkout };
+  $pool.checkin($held);
+
+  ok (await $waiting).defined, 'a returned connection wakes a waiting checkout';
+  $pool.disconnect-all;
+}
+
 # verify-idle-after: the checkout health probe is reserved for connections
 # that have sat idle past the threshold.
 
@@ -109,7 +166,16 @@ sub counting-pool(*%opts --> ConnectionPool) {
   my $conn = $pool.checkout;
   $pool.checkin($conn);
   $pool.checkout;
-  is $conn.probes, 2, 'by default every checkout probes the connection';
+  is $conn.probes, 0, 'by default a recently used connection checks out without a probe';
+  $pool.disconnect-all;
+}
+
+{
+  my $pool = counting-pool(size => 1, verify-idle-after => 0);
+  my $conn = $pool.checkout;
+  $pool.checkin($conn);
+  $pool.checkout;
+  is $conn.probes, 2, 'setting the threshold to zero probes on every checkout';
   $pool.disconnect-all;
 }
 
@@ -129,6 +195,19 @@ sub counting-pool(*%opts --> ConnectionPool) {
   sleep 0.05;
   $pool.checkout;
   is $conn.probes, 1, 'a connection idle past verify-idle-after is probed on checkout';
+  $pool.disconnect-all;
+}
+
+# Skipping the probe is safe because the statement layer recovers from a
+# connection that dropped since it was last used.
+{
+  my $pool = new-pool(size => 1);
+  my $conn = $pool.checkout;
+  $pool.checkin($conn);
+  $conn.disconnect;
+  my $again = $pool.checkout;
+  is $again.exec('SELECT 1')[0][0].Int, 1,
+    'a read recovers on a connection handed out without a probe';
   $pool.disconnect-all;
 }
 

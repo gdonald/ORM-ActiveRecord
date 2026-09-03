@@ -1,6 +1,8 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Relation::Scopes;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -49,5 +51,32 @@ describe 'Model.scope', {
     my @images = ScImage.jpgs.all;
 
     expect(@images.grep(* == $baz).elems).to.eq(0);
+  }
+
+  # A model's `submethod BUILD` runs on every instantiation, so a `scope`
+  # declared there is re-declared for every record built. The registry keeps one
+  # entry per (owning class, scope name) rather than one per record.
+  context 'the scope registry', {
+    it 'holds one entry however many records are built', {
+      ScImage.create({name => 'one', ext => 'jpg'});
+      ScImage.create({name => 'two', ext => 'jpg'});
+      my $before = Scopes.scopes.grep({ .name eq 'jpgs' }).elems;
+
+      ScImage.create({name => 'three', ext => 'jpg'});
+
+      expect(Scopes.scopes.grep({ .name eq 'jpgs' }).elems).to.eq($before);
+    }
+
+    it 'still finds the scope for its own class', {
+      expect(Scopes.exists('jpgs', ScImage)).to.be-truthy;
+    }
+
+    it 'does not find it for an unrelated class', {
+      expect(Scopes.exists('jpgs', Model)).to.be-falsy;
+    }
+
+    it 'does not find a name nothing declared', {
+      expect(Scopes.exists('nonesuch', ScImage)).to.be-falsy;
+    }
   }
 }

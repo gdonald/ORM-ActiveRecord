@@ -17,4 +17,14 @@ is Utils.tableize('User'),    'users',     'tableize pluralizes a single word';
 my class WidgetPart is Model { }
 is WidgetPart.table-name, 'widget_parts', 'a multi-word model derives a snake_case table name';
 
+# Each of these is a pure function of a name, and a model derives its table name
+# on every instantiation, so the string work is done once per name.
+is Utils.tableize('PageTag'), Utils.tableize('PageTag'),               'tableize gives the same answer every time';
+is Utils.singular('pages'), Utils.singular('pages'),                   'singular gives the same answer every time';
+is Utils.singular('pages'), 'page',                                    'singular drops a trailing s';
+is Utils.singular('person'), 'person',                                 'singular leaves a name without one alone';
+is Utils.to-foreign-key('pages'), Utils.to-foreign-key('pages'),       'to-foreign-key gives the same answer every time';
+is Utils.to-foreign-key('pages'), 'page_id',                           'to-foreign-key builds a key from a table name';
+nok Utils.tableize('Page') eq Utils.tableize('PageTag'),               'distinct names stay apart';
+
 done-testing;

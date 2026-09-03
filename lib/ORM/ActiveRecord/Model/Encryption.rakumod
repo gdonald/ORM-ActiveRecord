@@ -25,6 +25,10 @@ role ModelEncryption is export {
     %merged;
   }
 
+  method encrypted-attrs {
+    self!encryption-merged.keys.list;
+  }
+
   method encrypted-deterministic-attrs {
     self!encryption-merged.grep({ .value<deterministic> }).map(*.key).list;
   }
@@ -38,7 +42,16 @@ role ModelEncryption is export {
   }
 
   # Re-save every record, encrypting any column that is still plaintext.
+  # Backfill: rewrite every row so a column that was stored as plaintext before
+  # `encrypts` was declared is stored encrypted. The attribute itself does not
+  # change, only what a write makes of it, so each encrypted column is marked
+  # dirty to put it in the UPDATE.
   method encrypt-existing {
-    .save for self.all.perform;
+    my @columns = self.encrypted-attrs;
+
+    for self.all.perform -> $record {
+      $record.attribute-will-change($_) for @columns;
+      $record.save;
+    }
   }
 }

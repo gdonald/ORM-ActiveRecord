@@ -19,8 +19,20 @@ if $adapter.defined {
   nok $adapter.is-schema-change-sql('SELECT * FROM t'),                'SELECT is not a schema change';
   nok $adapter.is-schema-change-sql('INSERT INTO t(id) VALUES (1)'),   'INSERT is not a schema change';
   ok  $adapter.is-schema-change-sql('/* note */ DROP TABLE t'),        'a leading comment does not hide a schema change';
+
+  # A statement is classified once and each test reads the same stripped text,
+  # rather than every classifier redoing the substitutions.
+  is  $adapter.strip-sql-prefix('/* note */ DROP TABLE t'), 'DROP TABLE t', 'stripping drops a leading comment';
+  is  $adapter.strip-sql-prefix('   SELECT 1'), 'SELECT 1',                 'stripping drops leading whitespace';
+  is  $adapter.strip-sql-prefix('SELECT 1'), 'SELECT 1',                    'stripping leaves a bare statement alone';
+  ok  $adapter.is-write-stripped('INSERT INTO t(id) VALUES (1)'),           'a write is classified from the stripped text';
+  nok $adapter.is-write-stripped('SELECT * FROM t'),                        'a read is classified from the stripped text';
+  ok  $adapter.is-schema-change-stripped('DROP TABLE t'),                   'a schema change is classified from the stripped text';
+  is  $adapter.is-write-stripped($adapter.strip-sql-prefix('  /* tag */ UPDATE t SET a = 1')),
+      $adapter.is-write-sql('  /* tag */ UPDATE t SET a = 1'),
+      'the stripped classifier agrees with the whole-statement one';
 } else {
-  skip 'no adapter configured for the is-schema-change-sql classifier', 7;
+  skip 'no adapter configured for the is-schema-change-sql classifier', 14;
 }
 
 unless $has-db {

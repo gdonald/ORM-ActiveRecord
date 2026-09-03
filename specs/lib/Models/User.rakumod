@@ -20,6 +20,7 @@ class User is Model is export {
     self.validate: 'fname', { :presence };
 
     self.has-many: pages         => class-name => 'Page';
+    self.has-many: ordered-pages => %(class-name => 'Page', foreign-key => 'user_id', order => 'name DESC');
     self.has-many: subscriptions => class-name => 'Subscription';
     self.has-many: magazines     => %(through => :subscriptions, class-name => 'Magazine');
     self.has-one:  profile       => class-name => 'Profile';

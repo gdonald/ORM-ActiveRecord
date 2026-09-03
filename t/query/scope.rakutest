@@ -2,9 +2,11 @@ use v6.d;
 use lib 'lib';
 use lib 'specs/lib';
 use Query::Scope;
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Relation::Scopes;
 use Test;
 
-plan 4;
+plan 8;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -20,5 +22,17 @@ my @ids = @images.map(*.id);
 ok @ids.first({ $_ == $foo.id }).defined;
 ok @ids.first({ $_ == $bar.id }).defined;
 ok !@ids.first({ $_ == $baz.id }).defined;
+
+# A model's `submethod BUILD` runs on every instantiation, so a `scope` declared
+# there is re-declared for every record built. The registry keeps one entry per
+# (owning class, scope name) rather than one per record.
+my $before = Scopes.scopes.grep({ .name eq 'jpgs' }).elems;
+Image.create({name => 'qux', ext => 'jpg'});
+is Scopes.scopes.grep({ .name eq 'jpgs' }).elems, $before,
+  'the scope registry holds one entry however many records are built';
+
+ok  Scopes.exists('jpgs', Image),     'the registry finds the scope for its own class';
+nok Scopes.exists('jpgs', Model),     'the registry does not find it for an unrelated class';
+nok Scopes.exists('nonesuch', Image), 'the registry does not find a name nothing declared';
 
 Image.destroy-all;

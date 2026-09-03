@@ -37,6 +37,8 @@ is export
   has Hash $!not-params;
   has @!or-relations;
   has @!fields of Field;
+  has @!selected-fields of Field;
+  has Str $!selected-key = '';
   has @!order;
   has Int $!limit  = 0;
   has Int $!offset = 0;
@@ -59,11 +61,25 @@ is export
   has @!eager-loads;
   has @!pending-includes;
 
+  my %normalized-attrs-of;
+  my %deterministic-attrs-of;
+
+  # Which columns a model normalises or deterministically encrypts is fixed by
+  # the class, so each set is derived once rather than on every relation.
+  method !normalized-attrs-for(--> Set) {
+    %normalized-attrs-of{$!class.^name} //=
+      $!class.^can('normalized-attrs') ?? $!class.normalized-attrs.Set !! set();
+  }
+
+  method !deterministic-attrs-for(--> Set) {
+    %deterministic-attrs-of{$!class.^name} //=
+      $!class.^can('encrypted-deterministic-attrs') ?? $!class.encrypted-deterministic-attrs.Set !! set();
+  }
+
   submethod BUILD(Mu:U :$!class, Hash:D :$params) {
     $!table = Utils.table-name($!class);
     $!params = {};
     $!not-params = {};
-    @!fields = self.db.get-fields(:$!table).map({ Field.new(:name($_[0]), :type($_[1])) });
     for self!normalize-assoc-params($params).kv -> $k, $v { $!params{$k} = $v }
     self!apply-sti-default-scope;
     self!apply-discard-default-scope;
@@ -74,12 +90,12 @@ is export
   # Run a normalised column's normaliser over its search value, so a lookup
   # matches the stored (normalised) value.
   method !normalize-query-values {
-    return unless $!class.^can('normalized-attrs');
-    my %normalized = $!class.normalized-attrs.Set;
-    return unless %normalized;
+    return unless $!params.elems;
+    my $normalized = self!normalized-attrs-for;
+    return unless $normalized;
 
     for $!params.keys -> $column {
-      next unless %normalized{$column};
+      next unless $normalized{$column};
       $!params{$column} = $!params{$column} ~~ Positional
         ?? $!params{$column}.map({ $!class.normalize-value-for($column, $_) }).list
         !! $!class.normalize-value-for($column, $!params{$column});
@@ -89,12 +105,12 @@ is export
   # Replace a search value on a deterministically-encrypted column with its
   # ciphertext, so `Model.where(:ssn('123'))` matches the stored value.
   method !encrypt-query-values {
-    return unless $!class.^can('encrypted-deterministic-attrs');
-    my %deterministic = $!class.encrypted-deterministic-attrs.Set;
-    return unless %deterministic;
+    return unless $!params.elems;
+    my $deterministic = self!deterministic-attrs-for;
+    return unless $deterministic;
 
     for $!params.keys -> $column {
-      next unless %deterministic{$column};
+      next unless $deterministic{$column};
       $!params{$column} = $!params{$column} ~~ Positional
         ?? $!params{$column}.map({ $!class.encrypt-value($column, $_) }).list
         !! $!class.encrypt-value($column, $!params{$column});
@@ -181,13 +197,26 @@ is export
   # (entries that are not plain columns of this table, e.g. expressions for
   # pluck, don't narrow). Bulk writes use `all-fields` for the full type map.
   method fields-of {
-    return @!fields unless @!select.elems;
-    my $wanted = @!select.map(*.Str).Set;
-    my @subset = @!fields.grep({ .name ∈ $wanted });
-    @subset.elems ?? @subset !! @!fields;
+    return self.all-fields unless @!select.elems;
+
+    my $key = @!select.map(*.Str).join("\0");
+    unless $key eq $!selected-key && @!selected-fields.elems {
+      my $wanted = @!select.map(*.Str).Set;
+      my @subset = self.all-fields.grep({ .name ∈ $wanted });
+      @!selected-fields = @subset.elems ?? @subset !! self.all-fields;
+      $!selected-key    = $key;
+    }
+
+    @!selected-fields;
   }
 
-  method all-fields             { @!fields }
+  # A relation that never selects columns (count, exists, pluck, delete-all,
+  # to-sql) never asks for this, so the column metadata is fetched on the first
+  # read rather than when the relation is built.
+  method all-fields {
+    @!fields = self.db.get-field-objects(:table($!table)) unless @!fields.elems;
+    @!fields;
+  }
 
   method clone-query(--> Query) {
     my $copy = Query.new(:class($!class), :params({}));

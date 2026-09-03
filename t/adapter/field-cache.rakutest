@@ -1,0 +1,91 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Instrumentation::Notifications;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+my $has-db  = $adapter.defined && $adapter.is-connected;
+
+# default-for-type is a pure mapping and needs no live connection.
+if $adapter.defined {
+  is  $adapter.default-for-type('integer'), 0,                         'an integer column starts at zero';
+  is  $adapter.default-for-type('character varying'), '',              'a character column starts at the empty string';
+  is  $adapter.default-for-type('text'), '',                           'a text column starts at the empty string';
+  is  $adapter.default-for-type('numeric'), 0,                         'a numeric column starts at zero';
+  nok $adapter.default-for-type('boolean'),                            'a boolean column starts at False';
+  nok $adapter.default-for-type('timestamp without time zone').defined, 'a timestamp column starts undefined';
+  nok $adapter.default-for-type('date').defined,                       'a date column starts undefined';
+  dies-ok { $adapter.default-for-type('gobbledygook') },               'an unrecognized column type is refused';
+} else {
+  skip 'no adapter configured for the type-default mapping', 8;
+}
+
+unless $has-db {
+  skip 'no reachable database for the configured adapter', 13;
+  done-testing;
+  exit 0;
+}
+
+my $table = 'contracts';
+
+$adapter.clear-schema-cache;
+
+my @names = $adapter.get-field-objects(:$table).map(*.name);
+ok @names.first(* eq 'name').defined, 'the field list names every column of the table';
+
+my $first = $adapter.get-field-objects(:$table)[0];
+ok $adapter.get-field-objects(:$table)[0] === $first, 'a repeated call hands out the same Field object';
+
+my @sql;
+my $sub = Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p<sql> });
+
+$adapter.clear-schema-cache;
+$adapter.get-field-objects(:$table);
+my $after-fields = @sql.elems;
+ok $after-fields > 0, 'the first field list introspects the database';
+
+$adapter.get-field-objects(:$table);
+is @sql.elems, $after-fields, 'a repeated field list issues no further query';
+
+is $adapter.get-field-map(:$table){'name'}.name, 'name', 'the field map is keyed by column name';
+
+my $listed = $adapter.get-field-objects(:$table).first(*.name eq 'name');
+ok $adapter.get-field-map(:$table){'name'} === $listed, 'the field map shares its Field with the field list';
+
+@sql = ();
+$adapter.get-field-map(:$table);
+is @sql.elems, 0, 'a repeated field map issues no further query';
+
+is $adapter.get-field-types(:$table){'name'}, $adapter.get-field-map(:$table){'name'}.type,
+  'the type map reports the column type';
+
+@sql = ();
+$adapter.get-field-types(:$table);
+is @sql.elems, 0, 'a repeated type map issues no further query';
+
+my %defaults = $adapter.get-field-defaults(:$table);
+nok %defaults{'id'}:exists, 'the attribute defaults leave out the primary key';
+
+my @missing = $adapter.get-field-objects(:$table)
+  .grep({ .name ne 'id' })
+  .grep({ %defaults{.name}:!exists });
+is @missing.elems, 0, 'every other column has a starting value';
+
+@sql = ();
+$adapter.get-field-defaults(:$table);
+is @sql.elems, 0, 'repeated defaults issue no further query';
+
+Notifications.unsubscribe($sub);
+
+# A schema change clears every derived cache, so the next read re-introspects.
+$adapter.exec('DROP TABLE IF EXISTS fc_widgets');
+$adapter.ddl-create-table('fc_widgets', [ name => { :string, limit => 64 } ]);
+END { try $adapter.exec('DROP TABLE IF EXISTS fc_widgets') if $has-db }
+
+ok $adapter.get-field-map(:table('fc_widgets')){'name'}.defined,
+  'a schema change forces the derived caches to re-introspect';
+
+done-testing;

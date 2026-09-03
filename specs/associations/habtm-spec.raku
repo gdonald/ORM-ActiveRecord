@@ -4,6 +4,7 @@ use BDD::Behave;
 use SpecHelpers;
 use Models::Post;
 use Models::Tag;
+use ORM::ActiveRecord::Instrumentation::Notifications;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -145,5 +146,84 @@ describe 'has-and-belongs-to-many', {
 
       expect($post.tags.elems).to.eq(0);
     }
+  }
+}
+
+describe 'preloading a has-and-belongs-to-many association', {
+  before-each { clean-shared-tables }
+  after-each  { clean-shared-tables }
+
+  let(:built, {
+    my $ruby = Tag.create({name => 'ruby'});
+    my $raku = Tag.create({name => 'raku'});
+    my $perl = Tag.create({name => 'perl'});
+
+    my $first  = Post.create({title => 'First'});
+    my $second = Post.create({title => 'Second'});
+    my $third  = Post.create({title => 'Third'});
+
+    $first.add-tag($ruby);
+    $first.add-tag($raku);
+    $second.add-tag($perl);
+
+    %( :$first, :$second, :$third, :$ruby, :$raku, :$perl );
+  });
+
+  let(:counted, {
+    -> &block {
+      my @sql;
+      my $sub = Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p<sql> });
+      block();
+      Notifications.unsubscribe($sub);
+      @sql;
+    }
+  });
+
+  it 'gives each owner its own tags', {
+    built;
+    my @posts = Post.includes('tags').order('id').all;
+
+    expect(@posts[0].tags.map(*.name).sort.list).to.eq(('raku', 'ruby'));
+  }
+
+  it 'gives a second owner its own tags', {
+    built;
+    my @posts = Post.includes('tags').order('id').all;
+
+    expect(@posts[1].tags.map(*.name).list).to.eq(('perl',));
+  }
+
+  it 'gives an owner with no tags an empty collection', {
+    built;
+    my @posts = Post.includes('tags').order('id').all;
+
+    expect(@posts[2].tags.elems).to.eq(0);
+  }
+
+  it 'reads the owners, their join rows, and their tags in three queries', {
+    built;
+
+    expect(counted()(-> { Post.includes('tags').order('id').all }).elems).to.eq(3);
+  }
+
+  it 'does not add a query when another owner joins the load', {
+    built;
+    Post.create({title => 'Fourth'}).add-tag(Tag.create({name => 'zig'}));
+
+    expect(counted()(-> { Post.includes('tags').order('id').all }).elems).to.eq(3);
+  }
+
+  it 'serves the preloaded tags without another query', {
+    built;
+    my @posts = Post.includes('tags').order('id').all;
+
+    expect(counted()(-> { .tags.elems for @posts }).elems).to.eq(0);
+  }
+
+  it 'preloads the inverse side too', {
+    built;
+    my @tags = Tag.includes('posts').order('id').all;
+
+    expect(@tags[0].posts.map(*.title).list).to.eq(('First',));
   }
 }

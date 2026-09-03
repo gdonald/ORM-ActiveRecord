@@ -1,0 +1,70 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::DB;
+use Models::User;
+use Test;
+
+plan 9;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+my $adapter = DB.shared.adapter;
+
+sub columns-of(Str:D $sql) {
+  $sql.comb(/ <[a..z_]>+ ' ='/).map(*.subst(/' ='/, '')).list;
+}
+
+# Raku hash order is not stable across hash instances, so the same conditions
+# built twice can enumerate their keys either way round. Both the prepared
+# statement cache and the query cache are keyed on SQL text, so an unstable
+# order would multiply cache entries and miss on every repeat.
+is User.where({ fname => 'a', lname => 'b' }).to-sql,
+   User.where({ fname => 'a', lname => 'b' }).to-sql,
+   'a WHERE clause emits the same text for conditions built twice';
+
+is User.where({ fname => 'a', lname => 'b' }).to-sql,
+   User.where({ lname => 'b', fname => 'a' }).to-sql,
+   'a WHERE clause emits the same text whichever way the conditions are given';
+
+my $where-sql = User.where({ lname => 'b', fname => 'a' }).to-sql;
+ok $where-sql.index('fname') < $where-sql.index('lname'),
+  'a WHERE clause orders its columns by name';
+
+my %name-types = fname => 'character varying', lname => 'character varying';
+
+my $update = $adapter.build-update(
+  :table('users'), :id(1), :attrs(%( lname => 'b', fname => 'a' )), :types(%name-types),
+);
+is columns-of($update.sql).grep({ $_ eq 'fname' | 'lname' }).list, ('fname', 'lname'),
+  'an UPDATE orders its assigned columns by name';
+
+my $update-other = $adapter.build-update(
+  :table('users'), :id(1), :attrs(%( fname => 'a', lname => 'b' )), :types(%name-types),
+);
+is $update.sql, $update-other.sql,
+  'an UPDATE emits the same text whichever way the columns are given';
+
+# A hash written inline in a list flattens into its pairs, so each row is
+# pushed as one element.
+my @one-row;
+@one-row.push: %( lname => 'b', fname => 'a' );
+my @same-row-reversed;
+@same-row-reversed.push: %( fname => 'a', lname => 'b' );
+
+my $many = $adapter.build-insert-many(:table('users'), :rows(@one-row));
+ok $many.sql.index('fname') < $many.sql.index('lname'),
+  'a multi-row INSERT orders its column list by name';
+
+is $many.sql, $adapter.build-insert-many(:table('users'), :rows(@same-row-reversed)).sql,
+  'a multi-row INSERT emits the same text whichever way the row is given';
+
+my $one = $adapter.build-insert(:table('users'), :attrs(%( lname => 'b', fname => 'a' )));
+ok $one.sql.index('fname') < $one.sql.index('lname'),
+  'a single-row INSERT orders its column list by name';
+
+my $counters = $adapter.build-update-counters-where(
+  :table('users'), :counters(%( zeta => 1, alpha => 1 )), :where(%( id => 1 )),
+);
+ok $counters.sql.index('alpha') < $counters.sql.index('zeta'),
+  'a counter update orders its counters by name';

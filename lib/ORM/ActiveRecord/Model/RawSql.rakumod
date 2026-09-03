@@ -34,7 +34,7 @@ role ModelRawSql is export {
     my $stmt = self.db.sanitize-sql(@parts);
     my @rows = self.db.exec-stmt-hash($stmt);
     my $table = Utils.table-name(self);
-    my @fields = self.db.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
+    my @fields = self.db.get-field-objects(:$table);
     my %field-types = @fields.map({ .name => .type });
 
     my @objects;

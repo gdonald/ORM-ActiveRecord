@@ -61,10 +61,12 @@ class Model
   is export
 {
   my %connection-of;
+  my %belongs-to-names-of;
+  my %fkey-name-of;
 
   has DB $!db;
-  has Errors $.errors;
-  has Validators $.validators;
+  has Errors $!errors;
+  has Validators $!validators;
 
   has %.record is rw;
   has %.has-manys;
@@ -129,6 +131,7 @@ class Model
   has @.filter-attributes;
 
   has %.assoc-cache;
+  has %.assoc-cache-key;
 
   my Scopes $.scopes;
 
@@ -138,22 +141,36 @@ class Model
 
   submethod BUILD(Int:D :$!id, :%!record) {
     $!db = self.db;
-    $!errors = Errors.new(:model-name(self.^name));
-    $!validators = Validators.new;
 
     self.WHAT.register-sti;
     @!fields = self.get-fields(self.table-name);
     my $only = (%!record && %!record<fields>) ?? %!record<fields>.map(*.name).Set !! Nil;
-    self.init-attrs(:$only);
+    my $row  = (%!record && %!record<attrs>) ?? %!record<attrs> !! Nil;
 
-    if %!record && %!record<attrs> {
-      self.merge-attrs(%!record<attrs>);
-      self.update-db-attrs if $!id;
-      $!was-found-from-db = $!id != 0;
-    } elsif $!id {
-      self.get-attrs(:$!id);
+    if $row && $!id {
+      self!fill-attr-defaults(:$only, :skip($row));
+      self.merge-attrs($row);
+      self.update-db-attrs;
       $!was-found-from-db = True;
+    } elsif $row {
+      self.init-attrs(:$only);
+      self.merge-attrs($row);
+    } else {
+      self.init-attrs(:$only);
+
+      if $!id {
+        self.get-attrs(:$!id);
+        $!was-found-from-db = True;
+      }
     }
+  }
+
+  method errors(--> Errors) {
+    $!errors //= Errors.new(:model-name(self.^name));
+  }
+
+  method validators(--> Validators) {
+    $!validators //= Validators.new;
   }
 
   method new(|c) {
@@ -248,6 +265,19 @@ class Model
       return $?CLASS.scopes.exec($name, $scope-class, |@rest);
     }
 
+    # Every dynamic accessor below spells its affix with a hyphen and columns
+    # are snake_case, so a hyphen-free name that is already an attribute is a
+    # plain read. A name ending in `_id` still falls through, so the belongs-to
+    # branch can resolve an unset foreign key from its loaded record.
+    if self.DEFINITE && !$name.contains('-') && !$name.ends-with('_id') {
+      with self.store-accessor-column($name) -> $column {
+        %!attrs{$column} = %() unless %!attrs{$column} ~~ Associative;
+        return-rw %!attrs{$column}{$name};
+      }
+
+      return-rw %!attrs{$name} if %!attrs{$name}:exists;
+    }
+
     # Enum value predicate: record.is-active
     if self.DEFINITE && $name ~~ /^ 'is-' (.+) $/ {
       my $value = ~$0;
@@ -299,7 +329,7 @@ class Model
       return self.reset-attribute(~$0) if self.has-attribute(~$0);
     }
 
-    if $name ~~ /_id$/ && %!attrs«$name» == 0 {
+    if $name ~~ /_id$/ && %!attrs{$name} == 0 {
       my $base-name = $name.subst(/_id$/, '');
       return 0 if self.is-polymorphic-assoc($base-name);
       return self."$base-name"().id;
@@ -355,13 +385,16 @@ class Model
       }
     }
 
-    return-rw %!attrs«$name» if %!attrs«$name»:exists;
+    return-rw %!attrs{$name} if %!attrs{$name}:exists;
 
-    if any(%!has-manys.keys) eq $name {
+    if %!has-manys{$name}:exists {
       my $spec = %!has-manys{$name};
-      if %!assoc-cache{$name}:exists {
+      my $cache-key = self!assoc-owner-key($spec);
+      if self.assoc-cached($name, $cache-key) {
+        my $cached := %!assoc-cache{$name}<>;
+        return $cached if $cached ~~ CollectionProxy;
         my $cached-class = self.assoc-class-from-spec($spec) // Mu:U;
-        return self.wrap-collection(%!assoc-cache{$name}.list, $name, $spec, $cached-class, @rest);
+        return self.wrap-collection(-> { $cached.list }, $name, $spec, $cached-class, @rest);
       }
       self.check-strict-loading($name, $spec);
       my $class = Mu:U;
@@ -369,6 +402,7 @@ class Model
       my $as-name = '';
       my $fkey-override = '';
       my $pkey-col = 'id';
+      my @order;
 
       for $spec.keys -> $key {
         given $key {
@@ -384,6 +418,7 @@ class Model
           when 'inverse-of' { }
           when 'dependent' { }
           when 'extension' { }
+          when 'order' { @order = self.assoc-order-columns($spec) }
           when 'source' | 'source-type' | 'disable-joins' | 'strict-loading' | 'autosave' | 'validate' | 'query-constraints' | 'scope' { }
           default { say 'Unknown has-many type ' ~ $spec; die }
         }
@@ -394,97 +429,104 @@ class Model
       my $pkey-val = $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
       my $scope-block = self.assoc-scope-block($spec);
 
+      my $fkey-name = $fkey-override || Utils.base-name(self.fkey-name);
+
+      # Each shape of the association becomes a loader the proxy runs on first
+      # use, plus (where a single relation expresses it) a way to build that
+      # relation, so `count` and `find` can ask the database directly instead of
+      # fetching every row.
+      my &load;
+      my &relate = Callable;
+
       if $as-name {
         my $type-name = self.polymorphic-name;
         my %where = ($as-name ~ '_id') => $pkey-val, ($as-name ~ '_type') => $type-name;
-        my @records;
-        if $scope-block.defined {
-          my $q = Query.new(:$class, :params(%where));
-          $q = self.apply-assoc-scope($scope-block, $q, @rest);
-          @records = $q.all;
-        } else {
-          @records = $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
-        }
-        self.attach-inverse(@records, $spec, $class);
-        return self.wrap-collection(@records, $name, $spec, $class, @rest);
+
+        &load = -> {
+          my @records = $scope-block.defined
+            ?? self.apply-assoc-scope($scope-block, Query.new(:$class, :params(%where)), @rest).all
+            !! $!db.get-objects(:$class, :@fields, :table($target-table), :%where, :@order);
+          self.attach-inverse(@records, $spec, $class);
+          @records;
+        };
+
+        &relate = (-> { $class.where(%where).order(|@order) }) unless $scope-block.defined;
       }
-
-      my $fkey-name = $fkey-override || Utils.base-name(self.fkey-name);
-
-      if !$join-table && self.assoc-spec-has($spec, 'query-constraints') {
+      elsif !$join-table && self.assoc-spec-has($spec, 'query-constraints') {
         my @cols = self.assoc-spec-value($spec, 'query-constraints').list;
         my $natural-fkey = $fkey-override || Utils.base-name(self.fkey-name);
         my %where;
         for @cols -> $col {
           %where{$col} = $col eq $natural-fkey ?? $pkey-val !! %!attrs{$col};
         }
-        my @records;
-        if $scope-block.defined {
-          my $q = Query.new(:$class, :params(%where));
-          $q = self.apply-assoc-scope($scope-block, $q, @rest);
-          @records = $q.all;
-        } else {
-          @records = $!db.get-objects(:$class, :@fields, :table($target-table), :%where);
-        }
-        self.attach-inverse(@records, $spec, $class);
-        return self.wrap-collection(@records, $name, $spec, $class, @rest);
-      }
 
-      if $join-table && self.assoc-spec-has($spec, 'disable-joins') && so self.assoc-spec-value($spec, 'disable-joins') {
-        my $target-fkey = Utils.to-foreign-key($target-table);
-        my $select = $!db.sanitize-sql-array([
-          "SELECT $target-fkey FROM $join-table WHERE $fkey-name = ?",
-          $pkey-val,
-        ]);
-        my @rows = $!db.exec-stmt($select);
-        my @ids = @rows.map({ $_[0] }).grep(*.defined);
-        my @records;
-        if @ids.elems {
-          if $scope-block.defined {
-            my $q = Query.new(:$class, :params({ id => @ids.list }));
-            $q = self.apply-assoc-scope($scope-block, $q, @rest);
-            @records = $q.all;
-          } else {
-            @records = $!db.get-objects(:$class, :@fields, :table($target-table), :where({ id => @ids }));
+        &load = -> {
+          my @records = $scope-block.defined
+            ?? self.apply-assoc-scope($scope-block, Query.new(:$class, :params(%where)), @rest).all
+            !! $!db.get-objects(:$class, :@fields, :table($target-table), :%where, :@order);
+          self.attach-inverse(@records, $spec, $class);
+          @records;
+        };
+
+        &relate = (-> { $class.where(%where).order(|@order) }) unless $scope-block.defined;
+      }
+      elsif $join-table && self.assoc-spec-has($spec, 'disable-joins') && so self.assoc-spec-value($spec, 'disable-joins') {
+        &load = -> {
+          my $select = $!db.sanitize-sql-array([
+            "SELECT {Utils.to-foreign-key($target-table)} FROM $join-table WHERE $fkey-name = ?",
+            $pkey-val,
+          ]);
+          my @ids = $!db.exec-stmt($select).map({ $_[0] }).grep(*.defined);
+          my @records;
+
+          if @ids.elems {
+            @records = $scope-block.defined
+              ?? self.apply-assoc-scope($scope-block, Query.new(:$class, :params({ id => @ids.list })), @rest).all
+              !! $!db.get-objects(:$class, :@fields, :table($target-table), :where({ id => @ids }));
           }
+
+          self.attach-inverse(@records, $spec, $class);
+          @records;
+        };
+      }
+      elsif $join-table && $scope-block.defined {
+        &load = -> {
+          my $select = $!db.sanitize-sql-array([
+            "SELECT {Utils.to-foreign-key($target-table)} FROM $join-table WHERE $fkey-name = ?",
+            $pkey-val,
+          ]);
+          my @ids = $!db.exec-stmt($select).map({ $_[0] }).grep(*.defined);
+          my @records;
+
+          if @ids.elems {
+            @records = self.apply-assoc-scope($scope-block, Query.new(:$class, :params({ id => @ids.list })), @rest).all;
+          }
+
+          self.attach-inverse(@records, $spec, $class);
+          @records;
+        };
+      }
+      else {
+        &load = -> {
+          my @records = $scope-block.defined
+            ?? self.apply-assoc-scope($scope-block, Query.new(:$class, :params({ $fkey-name => $pkey-val })), @rest).all
+            !! $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $pkey-val), :@order);
+          self.attach-inverse(@records, $spec, $class);
+          @records;
+        };
+
+        unless $scope-block.defined || $join-table {
+          &relate = -> { $class.where(($fkey-name => $pkey-val).Hash).order(|@order) };
         }
-        self.attach-inverse(@records, $spec, $class);
-        return self.wrap-collection(@records, $name, $spec, $class, @rest);
       }
 
-      if $join-table && $scope-block.defined {
-        my $target-fkey = Utils.to-foreign-key($target-table);
-        my $select = $!db.sanitize-sql-array([
-          "SELECT $target-fkey FROM $join-table WHERE $fkey-name = ?",
-          $pkey-val,
-        ]);
-        my @rows = $!db.exec-stmt($select);
-        my @ids = @rows.map({ $_[0] }).grep(*.defined);
-        my @records;
-        if @ids.elems {
-          my $q = Query.new(:$class, :params({ id => @ids.list }));
-          $q = self.apply-assoc-scope($scope-block, $q, @rest);
-          @records = $q.all;
-        }
-        self.attach-inverse(@records, $spec, $class);
-        return self.wrap-collection(@records, $name, $spec, $class, @rest);
-      }
-
-      my @records;
-      if $scope-block.defined {
-        my $q = Query.new(:$class, :params({ $fkey-name => $pkey-val }));
-        $q = self.apply-assoc-scope($scope-block, $q, @rest);
-        @records = $q.all;
-      } else {
-        @records = $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where($fkey-name => $pkey-val));
-      }
-      self.attach-inverse(@records, $spec, $class);
-      return self.wrap-collection(@records, $name, $spec, $class, @rest);
+      return self!hold-collection($name, $cache-key, &load, &relate, $spec, $class, @rest, $scope-block);
     }
 
-    if any(%!has-ones.keys) eq $name {
+    if %!has-ones{$name}:exists {
       my $spec = %!has-ones{$name};
-      return %!assoc-cache{$name} if %!assoc-cache{$name}:exists;
+      my $cache-key = self!assoc-owner-key($spec);
+      return %!assoc-cache{$name} if self.assoc-cached($name, $cache-key);
       self.check-strict-loading($name, $spec);
       my $fkey-name = Utils.base-name(self.fkey-name);
       my $class = Mu:U;
@@ -532,9 +574,9 @@ class Model
         } else {
           $obj = $!db.get-object(:$class, :@fields, :$table, where => { id => $target-id });
         }
-        return Nil unless $obj.defined;
+        return self!hold-assoc($name, $cache-key, Nil, $scope-block, @rest) unless $obj.defined;
         self.attach-inverse-single($obj, $spec, $class);
-        return $obj;
+        return self!hold-assoc($name, $cache-key, $obj, $scope-block, @rest);
       }
 
       if $join-table {
@@ -556,10 +598,10 @@ class Model
           return $only;
         }
         my @objects = $!db.get-objects(:$class, :@fields, :$table, :$join-table, where => ($fkey-name => $pkey-val).Hash, limit => 1);
-        return Nil unless @objects.elems;
+        return self!hold-assoc($name, $cache-key, Nil, $scope-block, @rest) unless @objects.elems;
         my $only = @objects.first;
         self.attach-inverse-single($only, $spec, $class);
-        return $only;
+        return self!hold-assoc($name, $cache-key, $only, $scope-block, @rest);
       }
 
       my $obj;
@@ -570,12 +612,16 @@ class Model
       } else {
         $obj = $!db.get-object(:$class, :@fields, :$table, where => ($fkey-name => $pkey-val).Hash);
       }
-      return Nil unless $obj.defined;
+      return self!hold-assoc($name, $cache-key, Nil, $scope-block, @rest) unless $obj.defined;
       self.attach-inverse-single($obj, $spec, $class);
-      return $obj;
+      return self!hold-assoc($name, $cache-key, $obj, $scope-block, @rest);
     }
 
-    if any(%!habtms.keys) eq $name {
+    # A habtm collection is not kept between reads: its join table is written
+    # from both sides, so a link added or cleared through the other record
+    # would leave a kept collection stale with nothing to invalidate it. The
+    # preloader still fills the cache for an `includes` load.
+    if %!habtms{$name}:exists {
       my $spec = %!habtms{$name};
       return %!assoc-cache{$name}.list if %!assoc-cache{$name}:exists;
       self.check-strict-loading($name, $spec);
@@ -601,9 +647,12 @@ class Model
       return $!db.get-objects(:$class, :@fields, :table($target-table), :$join-table, :where(($owner-key => $!id).Hash));
     }
 
-    if any(%!belongs-tos.keys) eq $name {
+    if %!belongs-tos{$name}:exists {
       my $spec = %!belongs-tos{$name};
-      return %!assoc-cache{$name} if %!assoc-cache{$name}:exists;
+      my $cache-key = self.is-polymorphic-assoc($name)
+        ?? (%!attrs{$name ~ '_type'}, %!attrs{$name ~ '_id'})
+        !! %!attrs{self.assoc-fkey-from-spec($spec, $name ~ '_id')};
+      return %!assoc-cache{$name} if self.assoc-cached($name, $cache-key);
       self.check-strict-loading($name, $spec);
       if self.is-polymorphic-assoc($name) {
         my $type-attr = $name ~ '_type';
@@ -615,7 +664,7 @@ class Model
         my Int $id = %!attrs{$name ~ '_id'};
         return Nil unless $id;
         my @fields = self.get-fields($table);
-        return $!db.get-object(:$class, :@fields, :$table, where => :$id);
+        return self!hold-assoc($name, $cache-key, $!db.get-object(:$class, :@fields, :$table, where => :$id), Block, @rest);
       }
       my $class = self.assoc-class-from-spec($spec);
       my Str $table = Utils.table-name($class);
@@ -631,7 +680,7 @@ class Model
         return $q.first;
       }
       my %where = ($pkey-col => $fkey-val);
-      return $!db.get-object(:$class, :@fields, :$table, :%where);
+      return self!hold-assoc($name, $cache-key, $!db.get-object(:$class, :@fields, :$table, :%where), $scope-block, @rest);
     }
 
     return if $name ~~ /_confirmation/;
@@ -783,6 +832,18 @@ class Model
     so self.assoc-spec-value(spec, 'validate');
   }
 
+  # `order` on an association, as a string or a list of them. Declaring it here
+  # rather than through a `scope` block keeps the association memoisable and
+  # keeps `count` a `SELECT COUNT(*)`, neither of which a scope allows.
+  method assoc-order-columns(\spec) {
+    return () unless self.assoc-spec-has(spec, 'order');
+    my $v = self.assoc-spec-value(spec, 'order');
+    given $v {
+      when Positional { return $v.list.map(*.Str).list }
+      default         { return (~$v,) }
+    }
+  }
+
   method assoc-scope-block(\spec) {
     return Block unless self.assoc-spec-has(spec, 'scope');
     my $v = self.assoc-spec-value(spec, 'scope');
@@ -871,7 +932,7 @@ class Model
   }
 
   method fkey-name {
-    self.WHAT.raku.lc ~ '_id';
+    %fkey-name-of{self.^name} //= self.WHAT.raku.lc ~ '_id';
   }
 
   method belongs-to(*%rest) {
@@ -926,14 +987,79 @@ class Model
     self.assoc-spec-value(spec, 'extension');
   }
 
-  method wrap-collection(@records, Str:D $name, $spec, Mu $class, @args) {
-    my @col = @records;
+  # An association loaded through a direct read is kept, so a second read does
+  # not requery. The value it was loaded for is kept with it (the owner's
+  # primary key for a collection, the foreign key for a belongs-to), so writing
+  # that attribute invalidates the entry without needing a hook on attribute
+  # assignment. The preloader writes `assoc-cache` with no key, and those
+  # entries stay valid until something clears them.
+  #
+  # A collection is kept as its wrapped proxy and handed back as the same
+  # object, so a `push` or `delete` through the proxy is visible on the next
+  # read. An association with a scope block or scope arguments is never kept:
+  # its rows depend on the arguments of the call.
+  method assoc-cached(Str:D $name, $key --> Bool) {
+    return False unless %!assoc-cache{$name}:exists;
+    return True unless %!assoc-cache-key{$name}:exists;
+    %!assoc-cache-key{$name} eqv $key;
+  }
+
+  # Decontainerised on the way out: a collection stored in a hash slot comes
+  # back itemised, and `my @rows = $record.pages` would then bind the whole
+  # proxy as a single element.
+  method assoc-cache-put(Str:D $name, $key, $value) {
+    %!assoc-cache{$name}     = $value;
+    %!assoc-cache-key{$name} = $key;
+    $value<>;
+  }
+
+  method assoc-cache-clear(Str $name?) {
+    with $name {
+      %!assoc-cache{$name}:delete;
+      %!assoc-cache-key{$name}:delete;
+    } else {
+      %!assoc-cache     = ();
+      %!assoc-cache-key = ();
+    }
+    self;
+  }
+
+  method !assoc-owner-key(\spec) {
+    my $pkey-col = self.assoc-pkey-from-spec(spec, 'id');
+    $pkey-col eq 'id' ?? $!id !! %!attrs{$pkey-col};
+  }
+
+  # An association that came back empty is not kept. Re-reading it is one cheap
+  # query, and keeping it would hide a record created through another handle
+  # between the two reads, which is the common order in a create-then-read.
+  method !hold-collection(Str:D $name, $key, &load, &relate, $spec, Mu $class, @args, $scope-block) {
+    my $keep = !($scope-block.defined || @args.elems);
+    my $proxy := self.wrap-collection(&load, $name, $spec, $class, @args, :&relate, :$keep);
+    self.assoc-cache-put($name, $key, $proxy) if $keep;
+    $proxy;
+  }
+
+  method !hold-assoc(Str:D $name, $key, $value, $scope-block, @args) {
+    return $value<> if $scope-block.defined || @args.elems;
+    return $value<> unless $value.defined;
+    return $value<> if $value ~~ Positional && !$value.elems;
+    self.assoc-cache-put($name, $key, $value);
+  }
+
+  # The rows are fetched by `&load` the first time anything reifies the array,
+  # so a proxy that is only counted or searched never fetches them. `%state`
+  # is shared with the proxy so it can tell loaded from unloaded.
+  method wrap-collection(&load, Str:D $name, $spec, Mu $class, @args, :&relate, Bool :$keep = False) {
+    my @col;
     @col does CollectionProxy;
     @col.owner        = self;
     @col.spec         = $spec;
     @col.target-class = $class;
     @col.assoc-name   = $name;
     @col.args         = @args.Array;
+    @col.relate       = &relate;
+    @col.load         = &load;
+    @col.load-state   = %( loaded => False, keep => $keep );
     my $ext = self.assoc-extension-role($spec);
     @col does $ext if $ext !=== Mu;
     @col;
@@ -965,11 +1091,13 @@ class Model
 
   method has-one-create(Str:D $name, %attrs) {
     my ($class, %a) = self.has-one-attrs($name, %attrs);
+    self.assoc-cache-clear($name);
     $class.create(%a);
   }
 
   method has-one-create-bang(Str:D $name, %attrs) {
     my ($class, %a) = self.has-one-attrs($name, %attrs);
+    self.assoc-cache-clear($name);
     $class.create-bang(%a);
   }
 
@@ -1000,6 +1128,7 @@ class Model
       $!id, $record.id,
     ]);
     $!db.exec-stmt($stmt);
+    self.assoc-cache-clear($assoc);
     True;
   }
 
@@ -1009,6 +1138,7 @@ class Model
     my $target-key = self.habtm-target-key($assoc);
     my %where = ($owner-key => $!id, $target-key => $record.id);
     $!db.delete-records(:table($join-table), :%where);
+    self.assoc-cache-clear($assoc);
     True;
   }
 
@@ -1017,6 +1147,7 @@ class Model
     my $owner-key  = Utils.base-name(self.fkey-name);
     my %where = ($owner-key => $!id).Hash;
     $!db.delete-records(:table($join-table), :%where);
+    self.assoc-cache-clear($assoc);
     True;
   }
 
@@ -1024,34 +1155,33 @@ class Model
   # gets attrs only for the columns the query selected, so a narrowed
   # `select` load doesn't fake the missing columns with type defaults.
   method init-attrs(:$only) {
-    for @!fields {
-      my $name = $_.name;
-      next if $name eq 'id';
-      next if $only.defined && $name ∉ $only;
-      given .type {
-        when /integer/ { %!attrs{$name} = 0 }
-        when /(character|text)/ { %!attrs{$name} = '' }
-        when /numeric|decimal|real|double|float|money/ { %!attrs{$name} = 0 }
-        when /boolean/ { %!attrs{$name} = False }
-        when /timestamp|^date|^time/ { %!attrs{$name} = DateTime }
-        default { die 'Unknown field type: ' ~ $_ }
-      }
-    }
+    self!fill-attr-defaults(:$only);
     self.update-db-attrs;
   }
 
-  method touch-timestamps {
-    my $now = DateTime.now;
-    for @!fields -> $field {
-      given $field.name {
-        when 'updated_at' { %!attrs<updated_at> = $now }
-        when 'created_at' { %!attrs<created_at> //= $now if $!id == 0 }
-      }
+  # A column the fetched row already carries is overwritten by `merge-attrs`,
+  # so `:skip` leaves it out and the caller snapshots once after the merge.
+  method !fill-attr-defaults(:$only, :$skip) {
+    for $!db.get-field-defaults(:table(self.table-name)).kv -> $name, $value {
+      next if $only.defined && $name ∉ $only;
+      next if $skip.defined && ($skip{$name}:exists);
+      %!attrs{$name} = $value;
     }
   }
 
+  # Two column lookups rather than a walk of every column of the table with a
+  # `given`/`when` per column, on every save.
+  method touch-timestamps {
+    my %columns := self.field-map;
+    return unless (%columns<updated_at>:exists) || (%columns<created_at>:exists);
+
+    my $now = DateTime.now;
+    %!attrs<updated_at> = $now if %columns<updated_at>:exists;
+    %!attrs<created_at> //= $now if $!id == 0 && (%columns<created_at>:exists);
+  }
+
   method merge-attrs(Hash:D $attrs) {
-    for $attrs.keys { %!attrs«$_» = self.blank-to-null($_, $attrs«$_») }
+    for $attrs.keys { %!attrs{$_} = self.blank-to-null($_, $attrs{$_}) }
   }
 
   # A blank string assigned to a non-text column means "no value", so it becomes
@@ -1060,7 +1190,7 @@ class Model
   # null for datetime, numeric, and boolean attributes.
   method blank-to-null(Str:D $name, $value) {
     return $value unless $value.defined && $value ~~ Str && $value eq '';
-    my $field = @!fields.first({ .name eq $name });
+    my $field = self.field-map{$name};
     return $value unless $field && $field.type.defined;
     return $value if $field.type ~~ /:i character | text | varchar | 'char' | string /;
     Nil;
@@ -1085,14 +1215,17 @@ class Model
     @!fields.map({ $_.name });
   }
 
+  # One shallow copy rather than a write per column. Hydration calls this for
+  # every row, and on a ten-column table the per-key loop measured about 9%
+  # slower over 400 rows.
   method update-db-attrs {
-    for %!attrs.keys { %!attrs-db«$_» = %!attrs«$_» }
+    %!attrs-db := %!attrs.clone;
   }
 
   method locking-column(--> Str) { 'lock_version' }
 
   method is-locking-enabled(--> Bool) {
-    so self.fields.first({ .name eq self.locking-column });
+    so (self.field-map{self.locking-column}:exists);
   }
 
   method counter-cache-bump(Int:D $fkey-val, Str:D $target-table, Str:D $col, Str:D $pkey-col, Int:D $delta) {
@@ -1180,8 +1313,8 @@ class Model
       next if $class === Mu;
       my $pkey-col = self.assoc-pkey-from-spec($spec, 'id');
       my $target-table = Utils.table-name($class);
-      my @target-fields = self.get-fields($target-table).map({ .name });
-      my @existing = @cols.grep({ @target-fields.first(* eq $_).defined });
+      my %target-fields := $!db.get-field-map(:table($target-table));
+      my @existing = @cols.grep({ %target-fields{$_}:exists });
       self.touch-parent($fkey-val, $target-table, $pkey-col, @existing);
     }
   }
@@ -1219,7 +1352,7 @@ class Model
       return False unless self.do-before-updates;
       self.apply-secure-password;
       if $locking {
-        my %types = @!fields.map({ .name => .type }).Hash;
+        my %types = self.field-types;
         my %where = self.WHAT.default-id-locating
           ?? %( id => $!id, $lock-col => $prev-lock )
           !! %( |self.primary-key-where, $lock-col => $prev-lock );
@@ -1441,7 +1574,7 @@ class Model
 
   method raise-invalid {
     my @messages;
-    for $!errors.errors -> $e {
+    for self.errors.errors -> $e {
       @messages.push: $e.field.name ~ ' ' ~ $e.message;
     }
     die X::RecordInvalid.new(:record(self), :@messages);
@@ -1486,11 +1619,11 @@ class Model
     $!errors = Errors.new(:model-name(self.^name));
     self.do-before-validations;
     my $ctx = $context // $!validation-context // ($!id == 0 ?? 'create' !! 'update');
-    $!validators.validate($!db, self, :context($ctx));
+    self.validators.validate($!db, self, :context($ctx));
     self.validate-belongs-tos;
     self.validate-nested-pending;
     self.do-after-validations;
-    $!errors.errors.elems.so;
+    self.errors.errors.elems.so;
   }
 
   method validate-belongs-tos {
@@ -1503,7 +1636,7 @@ class Model
           my $field = self.get-field($name) // self.get-field($fkey-col);
           if $field {
             my $message = 'is invalid';
-            $!errors.push(Error.new(:$field, :$message, :type<invalid>));
+            self.errors.push(Error.new(:$field, :$message, :type<invalid>));
           }
         }
       }
@@ -1546,7 +1679,7 @@ class Model
       next unless $field;
       my $message = Message.build(:default('must exist'), :type<required>, :obj(self), :$field);
       my $e = Error.new(:$field, :$message, :type<blank>);
-      $!errors.push($e);
+      self.errors.push($e);
     }
   }
 
@@ -1691,7 +1824,7 @@ class Model
       next if %op<action> eq 'destroy';
       my $rec = %op<record>;
       next if $rec.is-valid;
-      $!errors.add(%op<assoc>, 'invalid', message => 'is invalid');
+      self.errors.add(%op<assoc>, 'invalid', message => 'is invalid');
     }
   }
 
@@ -1719,7 +1852,7 @@ class Model
     if $field !~~ Field { say 'Field "' ~ $name ~ '" does not exist'; die }
 
     my $v = Validator.new(:$klass, :$field, :$params);
-    $!validators.validators.push($v);
+    self.validators.validators.push($v);
   }
 
   multi method validates(@names, Hash:D $params) {
@@ -1744,14 +1877,14 @@ class Model
   method validates-with($validator, *%options) {
     my $klass = self.WHAT;
     my $wv = WithValidator.new(:$klass, :$validator, options => %options.Hash);
-    $!validators.with-validators.push($wv);
+    self.validators.with-validators.push($wv);
   }
 
   multi method validates-each(@names, Block:D $block, %params = {}) {
     my $klass = self.WHAT;
     my @fields = @names.map(*.Str);
     my $ev = EachValidator.new(:$klass, :@fields, :$block, params => %params);
-    $!validators.each-validators.push($ev);
+    self.validators.each-validators.push($ev);
   }
 
   multi method validates-each(Str:D $name, Block:D $block, %params = {}) {
@@ -1765,7 +1898,7 @@ class Model
   multi method validates-associated(Str:D $name, Hash:D $params = {}) {
     my $klass = self.WHAT;
     my $av = AssociatedValidator.new(:$klass, :$name, :$params);
-    $!validators.associated.push($av);
+    self.validators.associated.push($av);
   }
 
   multi method validates-associated(*@names) {
@@ -1775,17 +1908,32 @@ class Model
   method scope(Str:D $name, Block:D $block) {
     my $klass = self.WHAT;
 
-    my $s = Scope.new(:$klass, :$name, :$block);
-    $?CLASS.scopes.scopes.push($s);
+    $?CLASS.scopes.register(Scope.new(:$klass, :$name, :$block));
   }
 
   method get-fields(Str:D $table) {
-    $!db.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
+    $!db.get-field-objects(:$table);
+  }
+
+  # Which associations a model declares as belongs-to is fixed by the class, so
+  # the names are derived from one instance and kept, rather than by building a
+  # throwaway record for every relation that has to normalise its params.
+  method belongs-to-names(--> Set) {
+    %belongs-to-names-of{self.^name} //= self.new(:id(0)).belongs-tos.keys.Set;
+  }
+
+  method field-map(--> Hash) {
+    $!db.get-field-map(:table(self.table-name));
+  }
+
+  method field-types(--> Hash) {
+    $!db.get-field-types(:table(self.table-name));
   }
 
   method get-field(Str:D $name) {
-    for self.fields { return $_ if .name ~~ $name }
-    for self.fields { return $_ if .name ~~ $name ~ '_id' && .type ~~ 'integer' }
+    with self.field-map{$name} -> $field { return $field }
+    with self.field-map{$name ~ '_id'} -> $field { return $field if $field.type eq 'integer' }
+    Nil;
   }
 
   multi method count {
@@ -1909,7 +2057,7 @@ class Model
   method add-restrict-error(Str:D $assoc) {
     my $field = Field.new(:name('base'), :type('association'));
     my $message = 'Cannot delete record because dependent ' ~ $assoc ~ ' exist';
-    $!errors.push(Error.new(:$field, :$message, :type<restrict-dependent-destroy>));
+    self.errors.push(Error.new(:$field, :$message, :type<restrict-dependent-destroy>));
   }
 
   method dependent-destroy-children(Str:D $name, \spec, Bool:D :$many) {
@@ -2039,7 +2187,7 @@ multi sub trait_mod:<is>(Method:D $method, :$scope!) is export {
   my $klass = $method.package;
   my $name  = $method.name;
 
-  Scopes.scopes.push(
+  Scopes.register(
     Scope.new(:$klass, :$name, :block(-> |args { $klass."$name"(|args) }))
   );
 }

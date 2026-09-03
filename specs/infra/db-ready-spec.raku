@@ -1,4 +1,5 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Schema::DbReady;
 use ORM::ActiveRecord::DB;

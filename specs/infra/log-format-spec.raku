@@ -1,4 +1,5 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 use JSON::Tiny;
 use ORM::ActiveRecord::Support::Log;

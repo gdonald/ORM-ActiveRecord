@@ -1,0 +1,31 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use Validation::GuardSkip;
+use Test;
+
+plan 5;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+# A validation whose `if` guard is false must not run at all. Acceptance and
+# confirmation are the two that ran anyway: acceptance tested the guard with
+# `unless`, and confirmation's `&&` bound tighter than its `||`, leaving the
+# second branch unguarded.
+my $closed = GuardedContract.build({name => 'Unaccepted', terms => False});
+ok $closed.is-valid, 'acceptance does not run when the guard is closed';
+
+$closed.is-invalid;
+is $closed.errors.errors.elems, 0, 'acceptance records no error when the guard is closed';
+
+my $open = OpenGuardContract.build({name => 'Unaccepted', terms => False});
+nok $open.is-valid, 'acceptance still runs when the guard is open';
+
+my $client = GuardedClient.build({email => 'someone@example.com'});
+ok $client.is-valid, 'confirmation does not run when the guard is closed';
+
+$client.is-invalid;
+is $client.errors.errors.elems, 0, 'confirmation records no error when the guard is closed';
+
+GuardedContract.destroy-all;
+GuardedClient.destroy-all;

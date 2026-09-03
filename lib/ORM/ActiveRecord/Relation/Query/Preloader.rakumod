@@ -234,8 +234,65 @@ role QueryPreloader is export {
     }
   }
 
+  # One query for the join rows of every owner, one for the targets they name,
+  # rather than a query per owner.
   method !preload-habtm(@records, Str:D $name, $spec) {
-    self!preload-via-collection(@records, $name);
+    my $sample = @records[0];
+    my $class  = $sample.assoc-class-from-spec($spec);
+
+    if $class === Mu {
+      self!preload-via-collection(@records, $name);
+      return;
+    }
+
+    my @owner-ids = @records.map(*.id).grep(*.defined).grep(* != 0).unique;
+
+    unless @owner-ids.elems {
+      .assoc-cache{$name} = [] for @records;
+      return;
+    }
+
+    my $join-table = $sample.habtm-join-table($name);
+    my $owner-key  = Utils.base-name($sample.fkey-name);
+    my $target-key = $sample.habtm-target-key($name);
+    my $slots      = @owner-ids.map({ '?' }).join(', ');
+
+    my @rows = self.db.exec-stmt(
+      self.db.sanitize-sql-array([
+        "SELECT $owner-key, $target-key FROM $join-table WHERE $owner-key IN ($slots)",
+        |@owner-ids,
+      ])
+    );
+
+    my %ids-by-owner;
+    my %seen;
+    my @target-ids;
+
+    for @rows -> $row {
+      my ($owner-id, $target-id) = $row[0], $row[1];
+      next unless $owner-id.defined && $target-id.defined;
+
+      %ids-by-owner{$owner-id}.push: $target-id;
+
+      next if %seen{$target-id};
+      %seen{$target-id} = True;
+      @target-ids.push: $target-id;
+    }
+
+    my %by-id;
+
+    if @target-ids.elems {
+      my $scope-block = $sample.assoc-scope-block($spec);
+      my $q = $class.where({ id => @target-ids.list });
+      $q = $sample.apply-assoc-scope($scope-block, $q, []) if $scope-block.defined;
+
+      for $q.all -> $target { %by-id{$target.id} = $target }
+    }
+
+    for @records -> $r {
+      $r.assoc-cache{$name} =
+        (%ids-by-owner{$r.id} // []).list.map({ %by-id{$_} }).grep(*.defined).list;
+    }
   }
 
   method !preload-via-collection(@records, Str:D $name) {

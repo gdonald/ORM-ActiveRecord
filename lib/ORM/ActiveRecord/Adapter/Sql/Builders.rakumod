@@ -17,10 +17,13 @@ role SqlBuilders is export {
       !! $stmt.placeholder('');
   }
 
+  # Hash order is not stable across hash instances, and both the prepared
+  # statement cache and the query cache are keyed on SQL text, so the columns
+  # are emitted in a fixed order.
   method build-value-sets(SqlStmt:D $stmt, :%attrs, :%types = {}) {
     my @values;
-    for %attrs.keys {
-      next if $_ ~~ 'id';
+    for %attrs.keys.sort {
+      next if $_ eq 'id';
 
       # An attribute assigned an undefined value clears its column. Passing over
       # it instead would leave the old value in the row, so an assignment that
@@ -73,7 +76,8 @@ role SqlBuilders is export {
     die 'update-counters: no counters supplied' unless %counters.elems;
     my $stmt = SqlStmt.new(:adapter(self));
     my @parts;
-    for %counters.kv -> $col, $n {
+    for %counters.keys.sort -> $col {
+      my $n = %counters{$col};
       my $ph = $stmt.placeholder($n);
       @parts.push: "$col = COALESCE($col, 0) + $ph";
     }
@@ -91,9 +95,9 @@ role SqlBuilders is export {
     my %seen;
     my @order;
     for @rows -> %row {
-      for %row.keys -> $k {
+      for %row.keys.sort -> $k {
         next if $k eq 'id' && !$include-id;
-        next if $k ~~ /_confirmation$/;
+        next if $k.ends-with('_confirmation');
         unless %seen{$k} {
           %seen{$k} = True;
           @order.push: $k;
@@ -128,7 +132,7 @@ role SqlBuilders is export {
   }
 
   method without-excluded-fields(%attrs) {
-    for %attrs.keys { %attrs{$_}:delete if $_ ~~ /_confirmation$/ }
+    for %attrs.keys { %attrs{$_}:delete if $_.ends-with('_confirmation') }
     %attrs;
   }
 
@@ -315,10 +319,11 @@ role SqlBuilders is export {
 
   method !where-fragments(SqlStmt:D $stmt, %h, Str:D $op, Str :$qualifier) {
     my @out;
-    for %h.kv -> $k, $v {
+    for %h.keys.sort -> $k {
+      my $v = %h{$k};
       if $v ~~ Hash {
-        for $v.kv -> $col, $val {
-          @out.push: self!fragment-for($stmt, "$k.$col", $op, $val);
+        for $v.keys.sort -> $col {
+          @out.push: self!fragment-for($stmt, "$k.$col", $op, $v{$col});
         }
       } else {
         my $col = ($qualifier.defined && !$k.contains('.'))
@@ -442,9 +447,14 @@ role SqlBuilders is export {
     %types;
   }
 
+  # Only the changed columns go in the SET clause. A save with nothing to write
+  # issues no statement at all.
   method update-object(Mu:D $obj) {
     my $table = Utils.table-name($obj);
-    my %attrs = $obj.attrs-to-persist;
+    my %attrs = $obj.changed-attrs-to-persist;
+    %attrs{'id'}:delete;
+    return 0 unless %attrs.elems;
+
     my %types = self!types-from-fields($obj);
 
     my $stmt = $obj.WHAT.default-id-locating

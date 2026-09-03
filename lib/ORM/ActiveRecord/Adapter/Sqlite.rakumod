@@ -65,15 +65,25 @@ class SqliteAdapter is SqlAdapter is export {
   # SQLite locks the whole DB at the transaction level — no row-lock clause.
   method format-lock-clause($lock --> Str) { '' }
 
+  method classify-type(Str:D $type --> Str) {
+    given $type {
+      when /:i ^ bool /                                   { 'bool' }
+      when /:i timestamp | datetime | ^ date | ^ time /   { 'datetime' }
+      when /:i ^ int /                                    { 'int' }
+      when /:i ^ real | ^ numeric | ^ decimal | ^ float | ^ double / { 'numeric' }
+      default                                             { 'none' }
+    }
+  }
+
   method coerce-read($value, Str :$type) {
     return $value without $value;
     return $value unless $type.defined;
-    given $type {
-      when /:i ^ bool / {
+    given self.coercion-kind($type) {
+      when 'bool' {
         return $value if $value ~~ Bool;
         return $value.Int.Bool;
       }
-      when /:i timestamp | datetime | ^ date | ^ time / {
+      when 'datetime' {
         return $value if $value ~~ DateTime | Date;
         my $s = $value.Str;
         return $value unless $s;
@@ -82,12 +92,12 @@ class SqliteAdapter is SqlAdapter is export {
         return Date.new($s)       if $s ~~ /^ \d ** 4 '-' \d\d '-' \d\d $/;
         $value;
       }
-      when /:i ^ int / {
+      when 'int' {
         return $value if $value ~~ Int;
         return $value.Str.Int if $value.Str ~~ /^ '-'? \d+ $/;
         $value;
       }
-      when /:i ^ real | ^ numeric | ^ decimal | ^ float | ^ double / {
+      when 'numeric' {
         return $value if $value ~~ Numeric;
         return $value.Str.Numeric if $value.Str ~~ /^ '-'? \d+ ('.' \d+)? $/;
         $value;
@@ -99,16 +109,13 @@ class SqliteAdapter is SqlAdapter is export {
   method coerce-write($value, Str :$type) {
     return $value without $value.defined;
     return $value unless $type.defined;
-    given $type {
-      when /:i ^ bool / {
+    given self.coercion-kind($type) {
+      when 'bool' {
         return $value.Int if $value ~~ Bool;
         return $value if $value ~~ Int;
-        my $s = $value.Str.lc;
-        return 1 if $s eq 'true' | 't' | '1' | 'y' | 'yes';
-        return 0 if $s eq 'false'| 'f' | '0' | 'n' | 'no';
-        $value;
+        return self.coerce-bool($value).Int;
       }
-      when /:i timestamp | datetime | ^ date | ^ time / {
+      when 'datetime' {
         if $value ~~ DateTime {
           my $iso = $value.utc.Str;
           $iso ~~ s/'T'/ /;
@@ -125,7 +132,7 @@ class SqliteAdapter is SqlAdapter is export {
 
   method build-insert(Str:D :$table, :%attrs, :%types = {} --> SqlStmt) {
     my %fvs = self.without-excluded-fields(%attrs);
-    my @keys = %fvs.keys.grep({ %fvs{$_}.defined });
+    my @keys = %fvs.keys.sort.grep({ %fvs{$_}.defined });
     my $fields = @keys.join(', ');
     my @values = @keys.map({ %fvs{$_} });
     my @types  = @keys.map({ %types{$_} // Str });

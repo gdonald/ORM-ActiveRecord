@@ -3,9 +3,10 @@ use lib 'lib';
 use lib 'specs/lib';
 use Models::Post;
 use Models::Tag;
+use ORM::ActiveRecord::Instrumentation::Notifications;
 use Test;
 
-plan 14;
+plan 21;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -46,6 +47,52 @@ is $raku.posts.first.id, $post.id, 'add-post from the inverse side links the row
 is $post.tags.first.id,  $raku.id, 'and is visible from the owning side';
 $raku.clear-posts;
 is $post.tags.elems, 0, 'inverse-side clear empties the join table';
+
+Post.destroy-all;
+Tag.destroy-all;
+
+# Preloading a habtm association reads the join rows for every owner at once,
+# then the targets they name, rather than a query per owner.
+sub counted(&block) {
+  my @sql;
+  my $sub = Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p<sql> });
+  block();
+  Notifications.unsubscribe($sub);
+  @sql;
+}
+
+my $ruby-tag = Tag.create({name => 'ruby'});
+my $raku-tag = Tag.create({name => 'raku'});
+my $perl-tag = Tag.create({name => 'perl'});
+
+my $first  = Post.create({title => 'First'});
+my $second = Post.create({title => 'Second'});
+my $third  = Post.create({title => 'Third'});
+
+$first.add-tag($ruby-tag);
+$first.add-tag($raku-tag);
+$second.add-tag($perl-tag);
+
+my @preloaded = Post.includes('tags').order('id').all;
+
+is @preloaded[0].tags.map(*.name).sort.list, ('raku', 'ruby'), 'preloading gives each owner its own tags';
+is @preloaded[1].tags.map(*.name).list, ('perl',),             'preloading gives a second owner its own tags';
+is @preloaded[2].tags.elems, 0,                                'preloading gives an owner with no tags an empty collection';
+
+is counted({ Post.includes('tags').order('id').all }).elems, 3,
+  'preloading reads the owners, their join rows, and their tags in three queries';
+
+Post.create({title => 'Fourth'}).add-tag(Tag.create({name => 'zig'}));
+is counted({ Post.includes('tags').order('id').all }).elems, 3,
+  'another owner joining the load adds no query';
+
+is counted({ .tags.elems for @preloaded }).elems, 0,
+  'the preloaded tags are served without another query';
+
+my @preloaded-tags = Tag.includes('posts').order('id').all;
+is @preloaded-tags[0].posts.map(*.title).list, ('First',), 'the inverse side preloads too';
+
+.clear-tags for Post.all.all;
 
 Post.destroy-all;
 Tag.destroy-all;

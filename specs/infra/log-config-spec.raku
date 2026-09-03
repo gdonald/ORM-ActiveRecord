@@ -1,4 +1,5 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 
 my $src = 'lib/ORM/ActiveRecord/Support/Log.rakumod'.IO.slurp;

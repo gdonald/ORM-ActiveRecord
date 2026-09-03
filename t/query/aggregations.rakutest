@@ -6,7 +6,7 @@ use Models::Game;
 use Test;
 
 
-plan 33;
+plan 39;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -85,6 +85,23 @@ ok @upper.elems == 1 && @upper[0] eq 'GO', 'pluck of SQL expression';
 
 my @qualified = Game.where({name => 'Go'}).pluck('games.year');
 ok @qualified.elems == 1 && @qualified[0] == 2200, 'pluck of qualified column';
+
+# `pluck` and `ids` hand back a reified list. A `Seq` read a second time
+# silently yields a different answer rather than failing, and these are exactly
+# the kind of result a caller counts and then iterates.
+my $names = Game.order('name').pluck('name');
+is $names.list.elems, $names.list.elems, 'pluck gives the same rows when read twice';
+
+my $counted = $names.elems;
+is $names.list.elems, $counted, 'pluck gives the same rows after being counted';
+
+my $game-ids = Game.order('id').ids;
+is $game-ids.list.elems, $game-ids.list.elems, 'ids gives the same rows when read twice';
+ok $game-ids.first ~~ Int, 'ids gives integers';
+
+my $pairs = Game.order('name').pluck('name', 'year');
+is $pairs[0].elems, 2, 'pluck gives a row per column when several are named';
+is $pairs.list.elems, $pairs.list.elems, 'a multi-column pluck reads the same twice';
 
 # none short-circuits aggregations
 ok Game.none.sum('year') == 0, 'none.sum is 0';

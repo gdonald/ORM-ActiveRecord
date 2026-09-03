@@ -1,4 +1,5 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Instrumentation::Notifications;
@@ -38,6 +39,41 @@ describe 'is-schema-change-sql classifier', {
 
     it 'is not fooled by a leading comment', {
       expect($adapter.is-schema-change-sql('/* note */ DROP TABLE t')).to.be-truthy;
+    }
+
+    # A statement is classified once and each test reads the same stripped
+    # text, rather than every classifier redoing the substitutions.
+    context 'the shared stripping step', {
+      it 'drops a leading comment', {
+        expect($adapter.strip-sql-prefix('/* note */ DROP TABLE t')).to.eq('DROP TABLE t');
+      }
+
+      it 'drops leading whitespace', {
+        expect($adapter.strip-sql-prefix("   SELECT 1")).to.eq('SELECT 1');
+      }
+
+      it 'leaves a statement with neither alone', {
+        expect($adapter.strip-sql-prefix('SELECT 1')).to.eq('SELECT 1');
+      }
+
+      it 'classifies a write from the stripped text', {
+        expect($adapter.is-write-stripped('INSERT INTO t(id) VALUES (1)')).to.be-truthy;
+      }
+
+      it 'classifies a read from the stripped text', {
+        expect($adapter.is-write-stripped('SELECT * FROM t')).to.be-falsy;
+      }
+
+      it 'classifies a schema change from the stripped text', {
+        expect($adapter.is-schema-change-stripped('DROP TABLE t')).to.be-truthy;
+      }
+
+      it 'agrees with the whole-statement classifier', {
+        my $sql = '  /* tag */ UPDATE t SET a = 1';
+
+        expect($adapter.is-write-stripped($adapter.strip-sql-prefix($sql)))
+          .to.eq($adapter.is-write-sql($sql));
+      }
     }
   }
 }

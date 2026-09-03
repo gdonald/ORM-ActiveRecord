@@ -1,4 +1,5 @@
 use lib 'lib';
+use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Connection::Pool;
@@ -85,8 +86,8 @@ group 'connection pooling', :order<defined>, {
   }
 
   context 'auto-reconnect on a dropped connection', :order<defined>, {
-    it 'reconnects a connection that died while idle', {
-      my $pool = new-pool(size => 1);
+    it 'reconnects a connection that died while idle when it probes on checkout', {
+      my $pool = new-pool(size => 1, verify-idle-after => 0);
       my $conn = $pool.checkout;
       $pool.checkin($conn);
       $conn.disconnect;                 # simulate a driver-level drop
@@ -117,6 +118,82 @@ group 'connection pooling', :order<defined>, {
     }
   }
 
+  # Building a connection is a TCP connect and an auth handshake. Holding the
+  # pool lock across it would block every other checkout and checkin, so the
+  # slot is claimed under the lock and the connection built outside it.
+  context 'building a connection', :order<defined>, {
+    it 'does not hold the lock while the builder runs', {
+      my $pool;
+      my $seen-from-another-thread;
+
+      $pool = ConnectionPool.new(
+        size    => 2,
+        builder => {
+          # `stats` takes the pool lock. Reading it from another thread while
+          # the builder runs only completes if the lock is free; the bound
+          # turns a regression into a failure rather than a hang.
+          my $probe = start { $pool.stats<created> };
+          await Promise.anyof($probe, Promise.in(2));
+          $seen-from-another-thread = $probe.status == Kept ?? $probe.result !! Nil;
+          DB.shared.build-connection;
+        },
+      );
+
+      $pool.checkout;
+      $pool.disconnect-all;
+
+      expect($seen-from-another-thread).to.eq(1);
+    }
+
+    it 'releases the claimed slot when the builder throws', {
+      my $pool = ConnectionPool.new(size => 1, builder => { die 'no connection' });
+
+      try $pool.checkout;
+
+      expect($pool.stats<created>).to.eq(0);
+    }
+
+    it 'lets a later checkout try again after a failed build', {
+      my $fail = True;
+      my $pool = ConnectionPool.new(
+        size    => 1,
+        builder => { $fail ?? die 'no connection' !! DB.shared.build-connection },
+      );
+
+      try $pool.checkout;
+      $fail = False;
+      my $conn = $pool.checkout;
+      LEAVE $pool.disconnect-all;
+
+      expect($conn.defined).to.be-truthy;
+    }
+  }
+
+  context 'waiting for a free connection', :order<defined>, {
+    it 'hands the connection to a waiting checkout once it is returned', {
+      my $pool = new-pool(size => 1, checkout-timeout => 5);
+      my $held = $pool.checkout;
+
+      my $waiting = start { $pool.checkout };
+      $pool.checkin($held);
+
+      my $got = await $waiting;
+      $pool.disconnect-all;
+
+      expect($got.defined).to.be-truthy;
+    }
+
+    it 'still times out when nothing is returned', {
+      my $pool = new-pool(size => 1, checkout-timeout => 0.2);
+      my $held = $pool.checkout;
+
+      my $second = try { $pool.checkout };
+      $pool.disconnect-all;
+
+      expect($second.defined).to.be-falsy;
+    }
+  }
+
   context 'verify-idle-after', :order<defined>, {
     my role ProbeCounter {
       has Int $.probes is rw = 0;
@@ -127,8 +204,17 @@ group 'connection pooling', :order<defined>, {
       ConnectionPool.new(builder => { DB.shared.build-connection does ProbeCounter }, |%opts);
     }
 
-    it 'probes the connection on every checkout by default', {
+    it 'checks a recently used connection out without a probe by default', {
       my $pool = counting-pool(size => 1);
+      my $conn = $pool.checkout;
+      $pool.checkin($conn);
+      $pool.checkout;
+      $pool.disconnect-all;
+      expect($conn.probes).to.eq(0);
+    }
+
+    it 'probes on every checkout when the threshold is set to zero', {
+      my $pool = counting-pool(size => 1, verify-idle-after => 0);
       my $conn = $pool.checkout;
       $pool.checkin($conn);
       $pool.checkout;
@@ -153,6 +239,17 @@ group 'connection pooling', :order<defined>, {
       $pool.checkout;
       $pool.disconnect-all;
       expect($conn.probes).to.eq(1);
+    }
+
+    it 'recovers a read on a connection handed out without a probe', {
+      my $pool = new-pool(size => 1);
+      my $conn = $pool.checkout;
+      $pool.checkin($conn);
+      $conn.disconnect;
+      my $again = $pool.checkout;
+      my @rows = $again.exec('SELECT 1');
+      $pool.disconnect-all;
+      expect(@rows[0][0].Int).to.eq(1);
     }
   }
 }

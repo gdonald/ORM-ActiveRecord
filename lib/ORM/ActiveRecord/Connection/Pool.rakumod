@@ -14,7 +14,7 @@ class ConnectionPool is export {
   has Int  $.min  = 0;                # pre-warmed idle connections
   has Real $.checkout-timeout = 5;    # seconds to wait for a free connection
   has Real $.verify-timeout   = 0;    # seconds for the checkout health probe (0 = unbounded)
-  has Real $.verify-idle-after = 0;   # probe only connections idle longer than this (0 = every checkout)
+  has Real $.verify-idle-after = 5;   # probe only connections idle longer than this (0 = every checkout)
   has Real $.idle-timeout     = 0;    # reap idle connections older than this (0 = never)
   has Real $.reaping-frequency = 0;   # advisory; reaping runs via `reap`
 
@@ -22,6 +22,14 @@ class ConnectionPool is export {
   has      @!idle;                    # %( conn => Adapter, since => Instant )
   has      %!busy;                    # WHICH => Adapter
   has Int  $!created = 0;
+  has      @!waiters;                 # Vow per checkout waiting on a free slot
+
+  # A checkout that finds the pool exhausted waits on a promise the next
+  # checkin keeps, rather than re-taking the lock every few milliseconds. The
+  # short timeout alongside it is a safety net: a waiter that has already given
+  # up can be handed the signal, and this bounds how long a live waiter can
+  # miss one.
+  my constant WAIT-SLICE = 0.05;
 
   submethod TWEAK {
     self!warm if $!min > 0;
@@ -40,22 +48,28 @@ class ConnectionPool is export {
     my $deadline = now + $!checkout-timeout;
 
     loop {
-      my ($conn, $idle-since) = $!lock.protect: {
+      my ($conn, $idle-since, $reserved) = $!lock.protect: {
         if @!idle.elems {
           my %slot = @!idle.pop;
           %!busy{%slot<conn>.WHICH} = %slot<conn>;
-          (%slot<conn>, %slot<since>);
+          (%slot<conn>, %slot<since>, False);
         }
         elsif $!created < $!size {
+          # Claim the slot here and connect outside the lock: building a
+          # connection is a TCP connect plus an auth handshake, and holding the
+          # lock across it blocks every other checkout and checkin.
           $!created++;
-          my $c = &!builder();
-          %!busy{$c.WHICH} = $c;
-          ($c, now);   # freshly connected, as recent as a connection gets
+          (Adapter, Nil, True);
         }
         else {
-          (Adapter, Nil);   # type object signals "none available"
+          (Adapter, Nil, False);   # type object signals "none available"
         }
       };
+
+      if $reserved {
+        $conn       = self!build-reserved;
+        $idle-since = now;         # freshly connected, as recent as it gets
+      }
 
       if $conn ~~ Adapter:D {
         # A connection used moments ago is overwhelmingly still alive, and the
@@ -71,15 +85,52 @@ class ConnectionPool is export {
       die "ConnectionPool: checkout timed out after {$!checkout-timeout}s (pool size $!size)"
         if now > $deadline;
 
-      sleep 0.005;
+      self!wait-for-slot($deadline);
     }
   }
 
+  # Build the connection for a slot already claimed under the lock, releasing
+  # the claim if the connection cannot be made.
+  method !build-reserved(--> Adapter) {
+    my $built;
+
+    {
+      CATCH {
+        default {
+          $!lock.protect: { $!created-- };
+          .rethrow;
+        }
+      }
+      $built = &!builder();
+    }
+
+    $!lock.protect: { %!busy{$built.WHICH} = $built };
+    $built;
+  }
+
+  method !wait-for-slot(Instant:D $deadline) {
+    my $remaining = $deadline - now;
+    return if $remaining <= 0;
+
+    my $signal = Promise.new;
+    $!lock.protect: { @!waiters.push: $signal.vow };
+
+    await Promise.anyof($signal, Promise.in(min($remaining, WAIT-SLICE)));
+  }
+
   method checkin($conn) {
+    my @woken;
+
     $!lock.protect: {
       %!busy{$conn.WHICH}:delete;
       @!idle.push: %( conn => $conn, since => now );
+      @woken   = @!waiters;
+      @!waiters = ();
     }
+
+    # Every waiter is woken rather than one, since a waiter that has already
+    # timed out would otherwise swallow the signal. Each re-checks the pool.
+    .keep(True) for @woken;
   }
 
   method with-connection(&block) {

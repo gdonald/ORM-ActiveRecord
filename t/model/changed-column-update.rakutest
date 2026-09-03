@@ -1,0 +1,52 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Instrumentation::Notifications;
+use Models::User;
+use Test;
+
+plan 8;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub updates-of(&block) {
+  my @sql;
+  my $sub = Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p<sql> });
+  block();
+  Notifications.unsubscribe($sub);
+  @sql.grep({ .uc.contains('UPDATE') });
+}
+
+User.destroy-all;
+
+my $saved = User.create({fname => 'Greg', lname => 'Donald'});
+
+$saved.attrs<fname> = 'Ann';
+my @sql = updates-of({ $saved.save });
+ok  @sql[0].contains('fname'), 'the UPDATE names a column that changed';
+nok @sql[0].contains('lname'), 'the UPDATE leaves out a column that did not change';
+
+is updates-of({ $saved.save }).elems, 0, 'a save with nothing changed issues no statement';
+ok $saved.save, 'and still reports the save as successful';
+
+is User.find($saved.id).attrs<fname>, 'Ann', 'the new value is written';
+
+$saved.attribute-will-change('lname');
+ok updates-of({ $saved.save })[0].contains('lname'),
+  'a column marked dirty without a new value is written';
+
+# Two handles on the same row, each changing a different column.
+my $first  = User.find($saved.id);
+my $second = User.find($saved.id);
+
+$first.attrs<fname> = 'Bob';
+$first.save;
+
+$second.attrs<lname> = 'Smith';
+$second.save;
+
+is User.find($saved.id).attrs<fname>, 'Bob',   'a column another writer changed is left alone';
+is User.find($saved.id).attrs<lname>, 'Smith', 'the column the second writer changed is written';
+
+User.destroy-all;

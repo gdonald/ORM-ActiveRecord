@@ -1,0 +1,85 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::Instrumentation::Notifications;
+use Models::User;
+use Models::Page;
+use Models::Post;
+use Models::Tag;
+use Models::Profile;
+use Models::Article;
+use Test;
+
+plan 13;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub counted(&block) {
+  my @sql;
+  my $sub = Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p<sql> });
+  block();
+  Notifications.unsubscribe($sub);
+  @sql;
+}
+
+Page.destroy-all;
+Profile.destroy-all;
+Article.destroy-all;
+User.destroy-all;
+
+my $seed = User.create({fname => 'Greg', lname => 'Donald'});
+Page.create({user => $seed, name => 'Home'});
+Page.create({user => $seed, name => 'About'});
+
+my $owner = User.find($seed.id);
+
+$owner.pages.elems;
+is counted({ $owner.pages.elems }).elems, 0, 'a kept has-many queries once for two reads';
+
+my $proxy = $owner.pages;
+ok $owner.pages === $proxy, 'a kept has-many hands back the same proxy';
+is $owner.pages.elems, 2,   'a kept has-many still returns every row';
+
+$owner.pages.push(Page.create({name => 'Contact'}));
+is $owner.pages.elems, 3, 'a push through the proxy shows on the next read';
+
+ok counted({ $owner.reload.pages.elems }).elems > 0, 'reload drops what the record kept';
+
+my $childless = User.create({fname => 'Ann', lname => 'B'});
+$childless.pages.elems;
+Page.create({user => $childless, name => 'Late'});
+is $childless.pages.elems, 1, 'an empty collection is not kept, so a later record is found';
+
+$owner.profile;
+Profile.create({user => $owner, bio => 'Raku'});
+ok $owner.profile.defined, 'a has-one is not kept while it resolves to nothing';
+
+$owner.profile;
+is counted({ $owner.profile }).elems, 0, 'a kept has-one queries once for two reads';
+
+my $page = Page.find($owner.pages.first.id);
+$page.user;
+is counted({ $page.user }).elems, 0, 'a kept belongs-to queries once for two reads';
+
+my $other = User.create({fname => 'Bob', lname => 'C'});
+$page.attrs<user_id> = $other.id;
+is $page.user.id, $other.id, 'a belongs-to reloads when the foreign key changes';
+
+$owner.published-articles.elems;
+ok counted({ $owner.published-articles.elems }).elems > 0, 'an association with a scope block is not kept';
+
+my $post = Post.create({title => 'First'});
+my $tag  = Tag.create({name => 'raku'});
+$post.add-tag($tag);
+$post.tags.elems;
+ok counted({ $post.tags.elems }).elems > 0, 'a habtm collection is not kept between reads';
+
+$tag.clear-posts;
+is $post.tags.elems, 0, 'a habtm collection sees a link cleared through the other record';
+
+Post.destroy-all;
+Tag.destroy-all;
+Page.destroy-all;
+Profile.destroy-all;
+Article.destroy-all;
+User.destroy-all;

@@ -3,20 +3,20 @@ use ORM::ActiveRecord::Errors::X;
 
 role ModelDirtyTracking is export {
   method is-dirty(--> Bool) {
-    for self.attrs.keys -> $key { return True if self.attrs«$key» !eqv self.attrs-db«$key» }
+    for self.attrs.keys -> $key { return True if self.attrs{$key} !eqv self.attrs-db{$key} }
     False;
   }
 
   method is-changed(--> Bool) {
     return True if self.will-change.elems;
-    for self.attrs.keys -> $key { return True if self.attrs«$key» !eqv self.attrs-db«$key» }
+    for self.attrs.keys -> $key { return True if self.attrs{$key} !eqv self.attrs-db{$key} }
     False;
   }
 
   method changed() {
     my @names;
     for self.attrs.keys.sort -> $key {
-      @names.push($key) if self.will-change{$key} || self.attrs«$key» !eqv self.attrs-db«$key»;
+      @names.push($key) if self.will-change{$key} || self.attrs{$key} !eqv self.attrs-db{$key};
     }
     @names.list;
   }
@@ -38,7 +38,7 @@ role ModelDirtyTracking is export {
   }
 
   method is-attribute-changed(Str:D $name --> Bool) {
-    so self.will-change{$name} || (self.attrs«$name» !eqv self.attrs-db«$name»);
+    so self.will-change{$name} || (self.attrs{$name} !eqv self.attrs-db{$name});
   }
 
   method attribute-was(Str:D $name) {
@@ -95,6 +95,7 @@ role ModelDirtyTracking is export {
     return self if self.id == 0;
     self.get-attrs(:id(self.id));
     self.will-change = ();
+    self.assoc-cache-clear;
     self;
   }
 }

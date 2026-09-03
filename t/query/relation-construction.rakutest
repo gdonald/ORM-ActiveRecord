@@ -1,0 +1,58 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Instrumentation::Notifications;
+use Models::Page;
+use Models::User;
+
+plan 14;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub sql-of(&block) {
+  my @sql;
+  my $sub = Notifications.subscribe('sql.active_record', -> %p { @sql.push: %p<sql> });
+  block();
+  Notifications.unsubscribe($sub);
+  @sql;
+}
+
+ok  Page.belongs-to-names{'user'},          'belongs-to-names names a plain belongs-to';
+ok  Page.belongs-to-names{'autosave-user'}, 'belongs-to-names names a second belongs-to on the same class';
+nok Page.belongs-to-names{'nonesuch'},      'belongs-to-names leaves out a name the class does not declare';
+is  User.belongs-to-names.elems, 0,         'belongs-to-names is empty for a class that declares none';
+
+my $names = Page.belongs-to-names;
+ok Page.belongs-to-names === $names, 'belongs-to-names hands back the same set on a repeated call';
+
+is Page.where({ user => 7 }).where-values{'user_id'}, 7,
+  'a belongs-to name is still rewritten to its foreign key in a where clause';
+
+# The belongs-to names of a class are derived from one instance the first time
+# any relation needs them, so warm them before measuring what building a
+# relation costs.
+Page.belongs-to-names;
+DB.shared.adapter.clear-schema-cache;
+
+is sql-of({ Page.all }).elems, 0, 'building a relation queries nothing';
+is sql-of({ Page.all.where({ id => 1 }) }).elems, 0, 'adding a condition queries nothing';
+
+my $relation = Page.all;
+ok sql-of({ $relation.all-fields }).elems > 0, 'naming the fields reads the column list';
+is sql-of({ $relation.all-fields }).elems, 0, 'the column list is read only once';
+
+ok Page.all.all-fields.map(*.name).first(* eq 'name').defined,
+  'the named fields cover every column of the table';
+
+is Page.all.select('name').fields-of.map(*.name).list, ('name',),
+  'the named fields narrow to the selected columns';
+
+my $narrowed = Page.all.select('name');
+$narrowed.fields-of;
+is $narrowed.select('id').fields-of.map(*.name).sort.list, ('id', 'name'),
+  'the named fields renarrow when the selection grows';
+
+is Page.all.select('COUNT(*) AS c').fields-of.elems, Page.all.all-fields.elems,
+  'the named fields fall back to every column when the selection names none of them';

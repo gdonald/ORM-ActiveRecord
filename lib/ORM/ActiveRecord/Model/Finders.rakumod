@@ -69,7 +69,7 @@ role ModelFinders is export {
 
   method take(Int:D $limit = 1) {
     my $table = Utils.table-name(self);
-    my @fields = self.db.get-fields(:$table).map({ Field.new(:name($_[0]), :type($_[1])) });
+    my @fields = self.db.get-field-objects(:$table);
     my %where;
     self.db.get-objects(:$table, class => self.WHAT, :@fields, :%where, :$limit);
   }

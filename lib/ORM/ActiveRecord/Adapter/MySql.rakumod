@@ -124,6 +124,16 @@ class MySqlAdapter is SqlAdapter is export {
     "`$escaped`";
   }
 
+  method classify-type(Str:D $type --> Str) {
+    given $type {
+      when /:i ^ [ bool | 'tinyint(1)' ] /                { 'bool' }
+      when /:i datetime | timestamp | ^ date | ^ time /   { 'datetime' }
+      when /:i ^ [ int | bigint | smallint | tinyint | mediumint | integer ] / { 'int' }
+      when /:i ^ [ decimal | numeric | float | double | real ] / { 'numeric' }
+      default                                             { 'none' }
+    }
+  }
+
   method coerce-read($value is copy, Str :$type) {
     return $value without $value;
     return $value unless $type.defined;
@@ -131,12 +141,12 @@ class MySqlAdapter is SqlAdapter is export {
     # as Buf rather than Str; decode at the boundary so downstream logic
     # below sees plain strings.
     $value = $value.decode('utf-8') if $value ~~ Blob;
-    given $type {
-      when /:i ^ [ bool | 'tinyint(1)' ] / {
+    given self.coercion-kind($type) {
+      when 'bool' {
         return $value if $value ~~ Bool;
         return $value.Int.Bool;
       }
-      when /:i datetime | timestamp | ^ date | ^ time / {
+      when 'datetime' {
         return $value if $value ~~ DateTime | Date;
         my $s = $value.Str;
         return $value unless $s;
@@ -145,12 +155,12 @@ class MySqlAdapter is SqlAdapter is export {
         return Date.new($s) if $s ~~ /^ \d ** 4 '-' \d\d '-' \d\d $/;
         $value;
       }
-      when /:i ^ [ int | bigint | smallint | tinyint | mediumint | integer ] / {
+      when 'int' {
         return $value if $value ~~ Int;
         return $value.Str.Int if $value.Str ~~ /^ '-'? \d+ $/;
         $value;
       }
-      when /:i ^ [ decimal | numeric | float | double | real ] / {
+      when 'numeric' {
         return $value if $value ~~ Numeric;
         return $value.Str.Numeric if $value.Str ~~ /^ '-'? \d+ ('.' \d+)? $/;
         $value;
@@ -162,16 +172,13 @@ class MySqlAdapter is SqlAdapter is export {
   method coerce-write($value, Str :$type) {
     return $value without $value.defined;
     return $value unless $type.defined;
-    given $type {
-      when /:i ^ [ bool | 'tinyint(1)' ] / {
+    given self.coercion-kind($type) {
+      when 'bool' {
         return $value.Int if $value ~~ Bool;
         return $value if $value ~~ Int;
-        my $s = $value.Str.lc;
-        return 1 if $s eq 'true' | 't' | '1' | 'y' | 'yes';
-        return 0 if $s eq 'false' | 'f' | '0' | 'n' | 'no';
-        $value;
+        return self.coerce-bool($value).Int;
       }
-      when /:i datetime | timestamp | ^ date | ^ time / {
+      when 'datetime' {
         if $value ~~ DateTime {
           my $local = $value.in-timezone($*TZ);
           my $iso = $local.Str;
@@ -189,7 +196,7 @@ class MySqlAdapter is SqlAdapter is export {
 
   method build-insert(Str:D :$table, :%attrs, :%types = {} --> SqlStmt) {
     my %fvs = self.without-excluded-fields(%attrs);
-    my @keys = %fvs.keys.grep({ %fvs{$_}.defined });
+    my @keys = %fvs.keys.sort.grep({ %fvs{$_}.defined });
     my $fields = @keys.join(', ');
     my @values = @keys.map({ %fvs{$_} });
     my @types  = @keys.map({ %types{$_} // Str });
