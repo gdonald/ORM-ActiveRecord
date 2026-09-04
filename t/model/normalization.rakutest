@@ -35,26 +35,26 @@ END { try $adapter.exec('DROP TABLE IF EXISTS _contacts') if $has-db }
 if $has-db {
   Contact.destroy-all;
 
-  # single-attribute normalisation on save
+  # single-attribute normalization on save
   my $c = Contact.create({ email => '  Foo@Bar.COM ' });
-  is $c.email, 'foo@bar.com', 'the value is normalised in memory on save';
-  is Contact.find($c.id).email, 'foo@bar.com', 'the normalised value is persisted';
+  is $c.email, 'foo@bar.com', 'the value is normalized in memory on save';
+  is Contact.find($c.id).email, 'foo@bar.com', 'the normalized value is persisted';
 
-  # multi-attribute normalisation
+  # multi-attribute normalization
   my $m = Contact.create({ phone => '  555-1234 ', name => '  Bob  ' });
-  is $m.phone, '555-1234', 'a multi-attribute normaliser trims the first column';
-  is $m.name, 'Bob', 'a multi-attribute normaliser trims the second column';
+  is $m.phone, '555-1234', 'a multi-attribute normalizer trims the first column';
+  is $m.name, 'Bob', 'a multi-attribute normalizer trims the second column';
 
-  # querying normalises the search value
+  # querying normalizes the search value
   is Contact.where({ email => '  FOO@BAR.COM ' }).first.id, $c.id,
-    'a lookup normalises the search value to match the stored value';
+    'a lookup normalizes the search value to match the stored value';
 
   # normalize-value-for helper
-  is Contact.normalize-value-for('email', '  AB@C.D '), 'ab@c.d', 'normalize-value-for applies the normaliser';
+  is Contact.normalize-value-for('email', '  AB@C.D '), 'ab@c.d', 'normalize-value-for applies the normalizer';
   is Contact.normalize-value-for('name', ' keep '), 'keep', 'normalize-value-for trims a multi-attr column';
-  is Contact.normalize-value-for('missing', '  x  '), '  x  ', 'normalize-value-for leaves an un-normalised attribute alone';
+  is Contact.normalize-value-for('missing', '  x  '), '  x  ', 'normalize-value-for leaves an un-normalized attribute alone';
 } else {
-  skip 'database-backed normalisation', 8;
+  skip 'database-backed normalization', 8;
 }
 
 done-testing;

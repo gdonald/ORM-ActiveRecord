@@ -833,7 +833,7 @@ class Model
   }
 
   # `order` on an association, as a string or a list of them. Declaring it here
-  # rather than through a `scope` block keeps the association memoisable and
+  # rather than through a `scope` block keeps the association memoizable and
   # keeps `count` a `SELECT COUNT(*)`, neither of which a scope allows.
   method assoc-order-columns(\spec) {
     return () unless self.assoc-spec-has(spec, 'order');
@@ -1004,8 +1004,8 @@ class Model
     %!assoc-cache-key{$name} eqv $key;
   }
 
-  # Decontainerised on the way out: a collection stored in a hash slot comes
-  # back itemised, and `my @rows = $record.pages` would then bind the whole
+  # Decontainerized on the way out: a collection stored in a hash slot comes
+  # back itemized, and `my @rows = $record.pages` would then bind the whole
   # proxy as a single element.
   method assoc-cache-put(Str:D $name, $key, $value) {
     %!assoc-cache{$name}     = $value;
@@ -1917,7 +1917,7 @@ class Model
 
   # Which associations a model declares as belongs-to is fixed by the class, so
   # the names are derived from one instance and kept, rather than by building a
-  # throwaway record for every relation that has to normalise its params.
+  # throwaway record for every relation that has to normalize its params.
   method belongs-to-names(--> Set) {
     %belongs-to-names-of{self.^name} //= self.new(:id(0)).belongs-tos.keys.Set;
   }
@@ -2180,7 +2180,7 @@ class Model
 # The method works directly (Page.published) and is also registered per-class so
 # it is introspectable and discoverable by name like a `self.scope(...)` scope.
 multi sub trait_mod:<is>(Method:D $method, :$scope!) is export {
-  # Mark the method so a relation can recognise it as a scope by introspection
+  # Mark the method so a relation can recognize it as a scope by introspection
   # (this survives precompilation, unlike the compile-time global registry).
   $method does IsScope;
 

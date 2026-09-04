@@ -64,7 +64,7 @@ is export
   my %normalized-attrs-of;
   my %deterministic-attrs-of;
 
-  # Which columns a model normalises or deterministically encrypts is fixed by
+  # Which columns a model normalizes or deterministically encrypts is fixed by
   # the class, so each set is derived once rather than on every relation.
   method !normalized-attrs-for(--> Set) {
     %normalized-attrs-of{$!class.^name} //=
@@ -87,8 +87,8 @@ is export
     self!encrypt-query-values;
   }
 
-  # Run a normalised column's normaliser over its search value, so a lookup
-  # matches the stored (normalised) value.
+  # Run a normalized column's normalizer over its search value, so a lookup
+  # matches the stored (normalized) value.
   method !normalize-query-values {
     return unless $!params.elems;
     my $normalized = self!normalized-attrs-for;

@@ -68,8 +68,8 @@ if $has-db {
   $w2.score = 7;
   is $w2.score, 7, 'a virtual attribute is writable';
 
-  # a virtual attribute is recognised by has-attribute
-  ok $w.has-attribute('score'), 'has-attribute recognises a virtual attribute';
+  # a virtual attribute is recognized by has-attribute
+  ok $w.has-attribute('score'), 'has-attribute recognizes a virtual attribute';
 
   # a virtual attribute is NOT persisted: the insert succeeds and a reload
   # falls back to the default rather than the stored value
@@ -80,9 +80,9 @@ if $has-db {
   my $w4 = AttrWidget.create({ name => 'd', tags => ['x', 'y', 'z'] });
   my $raw-tags = $adapter.exec("SELECT tags FROM attr_widgets WHERE id = {$w4.id}")[0][0];
   $raw-tags = $raw-tags.decode if $raw-tags ~~ Blob;
-  is $raw-tags, 'x,y,z', 'a custom type serialises to the column';
+  is $raw-tags, 'x,y,z', 'a custom type serializes to the column';
   is AttrWidget.find($w4.id).tags.sort.list, ('x', 'y', 'z'),
-    'a custom type deserialises from the column';
+    'a custom type deserializes from the column';
 } else {
   plan 1;
   skip 'no database connection available';

@@ -67,7 +67,7 @@ describe 'code generators', {
       expect($out.contains("self.remove-column: 'widgets', :price;")).to.be-truthy;
     }
 
-    it 'renders an empty stub for an unrecognised name', {
+    it 'renders an empty stub for an unrecognized name', {
       my $out = $gen.render-migration('Frobnicate', []);
       expect($out.contains('class Frobnicate is Migration')).to.be-truthy;
     }

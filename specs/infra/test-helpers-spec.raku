@@ -54,7 +54,7 @@ sub query(Str:D $dbfile, Str:D $sql) {
 
 describe 'test helpers', {
   context 'fixture loader', {
-    it 'loads labelled rows with deterministic, reference-resolving ids', {
+    it 'loads labeled rows with deterministic, reference-resolving ids', {
       my %env = fresh;
       LEAVE { cleanup(%env) }
 

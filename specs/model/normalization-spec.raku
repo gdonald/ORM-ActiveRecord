@@ -33,31 +33,31 @@ END { try $adapter.exec('DROP TABLE IF EXISTS _contacts') if $has-db }
 
 my &group = $has-db ?? &describe !! &xdescribe;
 
-group 'attribute normalisation', :order<defined>, {
+group 'attribute normalization', :order<defined>, {
   before-each { Contact.destroy-all }
   after-each  { Contact.destroy-all }
 
   context 'on save', :order<defined>, {
-    it 'normalises the value in memory', {
+    it 'normalizes the value in memory', {
       expect(Contact.create({ email => '  Foo@Bar.COM ' }).email).to.eq('foo@bar.com');
     }
 
-    it 'persists the normalised value', {
+    it 'persists the normalized value', {
       my $c = Contact.create({ email => '  Foo@Bar.COM ' });
       expect(Contact.find($c.id).email).to.eq('foo@bar.com');
     }
 
-    it 'normalises the first of several attributes', {
+    it 'normalizes the first of several attributes', {
       expect(Contact.create({ phone => '  555-1234 ' }).phone).to.eq('555-1234');
     }
 
-    it 'normalises the second of several attributes', {
+    it 'normalizes the second of several attributes', {
       expect(Contact.create({ name => '  Bob  ' }).name).to.eq('Bob');
     }
   }
 
   context 'on query', :order<defined>, {
-    it 'normalises the search value to match the stored value', {
+    it 'normalizes the search value to match the stored value', {
       my $c = Contact.create({ email => '  Foo@Bar.COM ' });
       expect(Contact.where({ email => '  FOO@BAR.COM ' }).first.id).to.eq($c.id);
     }
@@ -66,11 +66,11 @@ group 'attribute normalisation', :order<defined>, {
   context 'normalize-value-for', :order<defined>, {
     before-each { Contact.create({ email => 'seed@x.com' }) }
 
-    it 'applies the normaliser to a value', {
+    it 'applies the normalizer to a value', {
       expect(Contact.normalize-value-for('email', '  AB@C.D ')).to.eq('ab@c.d');
     }
 
-    it 'leaves an un-normalised attribute alone', {
+    it 'leaves an un-normalized attribute alone', {
       expect(Contact.normalize-value-for('missing', '  x  ')).to.eq('  x  ');
     }
   }

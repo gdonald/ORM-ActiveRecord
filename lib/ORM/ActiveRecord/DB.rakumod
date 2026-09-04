@@ -238,7 +238,7 @@ class DB is export {
         Log.configure(
           |(level  => .Str               with $log<level>),
           |(format => .Str               with ($log<format> // $log<formatter>)),
-          |(colour => self!config-bool($_) with ($log<color> // $log<colour>)),
+          |(color => self!config-bool($_) with ($log<color> // $log<color>)),
         );
       }
     }

@@ -183,7 +183,7 @@ describe 'parse-database-url', {
 }
 
 describe 'DB.read-config with DATABASE_URL', {
-  it 'honours DATABASE_URL for the adapter', {
+  it 'honors DATABASE_URL for the adapter', {
     temp %*ENV<DATABASE_URL> = 'sqlite::memory:';
     my %c = DB.read-config;
     expect(%c<adapter>).to.eq('sqlite');

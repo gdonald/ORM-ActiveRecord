@@ -73,7 +73,7 @@ group 'attributes API', :order<defined>, {
       expect($w.score).to.eq(7);
     }
 
-    it 'is recognised by has-attribute', {
+    it 'is recognized by has-attribute', {
       expect(AttrWidget.create({ name => 'a' }).has-attribute('score')).to.be-truthy;
     }
 
@@ -84,14 +84,14 @@ group 'attributes API', :order<defined>, {
   }
 
   context 'custom column type', :order<defined>, {
-    it 'serialises to the column', {
+    it 'serializes to the column', {
       my $w = AttrWidget.create({ name => 'd', tags => ['x', 'y', 'z'] });
       my $raw = $adapter.exec("SELECT tags FROM attr_widgets WHERE id = {$w.id}")[0][0];
       $raw = $raw.decode if $raw ~~ Blob;
       expect($raw).to.eq('x,y,z');
     }
 
-    it 'deserialises from the column', {
+    it 'deserializes from the column', {
       my $w = AttrWidget.create({ name => 'd', tags => ['x', 'y', 'z'] });
       expect(AttrWidget.find($w.id).tags.sort.list).to.eq(('x', 'y', 'z'));
     }

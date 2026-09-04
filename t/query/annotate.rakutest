@@ -39,7 +39,7 @@ ok @bobs.elems == 1 && @bobs[0].fname eq 'Bob', 'annotate composes with where';
 # annotate sanitizes attempts to close the comment early
 my $sql3 = User.annotate('oops */ DROP TABLE users; /*').to-sql;
 ok !$sql3.contains('*/ DROP TABLE users; /*'),
-   'annotate neutralises embedded comment terminators';
+   'annotate neutralizes embedded comment terminators';
 
 # optimizer-hints emits /*+ hint */ right after SELECT
 my $hint-sql = User.optimizer-hints('MAX_EXECUTION_TIME(1000)').to-sql;

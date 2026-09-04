@@ -54,7 +54,7 @@ group 'model enums', :order<defined>, {
       expect(raw-status($o.id).Int).to.eq(9);
     }
 
-    it 'normalises a directly-assigned backing value to its symbol', {
+    it 'normalizes a directly-assigned backing value to its symbol', {
       expect(Order.create({ status => 9 }).status).to.eq('archived');
     }
 

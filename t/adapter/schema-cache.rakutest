@@ -59,7 +59,7 @@ ok $after-first > 0, 'the first get-fields introspects the database';
 $adapter.get-fields(table => 'sc_widgets');
 is @sql.elems, $after-first, 'a repeated get-fields is served from the cache and issues no query';
 
-# column-details is memoised independently of get-fields.
+# column-details is memoized independently of get-fields.
 @sql = ();
 $adapter.column-details(table => 'sc_widgets');
 my $after-details = @sql.elems;

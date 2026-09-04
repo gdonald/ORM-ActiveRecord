@@ -23,7 +23,7 @@ unless $shared.defined && $shared.is-connected {
   $conn.disconnect;
 }
 
-# memoises reads while enabled
+# memoizes reads while enabled
 {
   my $conn = DB.shared.build-connection;
   $conn.enable-query-cache;

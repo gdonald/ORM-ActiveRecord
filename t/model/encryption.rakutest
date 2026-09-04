@@ -59,10 +59,10 @@ if $has-db {
   isnt raw('notes', $a.id), raw('notes', $b.id), 'random encryption yields different ciphertext for equal plaintext';
   is Vault.find($a.id).notes, 'same note', 'a randomly-encrypted column decrypts';
 
-  # downcase normalisation
+  # downcase normalization
   Vault.destroy-all;
   my $e = Vault.create({ email => 'Foo@Bar.COM', name => 'a' });
-  is Vault.find($e.id).email, 'foo@bar.com', 'downcase normalises before encrypting';
+  is Vault.find($e.id).email, 'foo@bar.com', 'downcase normalizes before encrypting';
   is Vault.where({ email => 'FOO@BAR.COM' }).all.elems, 1, 'a downcased column is queryable case-insensitively';
 
   # key rotation: old data decrypts after a new primary key is prepended

@@ -17,7 +17,7 @@ LEAVE { Log.reset }
 sub last-line { @captured.tail<line> }
 
 # bound values in the query log
-Log.set-colour(False);
+Log.set-color(False);
 @captured = [];
 Log.query(sql => 'INSERT INTO users (name) VALUES (?)', ms => 5, binds => ['Ada']);
 ok last-line.contains('(5ms)'),            'query log includes the timing';
@@ -28,16 +28,16 @@ ok last-line.contains("[binds: 'Ada']"),   'query log includes the bound values'
 Log.query(sql => 'SELECT 1', ms => 1, binds => [7, Any]);
 ok last-line.contains('7, NULL'),          'binds render numbers bare and undefined as NULL';
 
-# colour toggle
+# color toggle
 @captured = [];
-Log.set-colour(True);
+Log.set-color(True);
 Log.query(sql => 'SELECT 1', ms => 1);
-ok last-line.contains("\e["),              'colour on emits ANSI escapes';
+ok last-line.contains("\e["),              'color on emits ANSI escapes';
 
 @captured = [];
-Log.set-colour(False);
+Log.set-color(False);
 Log.query(sql => 'SELECT 1', ms => 1);
-nok last-line.contains("\e["),             'colour off emits plain text';
+nok last-line.contains("\e["),             'color off emits plain text';
 
 # JSON formatter
 @captured = [];

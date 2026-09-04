@@ -102,7 +102,7 @@ class CreateJoinNamed is Migration {
 }
 
 CreateJoinNamed.new.up;
-ok table-exists('_jt_custom'), 'create-join-table honours an explicit table-name';
+ok table-exists('_jt_custom'), 'create-join-table honors an explicit table-name';
 CreateJoinNamed.new.down;
 
 # change-table with a coalesced bulk ALTER

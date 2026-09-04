@@ -10,32 +10,32 @@ with %*ENV<ORM_LOG_FILE> -> $path {
 }
 
 # SQL / query logging with a small structured-config layer: a minimum level, a
-# text-or-JSON formatter, ANSI colour toggle, and a pluggable sink. The
-# defaults reproduce the original colourised text routed through Log::Async.
+# text-or-JSON formatter, ANSI color toggle, and a pluggable sink. The
+# defaults reproduce the original colorized text routed through Log::Async.
 class Log is export {
   my Str  $level  = 'info';     # debug | info | warn | error
   my Str  $format = 'text';     # text | json
-  my Bool $colour = True;
+  my Bool $color = True;
   my      &log-sink;            # Callable($line, $level) or undefined
 
   my %LEVEL-RANK = debug => 0, info => 1, warn => 2, error => 3;
 
-  method configure(:$level, :$format, :$formatter, :$colour, :&sink) {
+  method configure(:$level, :$format, :$formatter, :$color, :&sink) {
     self.set-level($_)  with $level;
     self.set-format($_) with ($format // $formatter);
-    $colour = ?$_       with $colour;
+    $color = ?$_       with $color;
     &log-sink = &sink   if &sink;
   }
 
   method set-level(Str:D $value)   { $level  = $value.lc }
   method set-format(Str:D $value)  { $format = $value.lc }
-  method set-colour(Bool:D $value) { $colour = $value }
+  method set-color(Bool:D $value) { $color = $value }
   method set-sink(&block)          { &log-sink = &block }
 
   method reset {
     $level    = 'info';
     $format   = 'text';
-    $colour   = True;
+    $color   = True;
     &log-sink = Callable;
   }
 
@@ -85,7 +85,7 @@ class Log is export {
     ' [binds: ' ~ @binds.map({ self!render-bind($_) }).join(', ') ~ ']';
   }
 
-  method !colour-by-type(Str:D $sql --> Str) {
+  method !color-by-type(Str:D $sql --> Str) {
     given $sql {
       when /:i (BEGIN | COMMIT) /          { yellow($sql) }
       when /:i (INSERT | CREATE | ALTER) / { green($sql) }
@@ -99,12 +99,12 @@ class Log is export {
 
     given %entry<kind> {
       when 'sql' {
-        $colour ?? self!colour-by-type($sql) !! $sql;
+        $color ?? self!color-by-type($sql) !! $sql;
       }
       default {
         my $line = (%entry<slow> ?? 'SLOW ' !! '') ~ "({%entry<ms>}ms) " ~ $sql;
         $line ~= self!binds-suffix(%entry<binds>);
-        $colour ?? (%entry<slow> ?? red($line) !! blue($line)) !! $line;
+        $color ?? (%entry<slow> ?? red($line) !! blue($line)) !! $line;
       }
     }
   }

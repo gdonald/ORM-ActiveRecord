@@ -61,7 +61,7 @@ describe 'group / having', {
     }
   }
 
-  context 'parameterised having', {
+  context 'parameterized having', {
     it 'having with bind > 0 keeps all', {
       expect(User.group('lname').having('count(*) > ?', 0).count.elems).to.eq(3);
     }

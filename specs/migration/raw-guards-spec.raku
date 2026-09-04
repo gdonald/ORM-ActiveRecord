@@ -88,7 +88,7 @@ group 'migration raw SQL and guards', :order<defined>, {
       expect(NoTxnMig.new.disable-ddl-transaction).to.be-truthy;
     }
 
-    context 'the runner honours the flag', :order<defined>, {
+    context 'the runner honors the flag', :order<defined>, {
       it 'wraps a normal migration in a transaction', {
         expect(Migrate.new(:args([])).wraps-in-transaction(NormalMig.new)).to.be-truthy;
       }

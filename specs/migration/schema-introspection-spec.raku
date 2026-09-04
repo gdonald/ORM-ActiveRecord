@@ -43,7 +43,7 @@ sub constraint-types(Str:D $table) {
   $adapter.get-constraints(:$table).map(*.<type>).list;
 }
 
-# `_si_widget` pluralises to `_si_widgets`, so the reference FK targets it.
+# `_si_widget` pluralizes to `_si_widgets`, so the reference FK targets it.
 class CreateWidgets is Migration {
   method change {
     self.create-table: '_si_widgets', [ name => { :string, limit => 32 } ];

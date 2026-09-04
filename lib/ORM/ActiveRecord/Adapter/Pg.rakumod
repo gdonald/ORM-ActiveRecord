@@ -60,7 +60,7 @@ class PgAdapter is SqlAdapter is export {
 
   # pg_advisory_lock keys are 64-bit signed integers, so hash the name into
   # that range with FNV-1a. The advisory SELECTs are side-effecting, so they
-  # run uncached to avoid being served a memoised result.
+  # run uncached to avoid being served a memoized result.
   method !advisory-key(Str:D $name --> Int) {
     my $hash = 14695981039346656037;
     for $name.encode('utf-8').list -> $byte {

@@ -72,7 +72,7 @@ class SerializedType does AttributeType is export {
 }
 
 # Maps an enum's symbolic names to their backing (integer or text) values. The
-# in-memory representation is always the symbol; cast / deserialize normalise
+# in-memory representation is always the symbol; cast / deserialize normalize
 # any input to the symbol, and serialize maps the symbol to the backing value.
 class EnumType does AttributeType is export {
   has %.mapping;   # symbol => backing

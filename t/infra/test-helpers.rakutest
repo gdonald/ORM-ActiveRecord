@@ -67,7 +67,7 @@ sub query($sql) {
 # --- fixture loader ---
 my $fx = Fixtures.new(dir => $fixdir.Str).load;
 
-ok query("SELECT count(*) FROM authors")[0][0] == 2, 'fixtures insert each labelled row';
+ok query("SELECT count(*) FROM authors")[0][0] == 2, 'fixtures insert each labeled row';
 ok query("SELECT count(*) FROM posts")[0][0] == 1,   'fixtures load every file in the directory';
 
 is $fx.id('authors', 'alice'), Fixtures.new.identify('alice'),

@@ -57,7 +57,7 @@ describe 'streaming a statement row by row', {
     expect($count).to.eq(0);
   }
 
-  it 'leaves the connection usable afterwards', {
+  it 'leaves the connection usable afterward', {
     three-users;
     $adapter.stream-stmt(select-names, -> $row { });
 

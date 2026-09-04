@@ -55,7 +55,7 @@ class Notifications is export {
     self.notify($event, %payload);
 
     $error.rethrow if $error;
-    # Decontainerise: assigning block()'s row list into `$result` itemises it,
+    # Decontainerize: assigning block()'s row list into `$result` itemizes it,
     # so returning it bare would make callers iterating the result (a `for` over
     # rows) see one item instead of the list. `<>` returns the plain value, so
     # the instrumented path matches the un-subscribed `return block()` path.

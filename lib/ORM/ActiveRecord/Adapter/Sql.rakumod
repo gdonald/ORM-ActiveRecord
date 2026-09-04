@@ -32,7 +32,7 @@ class SqlAdapter
   has %!column-details-cache;
 
   # Column metadata comes from information_schema, which is expensive to query
-  # on every model operation, so memoise it per table for the life of the
+  # on every model operation, so memoize it per table for the life of the
   # connection. A schema change (DDL) clears it, and disconnect drops it with
   # the rest of the connection state.
   method get-fields(Str:D :$table) {
@@ -93,7 +93,7 @@ class SqlAdapter
   # matches on every value, so a ten-column row cost forty matches. A profile of
   # loading rows showed the regex engine taking 13% of the run. Each engine spells
   # its types differently, so the classification itself stays per adapter and
-  # only the memoisation is shared.
+  # only the memoization is shared.
   has %!coercion-kind;
 
   method coercion-kind(Str $type --> Str) {

@@ -48,9 +48,9 @@ if $has-db {
   my $arch = Order.create({ status => 'archived', name => 'b' });
   is raw-status($arch.id).Int, 9, 'a custom backing value is persisted';
 
-  # a backing value assigned directly is normalised to the symbol
+  # a backing value assigned directly is normalized to the symbol
   my $byint = Order.create({ status => 9, name => 'c' });
-  is $byint.status, 'archived', 'assigning a backing value normalises to the symbol';
+  is $byint.status, 'archived', 'assigning a backing value normalizes to the symbol';
 
   # reload from the database returns the symbol
   is Order.find($o.id).status, 'active', 'a record loaded from the database reads back the symbol';

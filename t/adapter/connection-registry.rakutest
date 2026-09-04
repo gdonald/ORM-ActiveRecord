@@ -107,7 +107,7 @@ my $name = DB.shared.name;
 }
 
 # DB.current is the single resolution point every query path (and app-level raw
-# SQL) shares. It must honour an async worker's bound connection, then the
+# SQL) shares. It must honor an async worker's bound connection, then the
 # request registry, and only otherwise the shared connection. Raw DB.current.exec
 # that skipped this ran on the shared connection from every request thread at
 # once and corrupted the driver under load.

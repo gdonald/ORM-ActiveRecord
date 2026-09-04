@@ -212,7 +212,7 @@ class SqliteAdapter is SqlAdapter is export {
   # PRAGMA index_info: (seqno, cid, name)
   method get-indexes(Str:D :$table --> List) {
     my @triples;
-    # Materialise the outer PRAGMA before issuing the per-index PRAGMA below;
+    # Materialize the outer PRAGMA before issuing the per-index PRAGMA below;
     # iterating a live SQLite statement while running a nested query holds a
     # read lock that would block a later DROP TABLE.
     my @list = self.exec("PRAGMA index_list('$table')").list;

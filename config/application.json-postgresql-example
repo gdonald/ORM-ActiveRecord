@@ -1,6 +1,6 @@
 {
   "test": {
-    "parallel": 16,
+    "parallel": 4,
     "primary": {
       "adapter": "pg",
       "schema": "public",

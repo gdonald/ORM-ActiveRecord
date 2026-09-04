@@ -1,11 +1,11 @@
 
-# Attribute normalisation. Declare in `submethod BUILD`:
+# Attribute normalization. Declare in `submethod BUILD`:
 #
 #   self.normalizes('email', :with(-> $v { $v.trim.lc }));
 #   self.normalizes('first-name', 'last-name', :with(-> $v { $v.trim }));
 #
 # The block runs on the attribute before validation and save, so the stored
-# value is always normalised, and on values used to query a normalised column
+# value is always normalized, and on values used to query a normalized column
 # so a lookup matches what was stored.
 role ModelNormalization is export {
   my %normalizers;   # class => { attr => block }

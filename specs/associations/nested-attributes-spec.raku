@@ -9,7 +9,7 @@ use Models::Signboard;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-# Itemise each record hash so the array of nested records is not flattened
+# Itemize each record hash so the array of nested records is not flattened
 # into a single list of pairs when the spec file is evaluated.
 sub rec(*%h) { $(%h) }
 

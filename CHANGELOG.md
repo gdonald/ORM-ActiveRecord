@@ -238,7 +238,7 @@ Initial release. The feature set below is what ships in 0.1.0.
 
 ### Higher-level features
 
-- Single-table inheritance, enums, the Attributes API, normalisation,
+- Single-table inheritance, enums, the Attributes API, normalization,
   encryption, secure tokens and passwords, nested attributes, soft deletes
   (`discard` / `undiscard`).
 
@@ -268,7 +268,7 @@ Initial release. The feature set below is what ships in 0.1.0.
 ### Logging and instrumentation
 
 - Structured SQL logging (level, formatter, sink), timing and bound values,
-  colourised output, and query-log tags.
+  colorized output, and query-log tags.
 - A pub/sub instrumentation layer for SQL, instantiation, and transaction
   events.
 

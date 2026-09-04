@@ -69,7 +69,7 @@ rm -rf lib/.precomp
 
 Every test in `t/` (Test / `prove6`) has a counterpart in `specs/`
 (BDD::Behave), and vice versa. Shared setup code lives under `specs/lib/`. When
-you change behaviour, update both sides in the same commit.
+you change behavior, update both sides in the same commit.
 
 ### Register new modules in `META6.json`
 
@@ -87,7 +87,7 @@ identifiers.
 ### Documentation
 
 User-facing docs live under `docs-src/docs/` and are wired into
-`docs-src/mkdocs.yml`. When a change adds a feature or changes behaviour, update
+`docs-src/mkdocs.yml`. When a change adds a feature or changes behavior, update
 the matching page in the same commit; the docs should track the `specs/`.
 
 ### Code style

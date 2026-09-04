@@ -8,7 +8,7 @@ class Scope is export {
 }
 
 # Marker mixed into a method by the `is scope` trait. It travels with the method
-# into the precompiled class, so a relation's FALLBACK can recognise a scope by
+# into the precompiled class, so a relation's FALLBACK can recognize a scope by
 # introspecting the model's methods (the global Scope registry built at compile
 # time does not survive precompilation across separate modules).
 role IsScope is export { }

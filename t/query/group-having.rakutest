@@ -34,7 +34,7 @@ ok %big-h.elems == 1 && %big-h<Anderson> == 2, 'having raw filters to 1 group';
 my @big = User.group('lname').having('count(*) > 1').pluck('lname');
 ok @big.elems == 1 && @big[0] eq 'Anderson', 'having raw kept the >1 group';
 
-# parameterised having
+# parameterized having
 ok User.group('lname').having('count(*) > ?', 0).count.elems == 3, 'having with bind > 0 keeps all';
 ok User.group('lname').having('count(*) > ?', 1).count.elems == 1, 'having with bind > 1 keeps Anderson';
 

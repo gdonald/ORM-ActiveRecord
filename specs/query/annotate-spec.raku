@@ -64,7 +64,7 @@ describe 'annotate', {
     expect(@bobs.elems == 1 && @bobs[0].fname eq 'Bob').to.be-truthy;
   }
 
-  it 'neutralises embedded comment terminators', {
+  it 'neutralizes embedded comment terminators', {
     my $sql3 = User.annotate('oops */ DROP TABLE users; /*').to-sql;
 
     expect($sql3.contains('*/ DROP TABLE users; /*')).to.be-falsy;

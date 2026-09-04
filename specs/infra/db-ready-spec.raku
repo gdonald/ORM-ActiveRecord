@@ -8,7 +8,7 @@ use ORM::ActiveRecord::Schema::Migrate;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-# These assert base behaviour; clear any per-worker overlay from the harness.
+# These assert base behavior; clear any per-worker overlay from the harness.
 %*ENV<BEHAVE_WORKER_INDEX>:delete;
 %*ENV<BEHAVE_WORKER_COUNT>:delete;
 

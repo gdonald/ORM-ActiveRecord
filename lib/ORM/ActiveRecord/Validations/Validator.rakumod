@@ -35,7 +35,7 @@ class Validator is export does OwnedByClass {
       as          => '',
     );
 
-    # `.pairs` explicitly: the attribute is scalar-containerised, so iterating
+    # `.pairs` explicitly: the attribute is scalar-containerized, so iterating
     # it bare would yield the whole hash as one item rather than its pairs.
     for $!params.pairs -> $param {
       given $param.keys.first {

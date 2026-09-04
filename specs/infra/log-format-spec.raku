@@ -19,7 +19,7 @@ describe 'structured logging', {
   sub last-line { @captured.tail<line> }
 
   context 'bound values', {
-    before-each { Log.set-colour(False) }
+    before-each { Log.set-color(False) }
 
     it 'includes the timing in the query log', {
       Log.query(sql => 'SELECT 1', ms => 5, binds => ['Ada']);
@@ -37,15 +37,15 @@ describe 'structured logging', {
     }
   }
 
-  context 'colour toggle', {
-    it 'emits ANSI escapes when colour is on', {
-      Log.set-colour(True);
+  context 'color toggle', {
+    it 'emits ANSI escapes when color is on', {
+      Log.set-color(True);
       Log.query(sql => 'SELECT 1', ms => 1);
       expect(last-line.contains("\e[")).to.be-truthy;
     }
 
-    it 'emits plain text when colour is off', {
-      Log.set-colour(False);
+    it 'emits plain text when color is off', {
+      Log.set-color(False);
       Log.query(sql => 'SELECT 1', ms => 1);
       expect(last-line.contains("\e[")).to.be-falsy;
     }

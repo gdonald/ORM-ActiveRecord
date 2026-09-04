@@ -49,7 +49,7 @@ ok $remove.contains("self.add-column: 'widgets', :price"),      'remove migratio
 
 # empty migration rendering
 my $empty = $gen.render-migration('Frobnicate', []);
-ok $empty.contains('class Frobnicate is Migration'),  'unrecognised name renders an empty stub';
+ok $empty.contains('class Frobnicate is Migration'),  'unrecognized name renders an empty stub';
 
 # validator rendering
 my $validator = $gen.render-validator('NotEvil');

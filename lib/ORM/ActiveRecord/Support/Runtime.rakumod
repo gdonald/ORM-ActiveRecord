@@ -6,7 +6,7 @@ use ORM::ActiveRecord::Support::Environment;
 
 # Backing logic for the `ar` runtime subcommands (console, runner, dbconsole,
 # notes, stats). The methods return data or command vectors rather than
-# launching processes, so the CLI does the exec/print and the behaviour stays
+# launching processes, so the CLI does the exec/print and the behavior stays
 # testable.
 class Runtime is export {
   has Str $.path = 'config/application.json';

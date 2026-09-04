@@ -70,7 +70,7 @@ describe 'Notifications pub/sub', :order<defined>, {
     expect(Notifications.instrument('nobody', { }, { 7 })).to.eq(7);
   }
 
-  it 'returns a list result decontainerised so callers iterate the rows', {
+  it 'returns a list result decontainerized so callers iterate the rows', {
     Notifications.subscribe('e.rows', -> %p { });
 
     my $count = 0;

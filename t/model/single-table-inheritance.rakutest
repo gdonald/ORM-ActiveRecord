@@ -82,8 +82,8 @@ ok  Hammer.descends-from-active-record,      'the first concrete class under an 
 nok BallPeen.descends-from-active-record,    'a subclass of the concrete root does not descend from active record';
 
 is Vehicle.inheritance-column, 'type',       'the inheritance column defaults to type';
-is Gizmo.inheritance-column,   'kind',        'the inheritance column can be customised';
-is Widget2.inheritance-column, 'kind',        'a subclass inherits the customised inheritance column';
+is Gizmo.inheritance-column,   'kind',        'the inheritance column can be customized';
+is Widget2.inheritance-column, 'kind',        'a subclass inherits the customized inheritance column';
 
 is Car.sti-name,              'Car',          'the stored type defaults to the class name';
 is Motorcycle.sti-name,       'moto',         'the stored type can be overridden';

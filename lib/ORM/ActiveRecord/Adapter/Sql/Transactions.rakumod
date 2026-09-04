@@ -31,10 +31,10 @@ role SqlTransactions is export {
   }
 
   method isolation-clause(Str:D $isolation --> Str) {
-    'ISOLATION LEVEL ' ~ self.normalise-isolation($isolation);
+    'ISOLATION LEVEL ' ~ self.normalize-isolation($isolation);
   }
 
-  method normalise-isolation(Str:D $iso --> Str) {
+  method normalize-isolation(Str:D $iso --> Str) {
     my $u = $iso.uc.subst('_', ' ', :g).subst(/\s+/, ' ', :g).trim;
     given $u {
       when 'READ UNCOMMITTED' | 'READ COMMITTED' | 'REPEATABLE READ' | 'SERIALIZABLE' { $u }
@@ -55,7 +55,7 @@ role SqlTransactions is export {
       if $isolation.defined && $isolation.chars {
         die "transaction: isolation level only applies to the outermost transaction"
           if $!txn-depth > 0;
-        self.normalise-isolation($isolation);
+        self.normalize-isolation($isolation);
       }
 
       if $!txn-depth == 0 {

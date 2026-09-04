@@ -69,7 +69,7 @@ Article.new(:id(0), :record({attrs => {title => 'B1', body => 'b', author_id => 
     'preloaded belongs-to returns the correct parent';
 }
 
-# --- includes: defaults to preload behaviour without references ---
+# --- includes: defaults to preload behavior without references ---
 {
   my @users = User.where({}).includes(:pages).all;
   ok @users.first.assoc-cache<pages>:exists,

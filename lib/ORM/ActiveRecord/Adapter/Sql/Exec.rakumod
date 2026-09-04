@@ -117,7 +117,7 @@ role SqlExec is export {
   method cached-statement-count(--> Int) { %!stmt-cache.elems }
 
   # Per-request query cache. When enabled, the rows from a read statement are
-  # memoised by SQL + binds + result shape, so repeating the same query inside
+  # memoized by SQL + binds + result shape, so repeating the same query inside
   # the cache window skips the database. Any write clears the cache (even when
   # caching is disabled) so a later read can't serve stale rows.
   method query-cache-enabled(--> Bool) { $!query-cache-enabled }

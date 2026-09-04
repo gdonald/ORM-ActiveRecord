@@ -6,7 +6,7 @@ use Models::User;
 use Test;
 
 # `references` is a metadata-only slot at this stage; it stores association
-# names so they can be honoured later when eager-loading lands. The wiring
+# names so they can be honored later when eager-loading lands. The wiring
 # we test here is the chainability and merge / unscope semantics.
 
 

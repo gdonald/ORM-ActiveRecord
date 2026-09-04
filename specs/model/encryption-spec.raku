@@ -82,8 +82,8 @@ group 'column encryption', :order<defined>, {
     }
   }
 
-  context 'downcase normalisation', :order<defined>, {
-    it 'normalises before encrypting', {
+  context 'downcase normalization', :order<defined>, {
+    it 'normalizes before encrypting', {
       my $v = Vault.create({ email => 'Foo@Bar.COM' });
       expect(Vault.find($v.id).email).to.eq('foo@bar.com');
     }

@@ -71,6 +71,6 @@ dies-ok { parse-database-url('redis://h:6379') },'redis scheme → dies';
   use ORM::ActiveRecord::DB;
   temp %*ENV<DATABASE_URL> = 'sqlite::memory:';
   my %c = DB.read-config;
-  is %c<adapter>,  'sqlite',   'DB.read-config honours DATABASE_URL';
+  is %c<adapter>,  'sqlite',   'DB.read-config honors DATABASE_URL';
   is %c<database>, ':memory:', 'DB.read-config carries database from URL';
 }

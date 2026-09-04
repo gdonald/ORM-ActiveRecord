@@ -69,7 +69,7 @@ class MySqlAdapter is SqlAdapter is export {
 
   # GET_LOCK names are capped at 64 characters; hash anything longer into a
   # short stable name. The lock SELECTs are side-effecting, so they run
-  # uncached to avoid being served a memoised result.
+  # uncached to avoid being served a memoized result.
   method !advisory-name(Str:D $name --> Str) {
     return $name if $name.chars <= 64;
     my $hash = 14695981039346656037;
@@ -107,7 +107,7 @@ class MySqlAdapter is SqlAdapter is export {
   # PG accepts it in BEGIN; emit a separate SET TRANSACTION first.
   method begin-sql(Str :$isolation) {
     if $isolation.defined && $isolation.chars {
-      my $level = self.normalise-isolation($isolation);
+      my $level = self.normalize-isolation($isolation);
       self.txn-exec("SET TRANSACTION ISOLATION LEVEL $level");
     }
     self.txn-exec('START TRANSACTION');
@@ -391,7 +391,7 @@ class MySqlAdapter is SqlAdapter is export {
     method !stringify($v is copy --> Str) {
       # DBDish::mysql can hand back an information_schema cell as a plain Str, a
       # Buf, or (depending on the client library and whether the connection is
-      # over a socket or TCP) a Buf wrapped in a one-element array. Normalise all
+      # over a socket or TCP) a Buf wrapped in a one-element array. Normalize all
       # of them to a Str here.
       $v = $v[0] if $v ~~ Array;
       return '' without $v;

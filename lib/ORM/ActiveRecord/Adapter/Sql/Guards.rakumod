@@ -62,8 +62,8 @@ role SqlGuards is export {
     False;
   }
 
-  # A statement that alters the schema, so the memoised column metadata must be
-  # dropped afterwards.
+  # A statement that alters the schema, so the memoized column metadata must be
+  # dropped afterward.
   method is-schema-change-sql(Str:D $sql --> Bool) {
     self.is-schema-change-stripped(self.strip-sql-prefix($sql));
   }
