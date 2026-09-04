@@ -1,10 +1,10 @@
 # ORM::ActiveRecord
 
-ORM::ActiveRecord is an [object-relational mapping](https://en.wikipedia.org/wiki/Object-relational_mapping) module for Raku that *mostly* follows the [Active Record Pattern](https://en.wikipedia.org/wiki/Active_record_pattern).
+ORM::ActiveRecord is an [object-relational mapping](https://en.wikipedia.org/wiki/Object-relational_mapping) module for Raku that follows the [Active Record Pattern](https://en.wikipedia.org/wiki/Active_record_pattern).
 
 ## Documentation
 
-[https://gdonald.github.io/ORM-ActiveRecord/](https://gdonald.github.io/ORM-ActiveRecord/)
+[https://keayl.dev/docs/ORM-ActiveRecord](https://keayl.dev/docs/ORM-ActiveRecord)
 
 ## Install using zef
 
@@ -33,7 +33,7 @@ say $page.user.fname;
 Fred
 ```
 
-Please see the [documentation](https://gdonald.github.io/ORM-ActiveRecord/) for more examples.
+Please see the [documentation](https://keayl.dev/docs/ORM-ActiveRecord) for more examples.
 
 ## Build Status
 
@@ -41,7 +41,7 @@ Please see the [documentation](https://gdonald.github.io/ORM-ActiveRecord/) for 
 
 ### License
 
-Copyright (c) 2019-2026 Greg Donald
+Copyright (c) 2017-2026 Greg Donald
 
 This software is licensed under the Artistic License 2.0.
 
