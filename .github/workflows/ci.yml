@@ -1,12 +1,15 @@
 name: CI
 
+# Runs after the home lab's Jenkins build passes and reports the
+# continuous-integration/jenkins/branch commit status. A status event runs
+# this file from the default branch, so each job checks out the commit the
+# status is for.
 on:
-  push:
-  pull_request:
-  workflow_dispatch:
+  status
 
 jobs:
   test:
+    if: github.event.context == 'continuous-integration/jenkins/branch' && github.event.state == 'success'
     name: ${{ matrix.db }} / ${{ matrix.suite }}
     runs-on: ubuntu-latest
     strategy:
@@ -26,6 +29,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.sha }}
 
       - name: Start PostgreSQL
         if: matrix.db == 'postgres'
