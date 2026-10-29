@@ -6,10 +6,11 @@ use ORM::ActiveRecord::Support::Log;
 
 plan 10;
 
-%*ENV<DISABLE-SQL-LOG>:delete;
+%*ENV<DISABLE_SQL_LOG DISABLE-SQL-LOG>:delete;
 
 my @captured;
 Log.reset;
+Log.set-sql-log(True);
 Log.set-sink(-> $line, $level { @captured.push: %( :$line, :$level ) });
 
 LEAVE { Log.reset }

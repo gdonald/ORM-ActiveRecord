@@ -170,7 +170,7 @@ sub migrate-one(Str $conn, %base, Int $i, Int $count --> Bool) {
     %*ENV<BEHAVE_WORKER_INDEX>:delete;
     %*ENV<BEHAVE_WORKER_COUNT>:delete;
   }
-  %*ENV<DISABLE-SQL-LOG> = 'True';
+  %*ENV<DISABLE_SQL_LOG> = 'True';
 
   DB.set-shared(Nil, name => $conn);
   Migrate.new(connection => $conn).run;
@@ -194,7 +194,7 @@ sub reset-one(Str $conn, %base, Int $i, Int $count --> Bool) {
     %*ENV<BEHAVE_WORKER_INDEX>:delete;
     %*ENV<BEHAVE_WORKER_COUNT>:delete;
   }
-  %*ENV<DISABLE-SQL-LOG> = 'True';
+  %*ENV<DISABLE_SQL_LOG> = 'True';
 
   DB.set-shared(Nil, name => $conn);
   Migrate.new(connection => $conn).reset(args => ['--yes', '--quiet']);

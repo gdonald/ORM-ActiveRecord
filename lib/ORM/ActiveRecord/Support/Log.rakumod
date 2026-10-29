@@ -2,6 +2,7 @@
 use Log::Async;
 use JSON::Tiny;
 use ORM::ActiveRecord::Support::Colors;
+use ORM::ActiveRecord::Support::Environment;
 
 logger.send-to($*OUT, :level(INFO));
 
@@ -17,33 +18,46 @@ class Log is export {
   my Str  $format = 'text';     # text | json
   my Bool $color = True;
   my      &log-sink;            # Callable($line, $level) or undefined
+  my      $sql-log;             # Bool, or undefined to follow the environment
 
   my %LEVEL-RANK = debug => 0, info => 1, warn => 2, error => 3;
 
-  method configure(:$level, :$format, :$formatter, :$color, :&sink) {
+  method configure(:$level, :$format, :$formatter, :$color, :&sink, :$sql-log) {
     self.set-level($_)  with $level;
     self.set-format($_) with ($format // $formatter);
     $color = ?$_       with $color;
     &log-sink = &sink   if &sink;
+    self.set-sql-log(?$_) with $sql-log;
   }
 
   method set-level(Str:D $value)   { $level  = $value.lc }
   method set-format(Str:D $value)  { $format = $value.lc }
   method set-color(Bool:D $value) { $color = $value }
   method set-sink(&block)          { &log-sink = &block }
+  method set-sql-log(Bool:D $value) { $sql-log = $value }
 
   method reset {
     $level    = 'info';
     $format   = 'text';
     $color   = True;
     &log-sink = Callable;
+    $sql-log  = Any;
+  }
+
+  # The environment is read on every call, so setting DISABLE_SQL_LOG at
+  # runtime takes effect. The hyphenated name predates the underscore one.
+  method is-enabled(--> Bool) {
+    return False if %*ENV<DISABLE_SQL_LOG> || %*ENV<DISABLE-SQL-LOG>;
+    return $sql-log with $sql-log;
+
+    !(current-env() eq 'test' || %*ENV<BEHAVE_WORKER_COUNT>.defined);
   }
 
   # The entry hash is built only when the line will be written. `Log.sql` runs
   # on every statement, and at the default level with SQL logging off the hash
   # was allocated and then dropped.
   method !wants(Str:D $entry-level --> Bool) {
-    return False if %*ENV<DISABLE-SQL-LOG>;
+    return False unless self.is-enabled;
     %LEVEL-RANK{$entry-level} >= %LEVEL-RANK{$level};
   }
 

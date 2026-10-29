@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5] - 2026-10-28
+
+### Added
+
+- `DISABLE_SQL_LOG` turns SQL logging off. Shells accept the underscore name,
+  so `DISABLE_SQL_LOG=1 behave` works in bash and zsh. `DISABLE-SQL-LOG` is
+  still read.
+- `Log.set-sql-log(Bool)`, `Log.configure(:sql-log)`, and a `sql-log` key in a
+  connection's `logging` config turn SQL logging on or off.
+
+### Changed
+
+- SQL logging is off by default in the `test` environment and under a behave
+  worker (`BEHAVE_WORKER_COUNT` set), so SQL lines no longer reach behave's
+  `--parallel` event channel. `sql-log` turns it back on.
+
 ## [0.9.4] - 2026-09-03
 
 ### Added

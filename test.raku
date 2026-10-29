@@ -332,7 +332,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
   # database, recreates it, and migrates up. Resetting (not a bare migrate) is
   # what lets a changed migration take effect, since a migration is only ever
   # applied once.
-  my $reset = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+  my $reset = run :env(%*ENV, DISABLE_SQL_LOG => 'True'),
     'raku', '-Ilib', 'bin/active-record', 'db:reset';
   return $reset.exitcode unless $reset.exitcode == 0;
 
@@ -353,13 +353,13 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
     for ('db:create', 'db:reset', 'db:migrate') -> $cmd {
       my @argv = 'raku', '-Ilib', 'bin/active-record', $cmd, "--parallel=$parallel";
       @argv.append: '--yes' if $cmd eq 'db:reset';
-      my $proc = run :env(%*ENV, DISABLE-SQL-LOG => 'True'), |@argv;
+      my $proc = run :env(%*ENV, DISABLE_SQL_LOG => 'True'), |@argv;
       return $proc.exitcode unless $proc.exitcode == 0;
     }
 
     # Pre-flight: confirm every expected worker database exists and is migrated
     # before launching any specs (one clean failure beats per-worker errors).
-    my $checked = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+    my $checked = run :env(%*ENV, DISABLE_SQL_LOG => 'True'),
     'raku', '-Ilib', 'bin/active-record', 'db:check', "--parallel=$parallel";
     return $checked.exitcode unless $checked.exitcode == 0;
 
@@ -367,7 +367,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
     $any-behave-fail = $proc.exitcode if $proc.exitcode != 0;
   } elsif $run-behave {
     # Pre-flight the single configured database before running any specs.
-    my $checked = run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+    my $checked = run :env(%*ENV, DISABLE_SQL_LOG => 'True'),
     'raku', '-Ilib', 'bin/active-record', 'db:check';
     return $checked.exitcode unless $checked.exitcode == 0;
 
@@ -385,7 +385,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
   # Some specs leave DB.shared in non-canonical state (e.g. reset-spec wipes
   # all tables; round-trip-spec re-migrates a swapped sqlite). Restore the
   # canonical schema so the next test.raku run starts clean.
-  run :env(%*ENV, DISABLE-SQL-LOG => 'True'),
+  run :env(%*ENV, DISABLE_SQL_LOG => 'True'),
   'raku', '-Ilib', 'bin/active-record';
 
   $any-behave-fail;

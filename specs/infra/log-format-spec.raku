@@ -8,8 +8,9 @@ describe 'structured logging', {
   my @captured;
 
   before-each {
-    %*ENV<DISABLE-SQL-LOG>:delete;
+    %*ENV<DISABLE_SQL_LOG DISABLE-SQL-LOG>:delete;
     Log.reset;
+    Log.set-sql-log(True);
     @captured = [];
     Log.set-sink(-> $line, $level { @captured.push: %( :$line, :$level ) });
   }

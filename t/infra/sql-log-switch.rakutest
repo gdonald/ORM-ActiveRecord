@@ -1,0 +1,93 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Support::Log;
+
+plan 10;
+
+my %saved-env = %*ENV;
+my @captured;
+
+LEAVE {
+  %*ENV = %saved-env;
+  Log.reset;
+}
+
+sub start-in(Str:D $env) {
+  %*ENV<DISABLE_SQL_LOG DISABLE-SQL-LOG BEHAVE_WORKER_COUNT RAKU_ENV DATABASE_URL>:delete;
+  %*ENV<AR_ENV> = $env;
+
+  Log.reset;
+  @captured = [];
+  Log.set-sink(-> $line, $level { @captured.push: $line });
+}
+
+sub sql-logged(--> Bool) {
+  Log.sql(sql => 'SELECT 1');
+  so @captured.elems;
+}
+
+start-in('development');
+ok sql-logged(), 'the development environment logs SQL';
+
+start-in('test');
+nok sql-logged(), 'the test environment does not log SQL';
+
+start-in('test');
+Log.set-sql-log(True);
+ok sql-logged(), 'set-sql-log turns SQL logging on in the test environment';
+
+start-in('test');
+Log.configure(sql-log => True);
+ok sql-logged(), 'configure with sql-log turns SQL logging on in the test environment';
+
+start-in('test');
+Log.set-sql-log(True);
+Log.reset;
+Log.set-sink(-> $line, $level { @captured.push: $line });
+nok sql-logged(), 'reset clears the sql-log setting';
+
+{
+  start-in('test');
+
+  my $tmp = $*TMPDIR.add("ar-sql-log-switch-{$*PID}");
+  $tmp.add('config').mkdir;
+  $tmp.add('config/application.json').spurt: q:to/JSON/;
+{
+  "test": {
+    "primary": {
+      "adapter": "sqlite",
+      "name": ":memory:",
+      "logging": { "sql-log": true }
+    }
+  }
+}
+JSON
+
+  my $db = indir $tmp, { DB.new };
+  $db.disconnect;
+
+  ok sql-logged(), 'sql-log in the connection logging config turns SQL logging on';
+
+  $tmp.add('config/application.json').unlink;
+  $tmp.add('config').rmdir;
+  $tmp.rmdir;
+}
+
+start-in('development');
+%*ENV<BEHAVE_WORKER_COUNT> = '2';
+nok sql-logged(), 'a behave worker does not log SQL';
+
+start-in('development');
+%*ENV<DISABLE_SQL_LOG> = '1';
+nok sql-logged(), 'DISABLE_SQL_LOG turns SQL logging off';
+
+start-in('development');
+%*ENV<DISABLE_SQL_LOG> = '1';
+Log.set-sql-log(True);
+nok sql-logged(), 'DISABLE_SQL_LOG wins over sql-log';
+
+start-in('development');
+%*ENV<DISABLE-SQL-LOG> = '1';
+nok sql-logged(), 'the hyphenated DISABLE-SQL-LOG turns SQL logging off';

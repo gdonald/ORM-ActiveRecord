@@ -239,6 +239,7 @@ class DB is export {
           |(level  => .Str               with $log<level>),
           |(format => .Str               with ($log<format> // $log<formatter>)),
           |(color => self!config-bool($_) with ($log<color> // $log<color>)),
+          |(sql-log => self!config-bool($_) with $log<sql-log>),
         );
       }
     }
@@ -355,7 +356,7 @@ class DB is export {
   method !warn-legacy {
     return if $legacy-warned;
     $legacy-warned = True;
-    return if %*ENV<DISABLE-SQL-LOG>;
+    return unless Log.is-enabled;
     note "ORM: flat 'db' config is deprecated; use per-environment named connections (see docs)";
   }
 }

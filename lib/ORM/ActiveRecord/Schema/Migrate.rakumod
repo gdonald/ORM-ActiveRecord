@@ -4,6 +4,7 @@ use MONKEY-SEE-NO-EVAL;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Support::Colors;
 use ORM::ActiveRecord::Support::Environment;
+use ORM::ActiveRecord::Support::Log;
 use ORM::ActiveRecord::Errors::X;
 
 class Migrate is export {
@@ -128,8 +129,8 @@ class Migrate is export {
   # migrate-to.
   method run-migration-file(Str:D $path, Str:D $version, Str:D $action) {
     # Migration progress goes to stdout, which behave parses as JSON events
-    # under --parallel; stay quiet when SQL logging is disabled (specs/tests).
-    unless %*ENV<DISABLE-SQL-LOG> {
+    # under --parallel, so it follows the SQL log switch.
+    if Log.is-enabled {
       say '';
       say $action ~~ 'up' ?? green('↑ ' ~ $path ~ ' ↑') !! red('↓ ' ~ $path ~ ' ↓');
     }
