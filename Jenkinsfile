@@ -20,11 +20,11 @@ def buildPod = '''
         args: ["infinity"]
         resources:
           requests:
-            cpu: "2"
-            memory: 4Gi
+            cpu: "3"
+            memory: 6Gi
           limits:
-            cpu: "4"
-            memory: 4Gi
+            cpu: "6"
+            memory: 8Gi
       - name: postgres
         image: postgres:17.11-trixie
         env:
@@ -85,61 +85,80 @@ pipeline {
       }
     }
 
-    stage('postgres / prove6') {
-      steps {
-        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-          withEnv(["DATABASE_URL=${postgresUrl}"]) {
-            sh './test.raku --prove6'
+    // Each adapter runs in its own lane, in parallel with the others. Within
+    // a lane the stages run in order, since each test.raku run resets that
+    // adapter's databases.
+    stage('tests') {
+      parallel {
+        stage('postgres') {
+          stages {
+            stage('postgres / prove6') {
+              steps {
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                  withEnv(["DATABASE_URL=${postgresUrl}"]) {
+                    sh './test.raku --prove6'
+                  }
+                }
+              }
+            }
+
+            stage('postgres / behave') {
+              steps {
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                  withEnv(["DATABASE_URL=${postgresUrl}"]) {
+                    sh './test.raku --behave --parallel=2'
+                  }
+                }
+              }
+            }
           }
         }
-      }
-    }
 
-    stage('postgres / behave') {
-      steps {
-        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-          withEnv(["DATABASE_URL=${postgresUrl}"]) {
-            sh './test.raku --behave --parallel=2'
+        stage('mysql') {
+          stages {
+            stage('mysql / prove6') {
+              steps {
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                  withEnv(["DATABASE_URL=${mysqlUrl}"]) {
+                    sh './test.raku --prove6'
+                  }
+                }
+              }
+            }
+
+            stage('mysql / behave') {
+              steps {
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                  withEnv(["DATABASE_URL=${mysqlUrl}"]) {
+                    sh './test.raku --behave --parallel=2'
+                  }
+                }
+              }
+            }
           }
         }
-      }
-    }
 
-    stage('mysql / prove6') {
-      steps {
-        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-          withEnv(["DATABASE_URL=${mysqlUrl}"]) {
-            sh './test.raku --prove6'
-          }
-        }
-      }
-    }
+        stage('sqlite') {
+          stages {
+            stage('sqlite / prove6') {
+              steps {
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                  withEnv(["DATABASE_URL=${sqliteUrl}"]) {
+                    sh './test.raku --prove6'
+                  }
+                }
+              }
+            }
 
-    stage('mysql / behave') {
-      steps {
-        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-          withEnv(["DATABASE_URL=${mysqlUrl}"]) {
-            sh './test.raku --behave --parallel=2'
-          }
-        }
-      }
-    }
-
-    stage('sqlite / prove6') {
-      steps {
-        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-          withEnv(["DATABASE_URL=${sqliteUrl}"]) {
-            sh './test.raku --prove6'
-          }
-        }
-      }
-    }
-
-    stage('sqlite / behave') {
-      steps {
-        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-          withEnv(["DATABASE_URL=${sqliteUrl}"]) {
-            sh './test.raku --behave --parallel=2'
+            stage('sqlite / behave') {
+              steps {
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                  withEnv(["DATABASE_URL=${sqliteUrl}"]) {
+                    sh './test.raku --behave --parallel=2'
+                  }
+                }
+              }
+            }
           }
         }
       }
