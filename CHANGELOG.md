@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.6] - 2026-10-30
+
+### Fixed
+
+- Reading a foreign key that was set and then cleared to NULL no longer warns
+  `Use of uninitialized value ... in numeric context`. The read still returns
+  an undefined value.
+
 ## [0.9.5] - 2026-10-28
 
 ### Added

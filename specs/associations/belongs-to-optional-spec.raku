@@ -11,6 +11,17 @@ use Models::Picture;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
+sub warnings-from(&block --> List) {
+  my @warnings;
+
+  {
+    CONTROL { when CX::Warn { @warnings.push: .message; .resume } }
+    block();
+  }
+
+  @warnings.List;
+}
+
 describe 'belongs-to optional / required', {
   before-each { clean-shared-tables }
   after-each  { clean-shared-tables }
@@ -157,6 +168,39 @@ describe 'belongs-to optional / required', {
       my $attach = Attachment.create({name => 'avatar.png', attachable => $alice});
       $attach.update({attachable => Nil});
       expect(Attachment.find($attach.id).attrs<attachable_type>.defined).to.be-falsy;
+    }
+  }
+
+  context 'reading a foreign key cleared after it was set', {
+    my $article;
+
+    before-each {
+      my $alice = User.create({fname => 'Alice', lname => 'A'});
+      $article = Article.create({title => 'Assigned', body => 'x', author => $alice});
+    }
+
+    context 'with a blank string', {
+      before-each { $article.update({author_id => ''}) }
+
+      it 'reads as undefined', {
+        expect(Article.find($article.id).author_id.defined).to.be-falsy;
+      }
+
+      it 'emits no warning', {
+        expect(warnings-from({ Article.find($article.id).author_id }).elems).to.eq(0);
+      }
+    }
+
+    context 'with Nil', {
+      before-each { $article.update({author_id => Nil}) }
+
+      it 'reads as undefined', {
+        expect(Article.find($article.id).author_id.defined).to.be-falsy;
+      }
+
+      it 'emits no warning', {
+        expect(warnings-from({ Article.find($article.id).author_id }).elems).to.eq(0);
+      }
     }
   }
 

@@ -329,7 +329,7 @@ class Model
       return self.reset-attribute(~$0) if self.has-attribute(~$0);
     }
 
-    if $name ~~ /_id$/ && %!attrs{$name} == 0 {
+    if $name ~~ /_id$/ && (%!attrs{$name} // 0) == 0 {
       my $base-name = $name.subst(/_id$/, '');
       return 0 if self.is-polymorphic-assoc($base-name);
       return self."$base-name"().id;

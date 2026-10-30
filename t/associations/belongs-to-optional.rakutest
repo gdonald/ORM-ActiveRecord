@@ -9,9 +9,20 @@ use Models::Attachment;
 use Models::Picture;
 use Test;
 
-plan 26;
+plan 30;
 
 %*ENV<DISABLE-SQL-LOG> = True;
+
+sub warnings-from(&block --> List) {
+  my @warnings;
+
+  {
+    CONTROL { when CX::Warn { @warnings.push: .message; .resume } }
+    block();
+  }
+
+  @warnings.List;
+}
 
 Page.destroy-all;
 Passport.destroy-all;
@@ -102,6 +113,25 @@ nok Attachment.find($attached.id).attrs<attachable_id>.defined,
   'clearing a polymorphic belongs-to clears its foreign key';
 nok Attachment.find($attached.id).attrs<attachable_type>.defined,
   'clearing a polymorphic belongs-to clears its type';
+
+# === Reading a foreign key cleared after it was set ===
+my $blank-owner = User.create({fname => 'Alice', lname => 'A'});
+my $blanked = Article.create({title => 'Assigned', body => 'x', author => $blank-owner});
+$blanked.update({author_id => ''});
+
+nok Article.find($blanked.id).author_id.defined,
+  'a foreign key cleared with a blank string reads as undefined';
+is warnings-from({ Article.find($blanked.id).author_id }).elems, 0,
+  'reading a foreign key cleared with a blank string emits no warning';
+
+my $nil-owner = User.create({fname => 'Alice', lname => 'A'});
+my $nilled = Article.create({title => 'Assigned', body => 'x', author => $nil-owner});
+$nilled.update({author_id => Nil});
+
+nok Article.find($nilled.id).author_id.defined,
+  'a foreign key cleared with Nil reads as undefined';
+is warnings-from({ Article.find($nilled.id).author_id }).elems, 0,
+  'reading a foreign key cleared with Nil emits no warning';
 
 # Predicate access
 ok !User.new(:id(0)).is-belongs-to-optional('user'),
