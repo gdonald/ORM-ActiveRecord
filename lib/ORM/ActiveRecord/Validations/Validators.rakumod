@@ -349,27 +349,27 @@ class Validators is export {
     my $lte = $param<numericality><lte>;
     my $in = $param<numericality><in>;
 
-    my $number = $obj."$field.name()"().Int;
+    my $number = $obj."$field.name()"().Numeric;
 
-    if $if() && !$unless() && $validate-on && $gt && $number <= $gt {
+    if $if() && !$unless() && $validate-on && $gt.defined && $number <= $gt {
       my $value = "$gt";
       my $message = Message.build(:override($msg), :default('more than {value} required'), :type<greater-than>, :$obj, :$field, :$value, :$as, :interpolations({:count($gt)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<greater-than>, :options(:count($gt)));
     }
 
-    if $if() && !$unless() && $validate-on && $gte && $number < $gte {
+    if $if() && !$unless() && $validate-on && $gte.defined && $number < $gte {
       my $value = "$gte";
       my $message = Message.build(:override($msg), :default('{value} or more required'), :type<greater-than-or-equal-to>, :$obj, :$field, :$value, :$as, :interpolations({:count($gte)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<greater-than-or-equal-to>, :options(:count($gte)));
     }
 
-    if $if() && !$unless() && $validate-on && $lt && $number >= $lt {
+    if $if() && !$unless() && $validate-on && $lt.defined && $number >= $lt {
       my $value = "$lt";
       my $message = Message.build(:override($msg), :default('less than {value} required'), :type<less-than>, :$obj, :$field, :$value, :$as, :interpolations({:count($lt)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<less-than>, :options(:count($lt)));
     }
 
-    if $if() && !$unless() && $validate-on && $lte && $number > $lte {
+    if $if() && !$unless() && $validate-on && $lte.defined && $number > $lte {
       my $value = "$lte";
       my $message = Message.build(:override($msg), :default('{value} or less required'), :type<less-than-or-equal-to>, :$obj, :$field, :$value, :$as, :interpolations({:count($lte)}));
       self.record-error(:$obj, :$field, :$message, :$strict, :type<less-than-or-equal-to>, :options(:count($lte)));

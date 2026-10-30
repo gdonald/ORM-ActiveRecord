@@ -4,15 +4,7 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.6] - 2026-10-30
-
-### Fixed
-
-- Reading a foreign key that was set and then cleared to NULL no longer warns
-  `Use of uninitialized value ... in numeric context`. The read still returns
-  an undefined value.
-
-## [0.9.5] - 2026-10-28
+## [0.9.5] - 2026-10-30
 
 ### Added
 
@@ -27,6 +19,17 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - SQL logging is off by default in the `test` environment and under a behave
   worker (`BEHAVE_WORKER_COUNT` set), so SQL lines no longer reach behave's
   `--parallel` event channel. `sql-log` turns it back on.
+
+### Fixed
+
+- Reading a foreign key that was set and then cleared to NULL no longer warns
+  `Use of uninitialized value ... in numeric context`. The read still returns
+  an undefined value.
+- `numericality` with a `gt`, `gte`, `lt`, or `lte` threshold of `0` now
+  validates. A threshold of `0` was skipped, so `numericality => { gte => 0 }`
+  accepted `-5`.
+- `numericality` compares the value as a number instead of truncating it to an
+  integer, so `gte => 0` rejects `-0.5` on a decimal column.
 
 ## [0.9.4] - 2026-09-03
 

@@ -1,0 +1,45 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use Validation::ZeroNumericality;
+use Test;
+
+plan 14;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub valid-attrs(*%overrides) {
+  %( above_zero => 1, at_least_zero => 0, below_zero => -1, at_most_zero => 0, balance => 0, |%overrides );
+}
+
+my Meter $meter;
+
+$meter = Meter.build(valid-attrs);
+ok $meter.is-valid, 'every value on the valid side of 0 is valid';
+
+$meter = Meter.build(valid-attrs(above_zero => 0));
+ok $meter.is-invalid, 'gt 0 rejects 0';
+is $meter.errors.above_zero[0], 'more than 0 required', 'gt 0 reports "more than 0 required"';
+
+$meter = Meter.build(valid-attrs(at_least_zero => -5));
+ok $meter.is-invalid, 'gte 0 rejects -5';
+is $meter.errors.at_least_zero[0], '0 or more required', 'gte 0 reports "0 or more required"';
+nok $meter.save, 'gte 0 does not save -5';
+
+$meter = Meter.build(valid-attrs(at_least_zero => 0));
+ok $meter.is-valid, 'gte 0 accepts 0';
+
+$meter = Meter.build(valid-attrs(below_zero => 0));
+ok $meter.is-invalid, 'lt 0 rejects 0';
+is $meter.errors.below_zero[0], 'less than 0 required', 'lt 0 reports "less than 0 required"';
+
+$meter = Meter.build(valid-attrs(at_most_zero => 5));
+ok $meter.is-invalid, 'lte 0 rejects 5';
+is $meter.errors.at_most_zero[0], '0 or less required', 'lte 0 reports "0 or less required"';
+
+$meter = Meter.build(valid-attrs(balance => -0.5));
+ok $meter.is-invalid, 'gte 0 on a decimal column rejects -0.5';
+is $meter.errors.balance[0], '0 or more required', 'gte 0 on a decimal column reports "0 or more required"';
+
+$meter = Meter.build(valid-attrs(balance => 0.5));
+ok $meter.is-valid, 'gte 0 on a decimal column accepts 0.5';

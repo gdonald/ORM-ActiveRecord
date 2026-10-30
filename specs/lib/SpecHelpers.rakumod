@@ -55,6 +55,7 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   persons
   images
   books
+  meters
   games
   logs
   manuals
