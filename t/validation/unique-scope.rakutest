@@ -4,7 +4,7 @@ use lib 'specs/lib';
 use Validation::UniqueScope;
 use Test;
 
-plan 3;
+plan 8;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -18,6 +18,35 @@ ok $subscription.is-valid;
 $subscription = Subscription.build({:$user, :$magazine});
 nok $subscription.is-valid;
 ok $subscription.errors.user_id[0] eq 'must be unique';
+
+Subscription.destroy-all;
+
+my $alice = User.create({fname => 'Alice'});
+my $cracked = Magazine.create({title => 'Cracked'});
+
+Subscription.create({:$user, :$magazine});
+$subscription = Subscription.create({user => $alice, :$magazine});
+nok $subscription.update({user_id => $user.id}),
+  'an update to a user another subscription to the same magazine has is refused';
+ok $subscription.errors.is-of-kind('user_id', 'taken'), 'the refused update records a taken error';
+
+Subscription.destroy-all;
+
+$subscription = Subscription.create({:$user, :$magazine});
+ok $subscription.update({user_id => $user.id}), 'an update keeping its own user is accepted';
+
+Subscription.destroy-all;
+
+Subscription.create({:$user, magazine => $cracked});
+$subscription = Subscription.create({user => $alice, :$magazine});
+ok $subscription.update({user_id => $user.id}),
+  'an update to a user a subscription to another magazine has is accepted';
+
+Subscription.destroy-all;
+
+$subscription = Subscription.create({:$user, :$magazine});
+ok $subscription.update({magazine_id => $cracked.id}),
+  'an update of another column while the user stays unique is accepted';
 
 Subscription.destroy-all;
 Magazine.destroy-all;

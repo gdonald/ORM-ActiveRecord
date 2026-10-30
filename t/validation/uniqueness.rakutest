@@ -4,7 +4,7 @@ use lib 'specs/lib';
 use Validation::Uniqueness;
 use Test;
 
-plan 4;
+plan 7;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -19,5 +19,15 @@ nok $person.errors.username;
 $person = Person.build({username => 'alfred'});
 ok $person.is-invalid;
 ok $person.errors.username[0] eq 'must be unique';
+
+Person.destroy-all;
+
+my $alfred = Person.create({username => 'alfred'});
+Person.create({username => 'bruce'});
+
+nok $alfred.update({username => 'bruce'}), 'an update to a username another row has is refused';
+ok $alfred.errors.is-of-kind('username', 'taken'), 'the refused update records a taken error';
+
+ok $alfred.update({username => 'alfred'}), 'an update keeping its own username is accepted';
 
 Person.destroy-all;

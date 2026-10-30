@@ -182,13 +182,14 @@ class Validators is export {
   }
 
   method validate-unique(DB :$db, Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg, Bool:D :$strict, Str:D :$as, Bool:D :$case-sensitive = True, :%conditions) {
-    return if $obj.id || $obj."$field.name()"() ~~ Empty;
+    return if $obj."$field.name()"() ~~ Empty;
 
     my $table = Utils.table-name($obj);
     my $col = $field.name;
     my $val = $obj."$col"();
 
-    my $found = self.unique-lookup(:$db, :$table, :$col, :$val, :$case-sensitive, :%conditions);
+    my %exclude = $obj.is-persisted ?? $obj.primary-key-where !! %();
+    my $found = self.unique-lookup(:$db, :$table, :$col, :$val, :$case-sensitive, :%conditions, :%exclude);
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && $found {
@@ -199,7 +200,7 @@ class Validators is export {
   }
 
   method validate-unique-scope(DB :$db, Mu:D :$obj, Field:D :$field, Pair:D :$scope, Hash:D :$ons, Block:D :$if, Block:D :$unless, Str:D :$msg, Bool:D :$strict, Str:D :$as, Bool:D :$case-sensitive = True, :%conditions) {
-    return if $obj.id || $obj."$field.name()"() ~~ Empty;
+    return if $obj."$field.name()"() ~~ Empty;
 
     my $table = Utils.table-name($obj);
     my $col = $field.name;
@@ -211,7 +212,8 @@ class Validators is export {
     }
     for %conditions.kv -> $k, $v { %scope-where{$k} = $v }
 
-    my $found = self.unique-lookup(:$db, :$table, :$col, :$val, :$case-sensitive, :conditions(%scope-where));
+    my %exclude = $obj.is-persisted ?? $obj.primary-key-where !! %();
+    my $found = self.unique-lookup(:$db, :$table, :$col, :$val, :$case-sensitive, :conditions(%scope-where), :%exclude);
     my $validate-on = self.validate-on(:$obj, :$ons);
 
     if $if() && !$unless() && $validate-on && $found {
@@ -221,7 +223,7 @@ class Validators is export {
     }
   }
 
-  method unique-lookup(DB :$db, Str:D :$table, Str:D :$col, :$val, Bool:D :$case-sensitive, :%conditions --> Bool) {
+  method unique-lookup(DB :$db, Str:D :$table, Str:D :$col, :$val, Bool:D :$case-sensitive, :%conditions, :%exclude --> Bool) {
     my @sql-parts;
     my @binds;
 
@@ -240,6 +242,11 @@ class Validators is export {
       } else {
         @sql-parts.push: "$k IS NULL";
       }
+    }
+
+    if %exclude {
+      @sql-parts.push: 'NOT (' ~ %exclude.keys.sort.map({ "$_ = ?" }).join(' AND ') ~ ')';
+      @binds.append: %exclude.keys.sort.map({ %exclude{$_} });
     }
 
     my $where-clause = @sql-parts.join(' AND ');

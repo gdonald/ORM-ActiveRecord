@@ -30,6 +30,10 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   accepted `-5`.
 - `numericality` compares the value as a number instead of truncating it to an
   integer, so `gte => 0` rejects `-0.5` on a decimal column.
+- `uniqueness`, with or without a `scope`, now checks an update to a saved
+  record. The check was skipped for any record with an id, so an update could
+  set a value another row already had. The record's own row is left out of the
+  lookup.
 
 ## [0.9.4] - 2026-09-03
 

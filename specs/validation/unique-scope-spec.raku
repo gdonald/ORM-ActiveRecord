@@ -42,4 +42,54 @@ describe 'uniqueness with scope', {
       expect($sub.errors.user_id[0]).to.eq('must be unique');
     }
   }
+
+  context 'updating a saved subscription', {
+    let(:greg,    { User.create({fname => 'Greg'}) });
+    let(:alice,   { User.create({fname => 'Alice'}) });
+    let(:mad,     { Magazine.create({title => 'Mad'}) });
+    let(:cracked, { Magazine.create({title => 'Cracked'}) });
+
+    context 'to a user another subscription to the same magazine has', {
+      let(:subscription, {
+        Subscription.create({user => greg, magazine => mad});
+        Subscription.create({user => alice, magazine => mad});
+      });
+
+      it 'is refused', {
+        expect(subscription.update({user_id => greg.id})).to.be-falsy;
+      }
+
+      it 'records a taken error', {
+        subscription.update({user_id => greg.id});
+        expect(subscription.errors.is-of-kind('user_id', 'taken')).to.be-truthy;
+      }
+    }
+
+    context 'keeping its own user', {
+      let(:subscription, { Subscription.create({user => greg, magazine => mad}) });
+
+      it 'is accepted', {
+        expect(subscription.update({user_id => greg.id})).to.be-truthy;
+      }
+    }
+
+    context 'to a user a subscription to another magazine has', {
+      let(:subscription, {
+        Subscription.create({user => greg, magazine => cracked});
+        Subscription.create({user => alice, magazine => mad});
+      });
+
+      it 'is accepted', {
+        expect(subscription.update({user_id => greg.id})).to.be-truthy;
+      }
+    }
+
+    context 'changing another column while its user stays unique', {
+      let(:subscription, { Subscription.create({user => greg, magazine => mad}) });
+
+      it 'is accepted', {
+        expect(subscription.update({magazine_id => cracked.id})).to.be-truthy;
+      }
+    }
+  }
 }

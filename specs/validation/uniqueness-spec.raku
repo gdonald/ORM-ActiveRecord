@@ -35,4 +35,27 @@ describe 'uniqueness validator', {
       expect($dup.errors.username[0]).to.eq('must be unique');
     }
   }
+
+  context 'updating a saved record', {
+    let(:alfred, { Person.create({username => 'alfred'}) });
+
+    context 'to a username another row has', {
+      before-each { Person.create({username => 'bruce'}) }
+
+      it 'is refused', {
+        expect(alfred.update({username => 'bruce'})).to.be-falsy;
+      }
+
+      it 'records a taken error', {
+        alfred.update({username => 'bruce'});
+        expect(alfred.errors.is-of-kind('username', 'taken')).to.be-truthy;
+      }
+    }
+
+    context 'keeping its own username', {
+      it 'is accepted', {
+        expect(alfred.update({username => 'alfred'})).to.be-truthy;
+      }
+    }
+  }
 }
