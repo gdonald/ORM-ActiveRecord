@@ -68,7 +68,7 @@ pipeline {
 
   options {
     disableConcurrentBuilds(abortPrevious: true)
-    timeout(time: 90, unit: 'MINUTES')
+    timeout(time: 180, unit: 'MINUTES')
   }
 
   // A failing test stage marks the build failed and the stages after it
