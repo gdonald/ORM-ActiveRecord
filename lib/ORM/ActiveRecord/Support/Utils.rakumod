@@ -1,4 +1,6 @@
 
+use Text::Inflector;
+
 class Utils is export {
   # Each of these is a pure function of a class or table name, and the set of
   # names a process sees is small and fixed, so the string work is done once
@@ -28,15 +30,12 @@ class Utils is export {
     $current;
   }
 
-  # Convert a (possibly namespaced) CamelCase class name to snake_case:
-  # 'PageTag' -> 'page_tag', 'Foo::HotItem' -> 'hot_item'.
   method underscore(Str:D $name) {
-    Utils.base-name($name).subst(/(<[a..z0..9]>)(<[A..Z]>)/, { "$0_$1" }, :g).lc;
+    Text::Inflector.underscore($name);
   }
 
-  # Table name: snake_case the class name, then pluralize.
   method tableize(Str:D $name) {
-    %tableized{$name} //= Utils.underscore($name) ~ 's';
+    %tableized{$name} //= Text::Inflector.tableize($name);
   }
 
   multi method table-name(Mu:D $obj) {
@@ -50,7 +49,7 @@ class Utils is export {
   }
 
   method singular(Str:D $name) {
-    %singularized{$name} //= $name.subst(/s$/, '');
+    %singularized{$name} //= Text::Inflector.singularize($name);
   }
 
   method to-foreign-key(Str:D $name) {

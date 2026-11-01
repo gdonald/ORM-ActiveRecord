@@ -11,6 +11,7 @@ use ORM::ActiveRecord::Relation::Collection;
 use ORM::ActiveRecord::Relation::Query;
 use ORM::ActiveRecord::Relation::Scope;
 use ORM::ActiveRecord::Relation::Scopes;
+use Text::Inflector;
 use ORM::ActiveRecord::Support::Utils;
 use ORM::ActiveRecord::Validations::Validator;
 use ORM::ActiveRecord::Validations::Validators;
@@ -61,8 +62,12 @@ class Model
   is export
 {
   my %connection-of;
-  my %belongs-to-names-of;
+  my %belongs-to-foreign-keys-of;
   my %fkey-name-of;
+
+  my class UnresolvedAssocClass { }
+  my $assoc-class-table      = Map.new;
+  my $assoc-class-table-lock = Lock.new;
 
   has DB $!db;
   has Errors $!errors;
@@ -410,10 +415,11 @@ class Model
       for $spec.keys -> $key {
         given $key {
           when 'class' { $class = $spec{'class'} }
-          when 'class-name' { $class = self.resolve-class-name(~$spec{'class-name'}) }
+          when 'class-name' | 'inferred-from' { $class = self.assoc-class-from-spec($spec) }
           when 'through' {
-            $join-table = $spec{'through'}.key;
-            $class = self.get-through-class($name, $join-table, $spec);
+            my $through-key = $spec{'through'}.key;
+            $class = self.get-through-class($name, $through-key, $spec);
+            $join-table = self.through-table($through-key);
           }
           when 'as' { $as-name = ~$spec{'as'} }
           when 'foreign-key' { $fkey-override = ~$spec{'foreign-key'} }
@@ -539,10 +545,10 @@ class Model
       for $spec.keys -> $key {
         given $key {
           when 'class' { $class = $spec{'class'} }
-          when 'class-name' { $class = self.resolve-class-name(~$spec{'class-name'}) }
+          when 'class-name' | 'inferred-from' { $class = self.assoc-class-from-spec($spec) }
           when 'through' {
             my $through-key = $spec{'through'}.key;
-            $join-table = $through-key ~ 's';
+            $join-table = self.through-table($through-key);
             $class = self.get-through-class-has-one($name, $through-key, $spec);
           }
           when 'foreign-key' { $fkey-name = ~$spec{'foreign-key'} }
@@ -705,8 +711,14 @@ class Model
     ~self.assoc-spec-value(spec, 'source-type');
   }
 
-  method get-through-class(Str:D $name, Str:D $join-table, \spec) {
-    my $class = self.assoc-class-from-spec(%!has-manys{$join-table});
+  method through-table(Str:D $through-key --> Str) {
+    my $class = self.assoc-class-from-spec(%!has-manys{$through-key} // %!has-ones{$through-key});
+
+    $class === Mu ?? $through-key.trans('-' => '_') !! Utils.table-name($class)
+  }
+
+  method get-through-class(Str:D $name, Str:D $through-key, \spec) {
+    my $class = self.assoc-class-from-spec(%!has-manys{$through-key});
     my $singular = self.assoc-source-name(spec, Utils.singular($name));
     my $instance = $class.new(:id(0));
     if $instance.is-polymorphic-assoc($singular) {
@@ -752,6 +764,7 @@ class Model
     if self.assoc-spec-has(spec, 'class-name') {
       return self.resolve-class-name(~self.assoc-spec-value(spec, 'class-name'));
     }
+    return self!uninferred-class(spec) if self.assoc-spec-has(spec, 'inferred-from');
     Mu;
   }
 
@@ -917,17 +930,108 @@ class Model
   }
 
   method resolve-class-name(Str:D $name) {
-    my @parts = $name.split('::');
-    my $obj = GLOBAL::{@parts.shift};
-    die "Cannot resolve class-name '$name': not found in GLOBAL::"
-      if $obj === Any || $obj ~~ Failure;
-    for @parts -> $part {
-      my $next = $obj.WHO{$part};
-      die "Cannot resolve class-name '$name': not found in GLOBAL::"
-        if $next === Any || $next ~~ Failure;
-      $obj = $next;
+    my \found = Utils.lookup-class($name);
+    die "Cannot resolve class-name '$name': not found in GLOBAL::" if found === Nil;
+
+    found
+  }
+
+  method !assoc-class-once(Str:D $kind, Str:D $name, &resolve) {
+    my $key   = self.WHAT.WHICH.Str ~ "\0$kind\0$name";
+    my $table = $assoc-class-table;
+    return $table{$key} if $table{$key}:exists;
+
+    $assoc-class-table-lock.protect: {
+      return $assoc-class-table{$key} if $assoc-class-table{$key}:exists;
+
+      my \resolved = resolve();
+      $assoc-class-table = Map.new(($assoc-class-table.pairs, $key => resolved).flat)
+        unless resolved === UnresolvedAssocClass;
+
+      resolved
     }
-    $obj;
+  }
+
+  method !inference-candidates(Str:D $kind, Str:D $name --> List) {
+    my $class-name = $kind eq 'has-many' | 'has-and-belongs-to-many'
+      ?? Text::Inflector.classify($name)
+      !! Text::Inflector.camelize($name);
+
+    my @package = self.^name.split('::');
+    @package.pop;
+
+    my @candidates;
+    loop {
+      @candidates.push: (|@package, $class-name).join('::');
+
+      last unless @package;
+      @package.pop;
+    }
+
+    @candidates.List
+  }
+
+  method !find-model-class(@candidates) {
+    for @candidates -> $candidate {
+      my \found = Utils.lookup-class($candidate);
+      return found if found !=== Nil && found ~~ Model;
+    }
+
+    UnresolvedAssocClass
+  }
+
+  method !with-assoc-class(Str:D $kind, Str:D $name, \spec) {
+    return spec if self.assoc-spec-has(spec, 'class') || self.assoc-spec-has(spec, 'through');
+    return spec if $kind eq 'belongs-to' && self.assoc-spec-value(spec, 'polymorphic');
+
+    my $is-inferred = !self.assoc-spec-has(spec, 'class-name');
+    my @candidates  = $is-inferred ?? self!inference-candidates($kind, $name) !! ();
+
+    my \target = $is-inferred
+      ?? self!assoc-class-once($kind, $name, { self!find-model-class(@candidates) })
+      !! self!assoc-class-once($kind, $name, {
+           my \found = Utils.lookup-class(~self.assoc-spec-value(spec, 'class-name'));
+           found === Nil ?? UnresolvedAssocClass !! found
+         });
+
+    return spec if target === UnresolvedAssocClass && !$is-inferred;
+
+    my %spec = spec ~~ Pair | Map ?? spec !! ();
+
+    if target === UnresolvedAssocClass {
+      %spec<inferred-from> = ($kind, $name, @candidates.List);
+    }
+    else {
+      %spec<class> = target;
+    }
+
+    %spec
+  }
+
+  method !uninferred-class(\spec) {
+    my ($kind, $name, $candidate-list) = self.assoc-spec-value(spec, 'inferred-from');
+    my @candidates = $candidate-list.list;
+
+    my \found = self!find-model-class(@candidates);
+    return found unless found === UnresolvedAssocClass;
+
+    my $class-name = @candidates.tail;
+
+    die "Cannot infer the class of $kind '$name' on {self.^name}: no model class named "
+      ~ "'$class-name' is in GLOBAL (looked for {@candidates.join(', ')}). Load it with `use` "
+      ~ "from a model file that binds it into GLOBAL (`GLOBAL::<$class-name> := $class-name;`), "
+      ~ "or pass class-name: when the association name is not the class name "
+      ~ "(for example `belongs-to: manager => %(class-name => 'Employee')`).";
+  }
+
+  method !with-underscored-foreign-key(Str:D $name, \spec) {
+    return spec unless $name.contains('-');
+    return spec if self.assoc-spec-has(spec, 'foreign-key') || self.assoc-spec-value(spec, 'polymorphic');
+
+    my %spec = spec ~~ Pair | Map ?? spec !! ();
+    %spec<foreign-key> = $name.trans('-' => '_') ~ '_id';
+
+    %spec
   }
 
   method table-name {
@@ -935,11 +1039,14 @@ class Model
   }
 
   method fkey-name {
-    %fkey-name-of{self.^name} //= self.WHAT.raku.lc ~ '_id';
+    %fkey-name-of{self.^name} //= Text::Inflector.foreign-key(self.^name);
   }
 
   method belongs-to(*%rest) {
-    %!belongs-tos.push: %rest.keys.first => %rest.values.first;
+    my $name = %rest.keys.first;
+    my $spec = self!with-assoc-class('belongs-to', $name, %rest.values.first);
+
+    %!belongs-tos.push: $name => self!with-underscored-foreign-key($name, $spec);
   }
 
   method is-polymorphic-assoc(Str:D $name --> Bool) {
@@ -982,7 +1089,9 @@ class Model
   }
 
   method has-many(*%rest) {
-    %!has-manys.push: %rest.keys.first => %rest.values.first;
+    my $name = %rest.keys.first;
+
+    %!has-manys.push: $name => self!with-assoc-class('has-many', $name, %rest.values.first);
   }
 
   method assoc-extension-role(\spec) {
@@ -1069,7 +1178,9 @@ class Model
   }
 
   method has-one(*%rest) {
-    %!has-ones.push: %rest.keys.first => %rest.values.first;
+    my $name = %rest.keys.first;
+
+    %!has-ones.push: $name => self!with-assoc-class('has-one', $name, %rest.values.first);
   }
 
   method has-one-attrs(Str:D $name, %attrs) {
@@ -1105,7 +1216,9 @@ class Model
   }
 
   method has-and-belongs-to-many(*%rest) {
-    %!habtms.push: %rest.keys.first => %rest.values.first;
+    my $name = %rest.keys.first;
+
+    %!habtms.push: $name => self!with-assoc-class('has-and-belongs-to-many', $name, %rest.values.first);
   }
 
   method habtm-join-table(Str:D $assoc --> Str) {
@@ -1678,7 +1791,7 @@ class Model
 
       next if $present;
 
-      my $field = self.get-field($name);
+      my $field = self.get-field($name) // self.get-field(self.assoc-fkey-from-spec($spec, $name ~ '_id'));
       next unless $field;
       my $message = Message.build(:default('must exist'), :type<required>, :obj(self), :$field);
       my $e = Error.new(:$field, :$message, :type<blank>);
@@ -1921,8 +2034,11 @@ class Model
   # Which associations a model declares as belongs-to is fixed by the class, so
   # the names are derived from one instance and kept, rather than by building a
   # throwaway record for every relation that has to normalize its params.
-  method belongs-to-names(--> Set) {
-    %belongs-to-names-of{self.^name} //= self.new(:id(0)).belongs-tos.keys.Set;
+  method belongs-to-foreign-keys(--> Map) {
+    %belongs-to-foreign-keys-of{self.^name} //= do {
+      my $stub = self.new(:id(0));
+      $stub.belongs-tos.map({ .key => $stub.assoc-fkey-from-spec(.value, .key ~ '_id') }).Map
+    }
   }
 
   method field-map(--> Hash) {

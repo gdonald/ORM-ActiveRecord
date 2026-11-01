@@ -74,11 +74,13 @@ role ModelReflection is export {
       ?? $name ~ '_id'
       !! Utils.base-name($probe.fkey-name);
 
-    my $klass = $polymorphic ?? Mu !! $probe.assoc-class-from-spec($spec);
-
     my $through = $probe.assoc-spec-has($spec, 'through')
       ?? ~$probe.assoc-spec-value($spec, 'through')
       !! Str;
+
+    my $klass = $polymorphic
+      ?? Mu
+      !! self!reflect-class($probe, $macro, $name, $spec, $through);
 
     my $source = $through.defined
       ?? $probe.assoc-source-name($spec, Utils.singular($name))
@@ -94,6 +96,17 @@ role ModelReflection is export {
       primary-key => $probe.assoc-pkey-from-spec($spec, 'id'),
       :$polymorphic, :$through, :$source,
     );
+  }
+
+  method !reflect-class($probe, Str:D $macro, Str:D $name, $spec, Str $through) {
+    return $probe.assoc-class-from-spec($spec)
+      if !$through.defined || $probe.assoc-spec-has($spec, 'class') || $probe.assoc-spec-has($spec, 'class-name');
+
+    my $through-key = $probe.assoc-spec-value($spec, 'through').key;
+
+    $macro eq 'has-one'
+      ?? $probe.get-through-class-has-one($name, $through-key, $spec)
+      !! $probe.get-through-class($name, $through-key, $spec)
   }
 
   # ---- columns / attributes ----

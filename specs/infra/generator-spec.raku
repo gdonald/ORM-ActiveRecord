@@ -17,8 +17,12 @@ describe 'code generators', {
       expect($gen.kebabize('AddEmailToUsers')).to.eq('add-email-to-users');
     }
 
-    it 'tableizes with the ORM naive plural rule', {
-      expect($gen.tableize('Person')).to.eq('persons');
+    it 'tableizes an irregular name with the inflector', {
+      expect($gen.tableize('Person')).to.eq('people');
+    }
+
+    it 'tableizes a consonant y name with the inflector', {
+      expect($gen.tableize('Category')).to.eq('categories');
     }
 
     it 'tableizes a camel-case name to snake_case plural', {
@@ -31,14 +35,22 @@ describe 'code generators', {
   }
 
   context 'model rendering', {
-    let(:model, { $gen.render-model('User', ['name:string', 'role:references']) });
+    let(:model, { $gen.render-model('User', ['name:string', 'role:references', 'blog_post:references']) });
 
     it 'renders the model class', {
       expect(model.contains('class User is Model')).to.be-truthy;
     }
 
-    it 'turns a reference field into a belongs-to', {
-      expect(model.contains("self.belongs-to: role => class-name => 'Role'")).to.be-truthy;
+    it 'turns a reference field into a belongs-to without a class name', {
+      expect(model.contains('self.belongs-to: :role;')).to.be-truthy;
+    }
+
+    it 'turns an underscored reference field into a dashed belongs-to', {
+      expect(model.contains('self.belongs-to: :blog-post;')).to.be-truthy;
+    }
+
+    it 'leaves class-name out of the belongs-to declarations', {
+      expect(model.contains('class-name')).to.be-falsy;
     }
 
     it 'registers the class in GLOBAL', {

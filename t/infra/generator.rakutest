@@ -3,7 +3,7 @@ use lib 'lib';
 use ORM::ActiveRecord::Schema::Generator;
 use Test;
 
-plan 33;
+plan 36;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -17,15 +17,18 @@ my $gen = Generator.new(:root($tmp.Str), :stamp('20260615120000'));
 is $gen.classize('blog_post'), 'BlogPost', 'classize underscores to PascalCase';
 is $gen.classize('user'),      'User',     'classize lower to PascalCase';
 is $gen.kebabize('AddEmailToUsers'), 'add-email-to-users', 'kebabize camel to kebab';
-is $gen.tableize('Person'),    'persons',  'tableize matches the ORM naive plural rule';
+is $gen.tableize('Person'),    'people',     'tableize uses the irregular plural from the inflector';
+is $gen.tableize('Category'),  'categories', 'tableize turns a consonant y into ies';
 is $gen.tableize('PageTag'),   'page_tags', 'tableize snake_cases a camel-case name';
 is $gen.tableize('blog_post'), 'blog_posts', 'tableize snake_cases an underscored name';
 
 # model rendering
-my $model = $gen.render-model('User', ['name:string', 'role:references']);
+my $model = $gen.render-model('User', ['name:string', 'role:references', 'blog_post:references']);
 ok $model.contains('class User is Model'),                          'model renders the class';
 ok $model.contains('submethod BUILD'),                             'model renders a BUILD block';
-ok $model.contains("self.belongs-to: role => class-name => 'Role'"), 'reference field becomes belongs-to';
+ok $model.contains('self.belongs-to: :role;'),                     'reference field becomes a belongs-to without a class name';
+ok $model.contains('self.belongs-to: :blog-post;'),                'underscored reference field becomes a dashed belongs-to';
+nok $model.contains('class-name'),                                 'belongs-to declarations leave class-name out';
 ok $model.contains('GLOBAL::<User> := User;'),                     'model registers the class in GLOBAL';
 
 # create-table migration rendering

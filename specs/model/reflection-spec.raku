@@ -19,7 +19,7 @@ class ReflAuthor is Model {
 class ReflBook is Model {
   method table-name { 'refl_books' }
   submethod BUILD {
-    self.belongs-to: reflauthor => class-name => 'ReflAuthor';
+    self.belongs-to: :refl-author;
     self.belongs-to: cover      => :polymorphic;
   }
 }
@@ -37,7 +37,7 @@ $adapter.ddl-create-table('refl_authors', [ name => { :string, limit => 32 }, ro
 $adapter.ddl-add-timestamps('refl_authors');
 $adapter.ddl-create-table('refl_books', [
   title      => { :string, limit => 64 },
-  reflauthor => { :reference },
+  refl_author => { :reference },
   cover      => { :reference, :polymorphic },
 ]);
 
@@ -60,7 +60,7 @@ describe 'association reflection', {
     it 'resolves the target class and foreign key', {
       aggregate-failures {
         expect(reflection.klass === ReflBook).to.be-truthy;
-        expect(reflection.foreign-key).to.eq('reflauthor_id');
+        expect(reflection.foreign-key).to.eq('refl_author_id');
       }
     }
   }

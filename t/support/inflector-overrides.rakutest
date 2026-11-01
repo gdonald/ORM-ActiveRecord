@@ -1,0 +1,14 @@
+use v6.d;
+use lib 'lib';
+use Test;
+use Text::Inflector;
+use ORM::ActiveRecord::Support::Utils;
+
+plan 2;
+
+Text::Inflector.inflections: {
+  .irregular('cow', 'kine');
+}
+
+is Utils.tableize('Cow'), 'kine',         'a process-wide override changes the table name of a model class';
+is Utils.to-foreign-key('kine'), 'cow_id', 'a process-wide override changes the foreign key built from a table name';

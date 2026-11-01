@@ -398,7 +398,7 @@ role CollectionProxy is export {
     return unless @ids.elems;
 
     my $owner-key  = self!through-owner-key;
-    my $target-key = Utils.to-foreign-key($!assoc-name);
+    my $target-key = self!through-target-key;
     my $slots      = @ids.map({ '?' }).join(', ');
 
     self.db.exec-stmt(self.db.sanitize-sql-array([
@@ -435,7 +435,7 @@ role CollectionProxy is export {
     my $join-table = self!through-join-table;
     return unless $join-table;
     my $owner-key  = self!through-owner-key;
-    my $target-key = Utils.to-foreign-key($!assoc-name);
+    my $target-key = self!through-target-key;
     self.db.delete-records(
       :table($join-table),
       :where(%($owner-key => self!owner-pkey-val, $target-key => $record.id)),
@@ -450,7 +450,7 @@ role CollectionProxy is export {
     $record.save if $record.id == 0;
     my $join-table = self!through-join-table;
     my $owner-key  = self!through-owner-key;
-    my $target-key = Utils.to-foreign-key($!assoc-name);
+    my $target-key = self!through-target-key;
     my $stmt = self.db.sanitize-sql-array([
       "INSERT INTO $join-table ($owner-key, $target-key) VALUES (?, ?)",
       self!owner-pkey-val, $record.id,
@@ -465,10 +465,14 @@ role CollectionProxy is export {
   method !through-join-table(--> Str) {
     return '' unless self!is-through;
     my $v = $!owner.assoc-spec-value($!spec, 'through');
-    given $v {
-      when Pair { return ~$v.key }
-      default   { return ~$v }
-    }
+
+    $!owner.through-table($v ~~ Pair ?? ~$v.key !! ~$v)
+  }
+
+  method !through-target-key(--> Str) {
+    $!target-class === Mu
+      ?? Utils.to-foreign-key($!assoc-name.trans('-' => '_'))
+      !! Utils.to-foreign-key(Utils.table-name($!target-class))
   }
 
   method !through-owner-key(--> Str) {

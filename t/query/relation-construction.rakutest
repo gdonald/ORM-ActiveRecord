@@ -19,21 +19,21 @@ sub sql-of(&block) {
   @sql;
 }
 
-ok  Page.belongs-to-names{'user'},          'belongs-to-names names a plain belongs-to';
-ok  Page.belongs-to-names{'autosave-user'}, 'belongs-to-names names a second belongs-to on the same class';
-nok Page.belongs-to-names{'nonesuch'},      'belongs-to-names leaves out a name the class does not declare';
-is  User.belongs-to-names.elems, 0,         'belongs-to-names is empty for a class that declares none';
+is  Page.belongs-to-foreign-keys{'user'}, 'user_id',          'belongs-to-foreign-keys maps a plain belongs-to to its conventional column';
+is  Page.belongs-to-foreign-keys{'autosave-user'}, 'user_id', 'belongs-to-foreign-keys maps a belongs-to with a foreign-key option to that column';
+nok Page.belongs-to-foreign-keys{'nonesuch'}:exists,         'belongs-to-foreign-keys leaves out a name the class does not declare';
+is  User.belongs-to-foreign-keys.elems, 0,                   'belongs-to-foreign-keys is empty for a class that declares none';
 
-my $names = Page.belongs-to-names;
-ok Page.belongs-to-names === $names, 'belongs-to-names hands back the same set on a repeated call';
+my $foreign-keys = Page.belongs-to-foreign-keys;
+ok Page.belongs-to-foreign-keys === $foreign-keys, 'belongs-to-foreign-keys hands back the same map on a repeated call';
 
 is Page.where({ user => 7 }).where-values{'user_id'}, 7,
   'a belongs-to name is still rewritten to its foreign key in a where clause';
 
-# The belongs-to names of a class are derived from one instance the first time
-# any relation needs them, so warm them before measuring what building a
+# The belongs-to foreign keys of a class are derived from one instance the first
+# time any relation needs them, so warm them before measuring what building a
 # relation costs.
-Page.belongs-to-names;
+Page.belongs-to-foreign-keys;
 DB.shared.adapter.clear-schema-cache;
 
 is sql-of({ Page.all }).elems, 0, 'building a relation queries nothing';

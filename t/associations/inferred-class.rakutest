@@ -1,0 +1,135 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use SpecHelpers;
+use Models::Account;
+use Models::Picture;
+use Models::Page;
+use Inferred;
+use Test;
+
+plan 46;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+clean-shared-tables;
+LEAVE clean-shared-tables;
+
+# belongs-to and has-many
+my $user = Inferred::User.create({fname => 'Greg', lname => 'Donald'});
+my $page = Inferred::Page.create({:$user, name => 'Raku'});
+
+ok Inferred::Page.reflect-on-association('user').klass === Inferred::User,  'belongs-to resolves the class from the singular name';
+is Inferred::Page.find($page.id).user.id, $user.id,                          'belongs-to loads the parent row';
+ok Inferred::User.reflect-on-association('pages').klass === Inferred::Page,  'has-many resolves the class from the plural name';
+is Inferred::User.find($user.id).pages.map(*.id).List, ($page.id,),          'has-many loads the child rows';
+
+# has-one
+my $account = Account.create({name => 'Main'});
+my $profile = Inferred::Profile.create({:$user, :$account, bio => 'Raku'});
+
+ok Inferred::User.reflect-on-association('profile').klass === Inferred::Profile, 'has-one resolves the class from the singular name';
+is Inferred::User.find($user.id).profile.id, $profile.id,                        'has-one loads the child row';
+
+# has-one through
+ok Inferred::User.reflect-on-association('account').klass === Account, 'has-one through resolves the class through the intermediate model';
+is Inferred::User.find($user.id).account.id, $account.id,              'has-one through loads the row';
+
+# has-many through
+my $magazine = Inferred::Magazine.create({title => 'Mad'});
+Inferred::Subscription.create({:$user, :$magazine});
+
+ok Inferred::User.reflect-on-association('magazines').klass === Inferred::Magazine, 'has-many through resolves the class through the join model';
+is Inferred::User.find($user.id).magazines.map(*.id).List, ($magazine.id,),         'has-many through loads the rows';
+
+# has-many through a dashed join association
+my $tag-cart = Inferred::Cart.create({name => 'Tagged'});
+my $cart-tag = Inferred::Tag.create({name => 'raku'});
+Inferred::CartTag.create({:cart($tag-cart), :tag($cart-tag)});
+
+ok Inferred::Cart.reflect-on-association('tags').klass === Inferred::Tag,     'a dashed through association resolves the class through the join model';
+is Inferred::Cart.find($tag-cart.id).tags.map(*.id).List, ($cart-tag.id,),    'a dashed through association reads the rows from the join model table';
+is Inferred::Cart.joins(:tags).count, 1,       'a dashed through association joins through the join model table';
+
+Inferred::Cart.find($tag-cart.id).tags.delete($cart-tag);
+is Inferred::CartTag.where({cart_id => $tag-cart.id}).count, 0,               'deleting from a dashed through association removes the join row';
+
+$tag-cart.tags.push($cart-tag);
+is Inferred::CartTag.where({cart_id => $tag-cart.id, tag_id => $cart-tag.id}).count, 1, 'adding to a dashed through association writes a join row';
+
+# has-and-belongs-to-many
+my $post = Inferred::Post.create({title => 'Hello'});
+my $tag  = Inferred::Tag.create({name => 'raku'});
+$post.add-tag($tag);
+
+ok Inferred::Post.reflect-on-association('tags').klass === Inferred::Tag, 'has-and-belongs-to-many resolves the class from the plural name';
+is $post.tags.map(*.id).List, ($tag.id,),                                 'has-and-belongs-to-many loads the linked rows';
+
+# has-many as a polymorphic owner
+$post.pictures.create({name => 'cover'});
+
+ok Inferred::Post.reflect-on-association('pictures').klass === Picture, 'has-many as resolves the class from the plural name';
+is $post.pictures.map(*.attrs<name>).List, ('cover',),                  'has-many as loads the rows';
+
+# multi-word names
+my $cart      = Inferred::Cart.create({name => 'First'});
+my $line-item = Inferred::LineItem.create({:$cart, name => 'Widget'});
+my $note      = Inferred::LineItemNote.create({:$line-item, body => 'Fragile'});
+
+ok Inferred::Cart.reflect-on-association('line-items').klass === Inferred::LineItem,   'a dashed plural name resolves a camel-case class';
+ok Inferred::LineItemNote.reflect-on-association('line-item').klass === Inferred::LineItem, 'a dashed singular name resolves a camel-case class';
+is Inferred::Cart.find($cart.id).line-items.map(*.id).List, ($line-item.id,),          'a dashed has-many loads the child rows';
+is $note.attrs<line_item_id>, $line-item.id,                                             'a dashed belongs-to stores an underscored foreign key column';
+is Inferred::LineItemNote.find($note.id).line-item.id, $line-item.id,                    'a dashed belongs-to loads the parent row';
+is Inferred::LineItemNote.where({:$line-item}).count, 1,                                   'a dashed belongs-to finds rows in a where clause';
+
+my $orphan-note = Inferred::LineItemNote.new(:id(0));
+$orphan-note.is-valid;
+like $orphan-note.errors.full-messages.join(' '), /'must exist'/,                          'a dashed belongs-to requires its parent';
+is Inferred::LineItemNote.reflect-on-association('line-item').foreign-key, 'line_item_id', 'a dashed belongs-to reports the underscored foreign key';
+is Inferred::LineItem.reflect-on-association('line-item-notes').foreign-key, 'line_item_id', 'a multi-word owner builds its foreign key from the snake_cased class name';
+is Inferred::LineItem.find($line-item.id).line-item-notes.map(*.id).List, ($note.id,),   'a multi-word owner loads its child rows';
+
+# irregular plurals
+my $person = Inferred::Person.create({username => 'greg'});
+
+ok Inferred::Cart.reflect-on-association('people').klass === Inferred::Person,       'people resolves Person';
+ok Inferred::Cart.reflect-on-association('categories').klass === Inferred::Category, 'categories resolves Category';
+is Inferred::Person.find($person.id).attrs<username>, 'greg',                         'an irregular model uses its irregular plural table';
+
+# a class loaded after the first instance
+Inferred::LateOwner.new(:id(0));
+GLOBAL::<LateTarget> := LateTarget;
+ok Inferred::LateOwner.reflect-on-association('late-target').klass === LateTarget,
+  'a class loaded after the first instance is found when the association is used';
+
+# the owner package and explicit classes
+ok Inferred::User.reflect-on-association('pages').klass === Inferred::Page,   'the owner package is searched before GLOBAL';
+ok Inferred::Profile.reflect-on-association('account').klass === Account,     'the lookup falls back to GLOBAL when the package has no such class';
+ok Inferred::Page.reflect-on-association('author').klass === Inferred::User,  'a class given by name wins over the inferred class';
+ok Inferred::Page.reflect-on-association('writer').klass === Inferred::User,  'a class given as a type wins over the inferred class';
+
+# a name with no matching class
+my $role-named = Inferred::RoleNamed.new(:id(0));
+ok $role-named.defined, 'a model with an unresolved association still builds';
+my $role-named-message = (try { $role-named.manager; '' }) // $!.message;
+
+like $role-named-message, /'belongs-to \'manager\''/, 'the error names the association';
+like $role-named-message, /'Inferred::Manager, Manager'/, 'the error names the classes it looked for';
+like $role-named-message, /'Load it with `use`'/,         'the error says to load the class with use';
+like $role-named-message, /'GLOBAL::<Manager> := Manager;'/, 'the error shows the GLOBAL binding a model file needs';
+like $role-named-message, /'class-name'/,                 'the error says to pass class-name for a role name';
+
+my $underscored-message = (try { Inferred::Underscored.new(:id(0)).line_items; '' }) // $!.message;
+like $underscored-message, /'\'Line_item\''/, 'an underscore is part of the word';
+
+# later instances of a model class read the class the first instance resolved
+Inferred::CountedCart.new(:id(0));
+Inferred.WHO<CountedItem>:delete;
+is Inferred::CountedCart.new(:id(0)).has-manys<counted-items><class>.^name, 'Inferred::CountedItem',
+  'a later instance reads the class the first instance resolved';
+
+await (^8).map({ start { Inferred::ConcurrentCart.new(:id(0)) } });
+Inferred.WHO<ConcurrentItem>:delete;
+is Inferred::ConcurrentCart.new(:id(0)).has-manys<concurrent-items><class>.^name, 'Inferred::ConcurrentItem',
+  'concurrent first instances resolve the class once for later instances';

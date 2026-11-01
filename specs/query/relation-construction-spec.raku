@@ -8,27 +8,27 @@ use Models::User;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-describe 'Model.belongs-to-names, the declared belongs-to associations of a class', {
-  it 'names a plain belongs-to', {
-    expect(Page.belongs-to-names{'user'}).to.be-truthy;
+describe 'Model.belongs-to-foreign-keys, the foreign key of each belongs-to on a class', {
+  it 'maps a plain belongs-to to its conventional column', {
+    expect(Page.belongs-to-foreign-keys{'user'}).to.eq('user_id');
   }
 
-  it 'names a second belongs-to on the same class', {
-    expect(Page.belongs-to-names{'autosave-user'}).to.be-truthy;
+  it 'maps a belongs-to with a foreign-key option to that column', {
+    expect(Page.belongs-to-foreign-keys{'autosave-user'}).to.eq('user_id');
   }
 
   it 'leaves out a name the class does not declare', {
-    expect(Page.belongs-to-names{'nonesuch'}).to.be-falsy;
+    expect(Page.belongs-to-foreign-keys{'nonesuch'}:exists).to.be-falsy;
   }
 
   it 'is empty for a class that declares none', {
-    expect(User.belongs-to-names.elems).to.eq(0);
+    expect(User.belongs-to-foreign-keys.elems).to.eq(0);
   }
 
-  it 'hands back the same set on a repeated call', {
-    my $first = Page.belongs-to-names;
+  it 'hands back the same map on a repeated call', {
+    my $first = Page.belongs-to-foreign-keys;
 
-    expect(Page.belongs-to-names === $first).to.be-truthy;
+    expect(Page.belongs-to-foreign-keys === $first).to.be-truthy;
   }
 
   it 'still rewrites a belongs-to name to its foreign key in a where clause', {
@@ -47,11 +47,11 @@ describe 'building a relation', {
     }
   });
 
-  # The belongs-to names of a class are derived from one instance the first
-  # time any relation needs them, so warm them here to keep each example
+  # The belongs-to foreign keys of a class are derived from one instance the
+  # first time any relation needs them, so warm them here to keep each example
   # measuring only what building a relation costs.
   before-each {
-    Page.belongs-to-names;
+    Page.belongs-to-foreign-keys;
     DB.shared.adapter.clear-schema-cache;
   }
 

@@ -12,7 +12,8 @@
     "Log::Async",
     "YAMLish",
     "OpenSSL",
-    "Base64"
+    "Base64",
+    "Text::Inflector:auth<zef:gdonald>"
   ],
   "build-depends": [],
   "test-depends": ["Test", "Test::META", "BDD::Behave:auth<zef:gdonald>"],
@@ -96,7 +97,6 @@
     "ORM::ActiveRecord::Support::Message": "lib/ORM/ActiveRecord/Support/Message.rakumod",
     "ORM::ActiveRecord::Support::Runtime": "lib/ORM/ActiveRecord/Support/Runtime.rakumod",
     "ORM::ActiveRecord::Support::Secrets": "lib/ORM/ActiveRecord/Support/Secrets.rakumod",
-    "ORM::ActiveRecord::Support::Spell": "lib/ORM/ActiveRecord/Support/Spell.rakumod",
     "ORM::ActiveRecord::Support::TestSkip": "lib/ORM/ActiveRecord/Support/TestSkip.rakumod",
     "ORM::ActiveRecord::Support::Utils": "lib/ORM/ActiveRecord/Support/Utils.rakumod",
     "ORM::ActiveRecord::Support::Version": "lib/ORM/ActiveRecord/Support/Version.rakumod",

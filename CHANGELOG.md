@@ -4,6 +4,52 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- An association with no `class:` or `class-name:` finds its class from its
+  name. `belongs-to` and `has-one` camel-case the name (`line-item` uses
+  `LineItem`). `has-many` and `has-and-belongs-to-many` singularize it first
+  (`people` uses `Person`). A dash separates words, and an underscore is part
+  of a word. The owner's package is searched before `GLOBAL`. The class is
+  resolved once per model class, when its first instance is built. Using an
+  association whose class is not loaded dies, naming the association and the
+  classes it tried.
+- A dependency on `Text::Inflector`, which supplies table names, foreign keys,
+  and inferred association classes. `Text::Inflector.inflections: { ... }` adds
+  an app's own `irregular`, `uncountable`, `plural`, `singular`, and `acronym`
+  rules. The rules freeze at the first lookup, and adding a rule after that
+  dies.
+- Reflection reports the class of a `through` association declared without
+  `class-name:`.
+
+### Changed
+
+- Table names come from the inflector. `Category` maps to `categories` instead
+  of `categorys`, `Person` to `people` instead of `persons`, and `LeadStatus`
+  to `lead_statuses` instead of `lead_statuss`. A model whose table uses the
+  old name needs `method table-name`.
+- The foreign key a model owns rows through is its snake-cased class name plus
+  `_id`. `LineItem` uses `line_item_id` instead of `lineitem_id`.
+- A dashed `belongs-to` name stores its foreign key in an underscored column:
+  `belongs-to: :line-item` uses `line_item_id`, not `line-item_id`.
+- `active-record generate model` writes `self.belongs-to: :author;` with no
+  `class-name:`, and turns an underscored reference field into a dashed
+  association (`blog_post:references` becomes `belongs-to: :blog-post`).
+- A `belongs-to` joined with `joins` uses its `foreign-key:` option.
+- A `through` association reads and writes the join model's table, so a dashed
+  join association such as `through => :cart-tags` uses `cart_tags`. A
+  `has-one` through no longer guesses the table by appending `s`.
+- A required `belongs-to` whose foreign key differs from its name (a dashed
+  name or a `foreign-key:` option) reports `must exist` when the key is empty.
+- `where({ assoc => $record })` uses the `belongs-to`'s foreign key column.
+
+### Removed
+
+- `Model.belongs-to-names`. `Model.belongs-to-foreign-keys` maps each
+  `belongs-to` name to its foreign key column.
+
 ## [0.9.5] - 2026-10-30
 
 ### Added

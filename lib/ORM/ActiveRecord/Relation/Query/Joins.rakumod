@@ -63,7 +63,7 @@ role QueryJoins is export {
       }
       my $other-class = $stub.assoc-class-from-spec($stub.belongs-tos{$name});
       my $other-table = Utils.table-name($other-class);
-      my $fkey = $name ~ '_id';
+      my $fkey = $stub.assoc-fkey-from-spec($stub.belongs-tos{$name}, $name ~ '_id');
       self.joins-values.push: "$kind $other-table ON $other-table.id = $base-table.$fkey";
       return ($other-class, $other-table);
     }
@@ -82,7 +82,7 @@ role QueryJoins is export {
           }
           my $other-class = $mid-stub.assoc-class-from-spec($mid-stub.belongs-tos{$singular});
           my $other-table = Utils.table-name($other-class);
-          my $fkey = $singular ~ '_id';
+          my $fkey = $mid-stub.assoc-fkey-from-spec($mid-stub.belongs-tos{$singular}, $singular ~ '_id');
           self.joins-values.push: "$kind $other-table ON $other-table.id = $mid-table.$fkey";
           return ($other-class, $other-table);
         }
@@ -124,7 +124,7 @@ role QueryJoins is export {
           }
           my $other-class = $mid-stub.assoc-class-from-spec($mid-stub.belongs-tos{$source});
           my $other-table = Utils.table-name($other-class);
-          my $fkey = $source ~ '_id';
+          my $fkey = $mid-stub.assoc-fkey-from-spec($mid-stub.belongs-tos{$source}, $source ~ '_id');
           self.joins-values.push: "$kind $other-table ON $other-table.id = $mid-table.$fkey";
           return ($other-class, $other-table);
         }

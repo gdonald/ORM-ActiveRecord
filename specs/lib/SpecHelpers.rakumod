@@ -30,6 +30,10 @@ sub rollback-if-in-transaction is export {
 # behave spec touching shared tables can start from a clean slate without
 # tripping over a sibling spec's leftover rows.
 my @SHARED-TABLE-CLEAN-ORDER = <
+  cart_tags
+  line_item_notes
+  line_items
+  carts
   articles_tags
   posts_tags
   pictures
@@ -52,7 +56,7 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   contacts
   contracts
   clients
-  persons
+  people
   images
   books
   meters

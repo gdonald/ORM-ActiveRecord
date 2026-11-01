@@ -3,6 +3,8 @@
 # (string in, string out) so they test without touching disk; the generate- /
 # destroy- methods write or remove the rendered files under the configured root.
 
+use Text::Inflector;
+
 class Generator is export {
   has Str $.root           = '.';
   has Str $.models-dir     = 'app/models';
@@ -25,7 +27,7 @@ class Generator is export {
   }
 
   method tableize(Str:D $name --> Str) {
-    self.classize($name).subst(/(<[a..z0..9]>)(<[A..Z]>)/, { "$0_$1" }, :g).lc ~ 's';
+    Text::Inflector.tableize(self.classize($name));
   }
 
   method parse-field(Str:D $token --> Hash) {
@@ -191,8 +193,7 @@ class Generator is export {
 
     my $body = @references.elems
       ?? @references.map({
-           my $assoc = .<name>;
-           "    self.belongs-to: $assoc => class-name => '" ~ self.classize($assoc) ~ "';"
+           "    self.belongs-to: :{.<name>.trans('_' => '-')};"
          }).join("\n")
       !! '';
 
