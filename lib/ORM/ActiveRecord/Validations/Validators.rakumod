@@ -341,7 +341,9 @@ class Validators is export {
   method validate-format(Mu:D :$obj, Field:D :$field, Hash:D :$ons, Block:D :$if, Block:D :$unless, Hash:D :$format, Str:D :$msg, Bool:D :$strict, Str:D :$as) {
     my $validate-on = self.validate-on(:$obj, :$ons);
 
-    if $if() && !$unless() && $validate-on && $obj."$field.name()"() !~~ $format<with> {
+    my $value = $obj."$field.name()"();
+
+    if $if() && !$unless() && $validate-on && !($value.defined && $value ~~ $format<with>) {
       my $message = Message.build(:override($msg), :default('is invalid'), :type<invalid>, :$obj, :$field, :$as);
       self.record-error(:$obj, :$field, :$message, :$strict, :type<invalid>);
     }

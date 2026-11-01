@@ -331,8 +331,11 @@ class Model
 
     if $name ~~ /_id$/ && (%!attrs{$name} // 0) == 0 {
       my $base-name = $name.subst(/_id$/, '');
-      return 0 if self.is-polymorphic-assoc($base-name);
-      return self."$base-name"().id;
+
+      if %!belongs-tos{$base-name}:exists {
+        return %!attrs{$name} if self.is-polymorphic-assoc($base-name);
+        return self."$base-name"().id;
+      }
     }
 
     if $name ~~ /^ 'add-' (.+) $/ {
@@ -2198,7 +2201,8 @@ multi sub infix:<==>(Model $a, Model $b --> Bool) is export {
 
   for @keys -> $k {
     given $a.attrs{$k} {
-      when Numeric { return False unless $a.attrs{$k} == $b.attrs{$k} }
+      when !.defined { return False if $b.attrs{$k}.defined }
+      when Numeric {return False unless $a.attrs{$k} == $b.attrs{$k} }
       when Str     { return False unless $a.attrs{$k} eq $b.attrs{$k} }
       default      { say 'Unknown type: ' ~ $a.attrs{$k}.^name; die }
     }

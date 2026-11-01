@@ -56,6 +56,8 @@ my @SHARED-TABLE-CLEAN-ORDER = <
   images
   books
   meters
+  wards
+  guardians
   games
   logs
   manuals

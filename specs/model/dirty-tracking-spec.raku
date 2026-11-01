@@ -201,8 +201,8 @@ group 'dirty tracking', {
       expect($w.previous-changes<name>:exists).to.be-truthy;
     }
 
-    it 'captures [default, new] for insert', {
-      expect($w.previous-changes<name>).to.eq(['', 'I']);
+    it 'captures [unset, new] for insert', {
+      expect($w.previous-changes<name>).to.eq([Str, 'I']);
     }
 
     it 'captures the saved-change pair after update', {

@@ -13,13 +13,13 @@ my $game;
 
 $game = Game.create({year => 1987});
 ok $game.id;
-ok $game.name eq '';
+nok $game.name.defined;
 ok $game.is-invalid;
 nok $game.save;
 
 $game = Game.create({year => 1987});
 ok $game.id;
-ok $game.name eq '';
+nok $game.name.defined;
 ok $game.is-invalid;
 nok $game.save;
 

@@ -123,9 +123,9 @@ describe 'polymorphic belongs-to', {
       expect($bare.attachable.defined).to.be-falsy;
     }
 
-    it 'unset _id stays 0', {
+    it 'unset _id stays NULL', {
       my $bare = Attachment.create({name => 'unattached.txt'});
-      expect($bare.attrs<attachable_id>).to.eq(0);
+      expect($bare.attrs<attachable_id>.defined).to.be-falsy;
     }
   }
 }

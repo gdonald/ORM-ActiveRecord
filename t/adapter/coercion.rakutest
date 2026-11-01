@@ -2,6 +2,7 @@
 use v6.d;
 use lib 'lib';
 use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::DB;
 use Test;
 
 class Contract is Model {
@@ -12,7 +13,7 @@ class Article is Model {
   submethod BUILD { }
 }
 
-plan 25;
+plan 27;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -105,3 +106,7 @@ ok $undef.id, 'a record created with an undefined text value persists';
 nok $undef.attrs<body>.defined, 'the undefined value is left undefined, not coerced';
 
 Article.destroy-all;
+
+my $adapter = DB.shared.adapter;
+is $adapter.coerce-bool('0'), False, 'coerce-bool reads the string "0" as False';
+is $adapter.coerce-bool('1'), True,  'coerce-bool reads the string "1" as True';

@@ -134,6 +134,13 @@ class MySqlAdapter is SqlAdapter is export {
     }
   }
 
+  # MySQL reports a text column's default unquoted, so `DEFAULT 'abc'` reads
+  # back as `abc`. MariaDB quotes it.
+  method column-default-value(Str:D $type, Str:D $default) {
+    return $default if self.coercion-kind($type) eq 'none' && $default !~~ /^ "'" .* "'" $/;
+    callsame;
+  }
+
   method coerce-read($value is copy, Str :$type) {
     return $value without $value;
     return $value unless $type.defined;

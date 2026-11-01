@@ -34,6 +34,25 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   record. The check was skipped for any record with an id, so an update could
   set a value another row already had. The record's own row is left out of the
   lookup.
+- A new record starts a nullable column undefined instead of at `0` or `''`,
+  so an `INSERT` leaves the column out and the row stores NULL. An optional
+  foreign key with a `references` constraint no longer fails to insert as `0`.
+  A NOT NULL column with no default still starts at `0`, `''`, or `False`.
+  Reading a nullable attribute before assigning it now returns an undefined
+  value.
+- A new record starts a column with a literal database default at that
+  default instead of at `0` or `''`, so `DEFAULT 3` is no longer overwritten
+  with `0` on insert. A column whose default is an expression, such as
+  `CURRENT_TIMESTAMP`, starts undefined and the database fills it.
+- `==` between two records compares an undefined attribute without warning
+  `Use of uninitialized value`, and no longer dies on an undefined date or
+  time attribute.
+- `coerce-bool` reads the strings `'0'` and `'1'` as `False` and `True`. Its
+  lookup sets held `IntStr` values that never matched a plain string, so
+  `'0'` fell through to `'0'.so` and read as `True`.
+- Reading an unset `*_id` attribute that has no `belongs-to` of that name
+  returns the attribute instead of dying with `Unknown attribute or method`.
+  An unset polymorphic `*_id` returns its stored value instead of `0`.
 
 ## [0.9.4] - 2026-09-03
 

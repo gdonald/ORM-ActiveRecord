@@ -43,7 +43,7 @@ clear-all;
 {
   my $alice = User.create({fname => 'alice'});
   my $orphan = Article.create({title => 'orphan', body => 'o'});
-  is $orphan.attrs<author_id>, 0, 'orphan article has no author before push';
+  nok $orphan.attrs<author_id>.defined, 'orphan article has no author before push';
 
   $alice.extended-articles.push($orphan);
   my $reloaded = Article.find($orphan.id);

@@ -49,6 +49,38 @@ describe 'default-for-type, the starting value a column type takes', {
   }
 }
 
+describe 'parse-default-literal, the value text of a column default', {
+  if !$adapter.defined {
+    pending 'no adapter configured for the default parser';
+  } else {
+    let(:parser, { $adapter });
+
+    it 'reads a bare number', {
+      expect(parser.parse-default-literal('3')).to.eq('3');
+    }
+
+    it 'reads a negative decimal inside parentheses', {
+      expect(parser.parse-default-literal('(-1.5)')).to.eq('-1.5');
+    }
+
+    it 'unquotes a string and its doubled quotes', {
+      expect(parser.parse-default-literal("'it''s'")).to.eq("it's");
+    }
+
+    it 'drops a type cast after the literal', {
+      expect(parser.parse-default-literal("'draft'::character varying")).to.eq('draft');
+    }
+
+    it 'reads a boolean keyword', {
+      expect(parser.parse-default-literal('FALSE')).to.eq('FALSE');
+    }
+
+    it 'leaves an expression undefined', {
+      expect(parser.parse-default-literal('CURRENT_TIMESTAMP').defined).to.be-falsy;
+    }
+  }
+}
+
 describe 'derived field caches over a table', {
   if !$has-db {
     pending 'no reachable database for the configured adapter';
@@ -148,7 +180,14 @@ describe 'derived field caches over a table', {
       before-each {
         $adapter.get-field-objects(:table('contracts'));
         $adapter.exec('DROP TABLE IF EXISTS fc_widgets');
-        $adapter.ddl-create-table('fc_widgets', [ name => { :string, limit => 64 } ]);
+        $adapter.ddl-create-table('fc_widgets', [
+          name  => { :string, limit => 64 },
+          code  => { :string, limit => 64, null => False },
+          stock => { :integer, null => False, default => 5 },
+          grade => { :string, limit => 8, null => False, default => "it's" },
+          listed => { :boolean, null => False, default => True },
+        ]);
+        $adapter.ddl-add-timestamps('fc_widgets');
       }
 
       after-each {
@@ -169,7 +208,31 @@ describe 'derived field caches over a table', {
       }
 
       it 're-introspects the defaults', {
-        expect(adapter.get-field-defaults(:table('fc_widgets')){'name'}.defined).to.be-truthy;
+        expect(adapter.get-field-defaults(:table('fc_widgets')){'name'}:exists).to.be-truthy;
+      }
+
+      it 'starts a nullable column undefined', {
+        expect(adapter.get-field-defaults(:table('fc_widgets')){'name'}.defined).to.be-falsy;
+      }
+
+      it 'starts a NOT NULL column with no default at the value for its type', {
+        expect(adapter.get-field-defaults(:table('fc_widgets')){'code'}).to.eq('');
+      }
+
+      it 'starts a column with a database default at that default', {
+        expect(adapter.get-field-defaults(:table('fc_widgets')){'stock'}).to.eq(5);
+      }
+
+      it 'starts a string column with a database default at that default', {
+        expect(adapter.get-field-defaults(:table('fc_widgets')){'grade'}).to.eq("it's");
+      }
+
+      it 'starts a boolean column with a database default at that default', {
+        expect(adapter.get-field-defaults(:table('fc_widgets')){'listed'}).to.be-truthy;
+      }
+
+      it 'starts a timestamp column with an expression default undefined', {
+        expect(adapter.get-field-defaults(:table('fc_widgets')){'created_at'}.defined).to.be-falsy;
       }
     }
   }

@@ -15,9 +15,9 @@ describe 'self-referential association', {
     expect($ceo.id).to.be-greater-than(0);
   }
 
-  it 'gives a top-level employee manager_id = 0', {
+  it 'gives a top-level employee no manager_id', {
     my $ceo = Employee.create({name => 'Alice'});
-    expect($ceo.attrs<manager_id>).to.eq(0);
+    expect($ceo.attrs<manager_id>.defined).to.be-falsy;
   }
 
   it 'saves a child with a manager', {

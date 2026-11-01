@@ -14,9 +14,9 @@ describe 'presence on: :update', {
       expect($game.id).to.be-truthy;
     }
 
-    it 'has empty name', {
+    it 'has no name', {
       my $game = Game.create({year => 1987});
-      expect($game.name).to.eq('');
+      expect($game.name.defined).to.be-falsy;
     }
 
     it 'is invalid on a subsequent update', {
@@ -36,9 +36,9 @@ describe 'presence on: :update', {
       expect($game.id).to.be-truthy;
     }
 
-    it 'has empty name', {
+    it 'has no name', {
       my $game = Game.create({year => 1987});
-      expect($game.name).to.eq('');
+      expect($game.name.defined).to.be-falsy;
     }
 
     it 'is invalid on subsequent check', {

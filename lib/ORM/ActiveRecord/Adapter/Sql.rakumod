@@ -58,10 +58,22 @@ class SqlAdapter
   method get-field-defaults(Str:D :$table --> Hash) {
     return %!field-defaults-cache{$table} if %!field-defaults-cache{$table}:exists;
 
+    my %details = self.column-details(:$table).map({ .<name> => $_ });
+
     my %defaults;
     for self.get-field-objects(:$table) -> $field {
       next if $field.name eq 'id';
-      %defaults{$field.name} = self.default-for-type($field.type);
+
+      my $type-default = self.default-for-type($field.type);
+      my %detail = %details{$field.name} // %();
+
+      %defaults{$field.name} = do if %detail<default>.defined {
+        self.column-default-value($field.type, %detail<default>) // $type-default.WHAT;
+      } elsif %detail<null> {
+        $type-default.WHAT;
+      } else {
+        $type-default;
+      }
     }
 
     %!field-defaults-cache{$table} = %defaults;
@@ -105,8 +117,8 @@ class SqlAdapter
 
   # The strings each database spells a boolean with. A `Set` rather than a
   # chain of `|`, which allocated a Junction per value read.
-  my constant TRUE-TEXT  = set <t true 1 y yes>;
-  my constant FALSE-TEXT = set <f false 0 n no>;
+  my constant TRUE-TEXT  = set <t true 1 y yes>».Str;
+  my constant FALSE-TEXT = set <f false 0 n no>».Str;
 
   method coerce-bool($value) {
     return $value if $value ~~ Bool;
@@ -125,6 +137,31 @@ class SqlAdapter
       when /timestamp|^date|^time/ { DateTime }
       default { die 'Unknown field type: ' ~ $type }
     }
+  }
+
+  # The value a column's database default gives a new record, or an undefined
+  # value when the default is an expression the database evaluates on insert,
+  # such as CURRENT_TIMESTAMP or nextval().
+  method column-default-value(Str:D $type, Str:D $default) {
+    my $literal = self.parse-default-literal($default);
+    return Any without $literal;
+
+    given self.coercion-kind($type) {
+      when 'bool' { self.coerce-bool($literal) }
+      default     { self.coerce-read($literal, :$type) }
+    }
+  }
+
+  method parse-default-literal(Str:D $default --> Str) {
+    my $text = $default.trim;
+    $text .= subst(/ '::' <[\w\s]>+ $/, '') while $text ~~ / '::' <[\w\s]>+ $/;
+    $text = $text.substr(1, *-1).trim while $text ~~ /^ '(' .* ')' $/;
+
+    return $text.substr(1, *-1).subst("''", "'", :g) if $text ~~ /^ "'" .* "'" $/;
+    return $text if $text ~~ /^ '-'? \d+ ['.' \d+]? $/;
+    return $text if $text ~~ /:i ^ [true | false] $/;
+
+    Str;
   }
 
   method column-details(Str:D :$table --> List) {

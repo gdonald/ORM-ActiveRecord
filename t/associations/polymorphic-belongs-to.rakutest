@@ -45,7 +45,7 @@ is $reloaded.attrs<attachable_type>, 'Post', 'attachable_type was updated on upd
 my $bare = Attachment.create({name => 'unattached.txt'});
 ok $bare.id, 'attachment with no polymorphic target saved';
 ok !$bare.attachable.defined, 'unset polymorphic returns Nil';
-is $bare.attrs<attachable_id>, 0, 'unset polymorphic _id stays 0';
+nok $bare.attrs<attachable_id>.defined, 'unset polymorphic _id stays NULL';
 
 Attachment.destroy-all;
 Post.destroy-all;

@@ -59,7 +59,7 @@ describe 'collection proxy', {
     it 'orphan has no author before push', {
       User.create({fname => 'alice'});
       my $orphan = Article.create({title => 'orphan', body => 'o'});
-      expect($orphan.attrs<author_id>).to.eq(0);
+      expect($orphan.attrs<author_id>.defined).to.be-falsy;
     }
 
     it 'push sets the foreign key', {

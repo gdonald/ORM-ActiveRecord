@@ -94,7 +94,7 @@ plan 49;
   my $w = Widget.build({ name => 'I', qty => 4 });
   $w.save;
   ok $w.previous-changes<name>:exists,      'previous-changes set after insert';
-  is-deeply $w.previous-changes<name>, ['', 'I'], 'insert: [default, new]';
+  is-deeply $w.previous-changes<name>, [Str, 'I'], 'insert: [unset, new]';
 
   $w.name = 'J';
   $w.save;

@@ -2,6 +2,7 @@ use lib 'lib';
 use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::DB;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -190,5 +191,17 @@ describe 'a blank string assigned to a non-text column', {
       my $undef = Article.create({ title => 'Undef Body', body => Str });
       expect($undef.attrs<body>.defined).to.be-falsy;
     }
+  }
+}
+
+describe 'coerce-bool on boolean text', {
+  let(:adapter, { DB.shared.adapter });
+
+  it 'reads the string "0" as False', {
+    expect(adapter.coerce-bool('0')).to.eq(False);
+  }
+
+  it 'reads the string "1" as True', {
+    expect(adapter.coerce-bool('1')).to.eq(True);
   }
 }

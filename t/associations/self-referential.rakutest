@@ -10,7 +10,7 @@ plan 15;
 
 my $ceo = Employee.create({name => 'Alice'});
 ok $ceo.id, 'ceo saved without a manager';
-is $ceo.attrs<manager_id>, 0, 'top-level employee has manager_id = 0';
+nok $ceo.attrs<manager_id>.defined, 'top-level employee has no manager_id';
 
 my $vp1 = Employee.create({name => 'Bob',     manager => $ceo});
 my $vp2 = Employee.create({name => 'Carol',   manager => $ceo});

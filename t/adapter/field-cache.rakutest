@@ -19,12 +19,19 @@ if $adapter.defined {
   nok $adapter.default-for-type('timestamp without time zone').defined, 'a timestamp column starts undefined';
   nok $adapter.default-for-type('date').defined,                       'a date column starts undefined';
   dies-ok { $adapter.default-for-type('gobbledygook') },               'an unrecognized column type is refused';
+
+  is  $adapter.parse-default-literal('3'), '3',                               'a default literal reads a bare number';
+  is  $adapter.parse-default-literal('(-1.5)'), '-1.5',                       'a default literal reads a negative decimal inside parentheses';
+  is  $adapter.parse-default-literal("'it''s'"), "it's",                      'a default literal unquotes a string and its doubled quotes';
+  is  $adapter.parse-default-literal("'draft'::character varying"), 'draft',  'a default literal drops a type cast';
+  is  $adapter.parse-default-literal('FALSE'), 'FALSE',                       'a default literal reads a boolean keyword';
+  nok $adapter.parse-default-literal('CURRENT_TIMESTAMP').defined,            'a default literal leaves an expression undefined';
 } else {
-  skip 'no adapter configured for the type-default mapping', 8;
+  skip 'no adapter configured for the type-default mapping', 14;
 }
 
 unless $has-db {
-  skip 'no reachable database for the configured adapter', 13;
+  skip 'no reachable database for the configured adapter', 19;
   done-testing;
   exit 0;
 }
@@ -82,10 +89,25 @@ Notifications.unsubscribe($sub);
 
 # A schema change clears every derived cache, so the next read re-introspects.
 $adapter.exec('DROP TABLE IF EXISTS fc_widgets');
-$adapter.ddl-create-table('fc_widgets', [ name => { :string, limit => 64 } ]);
+$adapter.ddl-create-table('fc_widgets', [
+  name  => { :string, limit => 64 },
+  code  => { :string, limit => 64, null => False },
+  stock => { :integer, null => False, default => 5 },
+  grade => { :string, limit => 8, null => False, default => "it's" },
+  listed => { :boolean, null => False, default => True },
+]);
+$adapter.ddl-add-timestamps('fc_widgets');
 END { try $adapter.exec('DROP TABLE IF EXISTS fc_widgets') if $has-db }
 
 ok $adapter.get-field-map(:table('fc_widgets')){'name'}.defined,
   'a schema change forces the derived caches to re-introspect';
+
+my %widget-defaults = $adapter.get-field-defaults(:table('fc_widgets'));
+nok %widget-defaults{'name'}.defined, 'a nullable column starts undefined';
+is  %widget-defaults{'code'}, '',      'a NOT NULL column with no default starts at the value for its type';
+is  %widget-defaults{'stock'}, 5,       'a column with a database default starts at that default';
+is  %widget-defaults{'grade'}, "it's",  'a string column with a database default starts at that default';
+ok  %widget-defaults{'listed'},         'a boolean column with a database default starts at that default';
+nok %widget-defaults{'created_at'}.defined, 'a timestamp column with an expression default starts undefined';
 
 done-testing;
