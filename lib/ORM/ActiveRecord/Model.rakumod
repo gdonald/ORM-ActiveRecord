@@ -304,6 +304,8 @@ class Model
       with self.enum-attr-for-value($name) -> $attr {
         return self.where({ $attr => self.enum-backing($attr, $name) });
       }
+
+      self!method-not-found($name);
     }
 
     if $name ~~ /^ 'is-saved-change-to-' (.+) $/ {
@@ -694,7 +696,11 @@ class Model
 
     return if $name ~~ /_confirmation/;
 
-    say 'Unknown attribute or method "' ~ $name ~ '"'; die;
+    self!method-not-found($name);
+  }
+
+  method !method-not-found(Str:D $name) {
+    X::Method::NotFound.new(invocant => self, method => $name, typename => self.^name).throw;
   }
 
   method assoc-source-name(\spec, Str:D $default --> Str) {

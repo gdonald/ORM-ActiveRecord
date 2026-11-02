@@ -49,6 +49,10 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `blank` error to each such column left undefined, with or without
   validation, and sends no statement. `save-bang` raises `X::RecordInvalid`.
   Clearing such a column on a saved record is refused the same way.
+- Calling a method a model does not define raises `X::Method::NotFound`,
+  naming the method and the model, on the model class and on an instance.
+  The class form died with a type object error, and the instance form printed
+  `Unknown attribute or method` and died with `Died`.
 
 ### Removed
 

@@ -1,0 +1,26 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::Model;
+use Defaults::NullableColumns;
+use Test;
+
+plan 6;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+throws-like { Ward.for-tenant(1) }, X::Method::NotFound,
+  'an unknown method on the model class raises X::Method::NotFound';
+
+try Ward.for-tenant(1);
+is $!.method, 'for-tenant', 'the class error names the method';
+is $!.typename, 'Defaults::NullableColumns::Ward', 'the class error names the model';
+
+my $ward = Ward.build({ name => 'Ada', slot => 1, code => 'W1' });
+
+throws-like { $ward.for-tenant(1) }, X::Method::NotFound,
+  'an unknown method on a model instance raises X::Method::NotFound';
+
+try $ward.for-tenant(1);
+is $!.method, 'for-tenant', 'the instance error names the method';
+is $!.typename, 'Defaults::NullableColumns::Ward', 'the instance error names the model';
