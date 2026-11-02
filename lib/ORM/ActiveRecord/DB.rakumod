@@ -35,6 +35,10 @@ class DB is export {
   my Lock $shared-lock = Lock.new;
   my Bool $legacy-warned = False;
 
+  # Connection names with an open transactional test, replaced wholesale on
+  # write for the same lock-free read as `$shared`.
+  my $test-transaction-names = Set.new;
+
   has Adapter $.adapter handles *;
   has Str $.name = default-connection();
   has %!config;
@@ -121,15 +125,27 @@ class DB is export {
   }
 
   # The connection the current context should use, resolved the one canonical
-  # way: an async worker's bound connection first, then the request-scoped
-  # registry (which hands out one pooled connection per request), and only
-  # outside a request the process-wide shared connection. Model, Query, and
-  # association proxies route through this; app-level raw SQL should too, so it
-  # never drives the shared connection from many request threads at once.
+  # way: an async worker's bound connection first, then the shared connection
+  # while a transactional test is open on it, then the request-scoped registry
+  # (which hands out one pooled connection per request), and only outside a
+  # request the process-wide shared connection. Model, Query, and association
+  # proxies route through this; app-level raw SQL should too, so it never drives
+  # the shared connection from many request threads at once.
   method current(Str:D :$name = default-connection() --> DB) {
     return $*AR-DB-OVERRIDE if $*AR-DB-OVERRIDE.defined;
+    return DB.shared(name => $name) if $test-transaction-names{$name};
     with $*AR-CONNECTION-REGISTRY { return .db-for($name) }
     DB.shared(name => $name);
+  }
+
+  method begin-test-transaction(Str:D :$name = default-connection(), Str :$isolation) {
+    DB.shared(:$name).adapter.open-transaction(:$isolation);
+    $shared-lock.protect: { $test-transaction-names = $test-transaction-names (|) $name }
+  }
+
+  method rollback-test-transaction(Str:D :$name = default-connection()) {
+    $shared-lock.protect: { $test-transaction-names = $test-transaction-names (-) $name }
+    DB.shared(:$name).adapter.force-rollback;
   }
 
   # Test seam: swap a named shared singleton to point at a hand-built DB

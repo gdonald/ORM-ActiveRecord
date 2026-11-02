@@ -16,11 +16,11 @@ use ORM::ActiveRecord::DB;
 #   with-rollback { User.create({ ... }); ... }
 
 sub begin-transactional-test(Str :$isolation) is export {
-  DB.shared.adapter.open-transaction(:$isolation);
+  DB.begin-test-transaction(:$isolation);
 }
 
 sub rollback-transactional-test is export {
-  DB.shared.adapter.force-rollback;
+  DB.rollback-test-transaction;
 }
 
 sub with-rollback(&block) is export {

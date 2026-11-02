@@ -53,6 +53,12 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   naming the method and the model, on the model class and on an instance.
   The class form died with a type object error, and the instance form printed
   `Unknown attribute or method` and died with `Died`.
+- While a transactional test is open, `DB.current` returns the shared
+  connection the test's transaction is on, even with a request's connection
+  registry bound. A request a spec sends inside `with-rollback` now sees the
+  rows the spec created, and the rows the request writes are rolled back with
+  the rest. The request read and wrote on a pooled connection outside the
+  transaction.
 
 ### Removed
 

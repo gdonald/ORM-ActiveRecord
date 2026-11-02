@@ -1,0 +1,37 @@
+use v6.d;
+use lib 'lib';
+use lib 'specs/lib';
+use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Connection::Registry;
+use ORM::ActiveRecord::Testing::Transaction;
+use Defaults::NullableColumns;
+use Test;
+
+plan 3;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+with-rollback {
+  Ward.create({ name => 'Ada', slot => 1, code => 'request-reads-test-row' });
+
+  my $registry = ORM::ActiveRecord::Connection::Registry.new;
+  my $*AR-CONNECTION-REGISTRY = $registry;
+  LEAVE $registry.release-all;
+
+  ok Ward.find-by({ code => 'request-reads-test-row' }),
+    'a request inside a transactional test finds a row the test created';
+
+  is-deeply $registry.checked-out-names, (),
+    'a request inside a transactional test checks no pooled connection out of the registry';
+}
+
+with-rollback {
+  my $registry = ORM::ActiveRecord::Connection::Registry.new;
+  my $*AR-CONNECTION-REGISTRY = $registry;
+  LEAVE $registry.release-all;
+
+  Ward.create({ name => 'Ben', slot => 2, code => 'request-writes-row' });
+}
+
+is Ward.where({ code => 'request-writes-row' }).count, 0,
+  'a row a request writes inside a transactional test is rolled back';
