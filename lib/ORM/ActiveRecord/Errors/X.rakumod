@@ -1,6 +1,14 @@
 
 class X::IrreversibleMigration is Exception is export {}
 
+class X::DuplicateMigrationVersion is Exception is export {
+  has Str $.version;
+  has @.paths;
+  method message {
+    "migrations share version $!version: " ~ @!paths.join(', ');
+  }
+}
+
 class X::RecordInvalid is Exception is export {
   has $.record;
   has @.messages;

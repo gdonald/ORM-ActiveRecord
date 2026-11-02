@@ -59,6 +59,14 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   rows the spec created, and the rows the request writes are rolled back with
   the rest. The request read and wrote on a pooled connection outside the
   transaction.
+- A generated migration gets a version one second after the highest version in
+  `db/migrate` when that version is at or past the current time. Migrations
+  generated within one second shared a version.
+- `migrate` runs every file whose version is not recorded in the `migrations`
+  table. It ran only files with a version above the last one applied, so a file
+  that shared a version or sorted below an applied one was skipped. Two files
+  with one version throw `X::DuplicateMigrationVersion`, naming the version and
+  both paths.
 
 ### Removed
 

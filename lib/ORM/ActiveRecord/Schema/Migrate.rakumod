@@ -107,18 +107,18 @@ class Migrate is export {
     my ($action, $count) = ac[0];
     my $cnt = 0;
 
-    my @files = self.files($!migration-path).sort;
+    my @files = self.migration-files;
     @files .= reverse if $action ~~ 'down';
 
-    for @files -> $path {
-      next unless IO::Path.new($path).basename ~~ /^$<version>=(\d+) '-' $<name>=(.*) \.raku/;
+    my %applied = self.applied-versions.map(* => True);
+
+    for @files -> %file {
       next unless $count == 0 || $cnt < $count;
 
-      my $version = $<version>.Str;
-      my $last = self.last;
-      next unless $action ~~ 'down' && $version == $last || $action ~~ 'up' && $version > $last;
+      my $version = %file<version>;
+      next unless $action ~~ 'down' && %applied{$version} || $action ~~ 'up' && !%applied{$version};
 
-      self.run-migration-file($path, $version, $action);
+      self.run-migration-file(%file<path>, $version, $action);
 
       $cnt++;
     }
@@ -156,13 +156,19 @@ class Migrate is export {
     $!db.commit if $wrap;
   }
 
-  # Every migration file as { version, name, path }, sorted by version.
+  # Every migration file as { version, name, path }, sorted by version. Two
+  # files with one version would leave the second unapplied, so that throws.
   method migration-files(--> List) {
     my @out;
     for self.files($!migration-path).sort -> $path {
       next unless IO::Path.new($path).basename ~~ /^$<version>=(\d+) '-' $<name>=(.*) \.raku/;
       @out.push: %( version => $<version>.Str, name => $<name>.Str, path => $path );
     }
+
+    for @out.classify(*.<version>).sort(*.key) -> (:key($version), :value(@shared)) {
+      X::DuplicateMigrationVersion.new(:$version, paths => @shared.map(*.<path>)).throw if @shared > 1;
+    }
+
     @out.List;
   }
 

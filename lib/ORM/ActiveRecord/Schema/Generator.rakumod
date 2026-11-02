@@ -260,9 +260,28 @@ class Generator is export {
 
   method !timestamp(--> Str) {
     return $!stamp if $!stamp.defined;
-    my $now = DateTime.now(:timezone(0));
+
+    my $now    = DateTime.now(:timezone(0)).truncated-to('second');
+    my $latest = self!latest-migration-time;
+    my $time   = $latest.defined && $latest >= $now ?? $latest.later(:1second) !! $now;
+
     sprintf '%04d%02d%02d%02d%02d%02d',
-      $now.year, $now.month, $now.day, $now.hour, $now.minute, $now.second.Int;
+      $time.year, $time.month, $time.day, $time.hour, $time.minute, $time.second.Int;
+  }
+
+  method !latest-migration-time(--> DateTime) {
+    my $dir = $!root.IO.add($!migrate-dir);
+    return DateTime unless $dir.d;
+
+    my $version = dir($dir).map(*.basename).grep(/^ \d ** 14 '-'/).map(*.substr(0, 14)).max;
+    return DateTime if $version ~~ -Inf;
+
+    DateTime.new(
+      year   => +$version.substr(0, 4),  month  => +$version.substr(4, 2),
+      day    => +$version.substr(6, 2),  hour   => +$version.substr(8, 2),
+      minute => +$version.substr(10, 2), second => +$version.substr(12, 2),
+      timezone => 0,
+    );
   }
 
   method !migration-path(Str:D $kebab --> Str) {

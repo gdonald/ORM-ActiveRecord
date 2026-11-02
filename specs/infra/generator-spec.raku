@@ -125,4 +125,33 @@ describe 'code generators', {
       run 'rm', '-rf', work.Str;
     }
   }
+
+  context 'versioning migrations without a fixed stamp', {
+    let(:work, {
+      my $tmp = $*TMPDIR.add('ar-generator-version-spec-' ~ $*PID);
+      $tmp.mkdir;
+      $tmp;
+    });
+
+    let(:writer, { Generator.new(:root(work.Str)) });
+
+    it 'gives back-to-back migrations different versions', {
+      my $form       = writer.generate-model('Form', ['name:string'])[1].IO.basename.substr(0, 14);
+      my $form-field = writer.generate-model('FormField', ['label:string'])[1].IO.basename.substr(0, 14);
+
+      expect($form-field > $form).to.be-truthy;
+
+      run 'rm', '-rf', work.Str;
+    }
+
+    it 'starts one second after a migration version later than the current time', {
+      work.add('db/migrate').mkdir;
+      work.add('db/migrate/20991231235959-create-reports.raku').spurt('');
+
+      my @paths = writer.generate-migration('AddTitleToReports', ['title:string']);
+      expect(@paths[0].IO.basename).to.eq('21000101000000-add-title-to-reports.raku');
+
+      run 'rm', '-rf', work.Str;
+    }
+  }
 }

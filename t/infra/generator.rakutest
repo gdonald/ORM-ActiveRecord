@@ -3,7 +3,7 @@ use lib 'lib';
 use ORM::ActiveRecord::Schema::Generator;
 use Test;
 
-plan 36;
+plan 38;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -90,3 +90,19 @@ nok $tmp.add('app/models/Account.rakumod').e, 'destroy-model removes the model f
 
 $gen.destroy-validator('Strong');
 nok $tmp.add('app/validators/StrongValidator.rakumod').e, 'destroy-validator removes the validator file';
+
+# versioning migrations without a fixed stamp
+my $versioned = $*TMPDIR.add('ar-generator-version-' ~ $*PID);
+$versioned.mkdir;
+LEAVE { run 'rm', '-rf', $versioned.Str }
+
+my $unstamped = Generator.new(:root($versioned.Str));
+
+my $form       = $unstamped.generate-model('Form', ['name:string'])[1].IO.basename.substr(0, 14);
+my $form-field = $unstamped.generate-model('FormField', ['label:string'])[1].IO.basename.substr(0, 14);
+ok $form-field > $form, 'back-to-back migrations get different versions';
+
+$versioned.add('db/migrate/20991231235959-create-reports.raku').spurt('');
+is $unstamped.generate-migration('AddTitleToReports', ['title:string'])[0].IO.basename,
+  '21000101000000-add-title-to-reports.raku',
+  'a migration version later than the current time is followed one second after it';

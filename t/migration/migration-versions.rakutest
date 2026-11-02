@@ -1,0 +1,50 @@
+use v6.d;
+use lib 'lib';
+use ORM::ActiveRecord::DB;
+use ORM::ActiveRecord::Errors::X;
+use ORM::ActiveRecord::Schema::Migrate;
+use Test;
+
+plan 2;
+
+%*ENV<DISABLE-SQL-LOG> = True;
+
+sub write-empty-migration(IO::Path:D $dir, Str:D $file, Str:D $class) {
+  $dir.add($file).spurt(qq:to/RAKU/);
+    use ORM::ActiveRecord::Schema::Migration;
+
+    class $class is Migration \{
+      method up \{ \}
+      method down \{ \}
+    \}
+    RAKU
+}
+
+my $duplicates = $*TMPDIR.add('ar-migration-duplicates-' ~ $*PID);
+$duplicates.mkdir;
+LEAVE { run 'rm', '-rf', $duplicates.Str }
+
+write-empty-migration($duplicates, '19000101000001-create-forms.raku', 'TestCreateForms');
+write-empty-migration($duplicates, '19000101000001-create-form_fields.raku', 'TestCreateFormFields');
+
+throws-like { Migrate.new(:migration-path($duplicates.Str)).migrate(['up', 0]) },
+  X::DuplicateMigrationVersion, version => '19000101000001',
+  'migrating two files that share a version throws';
+
+my $out-of-order = $*TMPDIR.add('ar-migration-out-of-order-' ~ $*PID);
+$out-of-order.mkdir;
+LEAVE { run 'rm', '-rf', $out-of-order.Str }
+
+my $migrate = Migrate.new(:migration-path($out-of-order.Str));
+$migrate.check-migrations-table;
+
+write-empty-migration($out-of-order, '19000101000003-create-reports.raku', 'TestCreateReports');
+$migrate.migrate(['up', 0]);
+
+write-empty-migration($out-of-order, '19000101000002-create-report_rows.raku', 'TestCreateReportRows');
+$migrate.migrate(['up', 0]);
+
+ok '19000101000002' (elem) $migrate.applied-versions,
+  'a migration with a version below an applied one still runs';
+
+$migrate.migrate(['down', 0]);
