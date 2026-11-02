@@ -12,6 +12,7 @@ class CreateGuardiansAndWards is Migration {
       score       => { :integer },
       tier        => { :integer, null => False, default => 3 },
       slot        => { :integer, null => False },
+      code        => { :string, limit => 64, null => False },
       nickname    => { :string, limit => 64 },
     ];
   }

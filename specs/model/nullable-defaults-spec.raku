@@ -2,6 +2,7 @@ use lib 'lib';
 use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::X;
 use Defaults::NullableColumns;
 
 %*ENV<DISABLE-SQL-LOG> = True;
@@ -13,7 +14,7 @@ describe 'the starting value of a column the caller does not set', {
   }
 
   context 'a nullable integer column', {
-    let(:ward, { Ward.build({ name => 'Ada', slot => 1 }) });
+    let(:ward, { Ward.build({ name => 'Ada', slot => 1, code => 'W1' }) });
 
     it 'starts undefined on a new record', {
       expect(ward.score.defined).to.be-falsy;
@@ -27,7 +28,7 @@ describe 'the starting value of a column the caller does not set', {
   }
 
   context 'a nullable string column', {
-    let(:ward, { Ward.build({ name => 'Ada', slot => 1 }) });
+    let(:ward, { Ward.build({ name => 'Ada', slot => 1, code => 'W1' }) });
 
     it 'stores NULL', {
       ward.save;
@@ -37,7 +38,7 @@ describe 'the starting value of a column the caller does not set', {
   }
 
   context 'a nullable foreign key with a constraint', {
-    let(:ward, { Ward.create({ name => 'Ada', slot => 1 }) });
+    let(:ward, { Ward.create({ name => 'Ada', slot => 1, code => 'W1' }) });
 
     it 'saves without a guardian', {
       expect(ward.is-persisted).to.be-truthy;
@@ -50,7 +51,7 @@ describe 'the starting value of a column the caller does not set', {
 
   context 'a nullable foreign key set by the caller', {
     let(:guardian, { Guardian.create({ name => 'Bea' }) });
-    let(:ward, { Ward.create({ name => 'Ada', slot => 1, guardian_id => guardian.id }) });
+    let(:ward, { Ward.create({ name => 'Ada', slot => 1, code => 'W1', guardian_id => guardian.id }) });
 
     it 'stores the guardian', {
       expect(Ward.find(ward.id).guardian_id).to.eq(guardian.id);
@@ -58,7 +59,7 @@ describe 'the starting value of a column the caller does not set', {
   }
 
   context 'a column with a database default', {
-    let(:ward, { Ward.create({ name => 'Ada', slot => 1 }) });
+    let(:ward, { Ward.create({ name => 'Ada', slot => 1, code => 'W1' }) });
 
     it 'starts at the database default on a new record', {
       expect(Ward.build({ name => 'Ada' }).tier).to.eq(3);
@@ -69,22 +70,68 @@ describe 'the starting value of a column the caller does not set', {
     }
   }
 
-  context 'a NOT NULL column with no default', {
-    let(:ward, { Ward.build({ name => 'Ada' }) });
+  context 'a NOT NULL integer column with no default', {
+    let(:ward, { Ward.build({ name => 'Ada', code => 'W1' }) });
 
-    it 'starts at the value for its type', {
-      expect(ward.slot).to.eq(0);
+    it 'starts undefined on a new record', {
+      expect(ward.slot.defined).to.be-falsy;
     }
 
-    it 'stores the value for its type', {
+    it 'is refused by save', {
+      expect(ward.save).to.be-falsy;
+    }
+
+    it 'is refused by save without validation', {
+      expect(ward.save(:!validate)).to.be-falsy;
+    }
+
+    it 'adds a blank error to the column', {
       ward.save;
 
-      expect(Ward.find(ward.id).slot).to.eq(0);
+      expect(ward.errors.is-added('slot', 'blank')).to.be-truthy;
+    }
+
+    it 'stores no row', {
+      ward.save;
+
+      expect(Ward.count).to.eq(0);
+    }
+
+    it 'raises X::RecordInvalid from save-bang', {
+      expect({ ward.save-bang }).to.raise-error(X::RecordInvalid);
+    }
+  }
+
+  context 'a NOT NULL string column with no default', {
+    let(:ward, { Ward.build({ name => 'Ada', slot => 1 }) });
+
+    it 'starts undefined on a new record', {
+      expect(ward.code.defined).to.be-falsy;
+    }
+
+    it 'is refused by save', {
+      expect(ward.save).to.be-falsy;
+    }
+  }
+
+  context 'a NOT NULL column cleared on a saved record', {
+    let(:ward, { Ward.create({ name => 'Ada', slot => 1, code => 'W1' }) });
+
+    before-each { ward.slot = Nil }
+
+    it 'is refused by save', {
+      expect(ward.save).to.be-falsy;
+    }
+
+    it 'keeps the stored value', {
+      ward.save;
+
+      expect(Ward.find(ward.id).slot).to.eq(1);
     }
   }
 
   context 'comparing records with ==', {
-    let(:ward, { Ward.create({ name => 'Ada', slot => 1 }) });
+    let(:ward, { Ward.create({ name => 'Ada', slot => 1, code => 'W1' }) });
 
     it 'matches a reload whose nullable column is NULL', {
       expect(Ward.find(ward.id) == ward).to.be-truthy;
@@ -102,7 +149,7 @@ describe 'the starting value of a column the caller does not set', {
   }
 
   context 'dirty tracking on a new record', {
-    let(:ward, { Ward.build({ name => 'Ada', slot => 1 }) });
+    let(:ward, { Ward.build({ name => 'Ada', slot => 1, code => 'W1' }) });
 
     before-each { ward.score = 7 }
 

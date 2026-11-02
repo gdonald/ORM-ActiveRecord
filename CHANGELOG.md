@@ -44,6 +44,11 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A required `belongs-to` whose foreign key differs from its name (a dashed
   name or a `foreign-key:` option) reports `must exist` when the key is empty.
 - `where({ assoc => $record })` uses the `belongs-to`'s foreign key column.
+- A new record starts a NOT NULL column with no database default undefined
+  instead of at `0`, `''`, or `False`. `save` returns `False` and adds a
+  `blank` error to each such column left undefined, with or without
+  validation, and sends no statement. `save-bang` raises `X::RecordInvalid`.
+  Clearing such a column on a saved record is refused the same way.
 
 ### Removed
 

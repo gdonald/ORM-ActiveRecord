@@ -2,14 +2,15 @@ use v6.d;
 use lib 'lib';
 use lib 'specs/lib';
 use ORM::ActiveRecord::Model;
+use ORM::ActiveRecord::Errors::X;
 use Defaults::NullableColumns;
 use Test;
 
-plan 13;
+plan 21;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
-my $ward = Ward.build({ name => 'Ada', slot => 1 });
+my $ward = Ward.build({ name => 'Ada', slot => 1, code => 'W1' });
 nok $ward.score.defined, 'a nullable integer column starts undefined on a new record';
 
 $ward.save;
@@ -23,17 +24,30 @@ is $loaded.tier, 3, 'a column with a database default gets the database default'
 ok $ward.is-persisted, 'a nullable foreign key with a constraint saves without a guardian';
 
 my $guardian = Guardian.create({ name => 'Bea' });
-my $guarded = Ward.create({ name => 'Cal', slot => 1, guardian_id => $guardian.id });
+my $guarded = Ward.create({ name => 'Cal', slot => 1, code => 'W1', guardian_id => $guardian.id });
 is Ward.find($guarded.id).guardian_id, $guardian.id, 'a nullable foreign key set by the caller stores the guardian';
 
-my $unslotted = Ward.build({ name => 'Dee' });
+my $unslotted = Ward.build({ name => 'Dee', code => 'W1' });
 is $unslotted.tier, 3, 'a column with a database default starts at the database default on a new record';
-is $unslotted.slot, 0, 'a NOT NULL column with no default starts at the value for its type';
+nok $unslotted.slot.defined, 'a NOT NULL integer column with no default starts undefined on a new record';
 
-$unslotted.save;
-is Ward.find($unslotted.id).slot, 0, 'a NOT NULL column with no default stores the value for its type';
+my $count-before = Ward.count;
+nok $unslotted.save, 'a NOT NULL integer column with no default is refused by save';
+ok $unslotted.errors.is-added('slot', 'blank'), 'a NOT NULL integer column with no default adds a blank error to the column';
+is Ward.count, $count-before, 'a NOT NULL integer column with no default stores no row';
+nok $unslotted.save(:!validate), 'a NOT NULL integer column with no default is refused by save without validation';
+throws-like { $unslotted.save-bang }, X::RecordInvalid, 'a NOT NULL integer column with no default raises X::RecordInvalid from save-bang';
 
-my $changed = Ward.build({ name => 'Eve', slot => 1 });
+my $uncoded = Ward.build({ name => 'Dee', slot => 1 });
+nok $uncoded.code.defined, 'a NOT NULL string column with no default starts undefined on a new record';
+nok $uncoded.save, 'a NOT NULL string column with no default is refused by save';
+
+my $cleared = Ward.create({ name => 'Fay', slot => 1, code => 'W1' });
+$cleared.slot = Nil;
+nok $cleared.save, 'a NOT NULL column cleared on a saved record is refused by save';
+is Ward.find($cleared.id).slot, 1, 'a NOT NULL column cleared on a saved record keeps the stored value';
+
+my $changed = Ward.build({ name => 'Eve', slot => 1, code => 'W1' });
 $changed.score = 7;
 nok $changed.attribute-change('score')[0].defined, 'dirty tracking on a new record reports the change from undefined';
 

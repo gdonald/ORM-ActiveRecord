@@ -1456,6 +1456,8 @@ class Model
       self.apply-sti-type;
       self.apply-secure-tokens;
       self.apply-secure-password;
+      return False unless self!has-required-columns;
+
       my $supplied = (%!attrs<id> // 0).Int;
       my $generated = $!db.create-object(self);
       %!attrs<id> = $!id = $supplied > 0 ?? $supplied !! $generated;
@@ -1467,6 +1469,8 @@ class Model
     my $do-update = -> {
       return False unless self.do-before-updates;
       self.apply-secure-password;
+      return False unless self!has-required-columns;
+
       if $locking {
         my %types = self.field-types;
         my %where = self.WHAT.default-id-locating
@@ -1525,6 +1529,17 @@ class Model
     }
 
     self.run-around-chain('save', $inner-save);
+  }
+
+  # Checked here rather than left to the database, since a failed statement
+  # aborts an open PostgreSQL transaction.
+  method !has-required-columns(--> Bool) {
+    my @primary-keys = self.WHAT.primary-keys;
+    my @missing = $!db.required-columns(:table(self.table-name))
+      .grep({ $_ !(elem) @primary-keys && (%!attrs{$_}:exists) && !%!attrs{$_}.defined });
+
+    self.errors.add($_, 'blank') for @missing;
+    !@missing;
   }
 
   method update-foreign-keys {

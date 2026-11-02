@@ -67,13 +67,9 @@ class SqlAdapter
       my $type-default = self.default-for-type($field.type);
       my %detail = %details{$field.name} // %();
 
-      %defaults{$field.name} = do if %detail<default>.defined {
-        self.column-default-value($field.type, %detail<default>) // $type-default.WHAT;
-      } elsif %detail<null> {
-        $type-default.WHAT;
-      } else {
-        $type-default;
-      }
+      %defaults{$field.name} = %detail<default>.defined
+        ?? self.column-default-value($field.type, %detail<default>) // $type-default.WHAT
+        !! $type-default.WHAT;
     }
 
     %!field-defaults-cache{$table} = %defaults;
@@ -169,6 +165,13 @@ class SqlAdapter
     my @details = self.column-details-uncached(:$table);
     %!column-details-cache{$table} = @details;
     @details
+  }
+
+  method required-columns(Str:D :$table --> List) {
+    self.column-details(:$table)
+      .grep({ .<name> ne 'id' && !.<null> && !.<default>.defined })
+      .map(*.<name>)
+      .List;
   }
 
   method clear-schema-cache {

@@ -215,8 +215,12 @@ describe 'derived field caches over a table', {
         expect(adapter.get-field-defaults(:table('fc_widgets')){'name'}.defined).to.be-falsy;
       }
 
-      it 'starts a NOT NULL column with no default at the value for its type', {
-        expect(adapter.get-field-defaults(:table('fc_widgets')){'code'}).to.eq('');
+      it 'starts a NOT NULL column with no default undefined', {
+        expect(adapter.get-field-defaults(:table('fc_widgets')){'code'}.defined).to.be-falsy;
+      }
+
+      it 'lists the NOT NULL columns with no default as required', {
+        expect(adapter.required-columns(:table('fc_widgets'))).to.eq(('code',));
       }
 
       it 'starts a column with a database default at that default', {

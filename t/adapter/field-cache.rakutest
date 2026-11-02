@@ -104,7 +104,8 @@ ok $adapter.get-field-map(:table('fc_widgets')){'name'}.defined,
 
 my %widget-defaults = $adapter.get-field-defaults(:table('fc_widgets'));
 nok %widget-defaults{'name'}.defined, 'a nullable column starts undefined';
-is  %widget-defaults{'code'}, '',      'a NOT NULL column with no default starts at the value for its type';
+nok %widget-defaults{'code'}.defined,   'a NOT NULL column with no default starts undefined';
+is-deeply $adapter.required-columns(:table('fc_widgets')), ('code',), 'the NOT NULL columns with no default are required';
 is  %widget-defaults{'stock'}, 5,       'a column with a database default starts at that default';
 is  %widget-defaults{'grade'}, "it's",  'a string column with a database default starts at that default';
 ok  %widget-defaults{'listed'},         'a boolean column with a database default starts at that default';
