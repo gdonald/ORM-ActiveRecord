@@ -1,13 +1,19 @@
 unit module ORM::ActiveRecord::Support::Crypto;
 
+use NativeCall;
 use OpenSSL::Digest;
 use OpenSSL::CryptTools;
+use OpenSSL::NativeLib;
 use Base64;
+use ORM::ActiveRecord::Support::Environment;
 
-# Cryptographic helpers used by secure tokens, signed ids, and encrypted
-# columns. HMAC-SHA256 and PBKDF2 are the standard constructions built on
-# OpenSSL's SHA-256; they are verified against the RFC test vectors in the
-# specs.
+constant PRODUCTION-PASSWORD-ITERATIONS = 100000;
+constant MINIMUM-PASSWORD-ITERATIONS    = 1;
+
+sub EVP_sha256(--> Pointer) is native(&crypto-lib) { * }
+
+sub PKCS5_PBKDF2_HMAC(Blob, int32, Blob, int32, int32, Pointer, int32, Buf --> int32)
+  is native(&crypto-lib) { * }
 
 sub random-bytes(Int:D $count --> Blob) is export {
   my $fh = '/dev/urandom'.IO.open(:bin, :r);
@@ -41,27 +47,14 @@ sub hmac-sha256(Blob:D $key is copy, Blob:D $message --> Blob) is export {
   sha256($opad ~ sha256($ipad ~ $message));
 }
 
-# PBKDF2-HMAC-SHA256 (RFC 2898).
 sub pbkdf2-sha256(Blob:D $password, Blob:D $salt, Int:D $iterations, Int:D $length --> Blob) is export {
-  my $hash-len = 32;
-  my $blocks   = ($length / $hash-len).ceiling;
-  my $output   = Buf.new;
+  my $output = Buf.allocate($length);
 
-  for 1 .. $blocks -> $index {
-    my $block-index = Buf.new(($index +> 24) +& 0xff, ($index +> 16) +& 0xff,
-                              ($index +> 8) +& 0xff, $index +& 0xff);
-    my $u = hmac-sha256($password, $salt ~ $block-index);
-    my $t = Buf.new($u);
+  PKCS5_PBKDF2_HMAC($password, $password.bytes, $salt, $salt.bytes,
+                    $iterations, EVP_sha256(), $length, $output)
+    or die "PKCS5_PBKDF2_HMAC failed";
 
-    for 2 .. $iterations {
-      $u = hmac-sha256($password, $u);
-      $t = Buf.new((^$hash-len).map({ $t[$_] +^ $u[$_] }));
-    }
-
-    $output ~= $t;
-  }
-
-  $output.subbuf(0, $length);
+  $output;
 }
 
 # Timing-safe comparison.
@@ -85,10 +78,11 @@ sub derive-key(Str:D $secret --> Blob) is export {
   sha256($secret.encode('utf-8'));
 }
 
-# Password hashing with PBKDF2-HMAC-SHA256. The digest is self-describing
-# (algorithm, iteration count, salt) so verification needs only the digest.
-# A bcrypt / argon2 hasher can be substituted by storing a different prefix.
-sub password-digest(Str:D $password, Int:D :$iterations = 100000 --> Str) is export {
+sub default-password-iterations(--> Int) is export {
+  current-env() eq 'test' ?? MINIMUM-PASSWORD-ITERATIONS !! PRODUCTION-PASSWORD-ITERATIONS;
+}
+
+sub password-digest(Str:D $password, Int:D :$iterations = default-password-iterations() --> Str) is export {
   my $salt = random-bytes(16);
   my $hash = pbkdf2-sha256($password.encode('utf-8'), $salt, $iterations, 32);
   ('pbkdf2-sha256', $iterations, b64url-encode($salt), b64url-encode($hash)).join('$');

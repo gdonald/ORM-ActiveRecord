@@ -25,7 +25,7 @@ class SecureUser is Model {
 
   submethod BUILD {
     self.has-secure-token('auth_token');
-    self.has-secure-password(:iterations(1000));
+    self.has-secure-password;
     self.generates-token-for('password-reset', :expires-in(900), { .password_digest // '' });
   }
 }

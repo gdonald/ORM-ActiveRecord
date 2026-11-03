@@ -20,7 +20,7 @@ role ModelSecure is export {
     self;
   }
 
-  method has-secure-password(Str:D :$attribute = 'password', Int:D :$iterations = 100000) {
+  method has-secure-password(Str:D :$attribute = 'password', Int :$iterations) {
     %password-config{self.WHAT.^name} = { :$attribute, :$iterations };
     self.attribute($attribute);
     self.attribute($attribute ~ '_confirmation');
@@ -62,7 +62,7 @@ role ModelSecure is export {
     my $value  = self.attrs{%config<attribute>};
     return unless $value.defined && $value.Str.chars;
     self.attrs{%config<attribute> ~ '_digest'} =
-      password-digest($value.Str, iterations => %config<iterations>);
+      password-digest($value.Str, iterations => %config<iterations> // default-password-iterations());
   }
 
   method authenticate(Str:D $password) {

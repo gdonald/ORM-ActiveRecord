@@ -67,6 +67,12 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   that shared a version or sorted below an applied one was skipped. Two files
   with one version throw `X::DuplicateMigrationVersion`, naming the version and
   both paths.
+- `has-secure-password` hashes with OpenSSL's `PKCS5_PBKDF2_HMAC` instead of
+  a PBKDF2 loop written in Raku. Digests keep the `pbkdf2-sha256$...` format,
+  so stored passwords still verify.
+- In the test environment, `has-secure-password` and `password-digest` default
+  to one iteration. Other environments keep 100,000. An `:iterations` option
+  overrides both.
 
 ### Removed
 

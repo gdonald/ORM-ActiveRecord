@@ -25,6 +25,27 @@ is hex(pbkdf2-sha256('password'.encode, 'salt'.encode, 2, 32)),
   'ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43',
   'PBKDF2-HMAC-SHA256 matches the 2-iteration vector';
 
+is hex(pbkdf2-sha256('password'.encode, 'salt'.encode, 4096, 32)),
+  'c5e478d59288c841aa530db6845c4c8d962893a001ce4e11a4963873aa98134a',
+  'PBKDF2-HMAC-SHA256 matches the 4096-iteration vector';
+
+is hex(pbkdf2-sha256('passwd'.encode, 'salt'.encode, 1, 64)),
+  '55ac046e56e3089fec1691c22544b605f94185216dde0465e68b9d57c20dacbc49ca9cccf179b645991664b39d77ef317c71b845b1e30bd509112041d3a19783',
+  'PBKDF2-HMAC-SHA256 matches the RFC 7914 64-byte vector';
+
+# password digests
+my $stored-digest = 'pbkdf2-sha256$100000$c2FsdA$WPyKFsPP12hgXBa2v7jdiHlEI7-_nj6yqOPUyR0tsF8';
+ok  password-verify('correct horse', $stored-digest), 'a stored 100,000-iteration digest verifies the right password';
+nok password-verify('wrong', $stored-digest), 'a stored 100,000-iteration digest rejects the wrong password';
+
+ok password-digest('correct horse').starts-with('pbkdf2-sha256$1$'),
+  'password-digest uses one iteration in the test environment';
+
+{
+  temp %*ENV<AR_ENV> = 'production';
+  is default-password-iterations(), 100000, 'default-password-iterations is 100,000 outside the test environment';
+}
+
 # base64url round-trips arbitrary bytes
 my $bytes = Blob.new(0, 1, 2, 250, 251, 252, 253, 254, 255);
 is hex(b64url-decode(b64url-encode($bytes))), hex($bytes), 'base64url round-trips bytes';
