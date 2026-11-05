@@ -21,6 +21,20 @@ class DtWidget is Model {
   method table-name { 'dt_widgets' }
 }
 
+my @create-changes;
+my @update-changes;
+my @save-changes;
+
+class DtCallbackWidget is Model {
+  method table-name { 'dt_widgets' }
+
+  submethod BUILD {
+    self.after-create: -> { @create-changes.push: $(self.saved-change-to('name')) };
+    self.after-update: -> { @update-changes.push: $(self.saved-change-to('name')) };
+    self.after-save:   -> { @save-changes.push:   $(self.saved-change-to('name')) };
+  }
+}
+
 END {
   try $adapter.exec('DROP TABLE IF EXISTS dt_widgets') if $has-db;
 }
@@ -374,6 +388,33 @@ group 'dirty tracking', {
       $w.save;
 
       expect($w.previous-changes<name>).to.eq(['S', 'T']);
+    }
+  }
+
+  context 'saved-change-to inside after callbacks', {
+    before-each {
+      @create-changes = ();
+      @update-changes = ();
+      @save-changes   = ();
+
+      my $w = DtCallbackWidget.create({ name => 'U' });
+      $w.name = 'V';
+      $w.save;
+
+      $w.name = 'W';
+      $w.save;
+    }
+
+    it 'after-create sees the insert', {
+      expect(@create-changes).to.eq([[Str, 'U'],]);
+    }
+
+    it 'after-update sees each update', {
+      expect(@update-changes).to.eq([['U', 'V'], ['V', 'W']]);
+    }
+
+    it 'after-save sees each save', {
+      expect(@save-changes).to.eq([[Str, 'U'], ['U', 'V'], ['V', 'W']]);
     }
   }
 }

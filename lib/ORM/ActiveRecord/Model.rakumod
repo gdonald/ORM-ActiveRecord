@@ -1467,6 +1467,8 @@ class Model
       my $supplied = (%!attrs<id> // 0).Int;
       my $generated = $!db.create-object(self);
       %!attrs<id> = $!id = $supplied > 0 ?? $supplied !! $generated;
+      %!previous-changes = %snapshot;
+
       self.apply-counter-cache-on-create;
       self.apply-touch-on-belongs-to;
       self.do-after-creates;
@@ -1494,6 +1496,8 @@ class Model
       } else {
         $!db.update-object(self);
       }
+      %!previous-changes = %snapshot;
+
       self.apply-counter-cache-on-update(%snapshot);
       self.apply-touch-on-belongs-to;
       self.do-after-updates;
@@ -1521,7 +1525,6 @@ class Model
       self.do-after-saves;
       self.update-db-attrs;
       self.apply-nested-pending;
-      %!previous-changes = %snapshot;
       %!will-change = ();
       $!was-new-record = $was-new;
       $!db.register-txn-callback(self, $was-new ?? 'create' !! 'update');

@@ -79,6 +79,13 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `Model.belongs-to-names`. `Model.belongs-to-foreign-keys` maps each
   `belongs-to` name to its foreign key column.
 
+### Fixed
+
+- Inside `after-create`, `after-update`, and `after-save` callbacks,
+  `saved-change-to`, `is-saved-change-to`, `attribute-before-last-save`, and
+  `previous-changes` describe the save that ran the callback. They described
+  the save before it.
+
 ## [0.9.5] - 2026-10-30
 
 ### Added

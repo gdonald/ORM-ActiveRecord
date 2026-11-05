@@ -33,7 +33,21 @@ use ORM::ActiveRecord::Model;
 
 class Widget is Model {}
 
-plan 49;
+my @create-changes;
+my @update-changes;
+my @save-changes;
+
+class CallbackWidget is Model {
+  method table-name { 'widgets' }
+
+  submethod BUILD {
+    self.after-create: -> { @create-changes.push: $(self.saved-change-to('name')) };
+    self.after-update: -> { @update-changes.push: $(self.saved-change-to('name')) };
+    self.after-save:   -> { @save-changes.push:   $(self.saved-change-to('name')) };
+  }
+}
+
+plan 52;
 
 # is-changed / changed / changes / changed-attributes
 {
@@ -164,6 +178,20 @@ plan 49;
   $w.save;
   nok $w.is-changed, 'after save: is-changed False';
   is-deeply $w.previous-changes<name>, ['S', 'T'], 'previous-changes survives save';
+}
+
+# after callbacks see the save that triggered them through saved-change-to
+{
+  my $w = CallbackWidget.create({ name => 'U' });
+  $w.name = 'V';
+  $w.save;
+
+  $w.name = 'W';
+  $w.save;
+
+  is-deeply @create-changes, [[Str, 'U'],], 'after-create sees the insert';
+  is-deeply @update-changes, [['U', 'V'], ['V', 'W']], 'after-update sees each update';
+  is-deeply @save-changes, [[Str, 'U'], ['U', 'V'], ['V', 'W']], 'after-save sees each save';
 }
 
 DB.set-shared(Nil);
