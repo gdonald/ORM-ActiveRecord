@@ -300,9 +300,6 @@ class DB is export {
     %config;
   }
 
-  # Connection names configured for the active environment. Legacy flat config
-  # and an absent/empty config yield just the primary connection; primary is
-  # always included (it may be supplied via DATABASE_URL).
   method connection-names(Str :$path = 'config/application.json',
                           Str :$env  = current-env('development') --> List) {
     return (default-connection(),) unless $path.IO.e;
@@ -315,9 +312,14 @@ class DB is export {
     return (default-connection(),) without $json;
     return (default-connection(),) if $json<db>:exists;
 
-    my @names = ($json{$env} // %()).hash.keys.grep(* ne 'parallel').sort;
+    my %env-config = ($json{$env} // %()).hash;
+    my @names = %env-config.keys.grep({ is-connection-entry(%env-config{$_}) }).sort;
     @names.unshift(default-connection()) unless default-connection() ∈ @names;
     @names.List;
+  }
+
+  sub is-connection-entry($value --> Bool) {
+    $value ~~ Associative && ($value<adapter>:exists);
   }
 
   # Per-environment parallel worker count (the `parallel` key). Only the test

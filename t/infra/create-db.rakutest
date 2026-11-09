@@ -1,5 +1,4 @@
 use v6.d;
-use lib 'lib';
 use Test;
 use JSON::Tiny;
 use ORM::ActiveRecord::Support::WorkerDb;
@@ -58,6 +57,25 @@ my @cleanup;
     'env-parallel reads the test env parallel count';
   is DB.env-parallel(path => $par, env => 'development'), 1,
     'env-parallel defaults to 1 without a parallel key';
+
+  my $app-keys = $*TMPDIR.add("cdb-app-keys-{$*PID}-{(now * 1e6).Int}.json").Str;
+  $app-keys.IO.spurt: to-json({
+    test => {
+      log-level => 'error',
+      mail      => { host => 'localhost' },
+      primary   => { adapter => 'sqlite', name => 'db/p.sqlite3' },
+      analytics => { adapter => 'sqlite', name => 'db/a.sqlite3' },
+    },
+  });
+  @cleanup.push: $app-keys;
+  is-deeply DB.connection-names(path => $app-keys, env => 'test'), <analytics primary>,
+    'connection-names excludes keys whose value is not a hash with an adapter';
+
+  my $no-primary = $*TMPDIR.add("cdb-no-primary-{$*PID}-{(now * 1e6).Int}.json").Str;
+  $no-primary.IO.spurt: to-json({ test => { analytics => { adapter => 'sqlite', name => 'db/a.sqlite3' } } });
+  @cleanup.push: $no-primary;
+  is-deeply DB.connection-names(path => $no-primary, env => 'test'), <primary analytics>,
+    'connection-names lists primary first when the config does not name it';
 }
 
 unless $has-sqlite {

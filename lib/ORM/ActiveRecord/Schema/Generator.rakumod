@@ -3,6 +3,7 @@
 # (string in, string out) so they test without touching disk; the generate- /
 # destroy- methods write or remove the rendered files under the configured root.
 
+use JSON::Fast;
 use Text::Inflector;
 
 class Generator is export {
@@ -324,6 +325,22 @@ class Generator is export {
     my $migration-path    = self!write($!migrate-dir, $migration-file, $migration-content);
 
     ($model-path, $migration-path);
+  }
+
+  method provide-model(Str:D $name --> Bool) {
+    my $meta-file = $!root.IO.add('META6.json');
+    return False unless $meta-file.e;
+
+    my $class    = self.classize($name);
+    my $relative = $!models-dir.IO.add("$class.rakumod").Str;
+
+    my %meta = from-json($meta-file.slurp);
+    return False if (%meta<provides>{$class} // '') eq $relative;
+
+    %meta<provides>{$class} = $relative;
+    $meta-file.spurt: to-json(%meta, :sorted-keys) ~ "\n";
+
+    True;
   }
 
   method generate-validator(Str:D $name --> List) {

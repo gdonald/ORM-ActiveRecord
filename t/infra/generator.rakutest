@@ -1,9 +1,9 @@
 use v6.d;
-use lib 'lib';
+use JSON::Fast;
 use ORM::ActiveRecord::Schema::Generator;
 use Test;
 
-plan 38;
+plan 45;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -106,3 +106,30 @@ $versioned.add('db/migrate/20991231235959-create-reports.raku').spurt('');
 is $unstamped.generate-migration('AddTitleToReports', ['title:string'])[0].IO.basename,
   '21000101000000-add-title-to-reports.raku',
   'a migration version later than the current time is followed one second after it';
+
+# adding a generated model to META6.json provides
+my $provided = $*TMPDIR.add('ar-generator-provides-' ~ $*PID);
+$provided.mkdir;
+LEAVE { run 'rm', '-rf', $provided.Str }
+
+my $provider = Generator.new(:root($provided.Str), :stamp('20260615120000'));
+
+nok $provider.provide-model('Widget'),  'provide-model reports no change without a META6.json';
+nok $provided.add('META6.json').e,      'provide-model does not create a META6.json';
+
+$provided.add('META6.json').spurt: to-json({
+  name     => 'demo',
+  provides => { Existing => 'app/models/Existing.rakumod' },
+});
+
+$provider.generate-model('Widget', ['name:string']);
+ok $provider.provide-model('Widget'), 'provide-model reports that it added the entry';
+
+my $meta-json = $provided.add('META6.json').slurp;
+my %meta      = from-json($meta-json);
+
+is %meta<provides><Widget>, 'app/models/Widget.rakumod',     'provide-model maps the model class to its file';
+is %meta<provides><Existing>, 'app/models/Existing.rakumod', 'provide-model keeps the other provides entries';
+ok $meta-json.index('"Existing"') < $meta-json.index('"Widget"'), 'provide-model writes the keys in sorted order';
+
+nok $provider.provide-model('Widget'), 'provide-model reports no change when the entry is already present';

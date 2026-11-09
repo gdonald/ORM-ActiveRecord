@@ -1,6 +1,4 @@
 use v6.d;
-use lib 'lib';
-use lib 'specs/lib';
 use Query::Scope;
 use ORM::ActiveRecord::Model;
 use ORM::ActiveRecord::Relation::Scopes;

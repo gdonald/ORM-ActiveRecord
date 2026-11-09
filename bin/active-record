@@ -83,6 +83,7 @@ sub run-generate(@args --> Int) {
     when 'model' {
       return missing('generate model NAME [field:type ...]') unless @rest.elems;
       announce('create', $gen.generate-model(@rest[0], @rest[1 .. *].grep(*.defined)));
+      say "  provide {$gen.classize(@rest[0])}" if $gen.provide-model(@rest[0]);
     }
     when 'migration' {
       return missing('generate migration NAME [field:type ...]') unless @rest.elems;

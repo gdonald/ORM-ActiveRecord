@@ -1,6 +1,5 @@
 
 use v6.d;
-use lib 'lib';
 use ORM::ActiveRecord::Adapter::Sqlite;
 use Test;
 

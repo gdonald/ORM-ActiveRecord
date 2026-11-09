@@ -8,6 +8,7 @@
   "auth": "zef:gdonald",
   "depends": [
     "DBIish",
+    "JSON::Fast",
     "JSON::Tiny",
     "Log::Async",
     "YAMLish",

@@ -1,5 +1,3 @@
-use lib 'lib';
-use lib 'specs/lib';
 use BDD::Behave;
 use JSON::Tiny;
 use ORM::ActiveRecord::Support::WorkerDb;
@@ -154,6 +152,27 @@ describe 'DB.connection-names (multi-db vs single)', {
     });
 
     expect(DB.connection-names(path => $tmp, env => 'test')).to.eq(("primary",));
+  }
+
+  it 'excludes keys whose value is not a hash with an adapter', {
+    $tmp = $*TMPDIR.add("cdb-app-keys-{$*PID}-{(now * 1e6).Int}.json").Str;
+    $tmp.IO.spurt: to-json({
+      test => {
+        log-level => 'error',
+        mail      => { host => 'localhost' },
+        primary   => { adapter => 'sqlite', name => 'db/p.sqlite3' },
+        analytics => { adapter => 'sqlite', name => 'db/a.sqlite3' },
+      },
+    });
+
+    expect(DB.connection-names(path => $tmp, env => 'test')).to.eq(<analytics primary>);
+  }
+
+  it 'lists primary first when the config does not name it', {
+    $tmp = $*TMPDIR.add("cdb-no-primary-{$*PID}-{(now * 1e6).Int}.json").Str;
+    $tmp.IO.spurt: to-json({ test => { analytics => { adapter => 'sqlite', name => 'db/a.sqlite3' } } });
+
+    expect(DB.connection-names(path => $tmp, env => 'test')).to.eq(<primary analytics>);
   }
 }
 

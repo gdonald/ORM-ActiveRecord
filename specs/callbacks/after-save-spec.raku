@@ -1,5 +1,3 @@
-use lib 'lib';
-use lib 'specs/lib';
 use BDD::Behave;
 use Callbacks::AfterSave;
 use Models::Log;

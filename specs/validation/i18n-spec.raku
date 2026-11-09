@@ -1,5 +1,3 @@
-use lib 'lib';
-use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Support::I18n;
 use Validation::I18n;

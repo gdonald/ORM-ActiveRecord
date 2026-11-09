@@ -1,5 +1,4 @@
 use v6.d;
-use lib 'lib';
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;
 use ORM::ActiveRecord::Schema::Migrate;

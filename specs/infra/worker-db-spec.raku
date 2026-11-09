@@ -1,5 +1,3 @@
-use lib 'lib';
-use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Support::WorkerDb;
 use ORM::ActiveRecord::DB;

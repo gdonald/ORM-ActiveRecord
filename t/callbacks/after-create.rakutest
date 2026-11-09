@@ -1,6 +1,4 @@
 use v6.d;
-use lib 'lib';
-use lib 'specs/lib';
 use Callbacks::AfterCreate;
 use Models::Log;
 use Test;

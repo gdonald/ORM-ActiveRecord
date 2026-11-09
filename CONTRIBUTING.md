@@ -52,7 +52,7 @@ backing up and restoring your real config around the run.
 Run a single file while iterating:
 
 ```
-prove6 -Ilib t/validation/length.rakutest
+prove6 -Ilib -Ispecs/lib t/validation/length.rakutest
 behave specs/validation/length-spec.raku
 ```
 

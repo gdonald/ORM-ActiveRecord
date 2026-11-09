@@ -1,6 +1,5 @@
 
 use v6.d;
-use lib 'lib';
 use MONKEY-SEE-NO-EVAL;
 use Test;
 use ORM::ActiveRecord::DB;

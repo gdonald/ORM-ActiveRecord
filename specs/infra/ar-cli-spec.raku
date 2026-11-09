@@ -1,6 +1,5 @@
-use lib 'lib';
-use lib 'specs/lib';
 use BDD::Behave;
+use JSON::Fast;
 use ORM::ActiveRecord::Support::WorkerDb;
 
 %*ENV<DISABLE-SQL-LOG> = True;
@@ -166,5 +165,46 @@ describe 'active-record generate migration', {
       !! ();
 
     expect(@migrations.elems).to.eq(1);
+  }
+}
+
+sub generate-widget(IO::Path $dir --> Str) {
+  my $repo = $*CWD;
+  my $proc = run 'raku', '-I', $repo.add('lib').Str, $repo.add('bin/active-record').Str,
+    'generate', 'model', 'Widget', 'name:string',
+    :cwd($dir.Str), :out, :err;
+  $proc.err.slurp(:close);
+  $proc.out.slurp(:close);
+}
+
+describe 'active-record generate model', {
+  context 'in a project with a META6.json', {
+    it 'adds the model to provides and prints the provide line', {
+      my $tmp = $*TMPDIR.add('ar-cli-generate-model-' ~ $*PID);
+      $tmp.mkdir;
+
+      LEAVE { run 'rm', '-rf', $tmp.Str }
+
+      $tmp.add('META6.json').spurt: to-json({ name => 'demo', provides => {} });
+      my $output = generate-widget($tmp);
+
+      aggregate-failures {
+        expect(from-json($tmp.add('META6.json').slurp)<provides><Widget>).to.eq('app/models/Widget.rakumod');
+        expect($output.lines).to.include('  provide Widget');
+      }
+    }
+  }
+
+  context 'in a project without a META6.json', {
+    it 'does not print a provide line', {
+      my $tmp = $*TMPDIR.add('ar-cli-generate-model-bare-' ~ $*PID);
+      $tmp.mkdir;
+
+      LEAVE { run 'rm', '-rf', $tmp.Str }
+
+      my $output = generate-widget($tmp);
+
+      expect($output.contains('provide')).to.be-falsy;
+    }
   }
 }

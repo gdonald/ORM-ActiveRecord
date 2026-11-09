@@ -1,6 +1,4 @@
-use lib 'lib';
 use BDD::Behave;
-use lib 'specs/lib';
 use Models::Game;
 use ORM::ActiveRecord::Relation::Query::Like;
 

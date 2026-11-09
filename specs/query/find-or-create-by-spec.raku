@@ -1,5 +1,3 @@
-use lib 'lib';
-use lib 'specs/lib';
 use BDD::Behave;
 use Validation::UserFnameOnly;
 use ORM::ActiveRecord::Errors::X;

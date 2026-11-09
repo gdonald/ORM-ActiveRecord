@@ -23,6 +23,9 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   dies.
 - Reflection reports the class of a `through` association declared without
   `class-name:`.
+- `active-record generate model` adds the model to `provides` in the project's
+  `META6.json`, when there is one, and prints `  provide <Class>`.
+- A dependency on `JSON::Fast`, which writes `META6.json` with sorted keys.
 
 ### Changed
 
@@ -85,6 +88,11 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `saved-change-to`, `is-saved-change-to`, `attribute-before-last-save`, and
   `previous-changes` describe the save that ran the callback. They described
   the save before it.
+- `DB.connection-names` lists only the keys of an environment whose value is an
+  object with an `adapter` key, plus `primary`. Other keys in the entry, such
+  as MVC::Keayl's `log-level` or a hash like `"mail": { "host": "localhost" }`,
+  no longer become connections, so `active-record db:migrate` no longer dies on
+  them.
 
 ## [0.9.5] - 2026-10-30
 

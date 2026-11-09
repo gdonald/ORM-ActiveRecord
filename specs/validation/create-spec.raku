@@ -1,6 +1,4 @@
-use lib 'lib';
 use BDD::Behave;
-use lib 'specs/lib';
 use Validation::UserFnameOnly;
 
 %*ENV<DISABLE-SQL-LOG> = True;

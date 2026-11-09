@@ -1,5 +1,3 @@
-use lib 'lib';
-use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::DB;
 use ORM::ActiveRecord::Errors::X;

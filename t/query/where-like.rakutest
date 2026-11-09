@@ -1,7 +1,5 @@
 
 use v6.d;
-use lib 'lib';
-use lib 'specs/lib';
 use Models::Game;
 use ORM::ActiveRecord::Relation::Query::Like;
 use Test;

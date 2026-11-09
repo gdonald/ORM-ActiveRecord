@@ -1,5 +1,3 @@
-use lib 'lib';
-use lib 'specs/lib';
 use BDD::Behave;
 use Text::Inflector;
 use ORM::ActiveRecord::Support::Utils;

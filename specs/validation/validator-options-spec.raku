@@ -1,5 +1,3 @@
-use lib 'lib';
-use lib 'specs/lib';
 use BDD::Behave;
 use ORM::ActiveRecord::Schema::Field;
 use ORM::ActiveRecord::Validations::Validator;

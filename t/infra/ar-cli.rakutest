@@ -1,7 +1,7 @@
 use v6.d;
-use lib 'lib';
 use Test;
 use DBIish;
+use JSON::Fast;
 use ORM::ActiveRecord::Support::WorkerDb;
 
 %*ENV<DISABLE-SQL-LOG> = True;
@@ -51,6 +51,33 @@ my @migrations = $tmp.add('db/migrate').d
   ?? $tmp.add('db/migrate').dir.grep(*.basename.ends-with('-create-things.raku')).list
   !! ();
 ok @migrations.elems == 1, 'active-record generate migration writes a migration file under db/migrate';
+
+sub generate-widget(IO::Path $dir --> Str) {
+  my $proc = run 'raku', '-I', $repo.add('lib').Str, $repo.add('bin/active-record').Str,
+    'generate', 'model', 'Widget', 'name:string',
+    :cwd($dir.Str), :out, :err;
+  $proc.err.slurp(:close);
+  $proc.out.slurp(:close);
+}
+
+my $with-meta = $*TMPDIR.add('ar-cli-generate-model-' ~ $*PID);
+$with-meta.mkdir;
+LEAVE { run 'rm', '-rf', $with-meta.Str }
+
+$with-meta.add('META6.json').spurt: to-json({ name => 'demo', provides => {} });
+my $provided-output = generate-widget($with-meta);
+
+is from-json($with-meta.add('META6.json').slurp)<provides><Widget>, 'app/models/Widget.rakumod',
+  'active-record generate model adds the model to provides';
+ok $provided-output.lines.grep('  provide Widget'),
+  'active-record generate model prints the provide line';
+
+my $without-meta = $*TMPDIR.add('ar-cli-generate-model-bare-' ~ $*PID);
+$without-meta.mkdir;
+LEAVE { run 'rm', '-rf', $without-meta.Str }
+
+nok generate-widget($without-meta).contains('provide'),
+  'active-record generate model prints no provide line without a META6.json';
 
 my $has-sqlite = try {
   my $handle = DBIish.connect('SQLite', :database(':memory:'));

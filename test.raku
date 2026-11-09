@@ -337,7 +337,7 @@ sub run-once(Str:D :$name, Str:D :$url, Int :$parallel = 1,
   return $reset.exitcode unless $reset.exitcode == 0;
 
   if $run-prove6 {
-    my $prove = run 'prove6', '-Ilib', 't';
+    my $prove = run 'prove6', '-Ilib', '-Ispecs/lib', 't';
     return $prove.exitcode unless $prove.exitcode == 0;
   }
 

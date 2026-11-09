@@ -1,5 +1,3 @@
-use lib 'lib';
-use lib 'specs/lib';
 use MONKEY-SEE-NO-EVAL;
 use BDD::Behave;
 use ORM::ActiveRecord::DB;

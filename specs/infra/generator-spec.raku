@@ -1,9 +1,15 @@
-use lib 'lib';
-use lib 'specs/lib';
 use BDD::Behave;
+use JSON::Fast;
 use ORM::ActiveRecord::Schema::Generator;
 
 %*ENV<DISABLE-SQL-LOG> = True;
+
+sub write-meta(IO::Path $dir) {
+  $dir.add('META6.json').spurt: to-json({
+    name     => 'demo',
+    provides => { Existing => 'app/models/Existing.rakumod' },
+  });
+}
 
 describe 'code generators', {
   my $gen = Generator.new(:stamp('20260615120000'));
@@ -152,6 +158,80 @@ describe 'code generators', {
       expect(@paths[0].IO.basename).to.eq('21000101000000-add-title-to-reports.raku');
 
       run 'rm', '-rf', work.Str;
+    }
+  }
+
+  context 'adding a generated model to META6.json provides', {
+    let(:work, {
+      my $tmp = $*TMPDIR.add('ar-generator-provides-' ~ $*PID);
+      $tmp.mkdir;
+      $tmp;
+    });
+
+    let(:writer, { Generator.new(:root(work.Str), :stamp('20260615120000')) });
+
+    context 'when the project has a META6.json', {
+      it 'maps the model class to its file', {
+        write-meta(work);
+        writer.generate-model('Widget', ['name:string']);
+        writer.provide-model('Widget');
+
+        expect(from-json(work.add('META6.json').slurp)<provides><Widget>).to.eq('app/models/Widget.rakumod');
+
+        run 'rm', '-rf', work.Str;
+      }
+
+      it 'keeps the other provides entries', {
+        write-meta(work);
+        writer.provide-model('Widget');
+
+        expect(from-json(work.add('META6.json').slurp)<provides><Existing>).to.eq('app/models/Existing.rakumod');
+
+        run 'rm', '-rf', work.Str;
+      }
+
+      it 'writes the keys in sorted order', {
+        write-meta(work);
+        writer.provide-model('Widget');
+
+        my $json = work.add('META6.json').slurp;
+        expect($json.index('"Existing"') < $json.index('"Widget"')).to.be-truthy;
+
+        run 'rm', '-rf', work.Str;
+      }
+
+      it 'reports that it added the entry', {
+        write-meta(work);
+
+        expect(writer.provide-model('Widget')).to.be-truthy;
+
+        run 'rm', '-rf', work.Str;
+      }
+
+      it 'reports no change when the entry is already present', {
+        write-meta(work);
+        writer.provide-model('Widget');
+
+        expect(writer.provide-model('Widget')).to.be-falsy;
+
+        run 'rm', '-rf', work.Str;
+      }
+    }
+
+    context 'when the project has no META6.json', {
+      it 'reports no change', {
+        expect(writer.provide-model('Widget')).to.be-falsy;
+
+        run 'rm', '-rf', work.Str;
+      }
+
+      it 'does not create a META6.json', {
+        writer.provide-model('Widget');
+
+        expect(work.add('META6.json').e).to.be-falsy;
+
+        run 'rm', '-rf', work.Str;
+      }
     }
   }
 }
