@@ -97,6 +97,32 @@ describe 'code generators', {
     }
   }
 
+  context 'rendered file beginnings', {
+    it 'starts a model with a use statement', {
+      expect($gen.render-model('User', ['name:string']).starts-with('use ')).to.be-truthy;
+    }
+
+    it 'starts a create-table migration with a use statement', {
+      expect($gen.render-migration('CreateWidgets', ['name:string']).starts-with('use ')).to.be-truthy;
+    }
+
+    it 'starts an add-column migration with a use statement', {
+      expect($gen.render-migration('AddEmailToUsers', ['email:string']).starts-with('use ')).to.be-truthy;
+    }
+
+    it 'starts a remove-column migration with a use statement', {
+      expect($gen.render-migration('RemovePriceFromWidgets', ['price:decimal']).starts-with('use ')).to.be-truthy;
+    }
+
+    it 'starts an empty migration with a use statement', {
+      expect($gen.render-migration('Frobnicate', []).starts-with('use ')).to.be-truthy;
+    }
+
+    it 'starts a validator with a use statement', {
+      expect($gen.render-validator('NotEvil').starts-with('use ')).to.be-truthy;
+    }
+  }
+
   context 'scope rendering', {
     it 'builds the where conditions', {
       expect($gen.render-scope-line('active', ['published:True']).contains('published => True')).to.be-truthy;

@@ -3,7 +3,7 @@ use JSON::Fast;
 use ORM::ActiveRecord::Schema::Generator;
 use Test;
 
-plan 45;
+plan 51;
 
 %*ENV<DISABLE-SQL-LOG> = True;
 
@@ -63,6 +63,14 @@ ok $validator.contains('method validate($record)'),         'validator renders a
 my $scope = $gen.render-scope-line('active', ['published:True']);
 ok $scope.contains("self.scope: 'active'"),  'scope line names the scope';
 ok $scope.contains('published => True'),     'scope line builds the where conditions';
+
+# rendered files start with the first use statement
+ok $model.starts-with('use '),     'model starts with a use statement';
+ok $create.starts-with('use '),    'create migration starts with a use statement';
+ok $add.starts-with('use '),       'add migration starts with a use statement';
+ok $remove.starts-with('use '),    'remove migration starts with a use statement';
+ok $empty.starts-with('use '),     'empty migration starts with a use statement';
+ok $validator.starts-with('use '), 'validator starts with a use statement';
 
 # generate model writes both files
 my @model-paths = $gen.generate-model('Account', ['name:string']);

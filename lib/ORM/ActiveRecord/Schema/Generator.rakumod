@@ -88,7 +88,6 @@ class Generator is export {
     $up ~= "\n$indexes" if $indexes;
 
     qq:to/RAKU/;
-
     use ORM::ActiveRecord::Schema::Migration;
 
     class $class is Migration \{
@@ -112,7 +111,6 @@ class Generator is export {
     @down.push: "    # revert the changes to '$table'" unless @down.elems;
 
     qq:to/RAKU/;
-
     use ORM::ActiveRecord::Schema::Migration;
 
     class $class is Migration \{
@@ -136,7 +134,6 @@ class Generator is export {
     @down.push: "    # restore the columns on '$table'" unless @down.elems;
 
     qq:to/RAKU/;
-
     use ORM::ActiveRecord::Schema::Migration;
 
     class $class is Migration \{
@@ -153,7 +150,6 @@ class Generator is export {
 
   method render-empty-migration(Str:D $class --> Str) {
     qq:to/RAKU/;
-
     use ORM::ActiveRecord::Schema::Migration;
 
     class $class is Migration \{
@@ -203,7 +199,6 @@ class Generator is export {
       !! "  submethod BUILD \{\n  \}";
 
     qq:to/RAKU/;
-
     use ORM::ActiveRecord::Model;
 
     class $class is Model \{
@@ -219,7 +214,6 @@ class Generator is export {
     $class ~= 'Validator' unless $class.ends-with('Validator');
 
     qq:to/RAKU/;
-
     use ORM::ActiveRecord::Errors::Error;
     use ORM::ActiveRecord::Schema::Field;
 
