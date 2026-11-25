@@ -292,7 +292,8 @@ role SqlExec is export {
     # The payload is built only when something consumes it. With no subscriber
     # `instrument` throws the hash, the bind list, and the statement name away
     # immediately, and that is the common case.
-    return run() unless Notifications.has-subscribers('sql.active_record');
+    return run() unless Notifications.has-subscribers('sql.active_record')
+      || Notifications.has-subscribers('sql.active_record.start');
 
     Notifications.instrument('sql.active_record',
       { sql => $exec-sql, binds => @binds.List, cached => False, name => self!sql-name($stripped) },

@@ -35,11 +35,15 @@ class Notifications is export {
     .<callback>(%payload) for %subscribers{$event}.list;
   }
 
-  # Run a block, time it, and notify subscribers with the duration (seconds)
-  # merged into the payload. When the block throws, subscribers still see the
-  # event (with the exception in the payload) and the error is rethrown.
+  # Notify `<event>.start` with the payload, run the block, time it, and notify
+  # `<event>` with the duration (seconds) merged into the payload. When the
+  # block throws, subscribers still see the event (with the exception in the
+  # payload) and the error is rethrown.
   method instrument(Str:D $event, %payload is copy, &block) {
-    return block() unless self.has-subscribers($event);
+    my $start-event = "$event.start";
+    return block() unless self.has-subscribers($event) || self.has-subscribers($start-event);
+
+    self.notify($start-event, %payload.clone);
 
     my $start = now;
     my $result;

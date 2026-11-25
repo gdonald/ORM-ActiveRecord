@@ -57,6 +57,24 @@ Notifications.reset;
   Notifications.reset;
 }
 
+{
+  my @order;
+  Notifications.subscribe('e.started.start', -> %p { @order.push: 'start' });
+  Notifications.subscribe('e.started', -> %p { @order.push: 'end' });
+  Notifications.instrument('e.started', {}, { @order.push: 'block' });
+  is-deeply @order, ['start', 'block', 'end'], 'instrument notifies the start event before the block runs';
+  Notifications.reset;
+}
+
+{
+  my @got;
+  Notifications.subscribe('e.only-start.start', -> %p { @got.push: %p });
+  Notifications.instrument('e.only-start', { tag => 'y' }, { 1 });
+  is @got[0]<tag>, 'y', 'instrument notifies the start event when only the start event has a subscriber';
+  nok @got[0]<duration>:exists, 'the start payload has no duration';
+  Notifications.reset;
+}
+
 Notifications.reset;
 is Notifications.instrument('nobody', {}, { 7 }), 7, 'instrument runs the block when nothing is subscribed';
 
@@ -91,6 +109,18 @@ if $has-db {
   ok $ev.defined, 'sql.active_record fires for an executed query';
   nok $ev<cached>, 'a live query event is not marked cached';
   ok $ev<duration> ~~ Numeric, 'the sql event carries a duration';
+  Notifications.reset;
+
+  my @order;
+  my @start;
+  Notifications.subscribe('sql.active_record.start', -> %p { @start.push: %p; @order.push: 'start' if %p<sql> eq 'SELECT 1' });
+  Notifications.subscribe('sql.active_record', -> %p { @order.push: 'end' if %p<sql> eq 'SELECT 1' });
+  $adapter.exec('SELECT 1');
+  my $sev = @start.first({ .<sql> eq 'SELECT 1' });
+  ok $sev.defined, 'sql.active_record.start fires for an executed query';
+  ok $sev<name>.defined, 'the sql start event carries the statement name';
+  nok $sev<duration>:exists, 'the sql start event has no duration';
+  is-deeply @order, ['start', 'end'], 'sql.active_record.start fires before sql.active_record';
   Notifications.reset;
 
   my $conn = DB.shared.build-connection;
@@ -151,7 +181,7 @@ if $has-db {
   LogSubscriber.reset;
   Notifications.reset;
 } else {
-  skip 'database-backed instrumentation', 11;
+  skip 'database-backed instrumentation', 15;
 }
 
 done-testing;
