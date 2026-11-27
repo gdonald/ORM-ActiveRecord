@@ -306,6 +306,27 @@ class PgAdapter is SqlAdapter is export {
     }
   }
 
+  method get-column-checks(Str:D :$table --> Hash) {
+    my $rows = self.exec(q:to/SQL/, $table);
+      SELECT att.attname, pg_get_constraintdef(con.oid)
+        FROM pg_constraint con
+        JOIN pg_attribute att ON att.attrelid = con.conrelid AND att.attnum = con.conkey[1]
+       WHERE con.conrelid = $1::regclass
+         AND con.contype = 'c'
+         AND array_length(con.conkey, 1) = 1
+       ORDER BY con.conname
+      SQL
+
+    my %out;
+
+    for @$rows -> $row {
+      my $definition = $row[1].Str;
+      %out{$row[0].Str}.push: ~($definition ~~ / ^ 'CHECK (' <( .*? )> ')' [ ' NOT VALID' ]? $ /);
+    }
+
+    %out;
+  }
+
   method get-foreign-keys(Str:D :$table --> List) {
     my $rows = self.exec(q:to/SQL/, $table);
       SELECT con.conname, att.attname, cl.relname, fatt.attname,
@@ -716,6 +737,7 @@ class PgAdapter is SqlAdapter is export {
       my Bool $is-binary = False;
       my Bool $is-array = False;
       my Bool $is-unique = False;
+      my $check;
       my $precision;
       my $scale;
       my $references;
@@ -778,6 +800,7 @@ class PgAdapter is SqlAdapter is export {
           when 'default'   { $has-default = True; $default-value = $value }
           when 'null'      { $null = $value }
           when 'unique'    { $is-unique = $value.so }
+          when 'check'     { $check = $value }
           when 'collation' { $collation = $value }
           when 'charset'   { die 'PgAdapter: charset is not supported (use collation)' }
           when 'as'        { $generated-as = $value }
@@ -820,6 +843,7 @@ class PgAdapter is SqlAdapter is export {
 
       $col ~= self.ref-null-clause($null);
       $col ~= ' UNIQUE' if $is-unique;
+      $col ~= " CHECK ($check)" if $check.defined;
 
       @comments.push($field_name => $comment) if $comment.defined;
 

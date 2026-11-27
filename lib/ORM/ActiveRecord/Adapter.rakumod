@@ -32,10 +32,12 @@ role Adapter is export {
   method column-details(Str:D :$table --> List) { ... }
 
   # Catalog introspection beyond columns: indexes, constraints, sequences.
-  # Each returns a List of Hashes (sequences: a List of names).
+  # Each returns a List of Hashes (sequences: a List of names, column checks:
+  # a Hash of column name to CHECK expression).
   method get-indexes(Str:D :$table --> List)     { ... }
   method get-constraints(Str:D :$table --> List) { ... }
   method get-foreign-keys(Str:D :$table --> List) { ... }
+  method get-column-checks(Str:D :$table --> Hash) { ... }
   method get-sequences(--> List)                 { ... }
 
   # CRUD primitives whose SQL shape varies by dialect

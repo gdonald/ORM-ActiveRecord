@@ -272,6 +272,32 @@ class SqliteAdapter is SqlAdapter is export {
     @out.sort(*.<name>).list;
   }
 
+  my regex sql-quoted { [ "'" <-[']>* "'" ]+ }
+  my regex sql-parens { '(' [ <-[()']>+ | <&sql-quoted> | <&sql-parens> ]* ')' }
+  my regex table-constraint { :i ^ \s* [ PRIMARY | FOREIGN | CONSTRAINT | CHECK | UNIQUE ] >> }
+
+  # SQLite keeps CHECK constraints only in the CREATE TABLE text, so the
+  # column definitions are split out of sqlite_master.sql.
+  method get-column-checks(Str:D :$table --> Hash) {
+    my %out;
+
+    my $rows = self.exec(q{SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?}, $table);
+    my $sql  = $rows[0][0].Str;
+    my $body = $sql.substr($sql.index('(') + 1).subst(/ ')' \s* $ /, '');
+
+    for $body.comb(/ [ <-[,()']>+ | <&sql-quoted> | <&sql-parens> ]+ /) -> $definition {
+      next if $definition ~~ &table-constraint;
+
+      my $column = $definition.words[0];
+
+      for $definition.match(/ :i << CHECK \s* <expression=&sql-parens> /, :g) -> $m {
+        %out{$column}.push: $m<expression>.Str.substr(1, *-1);
+      }
+    }
+
+    %out;
+  }
+
   # SQLite has no sequences; AUTOINCREMENT bookkeeping lives in sqlite_sequence.
   method get-sequences(--> List) {
     my $exists = self.exec(q{SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'sqlite_sequence'});
@@ -498,7 +524,7 @@ class SqliteAdapter is SqlAdapter is export {
   }
 
   method ddl-add-check-constraint(Str:D $table, Str:D $expression, *%opts) {
-    die 'SqliteAdapter: add-check-constraint on an existing table is not supported (SQLite needs a table rebuild; declare the CHECK in create-table instead)';
+    die 'SqliteAdapter: add-check-constraint on an existing table is not supported (SQLite needs a table rebuild; declare it with `check =>` on the column in create-table)';
   }
 
   method ddl-remove-check-constraint(Str:D $table, *%opts) {
@@ -555,6 +581,7 @@ class SqliteAdapter is SqlAdapter is export {
       my $generated-as;
       my Bool $stored = False;
       my Bool $is-unique = False;
+      my $check;
       my $references;
       my $fk-on-delete;
       my $fk-on-update;
@@ -598,6 +625,7 @@ class SqliteAdapter is SqlAdapter is export {
           when 'default'   { $has-default = True; $default-value = $value }
           when 'null'      { $null = $value }
           when 'unique'    { $is-unique = $value.so }
+          when 'check'     { $check = $value }
           when 'collation' { $collation = $value }
           when 'charset'   { }   # SQLite has no charset; ignored for parity
           when 'as'        { $generated-as = $value }
@@ -632,6 +660,7 @@ class SqliteAdapter is SqlAdapter is export {
 
       $col ~= self.ref-null-clause($null);
       $col ~= ' UNIQUE' if $is-unique;
+      $col ~= " CHECK ($check)" if $check.defined;
 
       @fields.push($col);
 

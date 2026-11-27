@@ -366,6 +366,37 @@ class MySqlAdapter is SqlAdapter is export {
       }).list;
     }
 
+    # MySQL stores a column CHECK as a table constraint with no link to the
+    # column, so a check is attached to the one column its clause names.
+    # check_clause backslash-escapes quotes (`_utf8mb4\'\'`), which is not
+    # valid SQL outside a string literal.
+    method get-column-checks(Str:D :$table --> Hash) {
+      my $stmt = SqlStmt.new(:adapter(self));
+      my $tph = $stmt.placeholder($table);
+      $stmt.sql = qq:to/SQL/;
+        SELECT cc.check_clause
+          FROM information_schema.table_constraints tc
+          JOIN information_schema.check_constraints cc
+            ON cc.constraint_schema = tc.constraint_schema
+           AND cc.constraint_name = tc.constraint_name
+         WHERE tc.table_schema = DATABASE()
+           AND tc.table_name = $tph
+           AND tc.constraint_type = 'CHECK'
+         ORDER BY tc.constraint_name
+        SQL
+
+      my %out;
+
+      for self.exec-stmt($stmt) -> $row {
+        my $clause  = self!stringify($row[0]).subst(/ '\\' (.) /, { ~$0 }, :g);
+        my @columns = $clause.comb(/ '`' <( <-[`]>+ )> '`' /).unique;
+
+        %out{@columns[0]}.push: $clause if @columns.elems == 1;
+      }
+
+      %out;
+    }
+
     # MySQL has no sequences (AUTO_INCREMENT lives on the column).
     method get-sequences(--> List) { () }
 
@@ -799,6 +830,7 @@ class MySqlAdapter is SqlAdapter is export {
             my Bool $is-binary = False;
             my Bool $is-money = False;
             my Bool $is-unique = False;
+            my $check;
             my $precision;
             my $scale;
             my $references;
@@ -844,6 +876,7 @@ class MySqlAdapter is SqlAdapter is export {
                 when 'default'   { $has-default = True; $default-value = $value }
                 when 'null'      { $null = $value }
                 when 'unique'    { $is-unique = $value.so }
+                when 'check'     { $check = $value }
                 when 'charset'   { $charset = $value }
                 when 'collation' { $collation = $value }
                 when 'as'        { $generated-as = $value }
@@ -898,6 +931,7 @@ class MySqlAdapter is SqlAdapter is export {
             $col ~= ' UNIQUE' if $is-unique;
 
             $col ~= ' COMMENT ' ~ self!string-literal($comment.Str) if $comment.defined;
+            $col ~= " CHECK ($check)" if $check.defined;
 
             @fields.push($col);
 

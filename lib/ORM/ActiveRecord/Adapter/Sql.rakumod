@@ -192,6 +192,7 @@ class SqlAdapter
   method get-indexes(Str:D :$table --> List)                        { ... }
   method get-constraints(Str:D :$table --> List)                    { ... }
   method get-foreign-keys(Str:D :$table --> List)                   { ... }
+  method get-column-checks(Str:D :$table --> Hash)                  { ... }
   method get-sequences(--> List)                                    { ... }
   method build-insert(Str:D :$table, :%attrs, :%types --> SqlStmt)  { ... }
   method create-object(Mu:D $obj)                                   { ... }

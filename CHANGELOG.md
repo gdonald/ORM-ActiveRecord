@@ -26,6 +26,13 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `active-record generate model` adds the model to `provides` in the project's
   `META6.json`, when there is one, and prints `  provide <Class>`.
 - A dependency on `JSON::Fast`, which writes `META6.json` with sorted keys.
+- A `check` column option in `create-table` and `add-column`
+  (`fname => { :string, check => "fname <> ''" }`) emits an inline `CHECK`
+  constraint on PostgreSQL, MySQL, and SQLite. It gives SQLite a way to declare
+  a CHECK, since SQLite cannot `add-check-constraint`.
+- `db:schema:dump` writes a CHECK constraint that names one column back as a
+  `check` option on that column. Adapters report these through
+  `get-column-checks`.
 
 ### Changed
 

@@ -68,13 +68,24 @@ class SchemaDumper is export {
   method !column-block(Str:D $table, @columns, %fk-by-column --> Str) {
     return '' unless @columns.elems;
     my $width = @columns.map(*.<name>.chars).max;
+    my %checks = $!adapter.get-column-checks(:$table);
+
     @columns.map(-> %col {
       my $pad = ' ' x ($width - %col<name>.chars);
       my $suffix = %fk-by-column{%col<name>}:exists
         ?? self!inline-fk-suffix($table, %fk-by-column{%col<name>})
         !! '';
+      $suffix ~= self!check-suffix(%checks{%col<name>}.list) if %checks{%col<name>}:exists;
       '      ' ~ %col<name> ~ $pad ~ ' => { :' ~ %col<adverb> ~ $suffix ~ ' },'
     }).join("\n");
+  }
+
+  method !check-suffix(@expressions --> Str) {
+    my $expression = @expressions.elems == 1
+      ?? @expressions[0]
+      !! @expressions.map({ "($_)" }).join(' AND ');
+
+    ', check => ' ~ $expression.raku;
   }
 
   # SQLite can't ALTER in a foreign key, so its dump declares the FK inline on
